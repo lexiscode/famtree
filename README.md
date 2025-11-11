@@ -1,66 +1,295 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# FamTree
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A modern full-stack web application for managing family trees, built with Laravel 10, React 18, and Inertia.js.
 
-## About Laravel
+## Tech Stack
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- **Backend**: Laravel 10 with PHP 8.2
+- **Frontend**: React 18 with TypeScript
+- **Server-Side Rendering**: Inertia.js
+- **Database**: MySQL 8.0
+- **Cache/Queue**: Redis
+- **Build Tool**: Vite
+- **Styling**: Bootstrap 5 + React Bootstrap
+- **Email Testing**: Mailpit
+- **Containerization**: Docker with Laravel Sail
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Quick Start
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### Prerequisites
 
-## Learning Laravel
+- Docker and Docker Compose installed
+- Git
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### Installation
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd famtree
+   ```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+2. **Start Docker containers**
+   ```bash
+   docker-compose up -d
+   ```
 
-## Laravel Sponsors
+3. **Access the application**
+   - App: http://localhost
+   - PhpMyAdmin: http://localhost:8080
+   - Mailpit (Email): http://localhost:8025
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## Running Commands in Docker
 
-### Premium Partners
+### Using docker-compose directly
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+```bash
+# Enter the application container
+docker-compose exec -it famtree bash
 
-## Contributing
+# Run Laravel commands
+docker-compose exec -it famtree php artisan migrate
+docker-compose exec -it famtree php artisan tinker
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+# Run npm commands
+docker-compose exec -it famtree npm run dev
+docker-compose exec -it famtree npm run build
 
-## Code of Conduct
+# Access MySQL
+docker-compose exec -it mysql mysql -u root famtree
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+# Access Redis
+docker-compose exec -it redis redis-cli
+```
 
-## Security Vulnerabilities
+### Using the sail script
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+# Enter the container
+./sail shell
+
+# Run artisan commands
+./sail artisan migrate
+./sail art make:model Post -m
+
+# Run npm commands
+./sail npm run dev
+./sail npm install
+
+# Run tests
+./sail test
+
+# Format code with Pint
+./sail pint
+
+# View logs
+./sail logs -f
+```
+
+## Development
+
+### Start the development servers
+
+```bash
+# In one terminal, start Vite dev server
+docker-compose exec -it famtree npm run dev
+
+# In another terminal, Laravel is already running
+# Access the app at http://localhost
+```
+
+### Key directories
+
+- **Backend**: `/app` - Laravel controllers, models, middleware
+- **Frontend**: `/resources/js` - React components, pages, layouts
+- **Database**: `/database/migrations` - Database schema
+- **Routes**: `/routes/web.php` - Web routes with Inertia pages
+- **Config**: `/config` - Application configuration
+
+## Database
+
+### Run migrations
+```bash
+docker-compose exec -it famtree php artisan migrate
+```
+
+### Seed database
+```bash
+docker-compose exec -it famtree php artisan db:seed
+```
+
+### Access MySQL CLI
+```bash
+docker-compose exec -it mysql mysql -u root famtree
+```
+
+## Testing
+
+### Run PHPUnit tests
+```bash
+docker-compose exec -it famtree php artisan test
+```
+
+### Run single test file
+```bash
+docker-compose exec -it famtree php artisan test tests/Feature/ExampleTest.php
+```
+
+## Code Style
+
+### Format PHP code with Pint
+```bash
+./sail pint
+```
+
+### Format code in specific directory
+```bash
+./sail pint app/Http/Controllers
+```
+
+## Services
+
+| Service | Port | Access |
+|---------|------|--------|
+| Laravel App | 80 | http://localhost |
+| Vite Dev Server | 5173 | http://localhost:5173 |
+| MySQL | 3306 | localhost:3306 |
+| Redis | 6379 | localhost:6379 |
+| PhpMyAdmin | 8080 | http://localhost:8080 |
+| Mailpit (SMTP) | 1025 | localhost:1025 |
+| Mailpit (Web UI) | 8025 | http://localhost:8025 |
+
+## Docker Management
+
+```bash
+# Start containers
+docker-compose up -d
+
+# Stop containers
+docker-compose down
+
+# Stop and remove all volumes
+docker-compose down -v
+
+# View container status
+docker-compose ps
+
+# View logs
+docker-compose logs -f [service-name]
+
+# Rebuild containers
+docker-compose build --no-cache
+
+# Enter specific service container
+docker-compose exec -it [service-name] bash
+# Examples:
+docker-compose exec -it famtree bash      # App container
+docker-compose exec -it mysql bash        # MySQL container
+docker-compose exec -it redis redis-cli   # Redis CLI
+```
+
+## Environment Configuration
+
+Copy `.env.example` to `.env` and update as needed:
+
+```bash
+cp .env.example .env
+```
+
+Key environment variables:
+- `APP_NAME=FamTree`
+- `APP_ENV=local` (use `production` in production)
+- `DB_HOST=mysql` (Docker service name)
+- `REDIS_HOST=redis` (Docker service name)
+
+## Project Structure
+
+```
+famtree/
+├── app/                      # Backend code
+│   ├── Http/Controllers/     # Request handlers
+│   ├── Models/               # Eloquent models
+│   └── Providers/            # Service providers
+├── resources/
+│   ├── js/                   # React components
+│   │   ├── Pages/            # Page components (one per route)
+│   │   ├── Components/       # Reusable components
+│   │   ├── Layouts/          # Layout wrappers
+│   │   └── app.tsx           # React entry point
+│   ├── css/                  # Global styles
+│   └── views/app.blade.php   # Root HTML template
+├── routes/
+│   ├── web.php               # Web routes
+│   └── api.php               # API routes
+├── database/
+│   ├── migrations/           # Database schema
+│   ├── factories/            # Model factories for testing
+│   └── seeders/              # Database seeders
+├── docker-compose.yml        # Docker services configuration
+├── sail                      # Sail CLI script
+└── vite.config.ts            # Vite configuration
+```
+
+## Creating New Features
+
+### Create a Model with Migration and Controller
+```bash
+docker-compose exec -it famtree php artisan make:model FamilyMember -mrc
+```
+
+### Create an Inertia Page
+1. Create controller method that returns `Inertia::render('PageName', $data)`
+2. Create React component in `/resources/js/Pages/PageName.tsx`
+3. Add route to `/routes/web.php`
+
+Example:
+```php
+// In controller
+return Inertia::render('FamilyMembers/Index', [
+    'members' => $members,
+]);
+
+// In React component
+export default function Index({ members }) {
+    return (
+        <GuestLayout>
+            {members.map(member => (
+                <div key={member.id}>{member.name}</div>
+            ))}
+        </GuestLayout>
+    );
+}
+```
+
+## Troubleshooting
+
+### MySQL connection fails
+- Ensure MySQL container is running: `docker-compose ps`
+- Check `.env` has `DB_HOST=mysql` (not 127.0.0.1)
+- Wait a few seconds for MySQL to fully start
+- Check logs: `docker-compose logs mysql`
+
+### Vite HMR not working
+- Ensure Vite is running on port 5173
+- Check `vite.config.ts` configuration
+
+### Asset build fails
+- Clear cache: `docker-compose exec -it famtree npm run build`
+- Reinstall dependencies: `docker-compose exec -it famtree npm install`
+
+### Database migration errors
+- Check migration syntax
+- Rollback and retry: `docker-compose exec -it famtree php artisan migrate:rollback`
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+This project is open-sourced software licensed under the MIT license.
+
+## Resources
+
+- [Laravel Documentation](https://laravel.com/docs)
+- [Inertia.js Documentation](https://inertiajs.com)
+- [React Documentation](https://react.dev)
+- [TypeScript Documentation](https://www.typescriptlang.org/docs)
+- [Vite Documentation](https://vitejs.dev)
+- [Laravel Sail Documentation](https://laravel.com/docs/sail)
