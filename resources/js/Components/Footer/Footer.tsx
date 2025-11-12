@@ -32,41 +32,72 @@ export default function Footer() {
 
   return (
     <footer className="footer">
+      {/* Background Gradient */}
+      <div className="footer-gradient"></div>
+
       <div className="footer-container">
         {/* Top Section */}
         <div className="footer-top">
           <div className="footer-grid">
             {/* Logo & Tagline */}
             <div className="footer-col footer-brand">
-              <h3 className="footer-logo">FamTree</h3>
+              <div className="footer-logo-wrapper">
+                <h3 className="footer-logo">FamTree</h3>
+                <span className="logo-badge">β</span>
+              </div>
               <p className="footer-tagline">Connecting Generations Digitally</p>
               <p className="footer-description">
                 FamTree helps families trace their heritage, connect with relatives, and preserve their legacy for generations to come.
               </p>
+
+              {/* Newsletter Signup */}
+              <div className="newsletter-signup">
+                <label className="newsletter-label">Get Updates</label>
+                <div className="newsletter-input-group">
+                  <input
+                    type="email"
+                    placeholder="your@email.com"
+                    className="newsletter-input"
+                    aria-label="Email for newsletter"
+                  />
+                  <button className="newsletter-btn" title="Subscribe">
+                    <i className="bi bi-arrow-right"></i>
+                  </button>
+                </div>
+              </div>
             </div>
 
             {/* Quick Links */}
             <div className="footer-col">
-              <h4 className="footer-col-title">Quick Links</h4>
+              <h4 className="footer-col-title">Product</h4>
               <ul className="footer-links">
                 {quickLinks.map((link) => (
                   <li key={link.label}>
-                    <Link href={link.href}>{link.label}</Link>
+                    <Link href={link.href} className="footer-link">
+                      {link.label}
+                      <span className="link-arrow">→</span>
+                    </Link>
                   </li>
                 ))}
                 <li>
-                  <Link href="/families">Public Families</Link>
+                  <Link href="/families" className="footer-link">
+                    Public Families
+                    <span className="link-arrow">→</span>
+                  </Link>
                 </li>
               </ul>
             </div>
 
             {/* Resources */}
             <div className="footer-col">
-              <h4 className="footer-col-title">Resources</h4>
+              <h4 className="footer-col-title">Legal</h4>
               <ul className="footer-links">
                 {resourceLinks.map((link) => (
                   <li key={link.label}>
-                    <a href={link.href}>{link.label}</a>
+                    <a href={link.href} className="footer-link">
+                      {link.label}
+                      <span className="link-arrow">→</span>
+                    </a>
                   </li>
                 ))}
               </ul>
@@ -74,7 +105,7 @@ export default function Footer() {
 
             {/* Social Links */}
             <div className="footer-col footer-social">
-              <h4 className="footer-col-title">Follow Us</h4>
+              <h4 className="footer-col-title">Connect</h4>
               <div className="social-icons">
                 {socialLinks.map((link) => (
                   <a
@@ -99,43 +130,39 @@ export default function Footer() {
                   </a>
                 ))}
               </div>
-            </div>
-
-            {/* CTA Button */}
-            <div className="footer-col footer-cta">
-              <button
-                className="btn btn-primary btn-lg"
-                onClick={() => {
-                  // Will trigger modal later
-                  console.log('Create Family clicked');
-                }}
-              >
-                Create Your Family
-              </button>
+              <p className="social-text">Follow us for family tips & updates</p>
             </div>
           </div>
         </div>
 
         {/* Divider */}
-        <hr className="footer-divider" />
+        <div className="footer-divider"></div>
 
         {/* Bottom Section */}
         <div className="footer-bottom">
           <div className="footer-bottom-content">
             <p className="footer-copyright">
-              &copy; {currentYear} FamTree. All rights reserved.
+              <span className="copyright-symbol">©</span> {currentYear} <strong>FamTree</strong>. Preserving legacies, one family at a time.
             </p>
-            <button
-              className="footer-back-to-top"
-              onClick={scrollToTop}
-              aria-label="Back to top"
-              title="Back to top"
-            >
-              ↑ Back to top
-            </button>
+            <div className="footer-bottom-links">
+              <a href="#" className="bottom-link">Status</a>
+              <a href="#" className="bottom-link">Changelog</a>
+              <a href="#" className="bottom-link">Security</a>
+              <button
+                className="footer-back-to-top"
+                onClick={scrollToTop}
+                aria-label="Back to top"
+                title="Back to top"
+              >
+                ↑ Top
+              </button>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Floating Accent */}
+      <div className="footer-accent"></div>
     </footer>
   );
 }

@@ -1,4 +1,5 @@
 import { useInView } from 'react-intersection-observer';
+import { useRef, useEffect, useState } from 'react';
 import './CTAFooterSection.css';
 
 export default function CTAFooterSection() {
@@ -7,45 +8,95 @@ export default function CTAFooterSection() {
         triggerOnce: true,
     });
 
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+
+    useEffect(() => {
+        const handleMouseMove = (e: MouseEvent) => {
+            setMousePos({ x: e.clientX, y: e.clientY });
+        };
+
+        window.addEventListener('mousemove', handleMouseMove);
+        return () => window.removeEventListener('mousemove', handleMouseMove);
+    }, []);
+
     return (
         <section className="cta-footer-section" ref={ref}>
-            <div className={`cta-content ${inView ? 'in-view' : ''}`}>
-                <h2>Ready to Preserve Your Family's Legacy?</h2>
-                <p>
-                    Join thousands of families already using FamTree to connect across generations.
-                    Start building your family tree today—it only takes a few minutes.
-                </p>
+            <canvas ref={canvasRef} className="cta-canvas"></canvas>
 
-                <div className="cta-buttons">
-                    <button className="btn btn-primary btn-lg">
-                        Create Free Account
-                    </button>
-                    <button className="btn btn-outline btn-lg">
-                        Learn More
-                    </button>
+            <div className={`cta-wrapper ${inView ? 'in-view' : ''}`}>
+                {/* Left Decorative Element */}
+                <div className="cta-decor cta-decor-left"></div>
+
+                <div className="cta-main-content">
+                    {/* Badge */}
+                    <div className="cta-badge">
+                        <span className="cta-badge-icon">⭐</span>
+                        <span>Join Thousands of Happy Families</span>
+                    </div>
+
+                    {/* Main Heading */}
+                    <h2 className="cta-title">
+                        Ready to Preserve Your
+                        <span className="cta-title-highlight">Family's Legacy?</span>
+                    </h2>
+
+                    {/* Description */}
+                    <p className="cta-description">
+                        Connect generations, preserve memories, and keep your family's story alive.
+                        Start your free family tree in minutes—no credit card required.
+                    </p>
+
+                    {/* Trust Indicators */}
+                    <div className="cta-trust-row">
+                        <div className="trust-item">
+                            <div className="trust-icon">✓</div>
+                            <div className="trust-text">
+                                <div className="trust-label">Free Forever</div>
+                                <div className="trust-sub">No credit card</div>
+                            </div>
+                        </div>
+                        <div className="trust-item">
+                            <div className="trust-icon">✓</div>
+                            <div className="trust-text">
+                                <div className="trust-label">Secure & Private</div>
+                                <div className="trust-sub">End-to-end encrypted</div>
+                            </div>
+                        </div>
+                        <div className="trust-item">
+                            <div className="trust-icon">✓</div>
+                            <div className="trust-text">
+                                <div className="trust-label">Unlimited Members</div>
+                                <div className="trust-sub">Add your whole family</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* CTA Buttons */}
+                    <div className="cta-actions">
+                        <button className="cta-btn cta-btn-primary">
+                            <span className="btn-icon">→</span>
+                            Create Free Account
+                        </button>
+                        <button className="cta-btn cta-btn-secondary">
+                            Watch Demo
+                        </button>
+                    </div>
+
+                    {/* Social Proof */}
+                    <div className="cta-social-proof">
+                        <div className="proof-text">Join 5,000+ families already preserving their legacy</div>
+                    </div>
                 </div>
 
-                <div className="cta-features">
-                    <div className="cta-feature">
-                        <span className="cta-feature-icon">✓</span>
-                        <span>Free to start, no credit card required</span>
-                    </div>
-                    <div className="cta-feature">
-                        <span className="cta-feature-icon">✓</span>
-                        <span>Unlimited family members</span>
-                    </div>
-                    <div className="cta-feature">
-                        <span className="cta-feature-icon">✓</span>
-                        <span>Secure & private by default</span>
-                    </div>
-                </div>
+                {/* Right Decorative Element */}
+                <div className="cta-decor cta-decor-right"></div>
             </div>
 
-            {/* Decorative background */}
-            <div className="cta-background">
-                <div className="cta-shape shape-1"></div>
-                <div className="cta-shape shape-2"></div>
-            </div>
+            {/* Floating Elements */}
+            <div className="floating-element floating-element-1"></div>
+            <div className="floating-element floating-element-2"></div>
+            <div className="floating-element floating-element-3"></div>
         </section>
     );
 }
