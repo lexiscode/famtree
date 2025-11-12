@@ -44,7 +44,43 @@ export default function About() {
 
     return (
         <GuestLayout>
-            <Head title="About FamTree - Our Mission & Team" />
+            <Head
+                title="About FamTree - Our Mission & Team"
+                meta={[
+                    {
+                        name: 'description',
+                        content: 'Learn about FamTree\'s mission to connect families and preserve heritage. Meet our team of dedicated professionals building the future of family genealogy.',
+                    },
+                    {
+                        name: 'keywords',
+                        content: 'about FamTree, family heritage, genealogy platform, team, mission',
+                    },
+                    {
+                        property: 'og:title',
+                        content: 'About FamTree - Our Mission & Team',
+                    },
+                    {
+                        property: 'og:description',
+                        content: 'Discover our mission to connect families and preserve heritage across generations.',
+                    },
+                    {
+                        property: 'og:type',
+                        content: 'website',
+                    },
+                    {
+                        property: 'og:url',
+                        content: 'https://famtree.com/about',
+                    },
+                    {
+                        property: 'og:image',
+                        content: 'https://famtree.com/og-image-about.jpg',
+                    },
+                    {
+                        name: 'canonical',
+                        content: 'https://famtree.com/about',
+                    },
+                ]}
+            />
 
             {/* Page Header */}
             <section className="about-header" ref={headerRef}>

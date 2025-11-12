@@ -48,7 +48,43 @@ export default function HowItWorks() {
 
     return (
         <GuestLayout>
-            <Head title="How FamTree Works - 5 Simple Steps" />
+            <Head
+                title="How FamTree Works - 5 Simple Steps"
+                meta={[
+                    {
+                        name: 'description',
+                        content: 'Learn how FamTree works in 5 simple steps. Build your family tree, connect with relatives, preserve memories, and celebrate heritage.',
+                    },
+                    {
+                        name: 'keywords',
+                        content: 'how family tree works, genealogy steps, heritage preservation guide, family connections',
+                    },
+                    {
+                        property: 'og:title',
+                        content: 'How FamTree Works - 5 Simple Steps',
+                    },
+                    {
+                        property: 'og:description',
+                        content: 'Discover how to build your family tree and preserve your heritage in 5 easy steps.',
+                    },
+                    {
+                        property: 'og:type',
+                        content: 'website',
+                    },
+                    {
+                        property: 'og:url',
+                        content: 'https://famtree.com/how-it-works',
+                    },
+                    {
+                        property: 'og:image',
+                        content: 'https://famtree.com/og-image-how-it-works.jpg',
+                    },
+                    {
+                        name: 'canonical',
+                        content: 'https://famtree.com/how-it-works',
+                    },
+                ]}
+            />
 
             {/* Header */}
             <section className="hiw-header" ref={headerRef}>

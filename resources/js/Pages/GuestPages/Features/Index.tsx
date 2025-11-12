@@ -97,7 +97,43 @@ export default function Features() {
 
     return (
         <GuestLayout>
-            <Head title="Features - FamTree | Digital Family Tree Platform" />
+            <Head
+                title="FamTree Features - Digital Family Tree & Heritage Platform"
+                meta={[
+                    {
+                        name: 'description',
+                        content: 'Explore FamTree\'s powerful features: build family trees, preserve memories, connect relatives, and celebrate heritage. Digital genealogy made easy.',
+                    },
+                    {
+                        name: 'keywords',
+                        content: 'family tree features, genealogy tools, heritage preservation, family connections, digital family tree',
+                    },
+                    {
+                        property: 'og:title',
+                        content: 'FamTree Features - Digital Family Tree & Heritage Platform',
+                    },
+                    {
+                        property: 'og:description',
+                        content: 'Discover powerful features to build, preserve, and share your family\'s legacy.',
+                    },
+                    {
+                        property: 'og:type',
+                        content: 'website',
+                    },
+                    {
+                        property: 'og:url',
+                        content: 'https://famtree.com/features',
+                    },
+                    {
+                        property: 'og:image',
+                        content: 'https://famtree.com/og-image-features.jpg',
+                    },
+                    {
+                        name: 'canonical',
+                        content: 'https://famtree.com/features',
+                    },
+                ]}
+            />
 
             {/* Page Header */}
             <section className="features-header" ref={headerRef}>
