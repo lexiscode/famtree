@@ -1,4 +1,4 @@
-# 🌐 FAMLINK — GUEST (NON-LOGGED-IN) UI/UX BLUEPRINT
+# 🌐 FAMTREE — GUEST (NON-LOGGED-IN) UI/UX BLUEPRINT
 
 FamTree is a revolutionary digital platform designed to help families trace, connect, and preserve their lineage across generations.
 
@@ -15,7 +15,7 @@ The goal is simple but powerful:
 “To reconnect Nigerian families to their history, preserve their stories, and strengthen inter-generational identity through technology.”
 
 
-Let’s outline the **entire guest-facing (non-logged-in)** user interface for your app **FamLink**, focusing on modern design psychology, clean flow, and emotional appeal.
+Let’s outline the **entire guest-facing (non-logged-in)** user interface for your app **FamTree**, focusing on modern design psychology, clean flow, and emotional appeal.
 
 The goal:
 
@@ -50,7 +50,7 @@ Optional: floating “📱 Get the App” or “🎥 Watch Demo” button.
 
 ### 🎯 Goal:
 
-Instantly communicate *what FamLink does*, *why it matters*, and *invite users to create their family space*.
+Instantly communicate *what FamTree does*, *why it matters*, and *invite users to create their family space*.
 
 ### 🧩 Structure:
 
@@ -64,7 +64,7 @@ Instantly communicate *what FamLink does*, *why it matters*, and *invite users t
   > “Reconnecting Generations. Preserving Family Roots.”
 * Subtext:
 
-  > “FamLink helps you trace your lineage, connect with relatives, and keep your family legacy alive — forever.”
+  > “FamTree helps you trace your lineage, connect with relatives, and keep your family legacy alive — forever.”
 * CTA Buttons:
 
   * 🟢 **“Create Your Family Space”** (Primary)
@@ -87,7 +87,7 @@ Optional: short looping video background (5–7s).
   > “Every Family Has a Story — We Help You Keep It Alive.”
 * Text:
 
-  > “In a fast-changing world, many have lost touch with their roots. FamLink preserves family history by helping Nigerians record, visualize, and celebrate their lineage across generations.”
+  > “In a fast-changing world, many have lost touch with their roots. FamTree preserves family history by helping Nigerians record, visualize, and celebrate their lineage across generations.”
 * Visual: Artistic “heritage scroll” animation showing photos fading into digital cards.
 
 ---
@@ -149,7 +149,7 @@ CTA: **“View All Features”**
 
 3–5 family quotes:
 
-> “I never knew how connected we were until FamLink. Now our children can see their lineage clearly.”
+> “I never knew how connected we were until FamTree. Now our children can see their lineage clearly.”
 > — *Chinonso Okafor, Lagos*
 
 ---
@@ -180,7 +180,7 @@ Goal: Tell the story of the app and its purpose — build trust.
 
 1. **Our Mission** — to digitally preserve every family story in Africa.
 2. **Why It Matters** — explain how family disconnection affects culture.
-3. **The Team Behind FamLink** — small bios, clean portraits.
+3. **The Team Behind FamTree** — small bios, clean portraits.
 4. **Our Vision 2030** — to become Africa’s largest digital family heritage map.
 Our Story: Brief emotional paragraph about how people lose touch with their extended family.
 Vision: “A world where every person knows their roots and family story.”
@@ -217,7 +217,7 @@ CTA: “Join the Movement → Register Now”
 * Family meetings and events
 * Chat and video rooms
 
-CTA: “See How Families Are Using FamLink →”
+CTA: “See How Families Are Using FamTree →”
 
 ---
 
@@ -293,7 +293,7 @@ Sidebar: Trending Posts | Categories | Newsletter Signup Modal
 * Logo + tagline: *“Connecting Generations Digitally.”*
 * Quick links (Home, About, Features, Contact).
 * “Create Your Family” button.
-* Copyright © FamLink 2025.
+* Copyright © FamTree 2025.
 
 ---
 
@@ -313,7 +313,7 @@ Sidebar: Trending Posts | Categories | Newsletter Signup Modal
   * Number of Members
   * “View Family →” (leads to family preview page)
 * CTA banners prompting signup when trying to view deeper details:
-  “Join FamLink to see the full family lineage and connect!”
+  “Join FamTree to see the full family lineage and connect!”
 
 ---
 
@@ -325,7 +325,7 @@ Sidebar: Trending Posts | Categories | Newsletter Signup Modal
 
 * Family Banner (photo + family name)
 * Origin Info: State, Local Government, Village
-* Short Bio/Story: “The Adebayos trace their roots to Ogun State and have over 50 members connected on FamLink.”
+* Short Bio/Story: “The Adebayos trace their roots to Ogun State and have over 50 members connected on FamTree.”
 * Family Head (with photo and role)
 * Limited Members shown (maybe 3–5 only)
 * CTA overlay for non-logged-in users:
@@ -376,3 +376,32 @@ To increase conversion:
 
 
 
+  --color-gold: #D4A574;
+  --color-blue: #1B3A52;
+  --color-brown: #8B6F47;
+
+  /* SECONDARY COLORS */
+  --color-cream: #FFF8F0;
+  --color-green: #7BA77F;
+  --color-gray: #A8A4A4;
+
+  /* TEXT COLORS */
+  --color-text-primary: #2C2C2C;
+  --color-text-secondary: #666666;
+  --color-text-accent: #D4A574;
+  --color-text-light: #F5F5F5;
+
+  /* BACKGROUND COLORS */
+  --color-bg-primary: #FFFFFF;
+  --color-bg-secondary: #FFF8F0;
+  --color-bg-dark: #1B3A52;
+
+  /* BORDER COLORS */
+  --color-border: #E0E0E0;
+  --color-border-dark: #D0D0D0;
+
+  /* STATUS COLORS */
+  --color-success: #7BA77F;
+  --color-error: #D32F2F;
+  --color-warning: #F57C00;
+  --color-info: #1976D2;

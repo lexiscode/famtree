@@ -1,0 +1,531 @@
+/* ============================================================================
+   CTA MODAL STYLES
+   ============================================================================ */
+
+/* Modal Overlay & Backdrop */
+.cta-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-modal);
+  padding: var(--space-md);
+  animation: fadeIn var(--transition-normal) ease-in-out;
+}
+
+/* Modal Container */
+.cta-modal {
+  background-color: var(--color-bg-primary);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 450px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-2xl);
+  animation: slideUp var(--transition-normal) ease-out;
+}
+
+/* Modal Header */
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-lg);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.modal-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.modal-brand h2 {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-blue);
+  margin: 0;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: var(--text-2xl);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: var(--space-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  transition: var(--transition-colors);
+}
+
+.modal-close:hover {
+  background-color: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+}
+
+.modal-close:focus {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 2px;
+}
+
+/* Tab Navigation */
+.modal-tabs {
+  display: flex;
+  border-bottom: 2px solid var(--color-border);
+  padding: 0 var(--space-lg);
+  gap: var(--space-md);
+}
+
+.tab-button {
+  background: none;
+  border: none;
+  padding: var(--space-md) 0;
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  position: relative;
+  transition: var(--transition-colors);
+  white-space: nowrap;
+}
+
+.tab-button:hover {
+  color: var(--color-text-primary);
+}
+
+.tab-button.active {
+  color: var(--color-blue);
+  font-weight: var(--font-weight-semibold);
+}
+
+.tab-button.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: var(--color-blue);
+}
+
+.tab-button:focus {
+  outline: 2px solid var(--color-gold);
+  outline-offset: -2px;
+}
+
+/* Modal Content */
+.modal-content {
+  padding: var(--space-lg);
+}
+
+/* Alert Messages */
+.alert {
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-lg);
+  font-size: var(--text-sm);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+}
+
+.alert-error {
+  background-color: rgba(220, 38, 38, 0.1);
+  color: var(--color-error);
+  border-left: 4px solid var(--color-error);
+}
+
+.alert-success {
+  background-color: rgba(34, 197, 94, 0.1);
+  color: var(--color-success);
+  border-left: 4px solid var(--color-success);
+}
+
+/* Form Styles */
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.form-group label {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  font-size: var(--text-sm);
+}
+
+.form-group input[type='text'],
+.form-group input[type='email'],
+.form-group input[type='password'] {
+  padding: var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-base);
+  font-family: inherit;
+  background-color: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  transition: var(--transition-colors);
+}
+
+.form-group input[type='text']:focus,
+.form-group input[type='email']:focus,
+.form-group input[type='password']:focus {
+  outline: none;
+  border-color: var(--color-blue);
+  background-color: var(--color-bg-primary);
+  box-shadow: 0 0 0 3px rgba(27, 58, 82, 0.1);
+}
+
+.form-group input:disabled {
+  background-color: var(--color-bg-secondary);
+  color: var(--color-text-secondary);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.form-group input[aria-invalid='true'] {
+  border-color: var(--color-error);
+}
+
+.form-group input[aria-invalid='true']:focus {
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+/* Error Message */
+.form-error {
+  font-size: var(--text-xs);
+  color: var(--color-error);
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  margin-top: var(--space-xs);
+}
+
+.form-error::before {
+  content: '⚠';
+  display: inline-block;
+}
+
+/* Password Input Wrapper */
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.password-input-wrapper input {
+  flex: 1;
+}
+
+.password-toggle {
+  position: absolute;
+  right: var(--space-md);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--space-sm);
+  font-size: var(--text-lg);
+  color: var(--color-text-secondary);
+  transition: var(--transition-colors);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.password-toggle:hover {
+  color: var(--color-text-primary);
+}
+
+.password-toggle:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.password-toggle:focus {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Password Hint */
+.password-hint {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  display: block;
+  margin-top: var(--space-xs);
+}
+
+/* Checkbox */
+.form-checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin: var(--space-sm) 0;
+}
+
+.form-checkbox input[type='checkbox'] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: var(--color-blue);
+}
+
+.form-checkbox label {
+  margin: 0;
+  cursor: pointer;
+  font-size: var(--text-sm);
+}
+
+.form-checkbox input[type='checkbox']:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Links */
+.forgot-password-link {
+  color: var(--color-blue);
+  text-decoration: none;
+  font-size: var(--text-sm);
+  transition: var(--transition-colors);
+  align-self: flex-start;
+  margin: var(--space-sm) 0;
+}
+
+.forgot-password-link:hover {
+  color: var(--color-gold);
+  text-decoration: underline;
+}
+
+.forgot-password-link:focus {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Buttons */
+.btn {
+  padding: var(--space-md) var(--space-lg);
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--text-base);
+  cursor: pointer;
+  transition: var(--transition-colors);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  font-family: inherit;
+}
+
+.btn-primary {
+  background-color: var(--color-blue);
+  color: white;
+  width: 100%;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: #0f2742;
+}
+
+.btn-primary:focus {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 2px;
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-lg {
+  padding: var(--space-md) var(--space-xl);
+  font-size: var(--text-base);
+  min-height: 48px;
+}
+
+.btn-secondary {
+  background-color: transparent;
+  color: var(--color-blue);
+  border: 2px solid var(--color-blue);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: rgba(27, 58, 82, 0.1);
+}
+
+.btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Loading Spinner */
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin var(--transition-slow) linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Modal Footer */
+.modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  margin-top: var(--space-lg);
+  padding-top: var(--space-lg);
+  border-top: 1px solid var(--color-border);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.link-button {
+  background: none;
+  border: none;
+  color: var(--color-blue);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  padding: 0;
+  transition: var(--transition-colors);
+  font-size: inherit;
+  text-decoration: underline;
+}
+
+.link-button:hover {
+  color: var(--color-gold);
+}
+
+.link-button:focus {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 2px;
+}
+
+.link-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Responsive Styles */
+@media (max-width: 640px) {
+  .cta-modal {
+    max-width: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .modal-header {
+    padding: var(--space-md);
+  }
+
+  .modal-content {
+    padding: var(--space-md);
+  }
+
+  .modal-brand h2 {
+    font-size: var(--text-xl);
+  }
+
+  .modal-close {
+    width: 36px;
+    height: 36px;
+  }
+
+  .tab-button {
+    font-size: var(--text-sm);
+    padding: var(--space-sm) 0;
+  }
+
+  .form-group input[type='text'],
+  .form-group input[type='email'],
+  .form-group input[type='password'] {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+
+  .btn-lg {
+    min-height: 44px;
+  }
+
+  .modal-footer {
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+}
+
+@media (max-width: 480px) {
+  .cta-modal-overlay {
+    padding: var(--space-sm);
+  }
+
+  .modal-header {
+    padding: var(--space-md);
+    gap: var(--space-sm);
+  }
+
+  .modal-brand h2 {
+    font-size: var(--text-lg);
+  }
+
+  .modal-tabs {
+    padding: 0 var(--space-md);
+    gap: var(--space-sm);
+  }
+
+  .tab-button {
+    font-size: var(--text-xs);
+    padding: var(--space-sm) 0;
+  }
+
+  .modal-content {
+    padding: var(--space-md);
+  }
+
+  .form-group {
+    gap: var(--space-xs);
+  }
+
+  .form-group label {
+    font-size: var(--text-xs);
+  }
+
+  .alert {
+    padding: var(--space-sm);
+    font-size: var(--text-xs);
+    gap: var(--space-sm);
+  }
+
+  .password-toggle {
+    right: var(--space-sm);
+  }
+}
+
+/* ============================================================================
+   END OF CTA MODAL STYLES
+   ============================================================================ */

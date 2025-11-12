@@ -1,0 +1,221 @@
+/* ============================================================================
+   CTA FOOTER SECTION STYLES
+   ============================================================================ */
+
+.cta-footer-section {
+  position: relative;
+  padding: var(--space-4xl) var(--space-lg);
+  padding-top: 5rem;
+  padding-bottom: 0;
+  background: linear-gradient(135deg, var(--color-blue) 0%, #0f2742 100%);
+  overflow: hidden;
+}
+
+/* CTA Background */
+.cta-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.cta-shape {
+  position: absolute;
+  opacity: 0.1;
+  filter: blur(60px);
+}
+
+.cta-shape.shape-1 {
+  width: 400px;
+  height: 400px;
+  background: var(--color-gold);
+  border-radius: 50%;
+  top: -100px;
+  right: -100px;
+}
+
+.cta-shape.shape-2 {
+  width: 300px;
+  height: 300px;
+  background: white;
+  border-radius: 50%;
+  bottom: -100px;
+  left: -100px;
+}
+
+/* CTA Content */
+.cta-content {
+  position: relative;
+  z-index: 1;
+  max-width: 700px;
+  margin: 0 auto;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all var(--transition-normal) ease-out;
+}
+
+.cta-content.in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.cta-content h2 {
+  font-family: var(--font-display);
+  font-size: var(--text-4xl);
+  font-weight: var(--font-weight-bold);
+  color: white;
+  margin: 0 0 var(--space-lg) 0;
+}
+
+.cta-content p {
+  font-size: var(--text-xl);
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0 0 var(--space-2xl) 0;
+  line-height: var(--line-height-relaxed);
+}
+
+/* CTA Buttons */
+.cta-buttons {
+  display: flex;
+  gap: var(--space-lg);
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: var(--space-2xl);
+}
+
+.cta-buttons .btn {
+  min-height: 56px;
+  padding: var(--space-md) var(--space-2xl);
+  font-size: var(--text-lg);
+}
+
+.cta-buttons .btn-primary {
+  background: white;
+  color: var(--color-blue);
+}
+
+.cta-buttons .btn-primary:hover {
+  background: rgba(255, 255, 255, 0.9);
+  transform: translateY(-3px);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+}
+
+.cta-buttons .btn-outline {
+  background: transparent;
+  border: 2px solid white;
+  color: white;
+}
+
+.cta-buttons .btn-outline:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--color-gold);
+  color: var(--color-gold);
+  transform: translateY(-3px);
+}
+
+/* CTA Features */
+.cta-features {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding-top: var(--space-2xl);
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.cta-feature {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-md);
+  font-size: var(--text-base);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.cta-feature-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: var(--color-gold);
+  color: var(--color-blue);
+  border-radius: 50%;
+  font-weight: var(--font-weight-bold);
+  flex-shrink: 0;
+  font-size: var(--text-sm);
+}
+
+/* Responsive Styles */
+@media (max-width: 1023px) {
+  .cta-content h2 {
+    font-size: var(--text-3xl);
+  }
+
+  .cta-buttons {
+    flex-direction: column;
+  }
+
+  .cta-buttons .btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 767px) {
+  .cta-footer-section {
+    padding: var(--space-2xl) var(--space-md);
+  }
+
+  .cta-content h2 {
+    font-size: var(--text-2xl);
+    margin-bottom: var(--space-md);
+  }
+
+  .cta-content p {
+    font-size: var(--text-lg);
+    margin-bottom: var(--space-lg);
+  }
+
+  .cta-buttons {
+    gap: var(--space-md);
+    margin-bottom: var(--space-lg);
+  }
+
+  .cta-buttons .btn {
+    min-height: 48px;
+    padding: var(--space-md) var(--space-lg);
+    font-size: var(--text-base);
+  }
+
+  .cta-feature {
+    font-size: var(--text-sm);
+    gap: var(--space-sm);
+  }
+
+  .cta-feature-icon {
+    width: 20px;
+    height: 20px;
+    font-size: var(--text-xs);
+  }
+}
+
+@media (max-width: 640px) {
+  .cta-content h2 {
+    font-size: var(--text-xl);
+  }
+
+  .cta-content p {
+    font-size: var(--text-base);
+  }
+
+  .cta-buttons .btn {
+    font-size: var(--text-sm);
+  }
+}
+
+/* ============================================================================
+   END OF CTA FOOTER SECTION STYLES
+   ============================================================================ */

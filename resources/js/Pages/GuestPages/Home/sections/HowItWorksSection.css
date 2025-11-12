@@ -1,0 +1,253 @@
+/* ============================================================================
+   HOW IT WORKS SECTION STYLES
+   ============================================================================ */
+
+.how-it-works-section {
+  padding: var(--space-4xl) var(--space-lg);
+  padding-top: 5rem;
+  padding-bottom: 5rem;
+  background: var(--color-bg-primary);
+}
+
+.how-it-works-container {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+/* Header */
+.how-header {
+  text-align: center;
+  margin-bottom: var(--space-3xl);
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all var(--transition-normal) ease-out;
+}
+
+.how-header.in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.how-header h2 {
+  font-family: var(--font-display);
+  font-size: var(--text-4xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  margin: 0 0 var(--space-md) 0;
+}
+
+.how-header p {
+  font-size: var(--text-xl);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+/* Steps Container */
+.how-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-2xl);
+  margin-bottom: var(--space-3xl);
+}
+
+.step-card {
+  position: relative;
+  padding: var(--space-2xl);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-normal);
+  opacity: 0;
+  transform: translateY(30px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.how-steps.in-view .step-card {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.step-card:hover {
+  border-color: var(--color-gold);
+  box-shadow: 0 10px 30px rgba(212, 165, 116, 0.1);
+  transform: translateY(-8px);
+}
+
+/* Step Number */
+.step-number {
+  font-family: var(--font-display);
+  font-size: 3rem;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-gold);
+  opacity: 0.2;
+  line-height: 1;
+}
+
+/* Step Connector */
+.step-connector {
+  position: absolute;
+  top: 50%;
+  right: -var(--space-2xl);
+  width: var(--space-2xl);
+  height: 2px;
+  background: linear-gradient(90deg, var(--color-gold) 0%, transparent 100%);
+  transform: translateY(-50%);
+}
+
+@media (max-width: 1023px) {
+  .step-connector {
+    display: none;
+  }
+}
+
+/* Step Content */
+.step-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.step-card h3 {
+  font-size: var(--text-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.step-card p {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-relaxed);
+  margin: 0;
+}
+
+/* Step Features */
+.step-features {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.step-features li {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.feature-checkmark {
+  color: var(--color-green);
+  font-weight: var(--font-weight-bold);
+  flex-shrink: 0;
+}
+
+/* CTA Section */
+.how-cta {
+  text-align: center;
+  padding: var(--space-2xl);
+  background: linear-gradient(135deg, rgba(212, 165, 116, 0.1) 0%, rgba(27, 58, 82, 0.1) 100%);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all var(--transition-normal) ease-out;
+}
+
+.how-steps.in-view ~ .how-cta {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 600ms;
+}
+
+.how-cta p {
+  font-size: var(--text-lg);
+  color: var(--color-text-primary);
+  margin: 0 0 var(--space-lg) 0;
+  font-weight: var(--font-weight-semibold);
+}
+
+.how-cta .btn {
+  min-height: 48px;
+  padding: var(--space-md) var(--space-2xl);
+}
+
+/* Responsive Styles */
+@media (max-width: 1023px) {
+  .how-header h2 {
+    font-size: var(--text-3xl);
+  }
+
+  .how-steps {
+    grid-template-columns: 1fr;
+    gap: var(--space-xl);
+  }
+}
+
+@media (max-width: 767px) {
+  .how-it-works-section {
+    padding: var(--space-2xl) var(--space-md);
+  }
+
+  .how-header {
+    margin-bottom: var(--space-2xl);
+  }
+
+  .how-header h2 {
+    font-size: var(--text-2xl);
+  }
+
+  .how-header p {
+    font-size: var(--text-base);
+  }
+
+  .step-card {
+    padding: var(--space-lg);
+    gap: var(--space-md);
+  }
+
+  .step-number {
+    font-size: 2rem;
+  }
+
+  .step-card h3 {
+    font-size: var(--text-lg);
+  }
+
+  .step-card p {
+    font-size: var(--text-xs);
+  }
+
+  .step-features li {
+    font-size: var(--text-xs);
+  }
+
+  .how-cta {
+    padding: var(--space-lg);
+  }
+
+  .how-cta p {
+    font-size: var(--text-base);
+    margin-bottom: var(--space-md);
+  }
+}
+
+@media (max-width: 640px) {
+  .how-header h2 {
+    font-size: var(--text-xl);
+  }
+
+  .step-number {
+    font-size: 1.5rem;
+  }
+}
+
+/* ============================================================================
+   END OF HOW IT WORKS SECTION STYLES
+   ============================================================================ */

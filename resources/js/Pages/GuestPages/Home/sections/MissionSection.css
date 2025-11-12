@@ -1,0 +1,296 @@
+/* ============================================================================
+   MISSION SECTION STYLES - ASYMMETRICAL STAGGERED LAYOUT
+   ============================================================================ */
+
+.mission-section {
+  padding: var(--space-4xl) var(--space-lg);
+  padding-top: 5rem;
+  padding-bottom: 5rem;
+  background: linear-gradient(180deg, var(--color-bg-primary) 0%, var(--color-bg-secondary) 100%);
+  position: relative;
+}
+
+.mission-container {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+/* Mission Header */
+.mission-header {
+  text-align: center;
+  margin-bottom: var(--space-3xl);
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all var(--transition-normal) ease-out;
+}
+
+.mission-header.in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.mission-header h2 {
+  font-family: var(--font-display);
+  font-size: var(--text-4xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  margin: 0 0 var(--space-md) 0;
+}
+
+.mission-subtitle {
+  font-size: var(--text-xl);
+  color: var(--color-text-secondary);
+  margin: 0;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Mission Content - Two Column Text */
+.mission-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3xl);
+  margin-bottom: var(--space-3xl);
+}
+
+.mission-text-left {
+  opacity: 0;
+  transform: translateX(-30px);
+  transition: all var(--transition-normal) ease-out;
+}
+
+.mission-content.in-view .mission-text-left {
+  opacity: 1;
+  transform: translateX(0);
+  transition-delay: 100ms;
+}
+
+.mission-text-right {
+  opacity: 0;
+  transform: translateX(30px);
+  transition: all var(--transition-normal) ease-out;
+}
+
+.mission-content.in-view .mission-text-right {
+  opacity: 1;
+  transform: translateX(0);
+  transition-delay: 200ms;
+}
+
+.mission-text-left p,
+.mission-text-right p {
+  font-size: var(--text-lg);
+  line-height: var(--line-height-relaxed);
+  color: var(--color-text-secondary);
+  margin: 0;
+  font-weight: var(--font-weight-normal);
+}
+
+.mission-text-left p {
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--text-lg);
+}
+
+.mission-text-right p {
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--text-lg);
+}
+
+/* Mission Values Grid - Staggered Layout */
+.mission-values {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-2xl);
+  position: relative;
+}
+
+.value-card {
+  padding: var(--space-2xl);
+  background: var(--color-bg-primary);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  transition: all var(--transition-normal);
+  opacity: 0;
+  transform: translateY(30px);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.value-card.in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Staggered positioning for cards */
+.value-card.card-1 {
+  margin-top: 0;
+}
+
+.value-card.card-2 {
+  margin-top: var(--space-2xl);
+}
+
+.value-card.card-3 {
+  margin-top: var(--space-2xl);
+}
+
+.value-card.card-4 {
+  margin-top: 0;
+}
+
+.value-card:hover {
+  transform: translateY(-12px);
+  border-color: var(--color-blue);
+  box-shadow: 0 20px 50px rgba(0, 102, 255, 0.15);
+  background: linear-gradient(135deg, rgba(0, 102, 255, 0.02) 0%, rgba(255, 184, 0, 0.02) 100%);
+}
+
+.value-icon {
+  font-size: 2.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, rgba(0, 102, 255, 0.1) 0%, rgba(255, 184, 0, 0.1) 100%);
+  border-radius: var(--radius-lg);
+}
+
+.value-card h3 {
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.value-card p {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  margin: 0;
+  line-height: var(--line-height-relaxed);
+  font-weight: var(--font-weight-normal);
+}
+
+/* Responsive Styles */
+@media (max-width: 1280px) {
+  .mission-values {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-2xl);
+  }
+
+  .value-card.card-1 {
+    margin-top: 0;
+  }
+
+  .value-card.card-2 {
+    margin-top: 0;
+  }
+
+  .value-card.card-3 {
+    margin-top: var(--space-2xl);
+  }
+
+  .value-card.card-4 {
+    margin-top: var(--space-2xl);
+  }
+}
+
+@media (max-width: 1023px) {
+  .mission-content {
+    grid-template-columns: 1fr;
+    gap: var(--space-2xl);
+  }
+
+  .mission-header h2 {
+    font-size: var(--text-3xl);
+  }
+
+  .mission-values {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .value-card.card-1,
+  .value-card.card-2,
+  .value-card.card-3,
+  .value-card.card-4 {
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 767px) {
+  .mission-section {
+    padding: var(--space-2xl) var(--space-md);
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+  }
+
+  .mission-header {
+    margin-bottom: var(--space-2xl);
+  }
+
+  .mission-header h2 {
+    font-size: var(--text-2xl);
+  }
+
+  .mission-subtitle {
+    font-size: var(--text-base);
+  }
+
+  .mission-content {
+    grid-template-columns: 1fr;
+    gap: var(--space-lg);
+    margin-bottom: var(--space-2xl);
+  }
+
+  .mission-text-left p,
+  .mission-text-right p {
+    font-size: var(--text-base);
+  }
+
+  .mission-values {
+    grid-template-columns: 1fr;
+    gap: var(--space-xl);
+  }
+
+  .value-card {
+    padding: var(--space-lg);
+  }
+
+  .value-card h3 {
+    font-size: var(--text-base);
+  }
+
+  .value-card p {
+    font-size: var(--text-xs);
+  }
+
+  .value-card.card-1,
+  .value-card.card-2,
+  .value-card.card-3,
+  .value-card.card-4 {
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .mission-header h2 {
+    font-size: var(--text-xl);
+  }
+
+  .mission-subtitle {
+    font-size: var(--text-sm);
+  }
+
+  .value-icon {
+    font-size: var(--text-2xl);
+  }
+}
+
+/* ============================================================================
+   END OF MISSION SECTION STYLES
+   ============================================================================ */
