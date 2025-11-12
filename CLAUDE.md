@@ -6,36 +6,40 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 FamTree is a Laravel 10 + React 18 + Inertia.js full-stack web application for managing family trees. The project follows a modern monolithic architecture with a clear separation between backend (PHP/Laravel) and frontend (React/TypeScript).
 
+The application uses **Laravel Sail** (Docker-based) for local development, with separate directory structures for guest and admin features. The codebase is organized into AdminPages/AdminControllers and GuestPages/GuestControllers to keep concerns isolated.
+
 ## Quick Start
 
 ### Essential Commands
 
-**Backend (Laravel):**
+**Using Laravel Sail (Recommended):**
 ```bash
-php artisan serve                    # Start Laravel dev server (port 8000)
-php artisan tinker                   # Interactive PHP shell
-php artisan migrate                  # Run database migrations
-php artisan db:seed                  # Seed database
-php artisan make:model Model -mrc    # Create model with migration, factory, controller
-php artisan make:controller ResourceController --resource
-php artisan test                     # Run PHPUnit tests
-php artisan test tests/Unit/Example  # Run single test file
-php artisan pint                     # Format code with PHP linting
-php artisan queue:work               # Process queued jobs
+./sail artisan serve                 # Start Laravel dev server (built-in with Sail)
+./sail artisan migrate               # Run database migrations
+./sail artisan db:seed               # Seed database
+./sail artisan make:model Model -mrc # Create model with migration, factory, controller
+./sail artisan test                  # Run PHPUnit tests
+./sail artisan test tests/Feature/ExampleTest.php  # Run single test file
+./sail pint                          # Format code with PHP linting (Laravel Pint)
+./sail npm run dev                   # Start Vite dev server (port 5173)
+./sail npm run build                 # Production build (outputs to public/build)
+./sail shell                         # Enter the app container bash
 ```
 
-**Frontend (React/Vite):**
+**Using docker-compose directly:**
 ```bash
-npm run dev                          # Start Vite dev server (port 5173)
-npm run build                        # Production build (outputs to public/build)
-npm test                             # Run tests (if configured)
+docker-compose exec -it famtree php artisan migrate           # Run migrations
+docker-compose exec -it famtree npm run dev                   # Start Vite dev server
+docker-compose exec -it famtree bash                          # Enter container shell
+docker-compose exec mysql mysql -u root -p famtree            # Direct MySQL access
 ```
 
-**Database & Docker:**
+**Docker Service Management:**
 ```bash
 docker-compose up -d                 # Start all services
 docker-compose down                  # Stop all services
-docker-compose exec mysql mysql -u root -p famtree  # Direct MySQL access
+docker-compose ps                    # Show running containers
+docker-compose logs -f famtree       # View app logs
 ```
 
 **Access Points:**
@@ -50,13 +54,21 @@ docker-compose exec mysql mysql -u root -p famtree  # Direct MySQL access
 ### Backend Structure (Laravel)
 
 **Key Directories:**
-- `/app/Http/Controllers/` - Request handlers
+- `/app/Http/Controllers/AdminControllers/` - Admin panel request handlers
+- `/app/Http/Controllers/GuestControllers/` - Guest/public area request handlers
+- `/app/Http/Controllers/Controller.php` - Base controller class
 - `/app/Models/` - Eloquent models
-- `/app/Http/Middleware/` - Request/response middleware
+- `/app/Http/Middleware/` - Request/response middleware (HandleInertiaRequests.php for props sharing)
+- `/app/Actions/AdminServices/` - Admin business logic and service classes
+- `/app/Actions/GuestServices/` - Guest/public business logic and service classes
+- `/app/Repositories/AdminRepositories/` - Data access layer for admin features
+- `/app/Repositories/GuestRepositories/` - Data access layer for guest features
 - `/app/Providers/` - Service registration and bootstrapping
-- `/routes/` - Route definitions (web.php, api.php)
+- `/routes/web.php` - Web routes with Inertia page rendering (API routes in routes/api.php if needed)
 - `/database/migrations/` - Database schema changes
-- `/config/` - Application configuration
+- `/database/factories/` - Model factories for testing
+- `/database/seeders/` - Database seed files
+- `/config/` - Application configuration (auth.php defines guards: admin and default)
 
 **Inertia Middleware** (`app/Http/Middleware/HandleInertiaRequests.php`):
 - Integrates server-side rendering of React components
@@ -64,10 +76,11 @@ docker-compose exec mysql mysql -u root -p famtree  # Direct MySQL access
 - All data passed here is available to frontend components via `$page.props`
 
 **Authentication:**
+- Dual authentication setup: `default` guard (user) and `admin` guard (admin users)
 - Uses Laravel Sanctum for API token authentication
+- Session-based auth for web routes via middleware
 - User model includes password hashing via casts
-- Admin guard available (configure in `/config/auth.php`)
-- Session-based auth for web routes
+- Both user and admin auth states available in HandleInertiaRequests.php
 
 **Database:**
 - MySQL 8.0 with migrations in `/database/migrations/`
@@ -77,10 +90,11 @@ docker-compose exec mysql mysql -u root -p famtree  # Direct MySQL access
 ### Frontend Structure (React/TypeScript)
 
 **Key Directories:**
-- `/resources/js/Pages/` - Page components (one per route)
-- `/resources/js/Layouts/` - Layout wrappers (GuestLayout available)
-- `/resources/js/Components/` - Reusable components
-- `/resources/js/types/` - TypeScript type definitions
+- `/resources/js/Pages/AdminPages/` - Admin panel page components
+- `/resources/js/Pages/GuestPages/` - Guest/public area page components
+- `/resources/js/Layouts/` - Layout wrappers (AdminLayout.tsx and GuestLayout.tsx)
+- `/resources/js/Components/` - Reusable shared components
+- `/resources/js/types/inertia.d.ts` - TypeScript type definitions for props
 - `/resources/css/` - Global styles
 - `/resources/views/app.blade.php` - Root HTML template
 
@@ -92,8 +106,9 @@ docker-compose exec mysql mysql -u root -p famtree  # Direct MySQL access
 
 **Type Safety:**
 - Global types in `/resources/js/types/inertia.d.ts`:
-  - `AuthUser` interface (id, name, email)
+  - `AuthUser` interface (id, name, email, username, onboarding_completed)
   - `CustomPageProps` extends Inertia PageProps with auth user
+- Current auth structure in middleware: `auth.user` (regular user) and `auth.admin` (admin user)
 - TypeScript strict mode enabled in `tsconfig.json`
 - Path aliases: `@/*` maps to `resources/js/*`
 
@@ -102,11 +117,14 @@ docker-compose exec mysql mysql -u root -p famtree  # Direct MySQL access
 - Use `usePage()` hook to access `$page.props`
 - Properties shared in HandleInertiaRequests middleware are automatically typed
 
-**UI Framework:**
-- Bootstrap 5 (loaded via CDN + npm)
-- React Bootstrap for component library
-- Bootstrap Icons available
-- Font Awesome available
+**UI Framework & Libraries:**
+- Bootstrap 5 (loaded via npm and CSS imported in app.tsx)
+- React Bootstrap (react-bootstrap) for component library
+- Bootstrap Icons (bootstrap-icons) available
+- Lucide React icons available
+- Recharts for data visualization
+- React Slick for carousels
+- React Toast Notifications (react-toastify, react-hot-toast)
 
 ### Key Integrations
 
@@ -126,43 +144,144 @@ docker-compose exec mysql mysql -u root -p famtree  # Direct MySQL access
 - Web UI at `http://localhost:8025`
 - All emails sent during development captured here
 
-**Real-Time Features (Ready but not enabled):**
-- Broadcasting infrastructure available in `/config/broadcasting.php`
-- Echo/Pusher setup commented in `resources/js/bootstrap.js`
-- Channels defined in `/routes/channels.php`
+**Additional Features:**
+- Redis available for caching and queues
+- Mailpit for email testing (SMTP on port 1025, Web UI on 8025)
+- PDF export libraries available (jspdf, html2canvas, html-to-image)
+- React Router DOM (react-router-dom) for additional routing if needed
 
-**Payment Integration:**
-- Paystack script loaded in root template
-- Ready for e-commerce features
+## Service + Repository Pattern
+
+This application follows the **Service + Repository** architectural pattern for clean separation of concerns:
+
+**Data Flow (Request → Response):**
+```
+HTTP Request
+    ↓
+Route → Controller
+    ↓
+Service (Business Logic)
+    ↓
+Repository (Data Access)
+    ↓
+Eloquent Model
+    ↓
+Database
+    ↓
+Model → Repository
+    ↓
+Service (Transform Data)
+    ↓
+Controller (Pass to View)
+    ↓
+Inertia::render() → React Component
+```
+
+**Key Principles:**
+- **Controllers**: Route handling and response building only
+- **Services**: Business logic, validation, calculations, orchestration
+- **Repositories**: Abstract all database queries and model access
+- **Models**: Database schema representation only
+
+**Dependency Injection Flow:**
+```
+Controller injects Service
+    Service injects Repository
+        Repository uses Model
+```
 
 ## Development Workflow
 
 ### Creating New Features
 
-**1. Create Backend Models & Controllers:**
+**1. Choose the appropriate section (Admin or Guest):**
+- Admin features: Use AdminControllers, AdminServices, AdminRepositories, and AdminPages
+- Guest/Public features: Use GuestControllers, GuestServices, GuestRepositories, and GuestPages
+
+**2. Create the Database Model:**
 ```bash
-php artisan make:model FamilyMember -mrc  # Creates model, migration, factory, controller
+./sail artisan make:model FamilyMember -m  # Creates model and migration
 # Edit migration in database/migrations/
-php artisan migrate
+./sail artisan migrate
 ```
 
-**2. Create API Routes:**
+**3. Create Repository (Data Access Layer):**
 ```php
-// routes/api.php or routes/web.php
-Route::get('/family', [FamilyMemberController::class, 'index']);
+// app/Repositories/AdminRepositories/FamilyMemberRepository.php
+namespace App\Repositories\AdminRepositories;
+use App\Models\FamilyMember;
+
+class FamilyMemberRepository
+{
+    public function all() { return FamilyMember::all(); }
+    public function find(int $id) { return FamilyMember::findOrFail($id); }
+    public function create(array $data) { return FamilyMember::create($data); }
+    public function update(int $id, array $data) { /* ... */ }
+    public function delete(int $id) { /* ... */ }
+}
 ```
 
-**3. Create Frontend Pages:**
-- Create component in `resources/js/Pages/FamilyMembers/Index.tsx`
-- Receives props from backend via Inertia
-- Can use layouts from `resources/js/Layouts/`
-
-**4. Share Data with Frontend:**
+**4. Create Service (Business Logic):**
 ```php
-// In HandleInertiaRequests or controller
-return Inertia::render('FamilyMembers/Index', [
-    'members' => $members,
-]);
+// app/Actions/AdminServices/FamilyMemberService.php
+namespace App\Actions\AdminServices;
+use App\Repositories\AdminRepositories\FamilyMemberRepository;
+
+class FamilyMemberService
+{
+    public function __construct(private FamilyMemberRepository $repo) {}
+
+    public function getAllMembers() { return $this->repo->all(); }
+    public function createMember(array $data) { /* validation + logic */ return $this->repo->create($data); }
+}
+```
+
+**5. Create Controller:**
+```php
+// app/Http/Controllers/AdminControllers/FamilyMemberController.php
+use App\Actions\AdminServices\FamilyMemberService;
+
+class FamilyMemberController
+{
+    public function __construct(private FamilyMemberService $service) {}
+
+    public function index()
+    {
+        $members = $this->service->getAllMembers();
+        return Inertia::render('AdminPages/FamilyMembers/Index', ['members' => $members]);
+    }
+}
+```
+
+**6. Create Routes:**
+```php
+// In routes/web.php
+Route::middleware(['auth:admin'])->group(function () {
+    Route::get('/family-members', [FamilyMemberController::class, 'index']);
+});
+```
+
+**7. Create Frontend Page Component:**
+```typescript
+// resources/js/Pages/AdminPages/FamilyMembers/Index.tsx
+import AdminLayout from '@/Layouts/AdminLayout';
+
+interface Member {
+    id: number;
+    name: string;
+}
+
+interface Props {
+    members: Member[];
+}
+
+export default function Index({ members }: Props) {
+    return (
+        <AdminLayout>
+            {/* Render members */}
+        </AdminLayout>
+    );
+}
 ```
 
 ### Testing
@@ -170,27 +289,40 @@ return Inertia::render('FamilyMembers/Index', [
 **PHPUnit (Backend):**
 - Unit tests: `/tests/Unit/`
 - Feature tests: `/tests/Feature/`
-- Run: `php artisan test`
-- Run single test: `php artisan test tests/Feature/ExampleTest.php`
+- Run all tests: `./sail artisan test`
+- Run single test file: `./sail artisan test tests/Feature/ExampleTest.php`
+- Run with specific filter: `./sail artisan test --filter=MethodName`
 
 **Test Helpers:**
-- Faker for generating test data
-- Mockery for mocking
+- Faker for generating test data (fakerphp/faker)
+- Mockery for mocking (mockery/mockery)
 - Laravel's testing traits in `/tests/TestCase.php`
+- Database transactions and refreshing available in test setup
 
 ## Inertia.js & Type Safety
 
 ### Component Props Pattern
 
 ```typescript
-// resources/js/Pages/FamilyMembers/Index.tsx
+// resources/js/Pages/GuestPages/FamilyMembers/Index.tsx
 import { useCallback } from 'react';
 import { usePage, router } from '@inertiajs/react';
 import GuestLayout from '@/Layouts/GuestLayout';
 
-export default function Index({ members }) {
+interface Member {
+    id: number;
+    name: string;
+    // other fields...
+}
+
+interface Props {
+    members: Member[];
+}
+
+export default function Index({ members }: Props) {
     const { props } = usePage();
     const { auth } = props; // Shared from HandleInertiaRequests
+    const user = auth?.user; // Regular user
 
     const handleCreate = useCallback(() => {
         router.post('/family', { name: 'John' });
@@ -208,122 +340,262 @@ export default function Index({ members }) {
 
 ### Sharing Data from Backend
 
+The HandleInertiaRequests.php middleware automatically shares auth state and flash messages:
+
 ```php
 // app/Http/Middleware/HandleInertiaRequests.php
 public function share(Request $request): array
 {
-    return array_merge(parent::share($request), [
+    $user = auth()->user();
+
+    return [
+        ...parent::share($request),
         'auth' => [
-            'user' => $request->user(),
+            'admin' => auth()->guard('admin')->user(),  // Admin user (null if not admin)
+            'user' => $user ? [                          // Regular user
+                'id' => $user->id,
+                'username' => $user->username,
+                'email' => $user->email,
+                'onboarding_completed' => $user->onboarding_completed,
+            ] : null,
         ],
         'flash' => [
             'success' => $request->session()->get('success'),
             'error' => $request->session()->get('error'),
         ],
-    ]);
+    ];
 }
 ```
+
+These props are automatically available in all pages via `usePage().props`. Always use TypeScript interfaces to type your page props.
 
 ## Code Organization Guidelines
 
 ### Controllers
-- Keep controllers focused on request/response handling
-- Use dependency injection for services
-- Return `Inertia::render()` for web pages, JSON for APIs
+- Organize into AdminControllers/ and GuestControllers/ directories
+- Keep controllers focused on request/response handling only
+- Inject repositories or services via constructor dependency injection
+- Never access models or database directly—delegate to repositories/services
+- Return `Inertia::render()` for page views with typed data from services
+- For AdminPages: `Inertia::render('AdminPages/...')`
+- For GuestPages: `Inertia::render('GuestPages/...')`
+
+Example:
+```php
+// app/Http/Controllers/AdminControllers/FamilyController.php
+use App\Actions\AdminServices\FamilyService;
+
+class FamilyController
+{
+    public function __construct(private FamilyService $familyService) {}
+
+    public function index()
+    {
+        $members = $this->familyService->getAllMembers();
+        return Inertia::render('AdminPages/Family/Index', ['members' => $members]);
+    }
+}
+```
+
+### Services (Business Logic)
+- Located in `/app/Actions/AdminServices/` or `/app/Actions/GuestServices/`
+- Contain all business logic, calculations, and data processing
+- Inject repositories via constructor to access data
+- Should be stateless and reusable
+- One service per feature/entity (e.g., FamilyService, UserService)
+- Handle complex operations and data transformations
+- Can call other services if needed
+
+Example:
+```php
+// app/Actions/AdminServices/FamilyService.php
+use App\Repositories\AdminRepositories\FamilyRepository;
+
+class FamilyService
+{
+    public function __construct(private FamilyRepository $familyRepo) {}
+
+    public function getAllMembers()
+    {
+        $members = $this->familyRepo->all();
+        return $members->sortBy('name')->values();
+    }
+
+    public function createMember(array $data)
+    {
+        // Business logic and validation
+        return $this->familyRepo->create($data);
+    }
+}
+```
+
+### Repositories (Data Access)
+- Located in `/app/Repositories/AdminRepositories/` or `/app/Repositories/GuestRepositories/`
+- Abstract database/model interactions from business logic
+- Handle all model queries and database operations
+- One repository per model (e.g., FamilyRepository, UserRepository)
+- Return models or collections, not raw queries
+- Keep queries focused and testable
+
+Example:
+```php
+// app/Repositories/AdminRepositories/FamilyRepository.php
+use App\Models\Family;
+
+class FamilyRepository
+{
+    public function all()
+    {
+        return Family::all();
+    }
+
+    public function find(int $id)
+    {
+        return Family::findOrFail($id);
+    }
+
+    public function create(array $data)
+    {
+        return Family::create($data);
+    }
+
+    public function update(int $id, array $data)
+    {
+        $family = $this->find($id);
+        $family->update($data);
+        return $family;
+    }
+
+    public function delete(int $id)
+    {
+        return $this->find($id)->delete();
+    }
+}
+```
 
 ### Models
 - Define relationships in Eloquent models
 - Use accessors/mutators for attribute transformation
-- Mass assignable `$fillable` for security
+- Declare mass assignable `$fillable` for security
+- User model exists and is extended for custom fields
+- Keep model code minimal—business logic belongs in services
 
 ### Routes
-- Web routes: `/routes/web.php` for page rendering
-- API routes: `/routes/api.php` for data endpoints
-- Use route groups for middleware and prefixes
+- Web routes in `/routes/web.php` for page rendering
+- Use route groups for middleware protection (auth, admin guards)
+- Separate admin routes (require admin guard) from guest routes
+- Example: `Route::middleware(['auth:admin'])->group(...)`
 
 ### Database
 - Migrations in `/database/migrations/` are version controlled
-- Use factories for test data
+- Use factories in `/database/factories/` for test data
 - Seeds in `/database/seeders/` for initial data
+- Both user and admin tables should be migrated as needed
 
 ### Frontend Components
-- One page per route in `/resources/js/Pages/`
+- Admin pages in `/resources/js/Pages/AdminPages/`
+- Guest pages in `/resources/js/Pages/GuestPages/`
 - Reusable components in `/resources/js/Components/`
-- Use TypeScript types for props
-- Layouts provide common structure (GuestLayout available)
+- Always type props with TypeScript interfaces
+- AdminLayout and GuestLayout provide consistent structure
 
 ## Build & Deployment
 
-**Development:**
-- Vite dev server: `npm run dev` (watches file changes, HMR)
-- Laravel server: `php artisan serve` (or use Sail)
-- Both must run simultaneously for full functionality
+**Local Development:**
+```bash
+./sail npm run dev                   # Vite dev server on port 5173 (watches file changes, HMR)
+# Laravel server is running in container automatically
+# Access app at http://localhost
+```
 
 **Production Build:**
 ```bash
-npm run build                        # Creates public/build/
-php artisan migrate --force          # Run migrations on production
-php artisan optimize                 # Optimize app
+./sail npm run build                 # Creates public/build/
+./sail artisan migrate --force       # Run migrations on production
+./sail artisan optimize              # Optimize autoloader and cache
 ```
 
 **Assets:**
-- Vite entry: `resources/js/app.tsx`
-- Output: `public/build/` (gitignored)
-- Manifest: `public/build/manifest.json`
+- Vite entry point: `resources/js/app.tsx`
+- Build output: `public/build/` (gitignored, generated)
+- Asset manifest: `public/build/manifest.json`
 - Referenced in `resources/views/app.blade.php` via `@vite` helper
+- Bootstrap CSS and JS imported directly in app.tsx
 
 ## Important Notes
 
 ### Environment Configuration
 - Copy `.env.example` to `.env`
-- Set `APP_NAME=FamTree`, `DB_DATABASE=famtree`
-- Vite port default is 5173, Laravel port is 8000
-- Change `VITE_APP_NAME` to match your app name
+- Key variables: `APP_NAME=FamTree`, `DB_DATABASE=famtree`
+- `DB_HOST=mysql` (Docker service name, not 127.0.0.1)
+- `REDIS_HOST=redis` (Docker service name)
+- `VITE_APP_NAME=FamTree` (matches APP_NAME)
+- Vite listens on port 5173, Laravel on port 80 (in Docker)
 
-### Docker with Sail
-- `docker-compose up -d` starts all services
+### Docker with Laravel Sail
+- `docker-compose up -d` starts all services in background
 - Services run in isolated containers with volume mounts
-- MySQL and Redis persist data in named volumes
+- MySQL and Redis persist data in named Docker volumes
+- `./sail` script provides convenient access to artisan and npm
 - XDebug can be enabled via environment variables
+- For first-time setup, ensure containers have built: `docker-compose build`
 
 ### Git Workflow
-- Recent commits: Feature-based (setup react, laravel foundation)
-- Keep commits atomic and descriptive
-- Use conventional commit format: `feat:`, `fix:`, `refactor:`, etc.
+- Recent commits: Setup Docker, React, admin guard structure
+- Keep commits atomic with clear messages
+- Use conventional format: `feat:`, `fix:`, `refactor:`, `docs:`, etc.
+- Feature branches from main for new work
 
-### Common Pitfalls
-- **Props not visible in React**: Check HandleInertiaRequests middleware
-- **CSRF errors**: Ensure middleware is registered in Kernel
-- **Asset compilation fails**: Run `npm install` and clear build cache
-- **Database migration issues**: Check migration syntax and rollback with `migrate:rollback`
-- **Type errors**: Ensure `tsconfig.json` path aliases match file structure
+### Common Issues & Troubleshooting
+- **App not accessible at http://localhost**: Ensure `docker-compose up -d` completed and port 80 is free
+- **MySQL connection fails**: Check `DB_HOST=mysql` in .env, not 127.0.0.1; allow 10-15 seconds for MySQL startup
+- **Props not visible in React**: Verify data is passed in `Inertia::render()` and check HandleInertiaRequests.php
+- **CSRF token errors**: Ensure HandleInertiaRequests middleware is registered in HTTP Kernel
+- **Vite HMR not working**: Verify Vite dev server running on port 5173 via `./sail npm run dev`
+- **Assets fail to compile**: Run `./sail npm install` and `./sail npm run build`, check for TypeScript errors
+- **Database migration errors**: Review migration syntax, test with `./sail artisan migrate:rollback` then migrate again
+- **Type errors in React**: Ensure TypeScript interfaces match actual backend data structure
 
 ## Useful Commands Cheat Sheet
 
 ```bash
-# Laravel Commands
-php artisan make:model Post -a                 # Create with all resources
-php artisan migrate:rollback                   # Undo last migration
-php artisan queue:work                         # Process background jobs
-php artisan config:cache                       # Cache config
-php artisan route:list                         # Show all routes
-php artisan tinker                             # Interactive shell
+# Laravel Commands (via Sail)
+./sail artisan make:model Post -mrc            # Create model with migration, factory, controller
+./sail artisan make:migration create_posts_table  # Create migration
+./sail artisan migrate                         # Run pending migrations
+./sail artisan migrate:rollback                # Undo last migration batch
+./sail artisan migrate:reset                   # Rollback all migrations
+./sail artisan config:cache                    # Cache config (clear with config:clear)
+./sail artisan route:list                      # Show all registered routes
+./sail artisan tinker                          # Interactive PHP shell
+./sail artisan db:seed                         # Run seeders
+./sail artisan pint                            # Format PHP code with Pint
 
-# Node/Vite Commands
-npm install                                    # Install dependencies
-npm run dev                                    # Dev server
-npm run build                                  # Production build
-npm list                                       # Show installed packages
+# Frontend Commands (via Sail)
+./sail npm install                             # Install npm dependencies
+./sail npm run dev                             # Start Vite dev server (port 5173)
+./sail npm run build                           # Production build
+./sail npm list                                # Show installed packages
 
-# Docker Commands
-docker-compose ps                              # Show running containers
-docker-compose logs -f famtree                 # View app logs
-docker-compose exec famtree bash               # Shell access
-docker-compose down -v                         # Stop & remove volumes
+# Testing
+./sail artisan test                            # Run all tests
+./sail artisan test tests/Feature/ExampleTest.php  # Run specific test file
+./sail artisan test --filter=testName         # Run tests matching filter
+
+# Docker Management
+docker-compose up -d                           # Start all services
+docker-compose down                            # Stop all services (keep volumes)
+docker-compose down -v                         # Stop & remove all volumes
+docker-compose ps                              # Show container status
+docker-compose logs -f famtree                 # Stream app container logs
+docker-compose exec -it famtree bash           # Enter container shell
+docker-compose build --no-cache                # Rebuild containers
 
 # Git Commands
 git status                                     # Show changes
 git log --oneline -10                          # Recent commits
+git diff                                       # Show unstaged changes
+git switch -c feature/name                     # Create and switch to new branch
 ```
 
 ## Resources
