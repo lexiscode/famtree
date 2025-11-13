@@ -2,7 +2,7 @@
 
 namespace App\Repositories\GuestRepositories;
 
-use App\Models\BlogPost;
+use App\Models\GuestModels\BlogPost;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class BlogRepository
