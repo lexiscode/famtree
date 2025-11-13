@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Link, usePage } from '@inertiajs/react';
+import { useModal } from '@/Context/ModalContext';
 import './NavigationBar.css';
 
 export default function NavigationBar() {
   const { url } = usePage();
+  const { openCtaModal } = useModal();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -98,8 +100,7 @@ export default function NavigationBar() {
               <button
                 className="btn btn-primary btn-sm"
                 onClick={() => {
-                  // Open login modal
-                  // This will be connected to a modal context later
+                  openCtaModal('login');
                   setIsMobileMenuOpen(false);
                 }}
               >
@@ -110,8 +111,7 @@ export default function NavigationBar() {
               <button
                 className="btn btn-secondary btn-sm"
                 onClick={() => {
-                  // Open register modal
-                  // This will be connected to a modal context later
+                  openCtaModal('register');
                   setIsMobileMenuOpen(false);
                 }}
               >

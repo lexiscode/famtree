@@ -1,17 +1,15 @@
 import { PropsWithChildren } from 'react';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { ModalProvider } from '@/Context/ModalContext';
 import NavigationBar from '@/Components/Navigation/NavigationBar';
 import Footer from '@/Components/Footer/Footer';
+import GuestLayoutContent from './GuestLayoutContent';
 
 export default function Guest({ children }: PropsWithChildren) {
     return (
-        <div className="guest-layout">
-            <NavigationBar />
-            <main className="guest-main-content" style={{ marginTop: '80px' }}>
-                {children}
-            </main>
-            <Footer />
+        <ModalProvider>
+            <GuestLayoutContent>{children}</GuestLayoutContent>
             <ToastContainer
                 position="top-right"
                 autoClose={3000}
@@ -23,6 +21,6 @@ export default function Guest({ children }: PropsWithChildren) {
                 pauseOnHover
                 theme="dark"
             />
-        </div>
+        </ModalProvider>
     );
 }
