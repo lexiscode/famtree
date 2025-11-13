@@ -85,4 +85,20 @@ class User extends Authenticatable
     {
         return $this->belongsTo(User::class, 'created_by_user_id');
     }
+
+    /**
+     * Get onboarding steps for this user
+     */
+    public function onboardingSteps()
+    {
+        return $this->hasMany(OnboardingStep::class);
+    }
+
+    /**
+     * Get family info for this user
+     */
+    public function familyInfo()
+    {
+        return $this->hasOne(UserFamilyInfo::class);
+    }
 }

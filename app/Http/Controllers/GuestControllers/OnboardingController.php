@@ -1,0 +1,204 @@
+<?php
+
+namespace App\Http\Controllers\GuestControllers;
+
+use App\Http\Controllers\Controller;
+use App\Actions\GuestServices\OnboardingService;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+
+class OnboardingController extends Controller
+{
+    public function __construct(private OnboardingService $onboardingService)
+    {
+    }
+
+    /**
+     * Show the onboarding start page
+     */
+    public function show(Request $request)
+    {
+        $userId = $request->user()->id;
+
+        try {
+            $onboardingData = $this->onboardingService->getOnboardingData($userId);
+            $progress = $this->onboardingService->getProgress($userId);
+
+            return Inertia::render('GuestPages/Onboarding/Index', [
+                'onboarding' => $onboardingData,
+                'progress' => $progress,
+            ]);
+        } catch (\Exception $e) {
+            return Inertia::render('GuestPages/Onboarding/Index', [
+                'error' => 'Unable to load onboarding data',
+            ]);
+        }
+    }
+
+    /**
+     * Save basic info step
+     */
+    public function saveBasicInfo(Request $request)
+    {
+        $userId = $request->user()->id;
+
+        try {
+            $validated = $request->validate([
+                'first_name' => 'required|string|max:255',
+                'last_name' => 'required|string|max:255',
+                'bio' => 'nullable|string|max:500',
+                'date_of_birth' => 'nullable|date',
+            ]);
+
+            $progress = $this->onboardingService->saveBasicInfoStep($userId, $validated);
+
+            return response()->json([
+                'success' => true,
+                'progress' => $progress,
+                'message' => 'Basic information saved successfully',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'errors' => $e->errors(),
+            ], 422);
+        }
+    }
+
+    /**
+     * Save family status step
+     */
+    public function saveFamilyStatus(Request $request)
+    {
+        $userId = $request->user()->id;
+
+        try {
+            $validated = $request->validate([
+                'family_status' => 'required|in:single,married,divorced,widowed,prefer_not_to_say',
+                'number_of_siblings' => 'nullable|integer|min:0',
+                'number_of_children' => 'nullable|integer|min:0',
+            ]);
+
+            $progress = $this->onboardingService->saveFamilyStatusStep($userId, $validated);
+
+            return response()->json([
+                'success' => true,
+                'progress' => $progress,
+                'message' => 'Family status saved successfully',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'errors' => $e->errors(),
+            ], 422);
+        }
+    }
+
+    /**
+     * Save location info step
+     */
+    public function saveLocationInfo(Request $request)
+    {
+        $userId = $request->user()->id;
+
+        try {
+            $validated = $request->validate([
+                'address' => 'nullable|string|max:500',
+                'city' => 'nullable|string|max:255',
+                'state_province' => 'nullable|string|max:255',
+                'country' => 'required|string|max:255',
+            ]);
+
+            $progress = $this->onboardingService->saveLocationInfoStep($userId, $validated);
+
+            return response()->json([
+                'success' => true,
+                'progress' => $progress,
+                'message' => 'Location information saved successfully',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'errors' => $e->errors(),
+            ], 422);
+        }
+    }
+
+    /**
+     * Save education and work step
+     */
+    public function saveEducationWork(Request $request)
+    {
+        $userId = $request->user()->id;
+
+        try {
+            $validated = $request->validate([
+                'education_level' => 'nullable|string|max:255',
+                'current_occupation' => 'nullable|string|max:255',
+            ]);
+
+            $progress = $this->onboardingService->saveEducationWorkStep($userId, $validated);
+
+            return response()->json([
+                'success' => true,
+                'progress' => $progress,
+                'message' => 'Education and work information saved successfully',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'errors' => $e->errors(),
+            ], 422);
+        }
+    }
+
+    /**
+     * Save siblings search step
+     */
+    public function saveSiblingsSearch(Request $request)
+    {
+        $userId = $request->user()->id;
+
+        try {
+            $validated = $request->validate([
+                'searched' => 'boolean',
+            ]);
+
+            $progress = $this->onboardingService->saveSiblingsSearchStep($userId, $validated);
+
+            return response()->json([
+                'success' => true,
+                'progress' => $progress,
+                'message' => 'Siblings search preference saved successfully',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'errors' => $e->errors(),
+            ], 422);
+        }
+    }
+
+    /**
+     * Complete onboarding
+     */
+    public function complete(Request $request)
+    {
+        $userId = $request->user()->id;
+
+        try {
+            $progress = $this->onboardingService->completeOnboarding($userId);
+
+            return response()->json([
+                'success' => true,
+                'progress' => $progress,
+                'message' => 'Onboarding completed successfully',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to complete onboarding',
+            ], 500);
+        }
+    }
+}
