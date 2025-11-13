@@ -174,7 +174,8 @@ export default function CTAModal({
               setActiveTab('login');
               setApiError(null);
               setSuccessMessage(null);
-              registerForm.reset();
+              registerForm.reset(undefined, { keepErrors: false, keepDirty: false, keepTouched: false });
+              loginForm.clearErrors();
             }}
             type="button"
           >
@@ -186,7 +187,8 @@ export default function CTAModal({
               setActiveTab('register');
               setApiError(null);
               setSuccessMessage(null);
-              loginForm.reset();
+              loginForm.reset(undefined, { keepErrors: false, keepDirty: false, keepTouched: false });
+              registerForm.clearErrors();
             }}
             type="button"
           >
