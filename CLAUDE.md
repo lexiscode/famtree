@@ -77,10 +77,12 @@ docker-compose logs -f famtree       # View app logs
 
 **Authentication:**
 - Dual authentication setup: `default` guard (user) and `admin` guard (admin users)
-- Uses Laravel Sanctum for API token authentication
-- Session-based auth for web routes via middleware
+- Session-based auth for web routes (user login/register via `/login`, `/register`, `/logout`)
 - User model includes password hashing via casts
 - Both user and admin auth states available in HandleInertiaRequests.php
+- Form request validation classes for login/register in `/app/Http/Requests/GuestRequests/`
+- AuthService handles business logic (registration, login, user data retrieval)
+- UserRepository abstracts database access for user operations
 
 **Database:**
 - MySQL 8.0 with migrations in `/database/migrations/`
@@ -106,9 +108,8 @@ docker-compose logs -f famtree       # View app logs
 
 **Type Safety:**
 - Global types in `/resources/js/types/inertia.d.ts`:
-  - `AuthUser` interface (id, name, email, username, onboarding_completed)
-  - `CustomPageProps` extends Inertia PageProps with auth user
-- Current auth structure in middleware: `auth.user` (regular user) and `auth.admin` (admin user)
+  - Auth structure: `auth.user` (regular user: id, first_name, last_name, username, email) and `auth.admin` (admin user)
+  - `CustomPageProps` extends Inertia PageProps with typed auth and flash messages
 - TypeScript strict mode enabled in `tsconfig.json`
 - Path aliases: `@/*` maps to `resources/js/*`
 
@@ -299,6 +300,40 @@ export default function Index({ members }: Props) {
 - Laravel's testing traits in `/tests/TestCase.php`
 - Database transactions and refreshing available in test setup
 
+## Authentication System
+
+The authentication system is implemented using Inertia.js form submissions with Laravel session-based authentication:
+
+**User Registration & Login Flow:**
+1. Frontend CTAModal component (`resources/js/Components/Modal/CTAModal.tsx`) collects form data
+2. Client-side validation with react-hook-form + zod schemas
+3. Form submission via `router.post()` to `/register` or `/login` endpoints
+4. Backend form request classes validate input (RegisterRequest, LoginRequest)
+5. AuthService handles business logic and duplicate user detection
+6. AuthController authenticates user and redirects to home with flash message
+7. HandleInertiaRequests middleware shares updated auth state to frontend
+
+**Key Files:**
+- **Frontend**: `resources/js/Components/Modal/CTAModal.tsx` - Modal with login/register forms
+- **Backend Controller**: `app/Http/Controllers/GuestControllers/AuthController.php` - Handles login/register/logout
+- **Service Layer**: `app/Actions/GuestServices/AuthService.php` - Registration and login logic
+- **Repository Layer**: `app/Repositories/GuestRepositories/UserRepository.php` - User database operations
+- **Request Validation**: `app/Http/Requests/GuestRequests/LoginRequest.php`, `RegisterRequest.php`
+- **Routes**: `/register` (POST), `/login` (POST), `/logout` (POST in authenticated routes)
+
+**Important Notes:**
+- User passwords must contain: uppercase, lowercase, number, minimum 8 characters
+- Email and username must be unique (validated in both request and service layer)
+- Remember me functionality available on login form
+- After registration, user is auto-logged in
+- All form submissions handled through Inertia's router (no JSON API)
+- Flash messages for success/error automatically available via $page.props.flash
+
+**ModalContext** (`resources/js/Context/ModalContext.tsx`):
+- Global state management for login/register modal visibility
+- Used by NavigationBar to trigger login/register modals
+- Wraps GuestLayout with ModalProvider for context availability
+
 ## Inertia.js & Type Safety
 
 ### Component Props Pattern
@@ -354,9 +389,10 @@ public function share(Request $request): array
             'admin' => auth()->guard('admin')->user(),  // Admin user (null if not admin)
             'user' => $user ? [                          // Regular user
                 'id' => $user->id,
+                'first_name' => $user->first_name,
+                'last_name' => $user->last_name,
                 'username' => $user->username,
                 'email' => $user->email,
-                'onboarding_completed' => $user->onboarding_completed,
             ] : null,
         ],
         'flash' => [
@@ -550,7 +586,10 @@ class FamilyRepository
 - **App not accessible at http://localhost**: Ensure `docker-compose up -d` completed and port 80 is free
 - **MySQL connection fails**: Check `DB_HOST=mysql` in .env, not 127.0.0.1; allow 10-15 seconds for MySQL startup
 - **Props not visible in React**: Verify data is passed in `Inertia::render()` and check HandleInertiaRequests.php
-- **CSRF token errors**: Ensure HandleInertiaRequests middleware is registered in HTTP Kernel
+- **Login/Register form not submitting**: Ensure database migrations have run (`./sail artisan migrate`), check browser console for errors
+- **Validation errors not showing**: Verify form request classes exist in `/app/Http/Requests/GuestRequests/`, check error object structure in onError callback
+- **User not logged in after registration**: Verify `Auth::guard('web')->login($user)` in AuthController.register(), check session configuration
+- **Flash messages not appearing**: Ensure `$page.props.flash` is accessed in layout, verify flash message keys match backend redirect messages
 - **Vite HMR not working**: Verify Vite dev server running on port 5173 via `./sail npm run dev`
 - **Assets fail to compile**: Run `./sail npm install` and `./sail npm run build`, check for TypeScript errors
 - **Database migration errors**: Review migration syntax, test with `./sail artisan migrate:rollback` then migrate again
