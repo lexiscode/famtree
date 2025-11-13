@@ -2,7 +2,7 @@
 
 namespace App\Repositories\GuestRepositories;
 
-use App\Models\Family;
+use App\Models\GuestModels\Family;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class FamilyRepository
