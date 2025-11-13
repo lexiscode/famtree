@@ -123,6 +123,11 @@
   border-radius: 2px;
 }
 
+/* Families menu item padding adjustment */
+.nav-link-families {
+  padding: var(--space-sm) var(--space-md) !important;
+}
+
 /* Auth Buttons Container */
 .auth-buttons {
   display: flex;

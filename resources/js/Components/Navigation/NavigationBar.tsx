@@ -85,7 +85,9 @@ export default function NavigationBar() {
               <li key={item.name} className="nav-item">
                 <Link
                   href={item.href}
-                  className={`nav-link ${isActive(item.href) ? 'active' : ''}`}
+                  className={`nav-link ${isActive(item.href) ? 'active' : ''} ${
+                    item.name === 'families' ? 'nav-link-families' : ''
+                  }`}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   {item.label}
