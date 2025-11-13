@@ -3,7 +3,7 @@
 namespace App\Actions\GuestServices;
 
 use App\Repositories\GuestRepositories\UserRepository;
-use App\Models\User;
+use App\Models\GuestModels\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 

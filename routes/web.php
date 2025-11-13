@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\GuestControllers\AuthController;
 use App\Http\Controllers\GuestControllers\BlogController;
 use App\Http\Controllers\GuestControllers\HomeController;
 use App\Http\Controllers\GuestControllers\AboutController;
@@ -10,7 +11,7 @@ use App\Http\Controllers\GuestControllers\FeaturesController;
 use App\Http\Controllers\GuestControllers\HowItWorksController;
 use App\Http\Controllers\GuestControllers\FamilyPreviewController;
 use App\Http\Controllers\GuestControllers\FamilyExplorerController;
-use App\Http\Controllers\GuestControllers\AuthController;
+use App\Http\Controllers\GuestControllers\AuthAccessControllers\LandingPageController;
 
 
 
@@ -18,6 +19,7 @@ use App\Http\Controllers\GuestControllers\AuthController;
 Route::get('/', function (Request $request) {
     if (auth()->check()) {
         // If the user is authenticated, redirect to landing page for logged-in users
+        return app(LandingPageController::class)->index($request);
     }
     return app(HomeController::class)->index();
 })->name('home');
