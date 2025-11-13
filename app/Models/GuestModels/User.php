@@ -23,6 +23,16 @@ class User extends Authenticatable
         'username',
         'email',
         'password',
+        'phone',
+        'address',
+        'bio',
+        'date_of_birth',
+        'profile_image_url',
+        'status',
+        'parent_user_id',
+        'is_child_account',
+        'created_by_user_id',
+        'onboarding_completed',
     ];
 
     /**
@@ -43,5 +53,36 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'date_of_birth' => 'date',
+        'is_child_account' => 'boolean',
+        'onboarding_completed' => 'boolean',
     ];
+
+    /**
+     * Relationships
+     */
+
+    /**
+     * Get the parent user (if this is a child account)
+     */
+    public function parent()
+    {
+        return $this->belongsTo(User::class, 'parent_user_id');
+    }
+
+    /**
+     * Get child accounts created by this user
+     */
+    public function children()
+    {
+        return $this->hasMany(User::class, 'parent_user_id');
+    }
+
+    /**
+     * Get the user who created this account
+     */
+    public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'created_by_user_id');
+    }
 }
