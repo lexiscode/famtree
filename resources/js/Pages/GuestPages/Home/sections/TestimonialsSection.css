@@ -4,7 +4,7 @@
 
 .testimonials-section {
   padding: var(--space-4xl) var(--space-lg);
-  background: #FFFFFF;
+  background: var(--color-bg-primary);
 }
 
 .testimonials-container {

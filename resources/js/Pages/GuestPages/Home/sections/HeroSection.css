@@ -10,7 +10,7 @@
   justify-content: center;
   align-items: center;
   overflow: hidden;
-  background: linear-gradient(135deg, #FFFFFF 0%, #F5F7FA 100%);
+  background: linear-gradient(135deg, var(--color-bg-primary) 0%, var(--color-bg-secondary) 100%);
 }
 
 /* Background Animation */
