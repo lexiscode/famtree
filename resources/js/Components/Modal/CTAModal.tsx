@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { usePage, router } from '@inertiajs/react';
+import { router } from '@inertiajs/react';
 import { z } from 'zod';
 import './CTAModal.css';
 
@@ -44,8 +44,6 @@ export default function CTAModal({
   onClose,
   initialTab = 'login',
 }: CTAModalProps) {
-  const { props } = usePage();
-  const csrfToken = (props.csrf_token as string) || '';
   const [activeTab, setActiveTab] = useState<'login' | 'register'>(initialTab);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
