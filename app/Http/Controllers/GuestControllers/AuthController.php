@@ -6,8 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\GuestRequests\LoginRequest;
 use App\Http\Requests\GuestRequests\RegisterRequest;
 use App\Actions\GuestServices\AuthService;
-use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class AuthController extends Controller
 {
@@ -16,119 +19,56 @@ class AuthController extends Controller
     }
 
     /**
-     * Register a new user
+     * Handle user registration
      */
-    public function register(RegisterRequest $request): JsonResponse
+    public function register(RegisterRequest $request): RedirectResponse
     {
-        try {
-            $validated = $request->validated();
+        $validated = $request->validated();
 
+        try {
             $user = $this->authService->register($validated);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Account created successfully. Please log in.',
-                'user' => $this->authService->getUserData($user),
-            ], 201);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $e->errors(),
-            ], 422);
+            // Log the user in after registration
+            Auth::guard('web')->login($user);
+
+            return redirect()->route('home')->with('success', 'Account created successfully!');
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Registration failed: ' . $e->getMessage(),
-            ], 500);
+            return redirect()->back()->withInput()->with('error', $e->getMessage());
         }
     }
 
     /**
-     * Login user
+     * Handle user login
      */
-    public function login(LoginRequest $request): JsonResponse
+    public function login(LoginRequest $request): RedirectResponse
     {
-        try {
-            $validated = $request->validated();
+        $validated = $request->validated();
 
+        try {
             $user = $this->authService->login(
                 $validated['emailOrUsername'],
                 $validated['password']
             );
 
-            // Create API token for stateless authentication
-            $token = $user->createToken('api-token')->plainTextToken;
-
-            // Log user in for session-based auth
+            // Log user in with remember me option
             Auth::guard('web')->login($user, $validated['rememberMe'] ?? false);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Login successful',
-                'user' => $this->authService->getUserData($user),
-                'token' => $token,
-            ], 200);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Login failed',
-                'errors' => $e->errors(),
-            ], 422);
+            return redirect()->route('home')->with('success', 'Login successful!');
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Login failed: ' . $e->getMessage(),
-            ], 401);
+            return redirect()->back()->withInput()->with('error', $e->getMessage());
         }
     }
 
     /**
-     * Logout user
+     * Handle user logout
      */
-    public function logout(Request $request): JsonResponse
+    public function logout(Request $request): RedirectResponse
     {
-        try {
-            // Revoke all tokens
-            if (auth()->user()) {
-                auth()->user()->tokens()->delete();
-            }
+        Auth::guard('web')->logout();
 
-            // Logout from session
-            Auth::guard('web')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Logged out successfully',
-            ], 200);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Logout failed: ' . $e->getMessage(),
-            ], 500);
-        }
-    }
-
-    /**
-     * Get current authenticated user
-     */
-    public function user(): JsonResponse
-    {
-        if (!Auth::check()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Not authenticated',
-            ], 401);
-        }
-
-        $user = Auth::user();
-
-        return response()->json([
-            'success' => true,
-            'user' => $this->authService->getUserData($user),
-        ], 200);
+        return redirect()->route('home')->with('success', 'Logged out successfully!');
     }
 }

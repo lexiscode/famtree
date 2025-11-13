@@ -39,9 +39,9 @@ Route::middleware(['web', 'guest'])->group(function () {
     Route::get('/families', [FamilyExplorerController::class, 'index'])->name('families.index');
     Route::get('/families/{slug}', [FamilyPreviewController::class, 'show'])->name('families.show');
 
-    // Authentication API endpoints
-    Route::post('/api/auth/register', [AuthController::class, 'register'])->name('auth.register');
-    Route::post('/api/auth/login', [AuthController::class, 'login'])->name('auth.login');
+    // Authentication routes
+    Route::post('/register', [AuthController::class, 'register'])->name('auth.register');
+    Route::post('/login', [AuthController::class, 'login'])->name('auth.login');
 });
 
 
@@ -52,7 +52,6 @@ Route::middleware(['web', 'guest'])->group(function () {
 */
 
 Route::middleware(['web', 'auth'])->group(function () {
-    // Authentication API endpoints
-    Route::post('/api/auth/logout', [AuthController::class, 'logout'])->name('auth.logout');
-    Route::get('/api/auth/user', [AuthController::class, 'user'])->name('auth.user');
+    // Authentication routes
+    Route::post('/logout', [AuthController::class, 'logout'])->name('auth.logout');
 });

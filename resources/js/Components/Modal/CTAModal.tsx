@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { usePage } from '@inertiajs/react';
+import { usePage, router } from '@inertiajs/react';
 import { z } from 'zod';
 import './CTAModal.css';
 
@@ -114,96 +114,51 @@ export default function CTAModal({
   };
 
   // Handle login submission
-  const handleLoginSubmit = async (data: LoginFormData) => {
+  const handleLoginSubmit = (data: LoginFormData) => {
     setIsSubmitting(true);
     setApiError(null);
 
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest',
-          'X-CSRF-Token': csrfToken,
-        },
-        credentials: 'include',
-        body: JSON.stringify(data),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        const errorMessage = result.errors?.emailOrUsername?.[0] ||
-                            result.message ||
+    router.post(route('auth.login'), data, {
+      onSuccess: () => {
+        setSuccessMessage('Login successful! Redirecting...');
+        onClose();
+      },
+      onError: (errors: any) => {
+        const errorMessage = errors?.emailOrUsername ||
+                            errors?.password ||
                             'Login failed. Please try again.';
-        setApiError(errorMessage);
-        return;
-      }
-
-      // Store token if provided
-      if (result.token) {
-        localStorage.setItem('auth_token', result.token);
-      }
-
-      setSuccessMessage('Login successful! Redirecting...');
-
-      // Reload page to update auth state
-      setTimeout(() => {
-        window.location.reload();
-      }, 1500);
-    } catch (error) {
-      console.error('Login error:', error);
-      setApiError('Login failed. Please check your connection and try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
+        setApiError(Array.isArray(errorMessage) ? errorMessage[0] : errorMessage);
+        setIsSubmitting(false);
+      },
+    });
   };
 
   // Handle register submission
-  const handleRegisterSubmit = async (data: RegisterFormData) => {
+  const handleRegisterSubmit = (data: RegisterFormData) => {
     setIsSubmitting(true);
     setApiError(null);
 
-    try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest',
-          'X-CSRF-Token': csrfToken,
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          ...data,
-          password_confirmation: data.confirmPassword,
-        }),
-      });
+    router.post(route('auth.register'), {
+      ...data,
+      password_confirmation: data.confirmPassword,
+    }, {
+      onSuccess: () => {
+        setSuccessMessage('Account created successfully! Logging you in...');
+        registerForm.reset();
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        const errors = result.errors || {};
-        const firstError = Object.values(errors).flat()[0] as string;
-        const errorMessage = firstError ||
-                            result.message ||
+        setTimeout(() => {
+          setActiveTab('login');
+          setSuccessMessage(null);
+          onClose();
+        }, 1500);
+      },
+      onError: (errors: any) => {
+        const errorMessage = Object.values(errors)?.[0] ||
                             'Registration failed. Please try again.';
-        setApiError(errorMessage);
-        return;
-      }
-
-      setSuccessMessage('Account created successfully! Please log in.');
-      registerForm.reset();
-
-      setTimeout(() => {
-        setActiveTab('login');
-        setSuccessMessage(null);
-      }, 2000);
-    } catch (error) {
-      console.error('Registration error:', error);
-      setApiError('Registration failed. Please check your connection and try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
+        setApiError(Array.isArray(errorMessage) ? errorMessage[0] : errorMessage);
+        setIsSubmitting(false);
+      },
+    });
   };
 
   if (!isOpen) return null;
