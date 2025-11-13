@@ -9,11 +9,9 @@
 ## 🎯 Phase 1: Authentication & User Profile Foundation
 
 ### 1.1 User Registration Enhancement
-- [ ] **Backend**: Extend RegisterRequest validation to include optional phone and address fields
 - [ ] **Backend**: Update User model with additional fields: `phone`, `address`, `bio`, `date_of_birth`, `profile_image_url`, `status` (Alive/Deceased)
 - [ ] **Database**: Create migration: `add_profile_fields_to_users_table`
   - Fields: `phone`, `address`, `bio`, `date_of_birth`, `profile_image_url`, `status` (enum: alive, deceased)
-- [ ] **Frontend**: Enhance registration form to collect optional basic profile info
 - [ ] **Backend**: Create UserProfileService for profile management
 - [ ] **Backend**: Create UserProfileRepository for data access
 
