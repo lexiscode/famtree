@@ -13,22 +13,22 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: var(--z-modal);
-  padding: var(--space-md);
-  animation: fadeIn var(--transition-normal) ease-in-out;
+  z-index: 1050;
+  padding: 1rem;
+  animation: fadeIn 0.3s ease-in-out;
 }
 
 /* Modal Container */
 .cta-modal {
-  background-color: var(--color-bg-primary);
-  border-radius: var(--radius-lg);
+  background-color: #ffffff;
+  border-radius: 0.5rem;
   width: 100%;
   max-width: 450px;
   max-height: 90vh;
   overflow-y: auto;
   overflow-x: hidden;
-  box-shadow: var(--shadow-2xl);
-  animation: slideUp var(--transition-normal) ease-out;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  animation: slideUp 0.3s ease-out;
   scrollbar-width: none;
 }
 
@@ -49,41 +49,41 @@
 .modal-brand {
   display: flex;
   align-items: center;
-  gap: var(--space-md);
+  gap: 0.75rem;
 }
 
 .modal-brand h2 {
-  font-family: var(--font-display);
-  font-size: var(--text-2xl);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-blue);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1b3a52;
   margin: 0;
 }
 
 .modal-close {
   background: none;
   border: none;
-  font-size: var(--text-2xl);
-  color: var(--color-text-secondary);
+  font-size: 1.5rem;
+  color: #6c757d;
   cursor: pointer;
-  padding: var(--space-sm);
+  padding: 0.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 44px;
   height: 44px;
-  border-radius: var(--radius-md);
-  transition: var(--transition-colors);
+  border-radius: 0.375rem;
+  transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
 }
 
 .modal-close:hover {
-  background-color: var(--color-bg-secondary);
-  color: var(--color-text-primary);
+  background-color: #e9ecef;
+  color: #212529;
 }
 
 .modal-close:focus {
-  outline: 2px solid var(--color-gold);
-  outline-offset: 2px;
+  outline: 0;
+  box-shadow: 0 0 0 0.2rem rgba(27, 58, 82, 0.25);
 }
 
 /* Tab Navigation */
@@ -92,7 +92,7 @@
   border-bottom: 2px solid #dee2e6;
   padding: 0 1.5rem;
   gap: 1rem;
-  background-color: #fff;
+  background-color: #ffffff;
 }
 
 .tab-button {
@@ -128,8 +128,9 @@
 }
 
 .tab-button:focus {
-  outline: 2px solid var(--color-gold);
-  outline-offset: -2px;
+  outline: 0;
+  box-shadow: inset 0 0 0 0.2rem rgba(27, 58, 82, 0.25);
+  border-radius: 0.375rem;
 }
 
 /* Modal Content */
@@ -189,7 +190,7 @@
   border-radius: 0.375rem;
   font-size: 1rem;
   font-family: inherit;
-  background-color: #fff;
+  background-color: #ffffff;
   color: #212529;
   transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
 }
@@ -199,7 +200,7 @@
 .form-group input[type='password']:focus {
   outline: none;
   border-color: #1b3a52;
-  background-color: #fff;
+  background-color: #ffffff;
   box-shadow: 0 0 0 0.2rem rgba(27, 58, 82, 0.25);
 }
 
@@ -239,7 +240,7 @@
   position: relative;
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
+  gap: 0.5rem;
 }
 
 .password-input-wrapper input {
@@ -248,32 +249,32 @@
 
 .password-toggle {
   position: absolute;
-  right: var(--space-md);
+  right: 0.875rem;
   background: none;
   border: none;
   cursor: pointer;
-  padding: var(--space-sm);
-  font-size: var(--text-lg);
-  color: var(--color-text-secondary);
-  transition: var(--transition-colors);
+  padding: 0.5rem;
+  font-size: 1rem;
+  color: #6c757d;
+  transition: color 0.15s ease-in-out;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .password-toggle:hover {
-  color: var(--color-text-primary);
+  color: #212529;
 }
 
 .password-toggle:disabled {
-  opacity: 0.6;
+  opacity: 0.65;
   cursor: not-allowed;
 }
 
 .password-toggle:focus {
-  outline: 2px solid var(--color-gold);
-  outline-offset: 2px;
-  border-radius: var(--radius-sm);
+  outline: 0;
+  box-shadow: 0 0 0 0.2rem rgba(27, 58, 82, 0.25);
+  border-radius: 0.375rem;
 }
 
 /* Password Hint */
@@ -306,11 +307,12 @@
   cursor: pointer;
   font-size: 0.875rem;
   color: #212529;
+  font-weight: 500;
 }
 
 .form-checkbox input[type='checkbox']:disabled {
   cursor: not-allowed;
-  opacity: 0.6;
+  opacity: 0.65;
 }
 
 /* Links */
@@ -321,6 +323,7 @@
   transition: color 0.15s ease-in-out;
   align-self: flex-start;
   margin: 0.5rem 0;
+  font-weight: 500;
 }
 
 .forgot-password-link:hover {
@@ -352,7 +355,7 @@
 
 .btn-primary {
   background-color: #1b3a52;
-  color: white;
+  color: #ffffff;
   width: 100%;
   border: 1px solid #1b3a52;
 }
@@ -373,15 +376,15 @@
 }
 
 .btn-lg {
-  padding: var(--space-md) var(--space-xl);
-  font-size: var(--text-base);
+  padding: 0.625rem 1.25rem;
+  font-size: 1rem;
   min-height: 48px;
 }
 
 .btn-secondary {
   background-color: transparent;
-  color: var(--color-blue);
-  border: 2px solid var(--color-blue);
+  color: #1b3a52;
+  border: 2px solid #1b3a52;
 }
 
 .btn-secondary:hover:not(:disabled) {
@@ -389,7 +392,7 @@
 }
 
 .btn-secondary:disabled {
-  opacity: 0.6;
+  opacity: 0.65;
   cursor: not-allowed;
 }
 
@@ -399,14 +402,34 @@
   width: 16px;
   height: 16px;
   border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: white;
+  border-top-color: #ffffff;
   border-radius: 50%;
-  animation: spin var(--transition-slow) linear infinite;
+  animation: spin 0.6s linear infinite;
 }
 
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
   }
 }
 
