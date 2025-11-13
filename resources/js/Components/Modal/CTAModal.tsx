@@ -116,17 +116,40 @@ export default function CTAModal({
     setApiError(null);
 
     try {
-      // TODO: Connect to actual backend endpoint
-      console.log('Login attempt:', data);
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        credentials: 'include',
+        body: JSON.stringify(data),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        const errorMessage = result.errors?.emailOrUsername?.[0] ||
+                            result.message ||
+                            'Login failed. Please try again.';
+        setApiError(errorMessage);
+        return;
+      }
+
+      // Store token if provided
+      if (result.token) {
+        localStorage.setItem('auth_token', result.token);
+      }
 
       setSuccessMessage('Login successful! Redirecting...');
-      // TODO: Handle redirect or token storage
-      setTimeout(() => onClose(), 2000);
+
+      // Reload page to update auth state
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
     } catch (error) {
-      setApiError('Login failed. Please try again.');
       console.error('Login error:', error);
+      setApiError('Login failed. Please check your connection and try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -138,20 +161,41 @@ export default function CTAModal({
     setApiError(null);
 
     try {
-      // TODO: Connect to actual backend endpoint
-      console.log('Register attempt:', data);
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          ...data,
+          password_confirmation: data.confirmPassword,
+        }),
+      });
 
-      setSuccessMessage('Account created successfully! Please check your email.');
-      loginForm.reset();
+      const result = await response.json();
+
+      if (!response.ok) {
+        const errors = result.errors || {};
+        const firstError = Object.values(errors).flat()[0] as string;
+        const errorMessage = firstError ||
+                            result.message ||
+                            'Registration failed. Please try again.';
+        setApiError(errorMessage);
+        return;
+      }
+
+      setSuccessMessage('Account created successfully! Please log in.');
+      registerForm.reset();
+
       setTimeout(() => {
         setActiveTab('login');
         setSuccessMessage(null);
       }, 2000);
     } catch (error) {
-      setApiError('Registration failed. Please try again.');
       console.error('Registration error:', error);
+      setApiError('Registration failed. Please check your connection and try again.');
     } finally {
       setIsSubmitting(false);
     }
