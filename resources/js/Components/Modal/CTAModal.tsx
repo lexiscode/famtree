@@ -6,19 +6,22 @@ import './CTAModal.css';
 
 // Validation schemas
 const loginSchema = z.object({
-  email: z.string().min(1, 'Email is required').email('Invalid email address'),
-  password: z.string().min(1, 'Password is required').min(8, 'Password must be at least 8 characters'),
+  emailOrUsername: z.string().min(1, 'Email or username is required'),
+  password: z.string().min(1, 'Password is required'),
   rememberMe: z.boolean().optional().default(false),
 });
 
 const registerSchema = z.object({
-  fullName: z.string().min(1, 'Name is required').min(2, 'Name must be at least 2 characters'),
+  firstName: z.string().min(1, 'First name is required').min(2, 'First name must be at least 2 characters'),
+  lastName: z.string().min(1, 'Last name is required').min(2, 'Last name must be at least 2 characters'),
+  username: z.string().min(1, 'Username is required').min(3, 'Username must be at least 3 characters'),
   email: z.string().min(1, 'Email is required').email('Invalid email address'),
   password: z
     .string()
     .min(1, 'Password is required')
     .min(8, 'Password must be at least 8 characters')
     .regex(/[A-Z]/, 'Password must contain an uppercase letter')
+    .regex(/[a-z]/, 'Password must contain a lowercase letter')
     .regex(/[0-9]/, 'Password must contain a number'),
   confirmPassword: z.string().min(1, 'Please confirm your password'),
   familyName: z.string().optional().default(''),
@@ -55,7 +58,7 @@ export default function CTAModal({
     resolver: zodResolver(loginSchema),
     mode: 'onSubmit',
     defaultValues: {
-      email: '',
+      emailOrUsername: '',
       password: '',
       rememberMe: false,
     },
@@ -66,7 +69,9 @@ export default function CTAModal({
     resolver: zodResolver(registerSchema),
     mode: 'onSubmit',
     defaultValues: {
-      fullName: '',
+      firstName: '',
+      lastName: '',
+      username: '',
       email: '',
       password: '',
       confirmPassword: '',
@@ -238,28 +243,28 @@ export default function CTAModal({
               className="modal-form"
               noValidate
             >
-              {/* Email Field */}
+              {/* Email or Username Field */}
               <div className="form-group">
-                <label htmlFor="login-email">Email Address</label>
+                <label htmlFor="login-emailOrUsername">Email or Username</label>
                 <input
-                  id="login-email"
-                  type="email"
-                  placeholder="your@email.com"
-                  {...loginForm.register('email')}
+                  id="login-emailOrUsername"
+                  type="text"
+                  placeholder="your@email.com or username"
+                  {...loginForm.register('emailOrUsername')}
                   ref={firstInputRef}
                   disabled={isSubmitting}
-                  aria-invalid={loginForm.formState.errors.email ? 'true' : 'false'}
+                  aria-invalid={loginForm.formState.errors.emailOrUsername ? 'true' : 'false'}
                   aria-describedby={
-                    loginForm.formState.errors.email ? 'login-email-error' : undefined
+                    loginForm.formState.errors.emailOrUsername ? 'login-emailOrUsername-error' : undefined
                   }
                 />
-                {loginForm.formState.errors.email && (
+                {loginForm.formState.errors.emailOrUsername && (
                   <span
-                    id="login-email-error"
+                    id="login-emailOrUsername-error"
                     className="form-error"
                     role="alert"
                   >
-                    {loginForm.formState.errors.email.message}
+                    {loginForm.formState.errors.emailOrUsername.message}
                   </span>
                 )}
               </div>
@@ -363,32 +368,93 @@ export default function CTAModal({
               className="modal-form"
               noValidate
             >
-              {/* Full Name Field */}
+              {/* First Name & Last Name Row */}
+              <div className="form-row">
+                {/* First Name Field */}
+                <div className="form-group form-group-half">
+                  <label htmlFor="register-firstName">First Name</label>
+                  <input
+                    id="register-firstName"
+                    type="text"
+                    placeholder="John"
+                    {...registerForm.register('firstName')}
+                    ref={firstInputRef}
+                    disabled={isSubmitting}
+                    aria-invalid={
+                      registerForm.formState.errors.firstName ? 'true' : 'false'
+                    }
+                    aria-describedby={
+                      registerForm.formState.errors.firstName
+                        ? 'register-firstName-error'
+                        : undefined
+                    }
+                  />
+                  {registerForm.formState.errors.firstName && (
+                    <span
+                      id="register-firstName-error"
+                      className="form-error"
+                      role="alert"
+                    >
+                      {registerForm.formState.errors.firstName.message}
+                    </span>
+                  )}
+                </div>
+
+                {/* Last Name Field */}
+                <div className="form-group form-group-half">
+                  <label htmlFor="register-lastName">Last Name</label>
+                  <input
+                    id="register-lastName"
+                    type="text"
+                    placeholder="Doe"
+                    {...registerForm.register('lastName')}
+                    disabled={isSubmitting}
+                    aria-invalid={
+                      registerForm.formState.errors.lastName ? 'true' : 'false'
+                    }
+                    aria-describedby={
+                      registerForm.formState.errors.lastName
+                        ? 'register-lastName-error'
+                        : undefined
+                    }
+                  />
+                  {registerForm.formState.errors.lastName && (
+                    <span
+                      id="register-lastName-error"
+                      className="form-error"
+                      role="alert"
+                    >
+                      {registerForm.formState.errors.lastName.message}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Username Field */}
               <div className="form-group">
-                <label htmlFor="register-name">Full Name</label>
+                <label htmlFor="register-username">Username</label>
                 <input
-                  id="register-name"
+                  id="register-username"
                   type="text"
-                  placeholder="John Doe"
-                  {...registerForm.register('fullName')}
-                  ref={firstInputRef}
+                  placeholder="johndoe123"
+                  {...registerForm.register('username')}
                   disabled={isSubmitting}
                   aria-invalid={
-                    registerForm.formState.errors.fullName ? 'true' : 'false'
+                    registerForm.formState.errors.username ? 'true' : 'false'
                   }
                   aria-describedby={
-                    registerForm.formState.errors.fullName
-                      ? 'register-name-error'
+                    registerForm.formState.errors.username
+                      ? 'register-username-error'
                       : undefined
                   }
                 />
-                {registerForm.formState.errors.fullName && (
+                {registerForm.formState.errors.username && (
                   <span
-                    id="register-name-error"
+                    id="register-username-error"
                     className="form-error"
                     role="alert"
                   >
-                    {registerForm.formState.errors.fullName.message}
+                    {registerForm.formState.errors.username.message}
                   </span>
                 )}
               </div>
@@ -461,7 +527,7 @@ export default function CTAModal({
                   </span>
                 )}
                 <small className="password-hint">
-                  Must be 8+ characters with uppercase and number
+                  Must be 8+ characters with uppercase, lowercase, and number
                 </small>
               </div>
 
