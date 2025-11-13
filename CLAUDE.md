@@ -56,13 +56,19 @@ docker-compose logs -f famtree       # View app logs
 **Key Directories:**
 - `/app/Http/Controllers/AdminControllers/` - Admin panel request handlers
 - `/app/Http/Controllers/GuestControllers/` - Guest/public area request handlers
+  - `AuthAccessControllers/` - Controllers for authenticated user pages (dashboard, profile, etc.)
 - `/app/Http/Controllers/Controller.php` - Base controller class
 - `/app/Models/` - Eloquent models
 - `/app/Http/Middleware/` - Request/response middleware (HandleInertiaRequests.php for props sharing)
+- `/app/Http/Requests/` - Form request validation classes (organized by context)
+  - `GuestRequests/` - Guest/public form requests
+  - `GuestRequests/AuthAccessRequests/` - Form requests for authenticated user pages
 - `/app/Actions/AdminServices/` - Admin business logic and service classes
 - `/app/Actions/GuestServices/` - Guest/public business logic and service classes
+  - `AuthAccessServices/` - Services for authenticated user pages
 - `/app/Repositories/AdminRepositories/` - Data access layer for admin features
 - `/app/Repositories/GuestRepositories/` - Data access layer for guest features
+  - `AuthAccessRepositories/` - Repositories for authenticated user pages
 - `/app/Providers/` - Service registration and bootstrapping
 - `/routes/web.php` - Web routes with Inertia page rendering (API routes in routes/api.php if needed)
 - `/database/migrations/` - Database schema changes
@@ -94,6 +100,7 @@ docker-compose logs -f famtree       # View app logs
 **Key Directories:**
 - `/resources/js/Pages/AdminPages/` - Admin panel page components
 - `/resources/js/Pages/GuestPages/` - Guest/public area page components
+  - `AuthAccessPages/` - Pages for authenticated guest users (dashboard, profile, settings, etc.)
 - `/resources/js/Layouts/` - Layout wrappers (AdminLayout.tsx and GuestLayout.tsx)
 - `/resources/js/Components/` - Reusable shared components
 - `/resources/js/types/inertia.d.ts` - TypeScript type definitions for props
@@ -195,9 +202,18 @@ Controller injects Service
 
 ### Creating New Features
 
-**1. Choose the appropriate section (Admin or Guest):**
-- Admin features: Use AdminControllers, AdminServices, AdminRepositories, and AdminPages
-- Guest/Public features: Use GuestControllers, GuestServices, GuestRepositories, and GuestPages
+**1. Determine the feature context and choose the appropriate directory structure:**
+
+- **Admin Features**: Use AdminControllers, AdminServices, AdminRepositories, and AdminPages
+  - Example: `Admin Dashboard` → AdminControllers/DashboardController.php
+
+- **Public/Guest Features** (unauthenticated only): Use GuestControllers, GuestServices, GuestRepositories, and GuestPages
+  - Example: `Blog` → GuestControllers/BlogController.php, GuestPages/Blog/
+  - Middleware: `['web', 'guest']`
+
+- **Authenticated User Features** (logged-in users only): Use GuestControllers/AuthAccessControllers/, GuestServices/AuthAccessServices/, etc.
+  - Example: `User Profile` → GuestControllers/AuthAccessControllers/ProfileController.php, GuestPages/AuthAccessPages/Profile/
+  - Middleware: `['web', 'auth']`
 
 **2. Create the Database Model:**
 ```bash
@@ -405,106 +421,176 @@ public function share(Request $request): array
 
 These props are automatically available in all pages via `usePage().props`. Always use TypeScript interfaces to type your page props.
 
+## Code Organization Strategy
+
+### Directory Structure Breakdown
+
+The codebase uses a **context-based organization** to maintain clean separation of concerns:
+
+**Three Main Contexts:**
+
+1. **Admin** - Administrative panel (admin users only)
+   - Location: `/AdminControllers/`, `/AdminServices/`, `/AdminRepositories/`, `/AdminPages/`
+   - Guard: `auth:admin`
+   - Purpose: Admin dashboard, user management, system settings
+
+2. **Guest (Public)** - Public-facing pages (unauthenticated users)
+   - Location: `/GuestControllers/`, `/GuestServices/`, `/GuestRepositories/`, `/GuestPages/`
+   - Middleware: `guest` (unauthenticated only)
+   - Purpose: Home, about, features, blog, contact, family explorer
+
+3. **Guest AuthAccess** - User-specific pages (authenticated guest users only)
+   - Location: `/GuestControllers/AuthAccessControllers/`, `/GuestServices/AuthAccessServices/`, `/GuestRepositories/AuthAccessRepositories/`, `/GuestPages/AuthAccessPages/`
+   - Middleware: `auth` (authenticated users only)
+   - Purpose: User dashboard, profile, family trees, settings, preferences
+
+**Why This Organization?**
+- **Clear Boundaries**: Each context has its own controllers, services, repositories, and pages
+- **Middleware Clarity**: Easy to see which middleware applies (guest vs auth)
+- **Feature Isolation**: Related features grouped together
+- **Scalability**: New features naturally fit into appropriate directories
+
+**Form Requests Organization:**
+- `/GuestRequests/` - Public form requests (login, register, contact form)
+- `/GuestRequests/AuthAccessRequests/` - Authenticated user form requests (profile updates, family tree modifications)
+
 ## Code Organization Guidelines
 
 ### Controllers
-- Organize into AdminControllers/ and GuestControllers/ directories
+- Organize into three main directories:
+  - `AdminControllers/` - Admin panel controllers (auth:admin middleware)
+  - `GuestControllers/` - Public/unauthenticated guest controllers (guest middleware)
+  - `GuestControllers/AuthAccessControllers/` - Authenticated user controllers (auth middleware)
 - Keep controllers focused on request/response handling only
 - Inject repositories or services via constructor dependency injection
 - Never access models or database directly—delegate to repositories/services
 - Return `Inertia::render()` for page views with typed data from services
-- For AdminPages: `Inertia::render('AdminPages/...')`
-- For GuestPages: `Inertia::render('GuestPages/...')`
+- Render paths match directory structure:
+  - `Inertia::render('AdminPages/...')` for admin pages
+  - `Inertia::render('GuestPages/...')` for public guest pages
+  - `Inertia::render('GuestPages/AuthAccessPages/...')` for authenticated user pages
 
-Example:
+Examples:
 ```php
-// app/Http/Controllers/AdminControllers/FamilyController.php
-use App\Actions\AdminServices\FamilyService;
+// Admin: app/Http/Controllers/AdminControllers/DashboardController.php
+namespace App\Http\Controllers\AdminControllers;
+use App\Actions\AdminServices\DashboardService;
 
-class FamilyController
-{
-    public function __construct(private FamilyService $familyService) {}
+class DashboardController {
+    public function __construct(private DashboardService $service) {}
+    public function index() {
+        return Inertia::render('AdminPages/Dashboard', ['stats' => $this->service->getStats()]);
+    }
+}
 
-    public function index()
-    {
-        $members = $this->familyService->getAllMembers();
-        return Inertia::render('AdminPages/Family/Index', ['members' => $members]);
+// Public Guest: app/Http/Controllers/GuestControllers/BlogController.php
+namespace App\Http\Controllers\GuestControllers;
+use App\Actions\GuestServices\BlogService;
+
+class BlogController {
+    public function __construct(private BlogService $service) {}
+    public function index() {
+        return Inertia::render('GuestPages/Blog/Index', ['posts' => $this->service->getAllPosts()]);
+    }
+}
+
+// Authenticated User: app/Http/Controllers/GuestControllers/AuthAccessControllers/ProfileController.php
+namespace App\Http\Controllers\GuestControllers\AuthAccessControllers;
+use App\Actions\GuestServices\AuthAccessServices\ProfileService;
+
+class ProfileController {
+    public function __construct(private ProfileService $service) {}
+    public function show() {
+        $user = auth()->user();
+        return Inertia::render('GuestPages/AuthAccessPages/Profile', ['profile' => $this->service->getProfile($user)]);
     }
 }
 ```
 
 ### Services (Business Logic)
-- Located in `/app/Actions/AdminServices/` or `/app/Actions/GuestServices/`
+- Located in `/app/Actions/AdminServices/`, `/app/Actions/GuestServices/`, or `/app/Actions/GuestServices/AuthAccessServices/`
 - Contain all business logic, calculations, and data processing
 - Inject repositories via constructor to access data
 - Should be stateless and reusable
-- One service per feature/entity (e.g., FamilyService, UserService)
+- One service per feature/entity (e.g., FamilyService, ProfileService)
 - Handle complex operations and data transformations
 - Can call other services if needed
+- Match controller location: admin services for admin controllers, guest for public, AuthAccessServices for authenticated user features
 
-Example:
+Examples:
 ```php
-// app/Actions/AdminServices/FamilyService.php
-use App\Repositories\AdminRepositories\FamilyRepository;
+// Admin: app/Actions/AdminServices/DashboardService.php
+use App\Repositories\AdminRepositories\UserRepository;
 
-class FamilyService
-{
-    public function __construct(private FamilyRepository $familyRepo) {}
-
-    public function getAllMembers()
-    {
-        $members = $this->familyRepo->all();
-        return $members->sortBy('name')->values();
+class DashboardService {
+    public function __construct(private UserRepository $userRepo) {}
+    public function getStats() {
+        return [
+            'total_users' => $this->userRepo->count(),
+            'active_today' => $this->userRepo->activeTodayCount(),
+        ];
     }
+}
 
-    public function createMember(array $data)
-    {
-        // Business logic and validation
-        return $this->familyRepo->create($data);
+// Public Guest: app/Actions/GuestServices/BlogService.php
+use App\Repositories\GuestRepositories\BlogRepository;
+
+class BlogService {
+    public function __construct(private BlogRepository $blogRepo) {}
+    public function getAllPosts() {
+        return $this->blogRepo->all()->sortByDesc('published_at');
+    }
+}
+
+// Authenticated User: app/Actions/GuestServices/AuthAccessServices/ProfileService.php
+use App\Repositories\GuestRepositories\AuthAccessRepositories\ProfileRepository;
+
+class ProfileService {
+    public function __construct(private ProfileRepository $profileRepo) {}
+    public function getProfile(User $user) {
+        return $this->profileRepo->findByUser($user);
     }
 }
 ```
 
 ### Repositories (Data Access)
-- Located in `/app/Repositories/AdminRepositories/` or `/app/Repositories/GuestRepositories/`
+- Located in `/app/Repositories/AdminRepositories/`, `/app/Repositories/GuestRepositories/`, or `/app/Repositories/GuestRepositories/AuthAccessRepositories/`
 - Abstract database/model interactions from business logic
 - Handle all model queries and database operations
-- One repository per model (e.g., FamilyRepository, UserRepository)
+- One repository per model (e.g., FamilyRepository, ProfileRepository, UserRepository)
 - Return models or collections, not raw queries
 - Keep queries focused and testable
+- Match service location: admin repos for admin services, guest for public services, AuthAccessRepositories for authenticated user services
 
-Example:
+Examples:
 ```php
-// app/Repositories/AdminRepositories/FamilyRepository.php
-use App\Models\Family;
+// Admin: app/Repositories/AdminRepositories/UserRepository.php
+use App\Models\User;
 
-class FamilyRepository
-{
-    public function all()
-    {
-        return Family::all();
-    }
+class UserRepository {
+    public function all() { return User::all(); }
+    public function find(int $id) { return User::findOrFail($id); }
+    public function count() { return User::count(); }
+    public function activeTodayCount() { return User::whereDate('last_seen', today())->count(); }
+}
 
-    public function find(int $id)
-    {
-        return Family::findOrFail($id);
-    }
+// Public Guest: app/Repositories/GuestRepositories/BlogRepository.php
+use App\Models\BlogPost;
 
-    public function create(array $data)
-    {
-        return Family::create($data);
-    }
+class BlogRepository {
+    public function all() { return BlogPost::published()->get(); }
+    public function find(int $id) { return BlogPost::findOrFail($id); }
+}
 
-    public function update(int $id, array $data)
-    {
-        $family = $this->find($id);
-        $family->update($data);
-        return $family;
-    }
+// Authenticated User: app/Repositories/GuestRepositories/AuthAccessRepositories/ProfileRepository.php
+use App\Models\UserProfile;
 
-    public function delete(int $id)
-    {
-        return $this->find($id)->delete();
+class ProfileRepository {
+    public function findByUser(User $user) { return UserProfile::where('user_id', $user->id)->first(); }
+    public function updateProfile(User $user, array $data) {
+        $profile = $this->findByUser($user) ?? new UserProfile(['user_id' => $user->id]);
+        $profile->update($data);
+        return $profile;
     }
 }
 ```
@@ -517,10 +603,33 @@ class FamilyRepository
 - Keep model code minimal—business logic belongs in services
 
 ### Routes
-- Web routes in `/routes/web.php` for page rendering
-- Use route groups for middleware protection (auth, admin guards)
-- Separate admin routes (require admin guard) from guest routes
-- Example: `Route::middleware(['auth:admin'])->group(...)`
+- Web routes in `/routes/web.php` for page rendering organized by context
+- Use route groups for middleware protection with clear separation
+
+**Three Route Groups:**
+
+1. **Admin Routes** - Protected by `auth:admin` guard
+   ```php
+   Route::middleware(['auth:admin'])->group(function () {
+       Route::get('/admin/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
+   });
+   ```
+
+2. **Public Guest Routes** - Protected by `guest` middleware (unauthenticated only)
+   ```php
+   Route::middleware(['web', 'guest'])->group(function () {
+       Route::get('/', [HomeController::class, 'index'])->name('home');
+       Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
+   });
+   ```
+
+3. **Authenticated User Routes** - Protected by `auth` middleware (logged-in users)
+   ```php
+   Route::middleware(['web', 'auth'])->group(function () {
+       Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+       Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
+   });
+   ```
 
 ### Database
 - Migrations in `/database/migrations/` are version controlled
@@ -529,11 +638,25 @@ class FamilyRepository
 - Both user and admin tables should be migrated as needed
 
 ### Frontend Components
-- Admin pages in `/resources/js/Pages/AdminPages/`
-- Guest pages in `/resources/js/Pages/GuestPages/`
-- Reusable components in `/resources/js/Components/`
-- Always type props with TypeScript interfaces
-- AdminLayout and GuestLayout provide consistent structure
+- **Admin pages** in `/resources/js/Pages/AdminPages/`
+  - Used with AdminLayout
+  - For routes protected by `auth:admin`
+
+- **Public Guest pages** in `/resources/js/Pages/GuestPages/`
+  - Used with GuestLayout
+  - For routes protected by `guest` middleware (unauthenticated)
+
+- **Authenticated User pages** in `/resources/js/Pages/GuestPages/AuthAccessPages/`
+  - Used with GuestLayout or AuthLayout (if different)
+  - For routes protected by `auth` middleware (logged-in users)
+
+- **Reusable components** in `/resources/js/Components/`
+  - Shared across all contexts
+  - Always type props with TypeScript interfaces
+
+- **Layouts** organize consistent structure
+  - AdminLayout for admin pages
+  - GuestLayout for both public and authenticated user pages
 
 ## Build & Deployment
 
