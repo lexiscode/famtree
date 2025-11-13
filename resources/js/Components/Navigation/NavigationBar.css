@@ -128,7 +128,6 @@
   display: flex;
   gap: var(--space-sm);
   align-items: center;
-  margin-top: var(--space-md);
 }
 
 .auth-buttons .nav-item {
