@@ -3,8 +3,9 @@
 namespace App\Http\Controllers\GuestControllers;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\GuestRequests\LoginRequest;
+use App\Http\Requests\GuestRequests\RegisterRequest;
 use App\Actions\GuestServices\AuthService;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 
@@ -17,16 +18,10 @@ class AuthController extends Controller
     /**
      * Register a new user
      */
-    public function register(Request $request): JsonResponse
+    public function register(RegisterRequest $request): JsonResponse
     {
         try {
-            $validated = $request->validate([
-                'firstName' => 'required|string|min:2',
-                'lastName' => 'required|string|min:2',
-                'username' => 'required|string|min:3|unique:users',
-                'email' => 'required|email|unique:users',
-                'password' => 'required|string|min:8|confirmed',
-            ]);
+            $validated = $request->validated();
 
             $user = $this->authService->register($validated);
 
@@ -52,14 +47,10 @@ class AuthController extends Controller
     /**
      * Login user
      */
-    public function login(Request $request): JsonResponse
+    public function login(LoginRequest $request): JsonResponse
     {
         try {
-            $validated = $request->validate([
-                'emailOrUsername' => 'required|string',
-                'password' => 'required|string',
-                'rememberMe' => 'boolean',
-            ]);
+            $validated = $request->validated();
 
             $user = $this->authService->login(
                 $validated['emailOrUsername'],
