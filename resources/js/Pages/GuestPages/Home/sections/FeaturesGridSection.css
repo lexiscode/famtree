@@ -6,7 +6,7 @@
   padding: var(--space-4xl) var(--space-lg);
   padding-top: 5rem;
   padding-bottom: 5rem;
-  background: linear-gradient(180deg, var(--color-bg-secondary) 0%, var(--color-bg-primary) 100%);
+  background: linear-gradient(180deg, #F8FAFC 0%, #FFFFFF 100%);
 }
 
 .features-container {
