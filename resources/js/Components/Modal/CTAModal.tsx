@@ -24,7 +24,6 @@ const registerSchema = z.object({
     .regex(/[a-z]/, 'Password must contain a lowercase letter')
     .regex(/[0-9]/, 'Password must contain a number'),
   confirmPassword: z.string().min(1, 'Please confirm your password'),
-  familyName: z.string().optional().default(''),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ['confirmPassword'],
@@ -75,7 +74,6 @@ export default function CTAModal({
       email: '',
       password: '',
       confirmPassword: '',
-      familyName: '',
     },
   });
 
@@ -575,19 +573,6 @@ export default function CTAModal({
                     {registerForm.formState.errors.confirmPassword.message}
                   </span>
                 )}
-              </div>
-
-              {/* Family Name Field (Optional) */}
-              <div className="form-group">
-                <label htmlFor="family-name">Family Name (Optional)</label>
-                <input
-                  id="family-name"
-                  type="text"
-                  placeholder="e.g., Okafor Family"
-                  {...registerForm.register('familyName')}
-                  disabled={isSubmitting}
-                />
-                <small>You can create or join a family later</small>
               </div>
 
               {/* Submit Button */}
