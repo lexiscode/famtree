@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { usePage } from '@inertiajs/react';
-import GuestLayout from '@/Layouts/GuestLayout';
+import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
 import OnboardingProgress from '@/Components/Onboarding/OnboardingProgress';
 import BasicInfoStep from './Steps/BasicInfoStep';
 import FamilyStatusStep from './Steps/FamilyStatusStep';
@@ -69,7 +69,7 @@ export default function OnboardingIndex({ onboarding, progress }: Props) {
     };
 
     return (
-        <GuestLayout>
+        <AuthAccessLayout>
             <div className="onboarding-container">
                 <div className="onboarding-wrapper">
                     {/* Header */}
@@ -95,6 +95,6 @@ export default function OnboardingIndex({ onboarding, progress }: Props) {
                     </div>
                 </div>
             </div>
-        </GuestLayout>
+        </AuthAccessLayout>
     );
 }
