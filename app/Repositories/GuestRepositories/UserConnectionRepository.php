@@ -226,4 +226,60 @@ class UserConnectionRepository
         // Get the actual user records
         return User::whereIn('id', $mutualIds)->get();
     }
+
+    /**
+     * Get relationship type(s) between two users
+     *
+     * @param int $userId1
+     * @param int $userId2
+     * @return array|null - Array of relationship types or null if not connected
+     */
+    public function getConnectionType(int $userId1, int $userId2): ?array
+    {
+        $connections = UserConnection::where('status', 'accepted')
+            ->where(function ($q) use ($userId1, $userId2) {
+                $q->where(function ($q) use ($userId1, $userId2) {
+                    $q->where('requester_user_id', $userId1)
+                      ->where('recipient_user_id', $userId2);
+                })
+                ->orWhere(function ($q) use ($userId1, $userId2) {
+                    $q->where('requester_user_id', $userId2)
+                      ->where('recipient_user_id', $userId1);
+                });
+            })
+            ->pluck('relationship_type')
+            ->toArray();
+
+        return count($connections) > 0 ? $connections : null;
+    }
+
+    /**
+     * Get pending request between two users (if any)
+     *
+     * @param int $userId1
+     * @param int $userId2
+     * @return UserConnection|null
+     */
+    public function getPendingRequestBetween(int $userId1, int $userId2): ?UserConnection
+    {
+        return UserConnection::where('status', 'pending')
+            ->where('requester_user_id', $userId2)
+            ->where('recipient_user_id', $userId1)
+            ->first();
+    }
+
+    /**
+     * Get sent request between two users (if any)
+     *
+     * @param int $userId1
+     * @param int $userId2
+     * @return UserConnection|null
+     */
+    public function getSentRequestBetween(int $userId1, int $userId2): ?UserConnection
+    {
+        return UserConnection::where('status', 'pending')
+            ->where('requester_user_id', $userId1)
+            ->where('recipient_user_id', $userId2)
+            ->first();
+    }
 }

@@ -13,6 +13,7 @@ use App\Http\Controllers\GuestControllers\FamilyPreviewController;
 use App\Http\Controllers\GuestControllers\FamilyExplorerController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\LandingPageController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\ConnectionRequestController;
+use App\Http\Controllers\GuestControllers\AuthAccessControllers\ProfileController;
 use App\Http\Controllers\GuestControllers\OnboardingController;
 
 
@@ -83,5 +84,11 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::post('/{connection}/undo-acceptance', [ConnectionRequestController::class, 'undoAcceptance'])->name('connections.undo-acceptance');
         Route::get('/api/search-users', [ConnectionRequestController::class, 'searchUsers'])->name('connections.search-users');
         Route::get('/api/relationship-types', [ConnectionRequestController::class, 'relationshipTypes'])->name('connections.relationship-types');
+    });
+
+    // Profile routes
+    Route::prefix('profile')->group(function () {
+        Route::get('/me', [ProfileController::class, 'myProfile'])->name('profile.me');
+        Route::get('/{userId}', [ProfileController::class, 'viewProfile'])->name('profile.view');
     });
 });
