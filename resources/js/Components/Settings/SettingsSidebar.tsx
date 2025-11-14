@@ -1,4 +1,4 @@
-import { ShieldCheck, Lock, Bell } from 'lucide-react';
+import { ShieldCheck, Lock, Bell, ArrowLeft } from 'lucide-react';
 
 interface SettingsSidebarProps {
     active: 'account' | 'privacy' | 'notifications';
@@ -45,6 +45,18 @@ export default function SettingsSidebar({ active }: SettingsSidebarProps) {
                     </a>
                 </li>
             </ul>
+
+            {/* Back to Profile Button */}
+            <div className="settings-sidebar-footer">
+                <a
+                    href={route('profile.me')}
+                    className="settings-nav-link settings-nav-back"
+                    title="Back to your profile"
+                >
+                    <ArrowLeft size={18} style={{ display: 'inline' }} />
+                    Back to Profile
+                </a>
+            </div>
         </div>
     );
 }

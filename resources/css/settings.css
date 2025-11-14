@@ -223,6 +223,26 @@
     color: #87CEEB;
 }
 
+.settings-sidebar-footer {
+    padding: 1.5rem;
+    border-top: 1px solid var(--settings-border);
+    margin-top: auto;
+}
+
+.settings-nav-back {
+    color: #87CEEB;
+    background: rgba(0, 82, 232, 0.1);
+    border-radius: 8px;
+    padding: 0.875rem 1.25rem !important;
+    font-size: 0.9rem !important;
+    justify-content: flex-start;
+}
+
+.settings-nav-back:hover {
+    background: rgba(0, 82, 232, 0.15) !important;
+    transform: translateX(-3px) !important;
+}
+
 /* ============================================
    Settings Main Content
    ============================================ */
