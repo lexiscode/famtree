@@ -12,6 +12,7 @@ use App\Http\Controllers\GuestControllers\HowItWorksController;
 use App\Http\Controllers\GuestControllers\FamilyPreviewController;
 use App\Http\Controllers\GuestControllers\FamilyExplorerController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\LandingPageController;
+use App\Http\Controllers\GuestControllers\AuthAccessControllers\ConnectionRequestController;
 use App\Http\Controllers\GuestControllers\OnboardingController;
 
 
@@ -67,5 +68,20 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::post('/education-work', [OnboardingController::class, 'saveEducationWork'])->name('onboarding.save.education-work');
         Route::post('/siblings-search', [OnboardingController::class, 'saveSiblingsSearch'])->name('onboarding.save.siblings-search');
         Route::post('/complete', [OnboardingController::class, 'complete'])->name('onboarding.complete');
+    });
+
+    // Connection routes
+    Route::prefix('connections')->group(function () {
+        Route::get('/', [ConnectionRequestController::class, 'index'])->name('connections.index');
+        Route::get('/pending', [ConnectionRequestController::class, 'pending'])->name('connections.pending');
+        Route::get('/sent', [ConnectionRequestController::class, 'sent'])->name('connections.sent');
+        Route::get('/create', [ConnectionRequestController::class, 'create'])->name('connections.create');
+        Route::post('/request', [ConnectionRequestController::class, 'store'])->name('connections.store');
+        Route::post('/{connection}/accept', [ConnectionRequestController::class, 'accept'])->name('connections.accept');
+        Route::post('/{connection}/decline', [ConnectionRequestController::class, 'decline'])->name('connections.decline');
+        Route::post('/{connection}/undo-request', [ConnectionRequestController::class, 'undoRequest'])->name('connections.undo-request');
+        Route::post('/{connection}/undo-acceptance', [ConnectionRequestController::class, 'undoAcceptance'])->name('connections.undo-acceptance');
+        Route::get('/api/search-users', [ConnectionRequestController::class, 'searchUsers'])->name('connections.search-users');
+        Route::get('/api/relationship-types', [ConnectionRequestController::class, 'relationshipTypes'])->name('connections.relationship-types');
     });
 });

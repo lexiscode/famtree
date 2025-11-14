@@ -103,6 +103,7 @@
   - Check 24h window for undo operations
 
 ### 3.3 Connection UI Pages
+Pls the UI needs to be very sleek as usual, in a much attractive and professional look, that can increase conversation rate. Use the app platform's brand colors too. Use both bootstrap, bootstrap icons and css in your designs.
 - [ ] **Frontend**: Create `AuthAccessPages/Connections/MyConnections.tsx`
   - Show all accepted connections grouped by relationship type
   - Display connection cards with user info
