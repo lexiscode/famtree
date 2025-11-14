@@ -93,6 +93,15 @@
   z-index: 1;
 }
 
+.connections-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 2rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(0, 82, 232, 0.1);
+}
+
 .connections-header-title {
   font-size: 2rem;
   font-weight: 700;
