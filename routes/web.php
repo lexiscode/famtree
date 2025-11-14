@@ -14,6 +14,7 @@ use App\Http\Controllers\GuestControllers\FamilyExplorerController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\LandingPageController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\ConnectionRequestController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\ProfileController;
+use App\Http\Controllers\GuestControllers\AuthAccessControllers\FamilyTreeController;
 use App\Http\Controllers\GuestControllers\OnboardingController;
 
 
@@ -90,5 +91,19 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::prefix('profile')->group(function () {
         Route::get('/me', [ProfileController::class, 'myProfile'])->name('profile.me');
         Route::get('/{userId}', [ProfileController::class, 'viewProfile'])->name('profile.view');
+    });
+
+    // Family Tree routes
+    Route::prefix('family-tree')->group(function () {
+        Route::get('/', [FamilyTreeController::class, 'index'])->name('family-tree.index');
+        Route::get('/create', [FamilyTreeController::class, 'create'])->name('family-tree.create');
+        Route::post('/', [FamilyTreeController::class, 'store'])->name('family-tree.store');
+        Route::get('/{treeId}', [FamilyTreeController::class, 'show'])->name('family-tree.show');
+        Route::get('/{treeId}/edit', [FamilyTreeController::class, 'edit'])->name('family-tree.edit');
+        Route::put('/{treeId}', [FamilyTreeController::class, 'update'])->name('family-tree.update');
+        Route::delete('/{treeId}', [FamilyTreeController::class, 'destroy'])->name('family-tree.destroy');
+        Route::post('/{treeId}/add-member', [FamilyTreeController::class, 'addMember'])->name('family-tree.add-member');
+        Route::delete('/{treeId}/members/{userId}', [FamilyTreeController::class, 'removeMember'])->name('family-tree.remove-member');
+        Route::get('/{treeId}/data', [FamilyTreeController::class, 'getTreeData'])->name('family-tree.data');
     });
 });

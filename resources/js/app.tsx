@@ -6,6 +6,7 @@ import '../css/variables.css';
 import '../css/onboarding.css';
 import '../css/connections.css';
 import '../css/profile.css';
+import '../css/family-tree.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 
