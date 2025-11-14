@@ -829,6 +829,27 @@
    INFO & TIPS BOXES
    ============================================================================ */
 
+.connections-info-box {
+  border-radius: 10px;
+  padding: 1.25rem;
+  margin-top: 1.5rem;
+  display: block;
+  position: relative;
+  z-index: 1;
+  backdrop-filter: blur(10px);
+  background: rgba(255, 193, 7, 0.1);
+  border: 1px solid rgba(255, 193, 7, 0.3);
+  color: #FFC107;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.connections-info-box strong {
+  display: inline;
+  color: #FFD700;
+  font-weight: 700;
+}
+
 .connection-info-box {
   border-radius: 10px;
   padding: 1.25rem;
