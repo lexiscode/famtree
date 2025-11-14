@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { Link } from '@inertiajs/react';
 import GuestLayout from '@/Layouts/GuestLayout';
-import { Plus, Globe, Lock, Users, Calendar, ArrowRight } from 'lucide-react';
+import { Plus, Globe, Lock, Users, Calendar, ArrowRight, Sparkles, Zap } from 'lucide-react';
 
 interface User {
     id: number;
@@ -30,10 +30,10 @@ export default function Index({ myTrees, memberTrees }: Props) {
     }, []);
 
     const TreeCard = ({ tree, isOwner = false }: { tree: TreeData; isOwner?: boolean }) => (
-        <Link href={route('family-tree.show', { treeId: tree.id })} className="tree-card" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+        <Link href={route('family-tree.show', { treeId: tree.id })} className="tree-card">
             <div className="tree-card-header">
                 <h3 className="tree-card-title">{tree.name}</h3>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                     {tree.is_public ? (
                         <div className="tree-card-badge public">
                             <Globe size={14} />
@@ -43,7 +43,11 @@ export default function Index({ myTrees, memberTrees }: Props) {
                             <Lock size={14} />
                         </div>
                     )}
-                    {isOwner && <div className="tree-card-badge owner">Owner</div>}
+                    {isOwner && (
+                        <div className="tree-card-badge owner">
+                            <Sparkles size={14} />
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -67,7 +71,7 @@ export default function Index({ myTrees, memberTrees }: Props) {
             )}
 
             <div className="tree-card-action">
-                View Tree
+                <span>View Tree</span>
                 <ArrowRight size={16} />
             </div>
         </Link>
@@ -78,15 +82,17 @@ export default function Index({ myTrees, memberTrees }: Props) {
             <div className="family-tree-page">
                 <div className="family-tree-container">
                     {/* Page Header */}
-                    <div className="tree-header" style={{ marginBottom: '2rem' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', flexWrap: 'wrap' }}>
-                            <div>
-                                <h1 style={{ margin: '0 0 0.5rem 0', fontFamily: "'Playfair Display', serif", fontSize: '2rem', fontWeight: 700 }}>
-                                    Family Trees
+                    <div className="tree-header" style={{ marginBottom: '2.5rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1.5rem', flexWrap: 'wrap' }}>
+                            <div style={{ flex: 1 }}>
+                                <h1 style={{ margin: '0 0 0.5rem 0', fontFamily: "'Playfair Display', serif", fontSize: '2.25rem', fontWeight: 800, color: '#1a1a1a', letterSpacing: '-0.5px' }}>
+                                    Your Family Trees
                                 </h1>
-                                <p style={{ margin: 0, color: '#6C757D', fontSize: '0.95rem' }}>Create and manage your family trees</p>
+                                <p style={{ margin: 0, color: '#6C757D', fontSize: '1rem', lineHeight: 1.6 }}>
+                                    Create and manage family trees to connect with relatives
+                                </p>
                             </div>
-                            <Link href={route('family-tree.create')} className="tree-action-btn" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none' }}>
+                            <Link href={route('family-tree.create')} className="tree-action-btn" style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', textDecoration: 'none', whiteSpace: 'nowrap' }}>
                                 <Plus size={18} />
                                 Create Tree
                             </Link>
@@ -94,24 +100,29 @@ export default function Index({ myTrees, memberTrees }: Props) {
                     </div>
 
                     {/* My Trees Section */}
-                    <div style={{ marginBottom: '2rem' }}>
-                        <h2 style={{ marginBottom: '1rem', color: '#1a1a1a', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <Users size={24} style={{ color: '#0052E8' }} />
-                            My Trees ({myTrees.length})
-                        </h2>
+                    <div style={{ marginBottom: '3rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                            <Zap size={24} style={{ color: '#0052E8' }} />
+                            <h2 style={{ margin: 0, color: '#1a1a1a', fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.3px' }}>
+                                My Trees
+                            </h2>
+                            <span style={{ background: 'linear-gradient(135deg, #0052E8, #00D4FF)', color: 'white', padding: '0.35rem 0.75rem', borderRadius: '50px', fontSize: '0.8rem', fontWeight: 700, marginLeft: '0.5rem' }}>
+                                {myTrees.length}
+                            </span>
+                        </div>
 
                         {myTrees.length === 0 ? (
                             <div className="tree-empty-state">
                                 <div className="tree-empty-icon">🌳</div>
                                 <h3 className="tree-empty-title">No family trees yet</h3>
-                                <p className="tree-empty-text">Create your first family tree to get started.</p>
+                                <p className="tree-empty-text">Create your first family tree to start connecting with your relatives and building your family history.</p>
                                 <Link href={route('family-tree.create')} className="tree-empty-action" style={{ textDecoration: 'none', display: 'inline-flex' }}>
                                     <Plus size={18} />
                                     Create First Tree
                                 </Link>
                             </div>
                         ) : (
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.75rem' }}>
                                 {myTrees.map((tree) => (
                                     <TreeCard key={tree.id} tree={tree} isOwner={true} />
                                 ))}
@@ -122,149 +133,51 @@ export default function Index({ myTrees, memberTrees }: Props) {
                     {/* Member Trees Section */}
                     {memberTrees.length > 0 && (
                         <div>
-                            <h2 style={{ marginBottom: '1rem', color: '#1a1a1a', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
                                 <Users size={24} style={{ color: '#00D97F' }} />
-                                Trees I'm Part Of ({memberTrees.length})
-                            </h2>
+                                <h2 style={{ margin: 0, color: '#1a1a1a', fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.3px' }}>
+                                    Trees I'm Part Of
+                                </h2>
+                                <span style={{ background: 'linear-gradient(135deg, #00D97F, #00E8A0)', color: 'white', padding: '0.35rem 0.75rem', borderRadius: '50px', fontSize: '0.8rem', fontWeight: 700, marginLeft: '0.5rem' }}>
+                                    {memberTrees.length}
+                                </span>
+                            </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.75rem' }}>
                                 {memberTrees.map((tree) => (
                                     <TreeCard key={tree.id} tree={tree} isOwner={false} />
                                 ))}
                             </div>
                         </div>
                     )}
+
+                    {/* Empty Suggestion Box */}
+                    {myTrees.length === 0 && memberTrees.length === 0 && (
+                        <div
+                            style={{
+                                background: 'linear-gradient(135deg, rgba(0, 82, 232, 0.08) 0%, rgba(0, 212, 255, 0.05) 100%)',
+                                border: '2px dashed rgba(0, 82, 232, 0.2)',
+                                borderRadius: '14px',
+                                padding: '2.5rem',
+                                textAlign: 'center',
+                                marginTop: '3rem',
+                            }}
+                        >
+                            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>👨‍👩‍👧‍👦</div>
+                            <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#1a1a1a', marginBottom: '0.75rem' }}>
+                                Start Your Family Journey
+                            </h3>
+                            <p style={{ color: '#6C757D', fontSize: '1rem', marginBottom: '1.5rem', lineHeight: 1.6, maxWidth: '500px', margin: '0 auto 1.5rem' }}>
+                                Create your first family tree today and connect with your relatives. Share your family history, build relationships, and keep your family story alive.
+                            </p>
+                            <Link href={route('family-tree.create')} className="tree-empty-action" style={{ textDecoration: 'none', display: 'inline-flex' }}>
+                                <Sparkles size={18} />
+                                Create Your First Tree
+                            </Link>
+                        </div>
+                    )}
                 </div>
             </div>
-
-            <style>{`
-                .tree-card {
-                    background: var(--tree-white);
-                    border: 2px solid var(--tree-border);
-                    border-radius: 12px;
-                    padding: 1.5rem;
-                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                    position: relative;
-                    overflow: hidden;
-                }
-
-                .tree-card::before {
-                    content: '';
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    height: 4px;
-                    background: linear-gradient(90deg, var(--tree-primary), var(--tree-info));
-                    transform: scaleX(0);
-                    transform-origin: left;
-                    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                }
-
-                .tree-card:hover {
-                    border-color: var(--tree-primary);
-                    box-shadow: var(--tree-shadow-hover);
-                    transform: translateY(-4px);
-                }
-
-                .tree-card:hover::before {
-                    transform: scaleX(1);
-                }
-
-                .tree-card-header {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: flex-start;
-                    margin-bottom: 0.75rem;
-                    gap: 1rem;
-                }
-
-                .tree-card-title {
-                    font-size: 1.1rem;
-                    font-weight: 700;
-                    color: #1a1a1a;
-                    margin: 0;
-                }
-
-                .tree-card-badge {
-                    display: inline-flex;
-                    align-items: center;
-                    gap: 0.35rem;
-                    padding: 0.4rem 0.75rem;
-                    background: var(--tree-primary-light);
-                    color: var(--tree-primary);
-                    border-radius: 12px;
-                    font-size: 0.75rem;
-                    font-weight: 600;
-                    white-space: nowrap;
-                }
-
-                .tree-card-badge.public {
-                    background: rgba(0, 217, 127, 0.1);
-                    color: var(--tree-success);
-                }
-
-                .tree-card-badge.private {
-                    background: rgba(255, 71, 87, 0.1);
-                    color: var(--tree-danger);
-                }
-
-                .tree-card-badge.owner {
-                    background: rgba(255, 215, 0, 0.1);
-                    color: #FFD700;
-                }
-
-                .tree-card-description {
-                    font-size: 0.85rem;
-                    color: #6C757D;
-                    margin: 0 0 0.75rem 0;
-                    line-height: 1.5;
-                    display: -webkit-box;
-                    -webkit-line-clamp: 2;
-                    -webkit-box-orient: vertical;
-                    overflow: hidden;
-                }
-
-                .tree-card-stats {
-                    display: flex;
-                    gap: 1rem;
-                    margin-bottom: 0.75rem;
-                    padding-bottom: 0.75rem;
-                    border-bottom: 1px solid var(--tree-border);
-                }
-
-                .tree-card-stat {
-                    display: flex;
-                    align-items: center;
-                    gap: 0.5rem;
-                    font-size: 0.85rem;
-                    color: #6C757D;
-                }
-
-                .tree-card-stat svg {
-                    color: var(--tree-primary);
-                }
-
-                .tree-card-creator {
-                    font-size: 0.8rem;
-                    color: #6C757D;
-                    margin-bottom: 0.75rem;
-                }
-
-                .tree-card-action {
-                    display: flex;
-                    align-items: center;
-                    justify-content: space-between;
-                    color: var(--tree-primary);
-                    font-weight: 600;
-                    font-size: 0.9rem;
-                    transition: all 0.2s ease;
-                }
-
-                .tree-card:hover .tree-card-action {
-                    gap: 0.25rem;
-                }
-            `}</style>
         </GuestLayout>
     );
 }

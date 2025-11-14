@@ -270,7 +270,7 @@ Pls the UI needs to be very sleek as usual, in a much attractive and professiona
   - "Switch Account" dropdown in navigation
   - "Back to Parent Account" button when viewing child
 
-NB: But the parent should not have total control of the child account though, pending when the child is of age. To which he/she will decide to change their passwords in order to have 
+NB: But the parent should not have total control of the child account though, pending when the child is of age. To which he/she will decide to change their passwords in order to have access to their accounts alone.
 ---
 
 ## 🎯 Phase 7: Status Management (Alive/Deceased)

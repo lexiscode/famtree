@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { usePage, router, Link } from '@inertiajs/react';
 import GuestLayout from '@/Layouts/GuestLayout';
-import { Users, Plus, Edit, Trash2, Download, Share2, Lock, Globe, Home, LogOut } from 'lucide-react';
+import { Users, Plus, Edit, Trash2, Download, Share2, Lock, Globe, Home, CheckCircle, XCircle } from 'lucide-react';
 
 interface User {
     id: number;
@@ -63,17 +63,11 @@ export default function MyFamilyTree({ tree, members, connections, stats, isOwne
     const { auth } = props;
     const user = auth?.user;
 
-    const [showAddMemberModal, setShowAddMemberModal] = useState(false);
-    const [selectedMember, setSelectedMember] = useState<TreeMember | null>(null);
     const [loading, setLoading] = useState(false);
 
-    const handleAddMember = useCallback(() => {
-        setShowAddMemberModal(true);
-    }, []);
-
     const handleRemoveMember = useCallback(
-        (memberId: number) => {
-            if (confirm('Are you sure you want to remove this member from the tree?')) {
+        (memberId: number, memberName: string) => {
+            if (confirm(`Are you sure you want to remove ${memberName} from the tree?`)) {
                 setLoading(true);
                 router.delete(
                     route('family-tree.remove-member', { treeId: tree.id, userId: memberId }),
@@ -83,7 +77,6 @@ export default function MyFamilyTree({ tree, members, connections, stats, isOwne
                         },
                         onError: () => {
                             setLoading(false);
-                            alert('Failed to remove member. Please try again.');
                         },
                     }
                 );
@@ -101,14 +94,12 @@ export default function MyFamilyTree({ tree, members, connections, stats, isOwne
                 },
                 onError: () => {
                     setLoading(false);
-                    alert('Failed to delete tree. Please try again.');
                 },
             });
         }
     }, [tree.id]);
 
     const handleExportTree = useCallback(() => {
-        // Export as JSON for now
         const data = {
             tree: tree,
             members: members,
@@ -116,34 +107,18 @@ export default function MyFamilyTree({ tree, members, connections, stats, isOwne
         };
         const element = document.createElement('a');
         element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(JSON.stringify(data, null, 2)));
-        element.setAttribute('download', `${tree.name.replace(/\s+/g, '_')}.json`);
+        element.setAttribute('download', `${tree.name.replace(/\s+/g, '_')}_${new Date().getTime()}.json`);
         element.style.display = 'none';
         document.body.appendChild(element);
         element.click();
         document.body.removeChild(element);
     }, [tree, members, connections]);
 
-    const relationshipColor = (relationship: string) => {
-        switch (relationship.toLowerCase()) {
-            case 'father':
-            case 'mother':
-                return 'success';
-            case 'son':
-            case 'daughter':
-                return 'info';
-            case 'brother':
-            case 'sister':
-                return 'warning';
-            default:
-                return 'primary';
-        }
-    };
-
     return (
         <GuestLayout>
             <div className="family-tree-page">
                 <div className="family-tree-container">
-                    {/* Header Section */}
+                    {/* Premium Header */}
                     <div className="tree-header">
                         <div className="tree-header-top">
                             <div className="tree-title-section">
@@ -163,7 +138,7 @@ export default function MyFamilyTree({ tree, members, connections, stats, isOwne
                                     </div>
                                 )}
                                 {isOwner && (
-                                    <div className="tree-badge" style={{ background: 'rgba(255, 215, 0, 0.1)', color: '#FFD700' }}>
+                                    <div className="tree-badge owner">
                                         <Home size={16} />
                                         Owner
                                     </div>
@@ -174,10 +149,6 @@ export default function MyFamilyTree({ tree, members, connections, stats, isOwne
                         {/* Action Buttons */}
                         {isOwner && (
                             <div className="tree-header-actions">
-                                <button className="tree-action-btn" onClick={handleAddMember} disabled={loading}>
-                                    <Plus size={18} />
-                                    Add Member
-                                </button>
                                 <Link href={route('family-tree.edit', { treeId: tree.id })} className="tree-action-btn secondary">
                                     <Edit size={18} />
                                     Edit
@@ -186,22 +157,22 @@ export default function MyFamilyTree({ tree, members, connections, stats, isOwne
                                     <Download size={18} />
                                     Export
                                 </button>
-                                <button className="tree-action-btn secondary" onClick={handleDeleteTree} disabled={loading} style={{ color: '#FF4757', borderColor: '#FF4757' }}>
+                                <button className="tree-action-btn danger" onClick={handleDeleteTree} disabled={loading}>
                                     <Trash2 size={18} />
                                     Delete
                                 </button>
                             </div>
                         )}
 
-                        {/* Statistics */}
+                        {/* Statistics Grid */}
                         <div className="tree-stats">
                             <div className="tree-stat">
                                 <div className="tree-stat-value">{stats.member_count}</div>
-                                <div className="tree-stat-label">Members</div>
+                                <div className="tree-stat-label">Total Members</div>
                             </div>
                             <div className="tree-stat">
                                 <div className="tree-stat-value">{connections.length}</div>
-                                <div className="tree-stat-label">Connections</div>
+                                <div className="tree-stat-label">Relationships</div>
                             </div>
                             <div className="tree-stat">
                                 <div className="tree-stat-value">{new Date(stats.created_at).getFullYear()}</div>
@@ -214,134 +185,135 @@ export default function MyFamilyTree({ tree, members, connections, stats, isOwne
                         </div>
                     </div>
 
-                    {/* Tree Visualization */}
+                    {/* Members Grid */}
                     <div className="tree-visualization-wrapper">
-                        <h2 style={{ marginTop: 0, marginBottom: '1.5rem', color: '#1a1a1a', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <Users size={24} style={{ color: '#0052E8' }} />
+                        <h2>
+                            <Users size={24} />
                             Family Members
                         </h2>
 
                         {members.length === 0 ? (
                             <div className="tree-empty-state">
                                 <div className="tree-empty-icon">👥</div>
-                                <h3 className="tree-empty-title">No members yet</h3>
-                                <p className="tree-empty-text">Start building your family tree by adding members.</p>
+                                <h3 className="tree-empty-title">No members in your tree</h3>
+                                <p className="tree-empty-text">Start building your family tree by inviting members or adding connections.</p>
                                 {isOwner && (
-                                    <button className="tree-empty-action" onClick={handleAddMember}>
+                                    <Link href={route('family-tree.index')} className="tree-empty-action">
                                         <Plus size={18} />
-                                        Add First Member
-                                    </button>
+                                        Back to Trees
+                                    </Link>
                                 )}
                             </div>
                         ) : (
                             <div className="tree-members-container">
-                                {members.map((member) => (
-                                    <div key={member.id} className="tree-member-card">
-                                        {member.profile_image_url ? (
-                                            <img src={member.profile_image_url} alt={member.name} className="tree-member-avatar" />
-                                        ) : (
-                                            <div className="tree-member-avatar" style={{ background: '#E8F0FF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem' }}>
-                                                {member.name.charAt(0).toUpperCase()}
-                                            </div>
-                                        )}
-                                        <div className="tree-member-name">{member.name}</div>
-                                        <div className="tree-member-username">@{member.username}</div>
+                                {members.map((member) => {
+                                    const memberConnection = connections.find(
+                                        (c) => (c.from === tree.root_user_id && c.to === member.id) || (c.from === member.id && c.to === tree.root_user_id)
+                                    );
 
-                                        {/* Find relationship to root user */}
-                                        {connections.find((c) => (c.from === tree.root_user_id && c.to === member.id) || (c.from === member.id && c.to === tree.root_user_id)) && (
-                                            <div className={`tree-member-relation`} style={{ background: `rgba(0, ${member.status === 'alive' ? '217, 127' : '0, 0'}, 0.1)`, color: member.status === 'alive' ? '#00D97F' : '#FF4757' }}>
-                                                {connections.find((c) => c.to === member.id)?.relationship || 'Related'}
-                                            </div>
-                                        )}
+                                    return (
+                                        <div key={member.id} className="tree-member-card">
+                                            {member.profile_image_url ? (
+                                                <img src={member.profile_image_url} alt={member.name} className="tree-member-avatar" />
+                                            ) : (
+                                                <div className="tree-member-avatar" style={{ background: 'linear-gradient(135deg, #0052E8, #00D4FF)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem', color: 'white', fontWeight: 'bold' }}>
+                                                    {member.name.charAt(0).toUpperCase()}
+                                                </div>
+                                            )}
+                                            <div className="tree-member-name">{member.name}</div>
+                                            <div className="tree-member-username">@{member.username}</div>
 
-                                        <div className={`tree-member-status ${member.status === 'alive' ? 'alive' : 'deceased'}`}>
-                                            {member.status === 'alive' ? '✓ Alive' : '✗ Deceased'}
+                                            {memberConnection && (
+                                                <div className="tree-member-relation">
+                                                    {memberConnection.relationship}
+                                                </div>
+                                            )}
+
+                                            <div className={`tree-member-status ${member.status === 'alive' ? 'alive' : 'deceased'}`}>
+                                                {member.status === 'alive' ? (
+                                                    <>
+                                                        <CheckCircle size={16} />
+                                                        Alive
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <XCircle size={16} />
+                                                        Deceased
+                                                    </>
+                                                )}
+                                            </div>
+
+                                            {isOwner && member.id !== user?.id && (
+                                                <div className="tree-member-action">
+                                                    <Link href={route('profile.view', { userId: member.id })} className="tree-member-action-btn">
+                                                        View Profile
+                                                    </Link>
+                                                    <button className="tree-member-action-btn danger" onClick={() => handleRemoveMember(member.id, member.name)} disabled={loading}>
+                                                        Remove
+                                                    </button>
+                                                </div>
+                                            )}
+                                            {!isOwner && member.id !== user?.id && (
+                                                <div className="tree-member-action">
+                                                    <Link href={route('profile.view', { userId: member.id })} className="tree-member-action-btn" style={{ flex: 1 }}>
+                                                        View Profile
+                                                    </Link>
+                                                </div>
+                                            )}
                                         </div>
-
-                                        {isOwner && member.id !== user?.id && (
-                                            <div className="tree-member-action">
-                                                <Link href={route('profile.view', { userId: member.id })} className="tree-member-action-btn">
-                                                    View Profile
-                                                </Link>
-                                                <button className="tree-member-action-btn danger" onClick={() => handleRemoveMember(member.id)} disabled={loading}>
-                                                    Remove
-                                                </button>
-                                            </div>
-                                        )}
-                                        {!isOwner && member.id !== user?.id && (
-                                            <Link href={route('profile.view', { userId: member.id })} className="tree-member-action-btn" style={{ display: 'block', textAlign: 'center' }}>
-                                                View Profile
-                                            </Link>
-                                        )}
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         )}
                     </div>
 
-                    {/* Hierarchy View */}
-                    {members.length > 0 && (
-                        <div className="tree-hierarchy">
-                            <div style={{ marginBottom: '1rem' }}>
-                                <h2 style={{ color: '#1a1a1a', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Home size={24} style={{ color: '#0052E8' }} />
-                                    Tree Relationships
-                                </h2>
-                            </div>
+                    {/* Relationships Section */}
+                    {members.length > 1 && connections.length > 0 && (
+                        <div className="tree-visualization-wrapper" style={{ marginBottom: '2.5rem' }}>
+                            <h2>
+                                <Share2 size={24} />
+                                Key Relationships
+                            </h2>
 
-                            {connections.length > 0 ? (
-                                connections.slice(0, 10).map((connection, idx) => {
+                            <div style={{ display: 'grid', gap: '1rem' }}>
+                                {connections.slice(0, 5).map((connection, idx) => {
                                     const fromMember = members.find((m) => m.id === connection.from);
                                     const toMember = members.find((m) => m.id === connection.to);
 
-                                    return (
-                                        fromMember &&
-                                        toMember && (
-                                            <div key={idx} className="tree-level" style={{ borderLeftColor: `var(--tree-${relationshipColor(connection.relationship)})` }}>
-                                                <div className="tree-level-title">
-                                                    <span style={{ color: '#1a1a1a' }}>
-                                                        {fromMember.name} → {connection.relationship} → {toMember.name}
+                                    return fromMember && toMember ? (
+                                        <div key={idx} style={{ padding: '1rem', background: 'linear-gradient(135deg, #F0F6FF 0%, rgba(0, 212, 255, 0.05) 100%)', borderRadius: '12px', border: '1px solid rgba(0, 82, 232, 0.1)', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'linear-gradient(135deg, #0052E8, #00D4FF)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '0.9rem', fontWeight: 'bold', flexShrink: 0 }}>
+                                                {fromMember.name.charAt(0)}
+                                            </div>
+                                            <div style={{ flex: 1 }}>
+                                                <div style={{ fontSize: '0.9rem', fontWeight: '700', color: '#1a1a1a' }}>
+                                                    {fromMember.name}
+                                                </div>
+                                                <div style={{ fontSize: '0.8rem', color: '#6C757D', marginTop: '0.2rem' }}>
+                                                    <span style={{ background: 'rgba(0, 82, 232, 0.1)', padding: '0.2rem 0.6rem', borderRadius: '4px', color: '#0052E8', fontWeight: '600' }}>
+                                                        {connection.relationship}
                                                     </span>
                                                 </div>
                                             </div>
-                                        )
-                                    );
-                                })
-                            ) : (
-                                <div className="tree-level">
-                                    <p style={{ color: '#6C757D', margin: 0 }}>No explicit relationships defined yet.</p>
-                                </div>
-                            )}
+                                            <div style={{ textAlign: 'right' }}>
+                                                <div style={{ fontSize: '0.9rem', fontWeight: '700', color: '#1a1a1a' }}>
+                                                    {toMember.name}
+                                                </div>
+                                                <div style={{ fontSize: '0.8rem', color: '#6C757D', marginTop: '0.2rem' }}>
+                                                    @{toMember.username}
+                                                </div>
+                                            </div>
+                                            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'linear-gradient(135deg, #00D97F, #00E8A0)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '0.9rem', fontWeight: 'bold', flexShrink: 0 }}>
+                                                {toMember.name.charAt(0)}
+                                            </div>
+                                        </div>
+                                    ) : null;
+                                })}
+                            </div>
                         </div>
                     )}
                 </div>
             </div>
-
-            {/* Add Member Modal */}
-            {showAddMemberModal && (
-                <div className="tree-modal-overlay" onClick={() => setShowAddMemberModal(false)}>
-                    <div className="tree-modal" onClick={(e) => e.stopPropagation()}>
-                        <h3 className="tree-modal-title">Add Member to Family Tree</h3>
-                        <p style={{ color: '#6C757D', marginBottom: '1rem' }}>
-                            You can add members by inviting them or searching from your connections.
-                        </p>
-                        <div style={{ marginBottom: '1rem' }}>
-                            <input type="text" className="tree-form-input" placeholder="Search by name or username..." style={{ marginBottom: '0.75rem' }} />
-                            <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                                {/* Connection list would go here */}
-                                <p style={{ color: '#6C757D', textAlign: 'center', padding: '1rem' }}>
-                                    Connect with other users to add them to your tree.
-                                </p>
-                            </div>
-                        </div>
-                        <div className="tree-modal-actions">
-                            <button className="tree-modal-btn secondary" onClick={() => setShowAddMemberModal(false)}>
-                                Close
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </GuestLayout>
     );
 }

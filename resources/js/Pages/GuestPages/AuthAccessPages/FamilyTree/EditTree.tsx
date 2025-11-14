@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { router } from '@inertiajs/react';
 import GuestLayout from '@/Layouts/GuestLayout';
-import { ArrowLeft, AlertCircle } from 'lucide-react';
+import { ArrowLeft, AlertCircle, Info } from 'lucide-react';
 
 interface TreeData {
     id: number;
@@ -33,7 +33,6 @@ export default function EditTree({ tree }: Props) {
             [name]: newValue,
         }));
 
-        // Clear error for this field
         if (errors[name]) {
             setErrors((prev) => {
                 const newErrors = { ...prev };
@@ -71,7 +70,32 @@ export default function EditTree({ tree }: Props) {
             <div className="family-tree-page">
                 <div className="family-tree-container">
                     {/* Back Button */}
-                    <button onClick={handleCancel} style={{ marginBottom: '1.5rem', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#0052E8', fontSize: '0.95rem', fontWeight: 600 }}>
+                    <button
+                        onClick={handleCancel}
+                        style={{
+                            marginBottom: '2rem',
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.65rem',
+                            color: '#0052E8',
+                            fontSize: '0.95rem',
+                            fontWeight: 700,
+                            transition: 'all 0.3s ease',
+                            padding: '0.75rem 1rem',
+                            borderRadius: '10px',
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'rgba(0, 82, 232, 0.08)';
+                            e.currentTarget.style.transform = 'translateX(-4px)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'none';
+                            e.currentTarget.style.transform = 'none';
+                        }}
+                    >
                         <ArrowLeft size={18} />
                         Back to Tree
                     </button>
@@ -79,12 +103,12 @@ export default function EditTree({ tree }: Props) {
                     {/* Form Container */}
                     <div className="tree-form-container">
                         <h1 className="tree-form-title">Edit Family Tree</h1>
-                        <p className="tree-form-subtitle">Update your family tree information</p>
+                        <p className="tree-form-subtitle">Update your family tree information and settings</p>
 
                         <form onSubmit={handleSubmit}>
                             {/* Tree Name Field */}
                             <div className="tree-form-group">
-                                <label className="tree-form-label">Tree Name</label>
+                                <label className="tree-form-label">Family Tree Name *</label>
                                 <input
                                     type="text"
                                     name="tree_name"
@@ -94,8 +118,8 @@ export default function EditTree({ tree }: Props) {
                                     onChange={handleInputChange}
                                     required
                                 />
-                                {errors.tree_name && <div className="tree-error-alert" style={{ marginTop: '0.35rem', padding: '0.5rem', borderRadius: '6px', fontSize: '0.85rem' }}>{errors.tree_name}</div>}
-                                <div className="tree-form-help">Give your family tree a meaningful name</div>
+                                {errors.tree_name && <div className="tree-error-alert" style={{ marginTop: '0.65rem', padding: '0.75rem', borderRadius: '8px', fontSize: '0.85rem' }}>{errors.tree_name}</div>}
+                                <div className="tree-form-help">Update the name of your family tree</div>
                             </div>
 
                             {/* Description Field */}
@@ -104,12 +128,12 @@ export default function EditTree({ tree }: Props) {
                                 <textarea
                                     name="description"
                                     className="tree-form-textarea"
-                                    placeholder="Add any details about this family tree, time period, location, etc."
+                                    placeholder="Add any details about this family tree, time period, location, or other important notes..."
                                     value={formData.description}
                                     onChange={handleInputChange}
                                 />
-                                {errors.description && <div className="tree-error-alert" style={{ marginTop: '0.35rem', padding: '0.5rem', borderRadius: '6px', fontSize: '0.85rem' }}>{errors.description}</div>}
-                                <div className="tree-form-help">Optional - helps others understand this tree's context</div>
+                                {errors.description && <div className="tree-error-alert" style={{ marginTop: '0.65rem', padding: '0.75rem', borderRadius: '8px', fontSize: '0.85rem' }}>{errors.description}</div>}
+                                <div className="tree-form-help">Update the description to help members understand this tree</div>
                             </div>
 
                             {/* Visibility Setting */}
@@ -119,29 +143,43 @@ export default function EditTree({ tree }: Props) {
                                     <input type="checkbox" name="is_public" checked={formData.is_public} onChange={handleInputChange} />
                                     <span>Make this tree public</span>
                                 </label>
-                                <div className="tree-form-help">Public trees can be viewed by anyone with the link</div>
+                                <div className="tree-form-help" style={{ marginTop: '0.6rem' }}>
+                                    {formData.is_public
+                                        ? 'This tree is visible to anyone with the link. Uncheck to make it private.'
+                                        : 'Only members can view this tree. Check to make it publicly viewable.'}
+                                </div>
                             </div>
 
                             {/* Info Box */}
-                            <div className="tree-info-alert" style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '1rem', borderRadius: '8px' }}>
-                                <AlertCircle size={20} style={{ marginTop: '0.1rem', flexShrink: 0 }} />
-                                <div>
-                                    <div style={{ fontWeight: 600, marginBottom: '0.35rem' }}>Remember:</div>
-                                    <ul style={{ margin: 0, paddingLeft: '1.2rem', fontSize: '0.9rem' }}>
-                                        <li>Changes will be saved immediately</li>
-                                        <li>Members and connections are not affected</li>
-                                        <li>You can manage members from the tree view</li>
+                            <div className="tree-info-alert" style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem', padding: '1.2rem', borderRadius: '10px' }}>
+                                <Info size={20} style={{ marginTop: '0.1rem', flexShrink: 0 }} />
+                                <div style={{ fontSize: '0.9rem', lineHeight: '1.6' }}>
+                                    <div style={{ fontWeight: 700, marginBottom: '0.5rem' }}>What will be updated:</div>
+                                    <ul style={{ margin: 0, paddingLeft: '1.4rem', fontSize: '0.85rem' }}>
+                                        <li style={{ marginBottom: '0.3rem' }}>Tree name and description</li>
+                                        <li>Visibility settings (public/private)</li>
                                     </ul>
+                                    <div style={{ marginTop: '0.75rem', fontSize: '0.85rem', fontStyle: 'italic' }}>
+                                        Members and relationships will not be affected by these changes.
+                                    </div>
                                 </div>
                             </div>
 
                             {/* Action Buttons */}
                             <div className="tree-form-actions">
-                                <button type="button" onClick={handleCancel} className="tree-form-cancel">
+                                <button
+                                    type="button"
+                                    onClick={handleCancel}
+                                    className="tree-form-cancel"
+                                >
                                     Cancel
                                 </button>
-                                <button type="submit" className="tree-form-submit" disabled={loading || !formData.tree_name.trim()}>
-                                    {loading ? 'Saving...' : 'Save Changes'}
+                                <button
+                                    type="submit"
+                                    className="tree-form-submit"
+                                    disabled={loading || !formData.tree_name.trim()}
+                                >
+                                    {loading ? 'Saving Changes...' : 'Save Changes'}
                                 </button>
                             </div>
                         </form>

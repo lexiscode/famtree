@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { router } from '@inertiajs/react';
 import GuestLayout from '@/Layouts/GuestLayout';
-import { ArrowLeft, AlertCircle, Info } from 'lucide-react';
+import { ArrowLeft, AlertCircle, Info, Lightbulb } from 'lucide-react';
 
 interface Props {
     connectionCount: number;
@@ -27,7 +27,6 @@ export default function CreateTree({ connectionCount }: Props) {
             [name]: newValue,
         }));
 
-        // Clear error for this field
         if (errors[name]) {
             setErrors((prev) => {
                 const newErrors = { ...prev };
@@ -65,20 +64,45 @@ export default function CreateTree({ connectionCount }: Props) {
             <div className="family-tree-page">
                 <div className="family-tree-container">
                     {/* Back Button */}
-                    <button onClick={handleCancel} style={{ marginBottom: '1.5rem', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#0052E8', fontSize: '0.95rem', fontWeight: 600 }}>
+                    <button
+                        onClick={handleCancel}
+                        style={{
+                            marginBottom: '2rem',
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.65rem',
+                            color: '#0052E8',
+                            fontSize: '0.95rem',
+                            fontWeight: 700,
+                            transition: 'all 0.3s ease',
+                            padding: '0.75rem 1rem',
+                            borderRadius: '10px',
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'rgba(0, 82, 232, 0.08)';
+                            e.currentTarget.style.transform = 'translateX(-4px)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'none';
+                            e.currentTarget.style.transform = 'none';
+                        }}
+                    >
                         <ArrowLeft size={18} />
-                        Back to Trees
+                        Back to Family Trees
                     </button>
 
                     {/* Form Container */}
                     <div className="tree-form-container">
-                        <h1 className="tree-form-title">Create Family Tree</h1>
-                        <p className="tree-form-subtitle">Build your family tree and connect with relatives</p>
+                        <h1 className="tree-form-title">Create Your Family Tree</h1>
+                        <p className="tree-form-subtitle">Build and manage your family tree with ease</p>
 
                         <form onSubmit={handleSubmit}>
                             {/* Tree Name Field */}
                             <div className="tree-form-group">
-                                <label className="tree-form-label">Tree Name</label>
+                                <label className="tree-form-label">Family Tree Name *</label>
                                 <input
                                     type="text"
                                     name="tree_name"
@@ -88,8 +112,8 @@ export default function CreateTree({ connectionCount }: Props) {
                                     onChange={handleInputChange}
                                     required
                                 />
-                                {errors.tree_name && <div className="tree-error-alert" style={{ marginTop: '0.35rem', padding: '0.5rem', borderRadius: '6px', fontSize: '0.85rem' }}>{errors.tree_name}</div>}
-                                <div className="tree-form-help">Give your family tree a meaningful name</div>
+                                {errors.tree_name && <div className="tree-error-alert" style={{ marginTop: '0.65rem', padding: '0.75rem', borderRadius: '8px', fontSize: '0.85rem' }}>{errors.tree_name}</div>}
+                                <div className="tree-form-help">Choose a name that represents your family</div>
                             </div>
 
                             {/* Description Field */}
@@ -98,12 +122,12 @@ export default function CreateTree({ connectionCount }: Props) {
                                 <textarea
                                     name="description"
                                     className="tree-form-textarea"
-                                    placeholder="Add any details about this family tree, time period, location, etc."
+                                    placeholder="Add any details about this family tree, time period, location, or other important notes..."
                                     value={formData.description}
                                     onChange={handleInputChange}
                                 />
-                                {errors.description && <div className="tree-error-alert" style={{ marginTop: '0.35rem', padding: '0.5rem', borderRadius: '6px', fontSize: '0.85rem' }}>{errors.description}</div>}
-                                <div className="tree-form-help">Optional - helps others understand this tree's context</div>
+                                {errors.description && <div className="tree-error-alert" style={{ marginTop: '0.65rem', padding: '0.75rem', borderRadius: '8px', fontSize: '0.85rem' }}>{errors.description}</div>}
+                                <div className="tree-form-help">Help other family members understand the context of this tree</div>
                             </div>
 
                             {/* Visibility Setting */}
@@ -113,7 +137,9 @@ export default function CreateTree({ connectionCount }: Props) {
                                     <input type="checkbox" name="is_public" checked={formData.is_public} onChange={handleInputChange} />
                                     <span>Make this tree public</span>
                                 </label>
-                                <div className="tree-form-help">Public trees can be viewed by anyone with the link</div>
+                                <div className="tree-form-help" style={{ marginTop: '0.6rem' }}>
+                                    Public trees can be viewed by anyone with the link. Private trees are visible only to members.
+                                </div>
                             </div>
 
                             {/* Auto-Populate Setting */}
@@ -123,41 +149,51 @@ export default function CreateTree({ connectionCount }: Props) {
                                     <>
                                         <label className="tree-form-checkbox">
                                             <input type="checkbox" name="auto_populate" checked={formData.auto_populate} onChange={handleInputChange} />
-                                            <span>
-                                                Automatically add my {connectionCount} connection{connectionCount !== 1 ? 's' : ''}
-                                            </span>
+                                            <span>Automatically add my {connectionCount} connection{connectionCount !== 1 ? 's' : ''} to this tree</span>
                                         </label>
-                                        <div className="tree-form-help">You can add or remove members after creating the tree</div>
+                                        <div className="tree-form-help" style={{ marginTop: '0.6rem' }}>
+                                            This will invite your existing connections to join the tree. You can add or remove members anytime.
+                                        </div>
                                     </>
                                 ) : (
-                                    <div className="tree-info-alert" style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '0.75rem', borderRadius: '8px', marginBottom: '0' }}>
-                                        <Info size={18} style={{ marginTop: '0.1rem', flexShrink: 0 }} />
-                                        <span>You don't have any connections yet. Add connections to auto-populate members.</span>
+                                    <div className="tree-info-alert" style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem', padding: '1.2rem', borderRadius: '10px', marginBottom: 0 }}>
+                                        <Info size={20} style={{ marginTop: '0.1rem', flexShrink: 0 }} />
+                                        <div style={{ fontSize: '0.9rem', lineHeight: '1.6' }}>
+                                            You don't have any connections yet. <strong>Start making connections</strong> first so you can auto-populate members when creating trees.
+                                        </div>
                                     </div>
                                 )}
                             </div>
 
-                            {/* Info Box */}
-                            <div className="tree-info-alert" style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '1rem', borderRadius: '8px' }}>
-                                <AlertCircle size={20} style={{ marginTop: '0.1rem', flexShrink: 0 }} />
-                                <div>
-                                    <div style={{ fontWeight: 600, marginBottom: '0.35rem' }}>Tips for building your family tree:</div>
-                                    <ul style={{ margin: 0, paddingLeft: '1.2rem', fontSize: '0.9rem' }}>
-                                        <li>Start with immediate family members</li>
-                                        <li>You can add or invite members anytime</li>
-                                        <li>Share your tree with family to grow it together</li>
-                                        <li>Set relationships between members for better visualization</li>
+                            {/* Tips Box */}
+                            <div className="tree-info-alert" style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem', padding: '1.5rem', borderRadius: '10px' }}>
+                                <Lightbulb size={22} style={{ marginTop: '0.1rem', flexShrink: 0 }} />
+                                <div style={{ fontSize: '0.9rem', lineHeight: '1.7' }}>
+                                    <div style={{ fontWeight: 700, marginBottom: '0.75rem', fontSize: '0.95rem' }}>Tips for building a great family tree:</div>
+                                    <ul style={{ margin: 0, paddingLeft: '1.4rem' }}>
+                                        <li style={{ marginBottom: '0.4rem' }}>Start with immediate family members (parents, siblings, children)</li>
+                                        <li style={{ marginBottom: '0.4rem' }}>Add relationships to help visualize family connections</li>
+                                        <li style={{ marginBottom: '0.4rem' }}>Invite family members to collaborate and grow the tree together</li>
+                                        <li>Keep information up-to-date for accuracy and meaningful connections</li>
                                     </ul>
                                 </div>
                             </div>
 
                             {/* Action Buttons */}
                             <div className="tree-form-actions">
-                                <button type="button" onClick={handleCancel} className="tree-form-cancel">
+                                <button
+                                    type="button"
+                                    onClick={handleCancel}
+                                    className="tree-form-cancel"
+                                >
                                     Cancel
                                 </button>
-                                <button type="submit" className="tree-form-submit" disabled={loading || !formData.tree_name.trim()}>
-                                    {loading ? 'Creating...' : 'Create Family Tree'}
+                                <button
+                                    type="submit"
+                                    className="tree-form-submit"
+                                    disabled={loading || !formData.tree_name.trim()}
+                                >
+                                    {loading ? 'Creating Family Tree...' : 'Create Family Tree'}
                                 </button>
                             </div>
                         </form>
