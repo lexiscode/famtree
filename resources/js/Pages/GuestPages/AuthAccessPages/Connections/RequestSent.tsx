@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { usePage, router } from '@inertiajs/react';
-import GuestLayout from '@/Layouts/GuestLayout';
+import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
 import { Send, Trash2 } from 'lucide-react';
 
 interface SentRequest {
@@ -51,7 +51,7 @@ export default function RequestSent({ requests: initialRequests, count }: Props)
     };
 
     return (
-        <GuestLayout>
+        <AuthAccessLayout>
             <div className="connections-page">
                 <div className="connections-container">
                     {/* Header */}
@@ -150,6 +150,6 @@ export default function RequestSent({ requests: initialRequests, count }: Props)
                     </div>
                 </div>
             </div>
-        </GuestLayout>
+        </AuthAccessLayout>
     );
 }

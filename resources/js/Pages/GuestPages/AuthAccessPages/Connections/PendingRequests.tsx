@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { usePage, router } from '@inertiajs/react';
-import GuestLayout from '@/Layouts/GuestLayout';
+import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
 import { Clock, Check, X } from 'lucide-react';
 
 interface Request {
@@ -72,7 +72,7 @@ export default function PendingRequests({ requests: initialRequests, count }: Pr
     };
 
     return (
-        <GuestLayout>
+        <AuthAccessLayout>
             <div className="connections-page">
                 <div className="connections-container">
                     {/* Header */}
@@ -171,6 +171,6 @@ export default function PendingRequests({ requests: initialRequests, count }: Pr
                     )}
                 </div>
             </div>
-        </GuestLayout>
+        </AuthAccessLayout>
     );
 }

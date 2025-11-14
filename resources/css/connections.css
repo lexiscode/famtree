@@ -15,20 +15,80 @@
 
 .connections-page-wrapper {
   min-height: 100vh;
-  background: linear-gradient(135deg, #F8F9FA 0%, #E8EAEF 100%);
+  background: linear-gradient(135deg, #0F1419 0%, #1a2332 50%, #0F1419 100%);
   padding-top: 2rem;
   padding-bottom: 4rem;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Animated floating shapes in background */
+.connections-page-wrapper::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Floating orb 1 - Gold */
+.connections-page-wrapper::after {
+    content: '';
+    position: fixed;
+    top: 10%;
+    right: 10%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0) 70%);
+    border-radius: 50%;
+    filter: blur(60px);
+    animation: connectionsFloatOrb1 25s ease-in-out infinite;
+    z-index: 0;
+    pointer-events: none;
+}
+
+@keyframes connectionsFloatOrb1 {
+    0%, 100% { transform: translateY(0px) translateX(0px); }
+    33% { transform: translateY(-40px) translateX(20px); }
+    66% { transform: translateY(40px) translateX(-20px); }
+}
+
+/* Floating orb 2 - Blue */
+.connections-page-wrapper .connections-header::before {
+    content: '';
+    position: fixed;
+    bottom: 20%;
+    left: 5%;
+    width: 250px;
+    height: 250px;
+    background: radial-gradient(circle, rgba(0, 82, 232, 0.25) 0%, rgba(0, 82, 232, 0) 70%);
+    border-radius: 50%;
+    filter: blur(60px);
+    animation: connectionsFloatOrb2 30s ease-in-out infinite reverse;
+    z-index: 0;
+    pointer-events: none;
+}
+
+@keyframes connectionsFloatOrb2 {
+    0%, 100% { transform: translateY(0px) translateX(0px); }
+    33% { transform: translateY(30px) translateX(-30px); }
+    66% { transform: translateY(-30px) translateX(30px); }
 }
 
 .connections-header {
   margin-bottom: 2.5rem;
   animation: fadeInDown 0.6s ease-out;
+  position: relative;
+  z-index: 1;
 }
 
 .connections-header-title {
   font-size: 2rem;
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: #FFFFFF;
   margin-bottom: 0.5rem;
   letter-spacing: -0.02em;
   display: flex;
@@ -38,7 +98,7 @@
 
 .connections-header-subtitle {
   font-size: 1rem;
-  color: var(--color-text-secondary);
+  color: #B0B0B0;
   line-height: 1.6;
   margin-bottom: 0;
 }
@@ -84,24 +144,25 @@
   width: 100%;
   height: 48px;
   padding: 0.75rem 1rem 0.75rem 44px;
-  border: 2px solid var(--color-border);
+  border: 2px solid rgba(0, 82, 232, 0.2);
   border-radius: 10px;
   font-size: 1rem;
-  color: var(--color-text-primary);
-  background-color: white;
+  color: #FFFFFF;
+  background-color: rgba(20, 25, 35, 0.8);
   transition: all 0.3s ease;
   font-family: var(--font-body);
+  backdrop-filter: blur(10px);
 }
 
 .connections-input:focus,
 .connections-select:focus {
-  border-color: var(--color-gold);
-  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1), 0 4px 12px rgba(0, 82, 232, 0.15);
+  border-color: #FFD700;
+  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1), 0 4px 12px rgba(0, 82, 232, 0.25);
   outline: none;
 }
 
 .connections-input::placeholder {
-  color: #9CA3AF;
+  color: #808080;
 }
 
 /* ============================================================================
@@ -109,13 +170,15 @@
    ============================================================================ */
 
 .connection-card {
-  background: white;
+  background: rgba(20, 25, 35, 0.8);
   border-radius: 12px;
-  border: 1px solid #E5E7EB;
+  border: 1px solid rgba(0, 82, 232, 0.2);
   padding: 1.5rem;
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   position: relative;
   overflow: hidden;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .connection-card::before {
@@ -125,16 +188,17 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: var(--connections-primary);
+  background: linear-gradient(90deg, #0052E8 0%, transparent 50%, #FFD700 100%);
   transform: scaleX(0);
   transform-origin: left;
   transition: transform 0.3s ease;
 }
 
 .connection-card:hover {
-  box-shadow: 0 10px 30px rgba(0, 82, 232, 0.15);
-  border-color: #BAE6FD;
+  box-shadow: 0 16px 48px rgba(0, 82, 232, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 215, 0, 0.4);
   transform: translateY(-6px);
+  background: rgba(20, 25, 35, 0.95);
 }
 
 .connection-card:hover::before {
@@ -170,13 +234,13 @@
 .connection-name {
   font-size: 1.0625rem;
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: #FFFFFF;
   margin-bottom: 0.25rem;
 }
 
 .connection-username {
   font-size: 0.875rem;
-  color: var(--color-text-secondary);
+  color: #B0B0B0;
 }
 
 .connection-status-badge {
@@ -194,28 +258,29 @@
 
 /* Relationship Info */
 .connection-relationship-box {
-  background: linear-gradient(135deg, #E0E7FF 0%, #F0F9FF 100%);
-  border: 1px solid #93C5FD;
+  background: rgba(0, 82, 232, 0.08);
+  border: 1px solid rgba(0, 82, 232, 0.25);
   border-radius: 8px;
   padding: 1rem;
   margin-bottom: 1.25rem;
+  backdrop-filter: blur(5px);
 }
 
 .connection-relationship-label {
   font-size: 0.875rem;
-  color: var(--color-text-secondary);
+  color: #B0B0B0;
   margin-bottom: 0.5rem;
 }
 
 .connection-relationship-value {
   font-size: 1.0625rem;
   font-weight: 700;
-  color: #0052E8;
+  color: #87CEEB;
 }
 
 .connection-date {
   font-size: 0.875rem;
-  color: var(--color-text-secondary);
+  color: #808080;
   margin-top: 0.5rem;
 }
 
@@ -247,36 +312,37 @@
 }
 
 .connection-action-btn-primary {
-  background: var(--connections-primary);
+  background: linear-gradient(135deg, #0052E8 0%, #FFD700 100%);
   color: white;
-  box-shadow: 0 4px 12px rgba(0, 82, 232, 0.2);
+  box-shadow: 0 8px 24px rgba(0, 82, 232, 0.3);
 }
 
 .connection-action-btn-primary:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 82, 232, 0.3);
+  box-shadow: 0 12px 36px rgba(0, 82, 232, 0.4);
 }
 
 .connection-action-btn-secondary {
-  background: var(--color-bg-secondary);
-  color: var(--color-text-primary);
-  border-color: var(--color-border);
+  background: rgba(240, 249, 255, 0.08);
+  color: #FFFFFF;
+  border-color: rgba(0, 82, 232, 0.2);
+  backdrop-filter: blur(5px);
 }
 
 .connection-action-btn-secondary:hover:not(:disabled) {
-  border-color: var(--color-text-secondary);
-  background: white;
+  border-color: rgba(0, 82, 232, 0.4);
+  background: rgba(240, 249, 255, 0.12);
   transform: translateY(-2px);
 }
 
 .connection-action-btn-danger {
   background: transparent;
-  color: #EF4444;
-  border-color: #FCA5A5;
+  color: #FF6B6B;
+  border-color: rgba(255, 107, 107, 0.4);
 }
 
 .connection-action-btn-danger:hover:not(:disabled) {
-  background: #FEE2E2;
+  background: rgba(255, 107, 107, 0.1);
   transform: translateY(-2px);
 }
 
@@ -304,13 +370,15 @@
 .connections-group-title {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #0052E8;
+  color: #87CEEB;
   margin-bottom: 1.5rem;
   padding-bottom: 0.75rem;
-  border-bottom: 2px solid var(--connections-primary);
+  border-bottom: 2px solid rgba(0, 82, 232, 0.3);
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  position: relative;
+  z-index: 1;
 }
 
 .connections-group-count {
@@ -343,30 +411,33 @@
    ============================================================================ */
 
 .connections-empty-state {
-  background: white;
+  background: rgba(20, 25, 35, 0.8);
   border-radius: 12px;
-  border: 2px dashed #E5E7EB;
+  border: 2px dashed rgba(0, 82, 232, 0.2);
   padding: 3rem 2rem;
   text-align: center;
+  backdrop-filter: blur(10px);
+  position: relative;
+  z-index: 1;
 }
 
 .connections-empty-icon {
   width: 64px;
   height: 64px;
   margin: 0 auto 1.5rem;
-  color: #D1D5DB;
+  color: #4B5563;
 }
 
 .connections-empty-title {
   font-size: 1.25rem;
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: #FFFFFF;
   margin-bottom: 0.75rem;
 }
 
 .connections-empty-message {
   font-size: 1rem;
-  color: var(--color-text-secondary);
+  color: #B0B0B0;
   line-height: 1.6;
   margin-bottom: 2rem;
 }
@@ -395,17 +466,20 @@
    ============================================================================ */
 
 .connection-request-item {
-  background: white;
+  background: rgba(20, 25, 35, 0.8);
   border-radius: 12px;
-  border: 1px solid #E5E7EB;
+  border: 1px solid rgba(0, 82, 232, 0.2);
   padding: 1.5rem;
   margin-bottom: 1rem;
   transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  position: relative;
+  z-index: 1;
 }
 
 .connection-request-item:hover {
-  box-shadow: 0 8px 20px rgba(0, 82, 232, 0.1);
-  border-color: #BAE6FD;
+  box-shadow: 0 12px 36px rgba(0, 82, 232, 0.25);
+  border-color: rgba(255, 215, 0, 0.4);
   transform: translateX(4px);
 }
 
@@ -437,14 +511,14 @@
 
 .connection-request-name {
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: #FFFFFF;
   font-size: 1rem;
   margin-bottom: 0.25rem;
 }
 
 .connection-request-username {
   font-size: 0.875rem;
-  color: var(--color-text-secondary);
+  color: #B0B0B0;
 }
 
 .connection-request-status {
@@ -469,11 +543,12 @@
 }
 
 .connection-request-details-box {
-  background: #F8F9FA;
+  background: rgba(0, 82, 232, 0.08);
   border-left: 3px solid #0052E8;
   border-radius: 6px;
   padding: 1rem;
   margin-bottom: 1.25rem;
+  backdrop-filter: blur(5px);
 }
 
 .connection-request-detail-row {
@@ -488,12 +563,12 @@
 }
 
 .connection-request-label {
-  color: var(--color-text-secondary);
+  color: #B0B0B0;
   font-weight: 500;
 }
 
 .connection-request-value {
-  color: var(--color-text-primary);
+  color: #87CEEB;
   font-weight: 600;
 }
 
@@ -519,19 +594,20 @@
   left: 0;
   right: 0;
   margin-top: 0.5rem;
-  background: white;
-  border: 1px solid #E5E7EB;
+  background: rgba(20, 25, 35, 0.95);
+  border: 1px solid rgba(0, 82, 232, 0.2);
   border-top: none;
   border-radius: 0 0 10px 10px;
   max-height: 320px;
   overflow-y: auto;
   z-index: 10;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
 }
 
 .connection-search-result-item {
   padding: 0.75rem 1rem;
-  border-bottom: 1px solid #F0F2F5;
+  border-bottom: 1px solid rgba(0, 82, 232, 0.1);
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
@@ -544,11 +620,11 @@
 }
 
 .connection-search-result-item:hover {
-  background-color: #F8F9FA;
+  background-color: rgba(0, 82, 232, 0.08);
 }
 
 .connection-search-result-item.selected {
-  background: linear-gradient(135deg, #E0E7FF 0%, #F0F9FF 100%);
+  background: rgba(0, 82, 232, 0.15);
 }
 
 .connection-search-result-avatar {
@@ -564,13 +640,13 @@
 
 .connection-search-result-name {
   font-weight: 600;
-  color: var(--color-text-primary);
+  color: #FFFFFF;
   font-size: 0.95rem;
 }
 
 .connection-search-result-username {
   font-size: 0.875rem;
-  color: var(--color-text-secondary);
+  color: #B0B0B0;
 }
 
 .connection-search-result-badge {
@@ -594,24 +670,27 @@
   display: flex;
   gap: 1rem;
   align-items: flex-start;
+  position: relative;
+  z-index: 1;
+  backdrop-filter: blur(10px);
 }
 
 .connection-info-box.primary {
-  background: linear-gradient(135deg, #E0E7FF 0%, #F0F9FF 100%);
-  border: 1px solid #93C5FD;
-  color: #0C4A6E;
+  background: rgba(0, 82, 232, 0.08);
+  border: 1px solid rgba(0, 82, 232, 0.25);
+  color: #87CEEB;
 }
 
 .connection-info-box.success {
-  background: linear-gradient(135deg, #DBEAFE 0%, #F0F9FF 100%);
-  border: 1px solid #93C5FD;
-  color: #0C4A6E;
+  background: rgba(0, 150, 136, 0.08);
+  border: 1px solid rgba(0, 150, 136, 0.25);
+  color: #4DB8AA;
 }
 
 .connection-info-box.warning {
-  background: linear-gradient(135deg, #FEF3C7 0%, #FEE4B5 100%);
-  border: 1px solid #FCD34D;
-  color: #92400E;
+  background: rgba(255, 193, 7, 0.08);
+  border: 1px solid rgba(255, 193, 7, 0.25);
+  color: #FFC107;
 }
 
 .connection-info-icon {

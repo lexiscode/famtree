@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { router } from '@inertiajs/react';
-import GuestLayout from '@/Layouts/GuestLayout';
+import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
 import { Search, Send, AlertCircle, CheckCircle, Loader } from 'lucide-react';
 
 interface User {
@@ -132,7 +132,7 @@ export default function SendRequest({ current_user_id }: Props) {
     };
 
     return (
-        <GuestLayout>
+        <AuthAccessLayout>
             <div className="connections-page">
                 <div className="connections-container" style={{ maxWidth: '650px' }}>
                     {/* Header */}
@@ -268,6 +268,6 @@ export default function SendRequest({ current_user_id }: Props) {
                     </div>
                 </div>
             </div>
-        </GuestLayout>
+        </AuthAccessLayout>
     );
 }

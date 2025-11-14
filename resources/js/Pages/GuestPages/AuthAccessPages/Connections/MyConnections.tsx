@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { usePage, router } from '@inertiajs/react';
-import GuestLayout from '@/Layouts/GuestLayout';
+import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
 import { Users, UserPlus, Search, Filter, ExternalLink, Undo2 } from 'lucide-react';
 
 interface Connection {
@@ -69,7 +69,7 @@ export default function MyConnections({ connections: initialConnections, total_c
     };
 
     return (
-        <GuestLayout>
+        <AuthAccessLayout>
             <div className="connections-page">
                 <div className="connections-container">
                     {/* Header Section */}
@@ -204,6 +204,6 @@ export default function MyConnections({ connections: initialConnections, total_c
                     )}
                 </div>
             </div>
-        </GuestLayout>
+        </AuthAccessLayout>
     );
 }
