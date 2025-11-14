@@ -5,33 +5,24 @@ import { router } from '@inertiajs/react';
 import { z } from 'zod';
 import './CTAModal.css';
 
-// Validation schemas
+// Validation schema for login only (keep Zod validation for login)
 const loginSchema = z.object({
   emailOrUsername: z.string().min(1, 'Email or username is required'),
   password: z.string().min(1, 'Password is required'),
   rememberMe: z.boolean().optional().default(false),
 });
 
-const registerSchema = z.object({
-  firstName: z.string().min(1, 'First name is required').min(2, 'First name must be at least 2 characters'),
-  lastName: z.string().min(1, 'Last name is required').min(2, 'Last name must be at least 2 characters'),
-  username: z.string().min(1, 'Username is required').min(3, 'Username must be at least 3 characters'),
-  email: z.string().min(1, 'Email is required').email('Invalid email address'),
-  password: z
-    .string()
-    .min(1, 'Password is required')
-    .min(8, 'Password must be at least 8 characters')
-    .regex(/[A-Z]/, 'Password must contain an uppercase letter')
-    .regex(/[a-z]/, 'Password must contain a lowercase letter')
-    .regex(/[0-9]/, 'Password must contain a number'),
-  confirmPassword: z.string().min(1, 'Please confirm your password'),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ['confirmPassword'],
-});
-
 type LoginFormData = z.infer<typeof loginSchema>;
-type RegisterFormData = z.infer<typeof registerSchema>;
+
+// Registration form data type (no Zod validation - backend handles all validation)
+interface RegisterFormData {
+  firstName: string;
+  lastName: string;
+  username: string;
+  email: string;
+  password: string;
+  password_confirmation: string;
+}
 
 interface CTAModalProps {
   isOpen: boolean;
@@ -64,17 +55,16 @@ export default function CTAModal({
     },
   });
 
-  // Register form
+  // Register form (no client-side validation - backend handles all validation)
   const registerForm = useForm<RegisterFormData>({
-    resolver: zodResolver(registerSchema),
-    mode: 'onBlur',
+    mode: 'onSubmit',
     defaultValues: {
       firstName: '',
       lastName: '',
       username: '',
       email: '',
       password: '',
-      confirmPassword: '',
+      password_confirmation: '',
     },
   });
 
@@ -131,18 +121,27 @@ export default function CTAModal({
     });
   };
 
-  // Handle register submission
-  const handleRegisterSubmit = (data: RegisterFormData) => {
+  // Handle register submission (all validation done by Laravel backend)
+  const handleRegisterSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     setIsSubmitting(true);
     setApiError(null);
 
-    router.post(route('auth.register'), {
-      ...data,
-      password_confirmation: data.confirmPassword,
-    }, {
+    // Get form data directly without any client-side validation
+    const formData = new FormData(e.currentTarget);
+    const data = Object.fromEntries(formData);
+
+    router.post(route('auth.register'), data, {
       onSuccess: () => {
         setSuccessMessage('Account created successfully! Logging you in...');
-        registerForm.reset();
+        registerForm.reset({
+          firstName: '',
+          lastName: '',
+          username: '',
+          email: '',
+          password: '',
+          password_confirmation: '',
+        });
 
         setTimeout(() => {
           setActiveTab('login');
@@ -379,7 +378,7 @@ export default function CTAModal({
           {/* REGISTER TAB */}
           {activeTab === 'register' && (
             <form
-              onSubmit={registerForm.handleSubmit(handleRegisterSubmit)}
+              onSubmit={handleRegisterSubmit}
               className="modal-form"
               noValidate
             >
@@ -391,28 +390,11 @@ export default function CTAModal({
                   <input
                     id="register-firstName"
                     type="text"
+                    name="firstName"
                     placeholder="John"
-                    {...registerForm.register('firstName')}
                     ref={firstInputRef}
                     disabled={isSubmitting}
-                    aria-invalid={
-                      registerForm.formState.errors.firstName ? 'true' : 'false'
-                    }
-                    aria-describedby={
-                      registerForm.formState.errors.firstName
-                        ? 'register-firstName-error'
-                        : undefined
-                    }
                   />
-                  {registerForm.formState.errors.firstName && (
-                    <span
-                      id="register-firstName-error"
-                      className="form-error"
-                      role="alert"
-                    >
-                      {registerForm.formState.errors.firstName.message}
-                    </span>
-                  )}
                 </div>
 
                 {/* Last Name Field */}
@@ -421,27 +403,10 @@ export default function CTAModal({
                   <input
                     id="register-lastName"
                     type="text"
+                    name="lastName"
                     placeholder="Doe"
-                    {...registerForm.register('lastName')}
                     disabled={isSubmitting}
-                    aria-invalid={
-                      registerForm.formState.errors.lastName ? 'true' : 'false'
-                    }
-                    aria-describedby={
-                      registerForm.formState.errors.lastName
-                        ? 'register-lastName-error'
-                        : undefined
-                    }
                   />
-                  {registerForm.formState.errors.lastName && (
-                    <span
-                      id="register-lastName-error"
-                      className="form-error"
-                      role="alert"
-                    >
-                      {registerForm.formState.errors.lastName.message}
-                    </span>
-                  )}
                 </div>
               </div>
 
@@ -451,27 +416,10 @@ export default function CTAModal({
                 <input
                   id="register-username"
                   type="text"
+                  name="username"
                   placeholder="johndoe123"
-                  {...registerForm.register('username')}
                   disabled={isSubmitting}
-                  aria-invalid={
-                    registerForm.formState.errors.username ? 'true' : 'false'
-                  }
-                  aria-describedby={
-                    registerForm.formState.errors.username
-                      ? 'register-username-error'
-                      : undefined
-                  }
                 />
-                {registerForm.formState.errors.username && (
-                  <span
-                    id="register-username-error"
-                    className="form-error"
-                    role="alert"
-                  >
-                    {registerForm.formState.errors.username.message}
-                  </span>
-                )}
               </div>
 
               {/* Email Field */}
@@ -480,27 +428,10 @@ export default function CTAModal({
                 <input
                   id="register-email"
                   type="email"
+                  name="email"
                   placeholder="your@email.com"
-                  {...registerForm.register('email')}
                   disabled={isSubmitting}
-                  aria-invalid={
-                    registerForm.formState.errors.email ? 'true' : 'false'
-                  }
-                  aria-describedby={
-                    registerForm.formState.errors.email
-                      ? 'register-email-error'
-                      : undefined
-                  }
                 />
-                {registerForm.formState.errors.email && (
-                  <span
-                    id="register-email-error"
-                    className="form-error"
-                    role="alert"
-                  >
-                    {registerForm.formState.errors.email.message}
-                  </span>
-                )}
               </div>
 
               {/* Password Field */}
@@ -510,17 +441,9 @@ export default function CTAModal({
                   <input
                     id="register-password"
                     type={showPassword ? 'text' : 'password'}
+                    name="password"
                     placeholder="••••••••"
-                    {...registerForm.register('password')}
                     disabled={isSubmitting}
-                    aria-invalid={
-                      registerForm.formState.errors.password ? 'true' : 'false'
-                    }
-                    aria-describedby={
-                      registerForm.formState.errors.password
-                        ? 'register-password-error'
-                        : undefined
-                    }
                   />
                   <button
                     type="button"
@@ -532,15 +455,6 @@ export default function CTAModal({
                     {showPassword ? '👁️' : '👁️‍🗨️'}
                   </button>
                 </div>
-                {registerForm.formState.errors.password && (
-                  <span
-                    id="register-password-error"
-                    className="form-error"
-                    role="alert"
-                  >
-                    {registerForm.formState.errors.password.message}
-                  </span>
-                )}
                 <small className="password-hint">
                   Must be 8+ characters with uppercase, lowercase, and number
                 </small>
@@ -555,19 +469,9 @@ export default function CTAModal({
                   <input
                     id="register-confirm-password"
                     type={showConfirmPassword ? 'text' : 'password'}
+                    name="password_confirmation"
                     placeholder="••••••••"
-                    {...registerForm.register('confirmPassword')}
                     disabled={isSubmitting}
-                    aria-invalid={
-                      registerForm.formState.errors.confirmPassword
-                        ? 'true'
-                        : 'false'
-                    }
-                    aria-describedby={
-                      registerForm.formState.errors.confirmPassword
-                        ? 'register-confirm-password-error'
-                        : undefined
-                    }
                   />
                   <button
                     type="button"
@@ -581,15 +485,6 @@ export default function CTAModal({
                     {showConfirmPassword ? '👁️' : '👁️‍🗨️'}
                   </button>
                 </div>
-                {registerForm.formState.errors.confirmPassword && (
-                  <span
-                    id="register-confirm-password-error"
-                    className="form-error"
-                    role="alert"
-                  >
-                    {registerForm.formState.errors.confirmPassword.message}
-                  </span>
-                )}
               </div>
 
               {/* Submit Button */}
@@ -618,14 +513,6 @@ export default function CTAModal({
                     setActiveTab('login');
                     setApiError(null);
                     setSuccessMessage(null);
-                    registerForm.reset({
-                      firstName: '',
-                      lastName: '',
-                      username: '',
-                      email: '',
-                      password: '',
-                      confirmPassword: '',
-                    });
                   }}
                   disabled={isSubmitting}
                 >
