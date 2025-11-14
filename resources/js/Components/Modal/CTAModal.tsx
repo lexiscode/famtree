@@ -67,7 +67,7 @@ export default function CTAModal({
   // Register form
   const registerForm = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
-    mode: 'onSubmit',
+    mode: 'onBlur',
     defaultValues: {
       firstName: '',
       lastName: '',
@@ -192,7 +192,14 @@ export default function CTAModal({
               setActiveTab('login');
               setApiError(null);
               setSuccessMessage(null);
-              registerForm.reset(undefined, { keepErrors: false, keepDirty: false, keepTouched: false });
+              registerForm.reset({
+                firstName: '',
+                lastName: '',
+                username: '',
+                email: '',
+                password: '',
+                confirmPassword: '',
+              }, { keepErrors: false, keepDirty: false, keepTouched: false });
               loginForm.clearErrors();
             }}
             type="button"
@@ -205,7 +212,11 @@ export default function CTAModal({
               setActiveTab('register');
               setApiError(null);
               setSuccessMessage(null);
-              loginForm.reset(undefined, { keepErrors: false, keepDirty: false, keepTouched: false });
+              loginForm.reset({
+                emailOrUsername: '',
+                password: '',
+                rememberMe: false,
+              }, { keepErrors: false, keepDirty: false, keepTouched: false });
               registerForm.clearErrors();
             }}
             type="button"
@@ -351,7 +362,11 @@ export default function CTAModal({
                     setActiveTab('register');
                     setApiError(null);
                     setSuccessMessage(null);
-                    loginForm.reset();
+                    loginForm.reset({
+                      emailOrUsername: '',
+                      password: '',
+                      rememberMe: false,
+                    });
                   }}
                   disabled={isSubmitting}
                 >
@@ -603,7 +618,14 @@ export default function CTAModal({
                     setActiveTab('login');
                     setApiError(null);
                     setSuccessMessage(null);
-                    registerForm.reset();
+                    registerForm.reset({
+                      firstName: '',
+                      lastName: '',
+                      username: '',
+                      email: '',
+                      password: '',
+                      confirmPassword: '',
+                    });
                   }}
                   disabled={isSubmitting}
                 >

@@ -463,14 +463,14 @@ export default function AccountSettings() {
                         bottom: 0,
                         background: 'rgba(0, 0, 0, 0.5)',
                         display: 'flex',
-                        align-items: 'center',
+                        alignItems: 'center',
                         justifyContent: 'center',
                         zIndex: 1000,
                         animation: 'fadeIn 0.3s ease-out',
                     }}>
                         <div style={{
                             background: 'white',
-                            border-radius: '16px',
+                            borderRadius: '16px',
                             padding: '2rem',
                             maxWidth: '450px',
                             boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
