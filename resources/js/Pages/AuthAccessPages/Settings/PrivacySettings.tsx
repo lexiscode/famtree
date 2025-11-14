@@ -1,0 +1,351 @@
+import { useState } from 'react';
+import { Eye, EyeOff, UserX, Flag, Lock, Check, AlertTriangle } from 'lucide-react';
+import { usePage } from '@inertiajs/react';
+import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
+import SettingsSidebar from '@/Components/Settings/SettingsSidebar';
+
+interface User {
+    id: number;
+    email: string;
+    first_name: string;
+    last_name: string;
+}
+
+interface PageProps {
+    auth: {
+        user: User;
+    };
+}
+
+export default function PrivacySettings() {
+    const { props } = usePage<PageProps>();
+
+    // Profile Visibility
+    const [profileVisibility, setProfileVisibility] = useState<'public' | 'connected' | 'private'>('connected');
+
+    // Blocked Users
+    const [blockedUsers, setBlockedUsers] = useState<Array<{ id: number; name: string; username: string }>>([]);
+    const [blockUsername, setBlockUsername] = useState('');
+    const [blockLoading, setBlockLoading] = useState(false);
+
+    // Privacy Field Controls
+    const [fieldVisibility, setFieldVisibility] = useState({
+        phone: 'connected',
+        bio: 'public',
+        date_of_birth: 'private',
+        location: 'connected',
+        education: 'connected',
+        job_title: 'connected',
+    });
+
+    const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+    const [saveLoading, setSaveLoading] = useState(false);
+
+    const handleBlockUser = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setBlockLoading(true);
+
+        if (!blockUsername.trim()) {
+            setBlockLoading(false);
+            return;
+        }
+
+        try {
+            setTimeout(() => {
+                setBlockedUsers([...blockedUsers, {
+                    id: Math.random(),
+                    name: blockUsername,
+                    username: blockUsername,
+                }]);
+                setBlockUsername('');
+                setSaveMessage({ type: 'success', text: `@${blockUsername} has been blocked` });
+                setBlockLoading(false);
+            }, 800);
+        } catch (error) {
+            setSaveMessage({ type: 'error', text: 'Failed to block user' });
+            setBlockLoading(false);
+        }
+    };
+
+    const handleUnblockUser = (userId: number) => {
+        setBlockedUsers(blockedUsers.filter(u => u.id !== userId));
+        setSaveMessage({ type: 'success', text: 'User has been unblocked' });
+    };
+
+    const handleSavePrivacySettings = async () => {
+        setSaveLoading(true);
+        setSaveMessage(null);
+
+        try {
+            setTimeout(() => {
+                setSaveMessage({ type: 'success', text: 'Privacy settings saved successfully' });
+                setSaveLoading(false);
+            }, 1000);
+        } catch (error) {
+            setSaveMessage({ type: 'error', text: 'Failed to save privacy settings' });
+            setSaveLoading(false);
+        }
+    };
+
+    const visibilityOptions = [
+        { value: 'public', label: 'Public', description: 'Anyone can see' },
+        { value: 'connected', label: 'Connected Only', description: 'Only your connections' },
+        { value: 'private', label: 'Private', description: 'Only you' },
+    ];
+
+    return (
+        <AuthAccessLayout>
+            <div className="settings-wrapper">
+                <SettingsSidebar active="privacy" />
+
+                <div className="settings-content">
+                    {/* Page Header */}
+                    <div className="settings-page-header">
+                        <h1 className="settings-page-title">
+                            <i className="bi bi-eye-slash"></i>
+                            Privacy Settings
+                        </h1>
+                        <p className="settings-page-subtitle">Control who can see your information and activity</p>
+                    </div>
+
+                    {/* Profile Visibility Section */}
+                    <div className="settings-section">
+                        <div className="settings-section-header">
+                            <div className="settings-section-icon">
+                                <Eye size={24} />
+                            </div>
+                            <div className="settings-section-title-wrapper">
+                                <h2 className="settings-section-title">Profile Visibility</h2>
+                                <p className="settings-section-subtitle">Control who can see your full profile</p>
+                            </div>
+                        </div>
+
+                        <div className="settings-section-body">
+                            {saveMessage && (
+                                <div className={`settings-alert settings-alert-${saveMessage.type}`}>
+                                    <div className="settings-alert-icon">
+                                        {saveMessage.type === 'success' ? <Check size={20} /> : <AlertTriangle size={20} />}
+                                    </div>
+                                    <div className="settings-alert-content">
+                                        <p className="settings-alert-message">{saveMessage.text}</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                {visibilityOptions.map((option) => (
+                                    <div key={option.value} className="settings-toggle-group">
+                                        <div className="settings-toggle-info">
+                                            <h3 className="settings-toggle-title">{option.label}</h3>
+                                            <p className="settings-toggle-description">{option.description}</p>
+                                        </div>
+                                        <input
+                                            type="radio"
+                                            name="profile-visibility"
+                                            value={option.value}
+                                            checked={profileVisibility === option.value}
+                                            onChange={(e) => setProfileVisibility(e.target.value as any)}
+                                            style={{
+                                                width: '20px',
+                                                height: '20px',
+                                                cursor: 'pointer',
+                                                accentColor: '#0052E8',
+                                            }}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Privacy Field Controls */}
+                    <div className="settings-section">
+                        <div className="settings-section-header">
+                            <div className="settings-section-icon">
+                                <Lock size={24} />
+                            </div>
+                            <div className="settings-section-title-wrapper">
+                                <h2 className="settings-section-title">Field-Level Privacy</h2>
+                                <p className="settings-section-subtitle">Control visibility of individual profile fields</p>
+                            </div>
+                        </div>
+
+                        <div className="settings-section-body">
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                                {Object.entries(fieldVisibility).map(([field, visibility]) => (
+                                    <div key={field} style={{ paddingBottom: '1.5rem', borderBottom: '1px solid #F0F2F5' }}>
+                                        <label className="settings-label" style={{ marginBottom: '0.75rem', textTransform: 'capitalize' }}>
+                                            {field.replace(/_/g, ' ')}
+                                        </label>
+                                        <select
+                                            value={visibility}
+                                            onChange={(e) => setFieldVisibility({ ...fieldVisibility, [field]: e.target.value })}
+                                            className="settings-select"
+                                        >
+                                            <option value="public">Public</option>
+                                            <option value="connected">Connected Only</option>
+                                            <option value="private">Private</option>
+                                        </select>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="settings-button-group">
+                                <button
+                                    onClick={handleSavePrivacySettings}
+                                    disabled={saveLoading}
+                                    className="settings-btn settings-btn-primary"
+                                >
+                                    {saveLoading ? 'Saving...' : 'Save Privacy Settings'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Blocked Users Section */}
+                    <div className="settings-section">
+                        <div className="settings-section-header">
+                            <div className="settings-section-icon">
+                                <UserX size={24} />
+                            </div>
+                            <div className="settings-section-title-wrapper">
+                                <h2 className="settings-section-title">Blocked Users</h2>
+                                <p className="settings-section-subtitle">Manage users you&apos;ve blocked</p>
+                            </div>
+                        </div>
+
+                        <div className="settings-section-body">
+                            <form onSubmit={handleBlockUser} className="settings-form-group" style={{ marginBottom: '2rem' }}>
+                                <label className="settings-label">Block a User</label>
+                                <div style={{ display: 'flex', gap: '1rem' }}>
+                                    <input
+                                        type="text"
+                                        className="settings-input"
+                                        placeholder="Enter username or email"
+                                        value={blockUsername}
+                                        onChange={(e) => setBlockUsername(e.target.value)}
+                                        style={{ flex: 1 }}
+                                    />
+                                    <button
+                                        type="submit"
+                                        disabled={blockLoading || !blockUsername.trim()}
+                                        className="settings-btn settings-btn-danger"
+                                    >
+                                        {blockLoading ? 'Blocking...' : 'Block'}
+                                    </button>
+                                </div>
+                                <p className="settings-form-hint">Users you block will not be able to send you connection requests or see your profile.</p>
+                            </form>
+
+                            <div style={{ marginBottom: '1rem' }}>
+                                <label className="settings-label" style={{ marginBottom: '1rem', display: 'block' }}>Blocked Users ({blockedUsers.length})</label>
+
+                                {blockedUsers.length === 0 ? (
+                                    <div style={{
+                                        padding: '2rem',
+                                        textAlign: 'center',
+                                        background: '#F9FAFB',
+                                        borderRadius: '10px',
+                                        color: '#6C757D',
+                                    }}>
+                                        <p style={{ margin: 0, fontWeight: 600 }}>No blocked users yet</p>
+                                    </div>
+                                ) : (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                        {blockedUsers.map((user) => (
+                                            <div
+                                                key={user.id}
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'space-between',
+                                                    padding: '1rem 1.25rem',
+                                                    background: '#FFE9EB',
+                                                    border: '1px solid #FF4757',
+                                                    borderRadius: '10px',
+                                                }}
+                                            >
+                                                <div>
+                                                    <p style={{ margin: 0, fontWeight: 700, color: '#1a1a1a' }}>{user.name}</p>
+                                                    <p style={{ margin: '0.25rem 0 0', fontSize: '0.85rem', color: '#6C757D' }}>@{user.username}</p>
+                                                </div>
+                                                <button
+                                                    onClick={() => handleUnblockUser(user.id)}
+                                                    className="settings-btn settings-btn-secondary"
+                                                    style={{ fontSize: '0.85rem', padding: '0.6rem 1rem' }}
+                                                >
+                                                    Unblock
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Report User Section */}
+                    <div className="settings-section">
+                        <div className="settings-section-header">
+                            <div className="settings-section-icon">
+                                <Flag size={24} />
+                            </div>
+                            <div className="settings-section-title-wrapper">
+                                <h2 className="settings-section-title">Report a User</h2>
+                                <p className="settings-section-subtitle">Report inappropriate behavior or content</p>
+                            </div>
+                        </div>
+
+                        <div className="settings-section-body">
+                            <form className="settings-form-group-row">
+                                <div className="settings-form-group">
+                                    <label className="settings-label">
+                                        Username to Report
+                                        <span className="settings-label-required">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        className="settings-input"
+                                        placeholder="Enter username"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="settings-form-group">
+                                    <label className="settings-label">
+                                        Reason
+                                        <span className="settings-label-required">*</span>
+                                    </label>
+                                    <select className="settings-select" required>
+                                        <option value="">Select a reason...</option>
+                                        <option value="harassment">Harassment or bullying</option>
+                                        <option value="spam">Spam</option>
+                                        <option value="inappropriate">Inappropriate content</option>
+                                        <option value="impersonation">Impersonation</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                            </form>
+
+                            <div className="settings-form-group">
+                                <label className="settings-label">Additional Details</label>
+                                <textarea
+                                    className="settings-textarea"
+                                    placeholder="Provide additional context about your report..."
+                                />
+                                <p className="settings-form-hint">Please provide as much detail as possible to help us review your report.</p>
+                            </div>
+
+                            <div className="settings-button-group">
+                                <button className="settings-btn settings-btn-danger">
+                                    <Flag size={18} />
+                                    Submit Report
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </AuthAccessLayout>
+    );
+}

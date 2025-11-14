@@ -352,6 +352,7 @@ Pls the UI needs to be very sleek as usual, in a much attractive and professiona
 ## 🎯 Phase 10: Settings & Account Management
 
 ### 10.1 User Settings
+Pls the UI needs to be very sleek as usual, in a much attractive and professional look, that can increase conversation rate. Use the app platform's brand colors too. Use both bootstrap, bootstrap icons and css in your designs.
 - [ ] **Frontend**: Create `AuthAccessPages/Settings/AccountSettings.tsx`
   - Change password
   - Email verification

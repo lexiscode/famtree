@@ -20,6 +20,7 @@ use App\Http\Controllers\GuestControllers\OnboardingController;
 use App\Http\Controllers\GuestControllers\StatusController;
 use App\Http\Controllers\GuestControllers\NotificationController;
 use App\Http\Controllers\GuestControllers\SearchController;
+use Inertia\Inertia;
 
 
 
@@ -155,4 +156,19 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/search', function () {
         return Inertia::render('AuthAccessPages/Search/Users');
     })->name('search.index');
+
+    // Settings routes
+    Route::prefix('settings')->group(function () {
+        Route::get('/account', function () {
+            return Inertia::render('AuthAccessPages/Settings/AccountSettings');
+        })->name('settings.account');
+
+        Route::get('/privacy', function () {
+            return Inertia::render('AuthAccessPages/Settings/PrivacySettings');
+        })->name('settings.privacy');
+
+        Route::get('/notifications', function () {
+            return Inertia::render('AuthAccessPages/Settings/NotificationSettings');
+        })->name('settings.notifications');
+    });
 });
