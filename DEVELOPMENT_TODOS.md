@@ -321,6 +321,7 @@ NB: But the parent should not have total control of the child account though, pe
   - Method: `notifyConnectionDeclined($declinerId, $originalRequesterId)` - Send notification
 
 ### 8.3 Notification Frontend
+Pls the UI needs to be very sleek as usual, in a much attractive and professional look, that can increase conversation rate. Use the app platform's brand colors too. Use both bootstrap, bootstrap icons and css in your designs.
 - [ ] **Frontend**: Create notifications dropdown in navbar
   - Show unread notification count badge
   - Display list of recent notifications

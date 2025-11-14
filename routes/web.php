@@ -17,6 +17,7 @@ use App\Http\Controllers\GuestControllers\AuthAccessControllers\ProfileControlle
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\FamilyTreeController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\ChildAccountController;
 use App\Http\Controllers\GuestControllers\OnboardingController;
+use App\Http\Controllers\GuestControllers\StatusController;
 
 
 
@@ -118,5 +119,12 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::delete('/{childId}', [ChildAccountController::class, 'destroy'])->name('child-accounts.destroy');
         Route::post('/{childId}/set-email', [ChildAccountController::class, 'setEmail'])->name('child-accounts.set-email');
         Route::get('/api/children', [ChildAccountController::class, 'getChildren'])->name('child-accounts.get-children');
+    });
+
+    // Status Management routes
+    Route::prefix('status')->group(function () {
+        Route::post('/update', [StatusController::class, 'updateStatus'])->name('status.update');
+        Route::get('/{userId}', [StatusController::class, 'getStatus'])->name('status.get');
+        Route::post('/can-update', [StatusController::class, 'canUpdateStatus'])->name('status.can-update');
     });
 });

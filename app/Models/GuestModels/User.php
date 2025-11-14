@@ -29,6 +29,7 @@ class User extends Authenticatable
         'date_of_birth',
         'profile_image_url',
         'status',
+        'death_date',
         'parent_user_id',
         'is_child_account',
         'created_by_user_id',
@@ -54,6 +55,7 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'date_of_birth' => 'date',
+        'death_date' => 'date',
         'is_child_account' => 'boolean',
         'onboarding_completed' => 'boolean',
     ];
