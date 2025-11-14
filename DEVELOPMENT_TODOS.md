@@ -151,6 +151,7 @@ Pls the UI needs to be very sleek as usual, in a much attractive and professiona
     - `public` - Anyone can see (but might be blurred if not connected)
 
 ### 4.2 Profile Display Pages
+Pls the UI needs to be very sleek as usual, in a much attractive and professional look, that can increase conversation rate. Use the app platform's brand colors too. Use both bootstrap, bootstrap icons and css in your designs.
 - [ ] **Frontend**: Create `AuthAccessPages/Profile/MyProfile.tsx`
   - Display current user's complete profile
   - Edit profile button

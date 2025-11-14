@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { router } from '@inertiajs/react';
 import GuestLayout from '@/Layouts/GuestLayout';
-import { Search, Send, AlertCircle, CheckCircle } from 'lucide-react';
+import { Search, Send, AlertCircle, CheckCircle, Loader } from 'lucide-react';
 
 interface User {
     id: number;
@@ -133,148 +133,77 @@ export default function SendRequest({ current_user_id }: Props) {
 
     return (
         <GuestLayout>
-            <div className="min-vh-100" style={{ backgroundColor: '#F8F9FA', paddingTop: '3rem', paddingBottom: '3rem' }}>
-                <div className="container" style={{ maxWidth: '600px' }}>
+            <div className="connections-page">
+                <div className="connections-container" style={{ maxWidth: '650px' }}>
                     {/* Header */}
-                    <div className="mb-4">
-                        <h1 className="h2 fw-bold mb-1">Send Connection Request</h1>
-                        <p className="text-muted">Connect with family members to build your family tree</p>
+                    <div className="connections-header-simple">
+                        <h1 className="connections-title">Send Connection Request</h1>
+                        <p className="connections-subtitle">Connect with family members to build your family tree</p>
                     </div>
 
-                    <div
-                        style={{
-                            backgroundColor: 'white',
-                            borderRadius: '12px',
-                            border: '1px solid #E5E7EB',
-                            padding: '2rem',
-                        }}
-                    >
+                    <div className="connections-form-card">
                         {/* Error Alert */}
                         {error && (
-                            <div
-                                className="alert mb-4 d-flex align-items-start gap-3"
-                                style={{
-                                    backgroundColor: '#FEE2E2',
-                                    border: '1px solid #FCA5A5',
-                                    color: '#991B1B',
-                                }}
-                            >
-                                <AlertCircle size={20} style={{ flexShrink: 0, marginTop: '2px' }} />
+                            <div className="connections-alert connections-alert-error">
+                                <AlertCircle size={20} className="connections-alert-icon" />
                                 <div>{error}</div>
                             </div>
                         )}
 
                         {/* Success Alert */}
                         {success && (
-                            <div
-                                className="alert mb-4 d-flex align-items-start gap-3"
-                                style={{
-                                    backgroundColor: '#DBEAFE',
-                                    border: '1px solid #93C5FD',
-                                    color: '#1E40AF',
-                                }}
-                            >
-                                <CheckCircle size={20} style={{ flexShrink: 0, marginTop: '2px' }} />
+                            <div className="connections-alert connections-alert-success">
+                                <CheckCircle size={20} className="connections-alert-icon" />
                                 <div>{success}</div>
                             </div>
                         )}
 
                         {/* Search for User */}
-                        <div className="form-group mb-4">
-                            <label className="form-label fw-semibold mb-2">Search for Family Member</label>
-                            <div style={{ position: 'relative' }}>
+                        <div className="connections-form-group">
+                            <label className="connections-form-label">Search for Family Member</label>
+                            <div className="connections-search-wrapper">
                                 <Search
                                     size={18}
-                                    style={{
-                                        position: 'absolute',
-                                        left: '12px',
-                                        top: '12px',
-                                        color: '#9CA3AF',
-                                        pointerEvents: 'none',
-                                    }}
+                                    className="connections-input-icon"
                                 />
                                 <input
                                     type="text"
-                                    className="form-control"
+                                    className="connections-search-input"
                                     placeholder="Search by name, username, or email..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    style={{ paddingLeft: '40px' }}
                                 />
                             </div>
 
-                            {/* Search Results */}
+                            {/* Search Results Dropdown */}
                             {users.length > 0 && (
-                                <div
-                                    style={{
-                                        marginTop: '0.5rem',
-                                        border: '1px solid #E5E7EB',
-                                        borderRadius: '8px',
-                                        maxHeight: '300px',
-                                        overflowY: 'auto',
-                                        backgroundColor: '#FFFFFF',
-                                    }}
-                                >
+                                <div className="connections-search-results">
                                     {users.map(user => (
                                         <div
                                             key={user.id}
-                                            style={{
-                                                padding: '0.75rem 1rem',
-                                                borderBottom: '1px solid #E5E7EB',
-                                                cursor: 'pointer',
-                                                backgroundColor: selectedUser?.id === user.id ? '#E0E7FF' : 'transparent',
-                                                transition: 'background-color 0.2s',
-                                            }}
+                                            className={`connections-search-result-item ${selectedUser?.id === user.id ? 'selected' : ''}`}
                                             onClick={() => setSelectedUser(user)}
-                                            onMouseEnter={(e) => {
-                                                if (selectedUser?.id !== user.id) {
-                                                    e.currentTarget.style.backgroundColor = '#F8F9FA';
-                                                }
-                                            }}
-                                            onMouseLeave={(e) => {
-                                                if (selectedUser?.id !== user.id) {
-                                                    e.currentTarget.style.backgroundColor = 'transparent';
-                                                }
-                                            }}
                                         >
-                                            <div className="d-flex align-items-center gap-2">
-                                                <img
-                                                    src={user.profile_image_url || 'https://via.placeholder.com/40'}
-                                                    alt={user.name}
-                                                    style={{
-                                                        width: '40px',
-                                                        height: '40px',
-                                                        borderRadius: '50%',
-                                                        objectFit: 'cover',
-                                                    }}
-                                                />
-                                                <div className="flex-grow-1">
-                                                    <div className="fw-semibold">{user.name}</div>
-                                                    <small className="text-muted">@{user.username}</small>
-                                                </div>
-                                                {selectedUser?.id === user.id && (
-                                                    <span
-                                                        style={{
-                                                            display: 'inline-block',
-                                                            backgroundColor: '#0052E8',
-                                                            color: 'white',
-                                                            padding: '0.25rem 0.75rem',
-                                                            borderRadius: '9999px',
-                                                            fontSize: '0.75rem',
-                                                            fontWeight: '600',
-                                                        }}
-                                                    >
-                                                        Selected
-                                                    </span>
-                                                )}
+                                            <img
+                                                src={user.profile_image_url || 'https://via.placeholder.com/40'}
+                                                alt={user.name}
+                                                className="connections-result-avatar"
+                                            />
+                                            <div className="connections-result-info">
+                                                <div className="connections-result-name">{user.name}</div>
+                                                <small className="connections-result-username">@{user.username}</small>
                                             </div>
+                                            {selectedUser?.id === user.id && (
+                                                <span className="connections-result-selected">✓ Selected</span>
+                                            )}
                                         </div>
                                     ))}
                                 </div>
                             )}
 
                             {searching && (
-                                <div style={{ marginTop: '0.5rem', color: '#6B7280', fontSize: '0.875rem' }}>
+                                <div className="connections-searching">
+                                    <Loader size={16} className="connections-search-spinner" />
                                     Searching...
                                 </div>
                             )}
@@ -282,25 +211,18 @@ export default function SendRequest({ current_user_id }: Props) {
 
                         {/* Selected User Display */}
                         {selectedUser && (
-                            <div
-                                className="p-3 mb-4"
-                                style={{
-                                    backgroundColor: '#F0F9FF',
-                                    border: '1px solid #BAE6FD',
-                                    borderRadius: '8px',
-                                }}
-                            >
-                                <p className="mb-0 small">
+                            <div className="connections-selected-user">
+                                <p>
                                     <strong>Connecting with:</strong> {selectedUser.name} (@{selectedUser.username})
                                 </p>
                             </div>
                         )}
 
                         {/* Relationship Type */}
-                        <div className="form-group mb-4">
-                            <label className="form-label fw-semibold mb-2">Relationship Type</label>
+                        <div className="connections-form-group">
+                            <label className="connections-form-label">Relationship Type</label>
                             <select
-                                className="form-select"
+                                className="connections-form-select"
                                 value={relationshipType}
                                 onChange={(e) => setRelationshipType(e.target.value)}
                                 disabled={!selectedUser}
@@ -314,7 +236,7 @@ export default function SendRequest({ current_user_id }: Props) {
                             </select>
 
                             {relationshipType && (
-                                <small className="text-muted d-block mt-2">
+                                <small className="connections-form-hint">
                                     {relationshipTypes.find(t => t.key === relationshipType)?.description}
                                 </small>
                             )}
@@ -322,13 +244,7 @@ export default function SendRequest({ current_user_id }: Props) {
 
                         {/* Submit Button */}
                         <button
-                            className="btn w-100"
-                            style={{
-                                background: 'linear-gradient(135deg, #0052E8 0%, #00D4FF 100%)',
-                                color: 'white',
-                                border: 'none',
-                                height: '48px',
-                            }}
+                            className="connections-btn-primary connections-btn-large"
                             onClick={handleSendRequest}
                             disabled={loading || !selectedUser || !relationshipType}
                         >
@@ -346,15 +262,7 @@ export default function SendRequest({ current_user_id }: Props) {
                         </button>
 
                         {/* Info Box */}
-                        <div
-                            className="mt-4 p-3"
-                            style={{
-                                backgroundColor: '#F3F4F6',
-                                borderRadius: '8px',
-                                fontSize: '0.875rem',
-                                color: '#4B5563',
-                            }}
-                        >
+                        <div className="connections-info-box">
                             <strong>💡 Tip:</strong> Once the other person accepts your request, you'll both be able to see each other's family connections.
                         </div>
                     </div>

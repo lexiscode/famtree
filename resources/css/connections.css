@@ -1,0 +1,750 @@
+/* ============================================================================
+   CONNECTIONS - SLEEK & PROFESSIONAL DESIGN
+   ============================================================================ */
+
+:root {
+  --connections-primary: linear-gradient(135deg, #0052E8 0%, #00D4FF 100%);
+  --connections-secondary: linear-gradient(135deg, #FFD700 0%, #FF9800 100%);
+  --connections-success: linear-gradient(135deg, #00D97F 0%, #00B981 100%);
+  --connections-warning: linear-gradient(135deg, #F59E0B 0%, #F97316 100%);
+}
+
+/* ============================================================================
+   PAGE CONTAINER
+   ============================================================================ */
+
+.connections-page-wrapper {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #F8F9FA 0%, #E8EAEF 100%);
+  padding-top: 2rem;
+  padding-bottom: 4rem;
+}
+
+.connections-header {
+  margin-bottom: 2.5rem;
+  animation: fadeInDown 0.6s ease-out;
+}
+
+.connections-header-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.02em;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.connections-header-subtitle {
+  font-size: 1rem;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin-bottom: 0;
+}
+
+.connections-badge {
+  display: inline-block;
+  background: var(--connections-primary);
+  color: white;
+  padding: 0.35rem 0.85rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+/* ============================================================================
+   SEARCH & FILTER SECTION
+   ============================================================================ */
+
+.connections-filters-wrapper {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.connections-filter-group {
+  position: relative;
+}
+
+.connections-filter-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9CA3AF;
+  pointer-events: none;
+  width: 18px;
+  height: 18px;
+}
+
+.connections-input,
+.connections-select {
+  width: 100%;
+  height: 48px;
+  padding: 0.75rem 1rem 0.75rem 44px;
+  border: 2px solid var(--color-border);
+  border-radius: 10px;
+  font-size: 1rem;
+  color: var(--color-text-primary);
+  background-color: white;
+  transition: all 0.3s ease;
+  font-family: var(--font-body);
+}
+
+.connections-input:focus,
+.connections-select:focus {
+  border-color: var(--color-gold);
+  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1), 0 4px 12px rgba(0, 82, 232, 0.15);
+  outline: none;
+}
+
+.connections-input::placeholder {
+  color: #9CA3AF;
+}
+
+/* ============================================================================
+   CONNECTION CARDS
+   ============================================================================ */
+
+.connection-card {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #E5E7EB;
+  padding: 1.5rem;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.connection-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--connections-primary);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s ease;
+}
+
+.connection-card:hover {
+  box-shadow: 0 10px 30px rgba(0, 82, 232, 0.15);
+  border-color: #BAE6FD;
+  transform: translateY(-6px);
+}
+
+.connection-card:hover::before {
+  transform: scaleX(1);
+}
+
+/* Header */
+.connection-card-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.connection-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #E5E7EB;
+  transition: all 0.3s ease;
+}
+
+.connection-card:hover .connection-avatar {
+  border-color: #0052E8;
+  box-shadow: 0 0 0 3px rgba(0, 82, 232, 0.1);
+}
+
+.connection-info {
+  flex: 1;
+}
+
+.connection-name {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.connection-username {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
+.connection-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #D1FAE5;
+  color: #10B981;
+  padding: 0.35rem 0.85rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Relationship Info */
+.connection-relationship-box {
+  background: linear-gradient(135deg, #E0E7FF 0%, #F0F9FF 100%);
+  border: 1px solid #93C5FD;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.connection-relationship-label {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.connection-relationship-value {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: #0052E8;
+}
+
+.connection-date {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  margin-top: 0.5rem;
+}
+
+/* Actions */
+.connection-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.connection-action-btn {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 44px;
+}
+
+.connection-action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.connection-action-btn-primary {
+  background: var(--connections-primary);
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 82, 232, 0.2);
+}
+
+.connection-action-btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 82, 232, 0.3);
+}
+
+.connection-action-btn-secondary {
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  border-color: var(--color-border);
+}
+
+.connection-action-btn-secondary:hover:not(:disabled) {
+  border-color: var(--color-text-secondary);
+  background: white;
+  transform: translateY(-2px);
+}
+
+.connection-action-btn-danger {
+  background: transparent;
+  color: #EF4444;
+  border-color: #FCA5A5;
+}
+
+.connection-action-btn-danger:hover:not(:disabled) {
+  background: #FEE2E2;
+  transform: translateY(-2px);
+}
+
+.connection-undo-timer {
+  font-size: 0.875rem;
+  color: #F97316;
+  margin-top: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: #FEF3C7;
+  border-left: 3px solid #F59E0B;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* ============================================================================
+   GROUPED CONNECTIONS SECTION
+   ============================================================================ */
+
+.connections-group {
+  margin-bottom: 3rem;
+}
+
+.connections-group-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0052E8;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid var(--connections-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.connections-group-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: var(--connections-primary);
+  color: white;
+  border-radius: 50%;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.connections-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .connections-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================================================
+   EMPTY STATE
+   ============================================================================ */
+
+.connections-empty-state {
+  background: white;
+  border-radius: 12px;
+  border: 2px dashed #E5E7EB;
+  padding: 3rem 2rem;
+  text-align: center;
+}
+
+.connections-empty-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 1.5rem;
+  color: #D1D5DB;
+}
+
+.connections-empty-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: 0.75rem;
+}
+
+.connections-empty-message {
+  font-size: 1rem;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+
+.connections-empty-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--connections-primary);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.connections-empty-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 82, 232, 0.3);
+}
+
+/* ============================================================================
+   REQUEST LIST ITEMS
+   ============================================================================ */
+
+.connection-request-item {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #E5E7EB;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  transition: all 0.3s ease;
+}
+
+.connection-request-item:hover {
+  box-shadow: 0 8px 20px rgba(0, 82, 232, 0.1);
+  border-color: #BAE6FD;
+  transform: translateX(4px);
+}
+
+.connection-request-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.connection-request-user {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.connection-request-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #E5E7EB;
+}
+
+.connection-request-details {
+  flex: 1;
+}
+
+.connection-request-name {
+  font-weight: 700;
+  color: var(--color-text-primary);
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.connection-request-username {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
+.connection-request-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.connection-request-status.pending {
+  background: #FEF3C7;
+  color: #92400E;
+}
+
+.connection-request-status.accepted {
+  background: #D1FAE5;
+  color: #10B981;
+}
+
+.connection-request-details-box {
+  background: #F8F9FA;
+  border-left: 3px solid #0052E8;
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.connection-request-detail-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.connection-request-detail-row:last-child {
+  margin-bottom: 0;
+}
+
+.connection-request-label {
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.connection-request-value {
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.connection-request-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+@media (max-width: 576px) {
+  .connection-request-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================================================
+   SEARCH RESULTS DROPDOWN
+   ============================================================================ */
+
+.connection-search-results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 0.5rem;
+  background: white;
+  border: 1px solid #E5E7EB;
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+  max-height: 320px;
+  overflow-y: auto;
+  z-index: 10;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.connection-search-result-item {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #F0F2F5;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.connection-search-result-item:last-child {
+  border-bottom: none;
+}
+
+.connection-search-result-item:hover {
+  background-color: #F8F9FA;
+}
+
+.connection-search-result-item.selected {
+  background: linear-gradient(135deg, #E0E7FF 0%, #F0F9FF 100%);
+}
+
+.connection-search-result-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.connection-search-result-info {
+  flex: 1;
+}
+
+.connection-search-result-name {
+  font-weight: 600;
+  color: var(--color-text-primary);
+  font-size: 0.95rem;
+}
+
+.connection-search-result-username {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
+.connection-search-result-badge {
+  background: #0052E8;
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ============================================================================
+   INFO & TIPS BOXES
+   ============================================================================ */
+
+.connection-info-box {
+  border-radius: 10px;
+  padding: 1.25rem;
+  margin-top: 1.5rem;
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.connection-info-box.primary {
+  background: linear-gradient(135deg, #E0E7FF 0%, #F0F9FF 100%);
+  border: 1px solid #93C5FD;
+  color: #0C4A6E;
+}
+
+.connection-info-box.success {
+  background: linear-gradient(135deg, #DBEAFE 0%, #F0F9FF 100%);
+  border: 1px solid #93C5FD;
+  color: #0C4A6E;
+}
+
+.connection-info-box.warning {
+  background: linear-gradient(135deg, #FEF3C7 0%, #FEE4B5 100%);
+  border: 1px solid #FCD34D;
+  color: #92400E;
+}
+
+.connection-info-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  line-height: 1;
+  margin-top: 0.25rem;
+}
+
+.connection-info-content {
+  flex: 1;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.connection-info-title {
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+}
+
+.connection-info-text {
+  margin: 0;
+}
+
+.connection-info-list {
+  margin-top: 0.5rem;
+  padding-left: 1.5rem;
+}
+
+.connection-info-list li {
+  margin-bottom: 0.35rem;
+}
+
+/* ============================================================================
+   LOADING STATES
+   ============================================================================ */
+
+.connection-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top-color: currentColor;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.connection-loading-skeleton {
+  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* ============================================================================
+   ANIMATIONS
+   ============================================================================ */
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.connections-animate-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+/* ============================================================================
+   RESPONSIVE DESIGN
+   ============================================================================ */
+
+@media (max-width: 768px) {
+  .connections-header-title {
+    font-size: 1.5rem;
+  }
+
+  .connections-filters-wrapper {
+    grid-template-columns: 1fr;
+  }
+
+  .connection-card {
+    padding: 1.25rem;
+  }
+
+  .connection-actions {
+    flex-direction: column;
+  }
+
+  .connection-request-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .connection-request-status {
+    margin-top: 0.75rem;
+  }
+
+  .connections-empty-state {
+    padding: 2rem 1.5rem;
+  }
+}
+
+/* ============================================================================
+   END OF CONNECTIONS STYLES
+   ============================================================================ */

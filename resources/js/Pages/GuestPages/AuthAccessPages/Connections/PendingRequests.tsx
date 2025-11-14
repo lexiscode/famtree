@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { usePage, router } from '@inertiajs/react';
 import GuestLayout from '@/Layouts/GuestLayout';
-import { Clock, Check, X, ChevronRight } from 'lucide-react';
+import { Clock, Check, X } from 'lucide-react';
 
 interface Request {
     id: number;
@@ -73,85 +73,66 @@ export default function PendingRequests({ requests: initialRequests, count }: Pr
 
     return (
         <GuestLayout>
-            <div className="min-vh-100" style={{ backgroundColor: '#F8F9FA', paddingTop: '3rem', paddingBottom: '3rem' }}>
-                <div className="container" style={{ maxWidth: '700px' }}>
+            <div className="connections-page">
+                <div className="connections-container">
                     {/* Header */}
-                    <div className="mb-4">
-                        <h1 className="h2 fw-bold mb-1">Pending Requests</h1>
-                        <p className="text-muted">
+                    <div className="connections-header-simple">
+                        <h1 className="connections-title">Pending Requests</h1>
+                        <p className="connections-subtitle">
                             You have <strong>{count}</strong> pending connection request{count !== 1 ? 's' : ''}
                         </p>
                     </div>
 
                     {/* Requests List */}
                     {requests.length === 0 ? (
-                        <div
-                            className="text-center py-5"
-                            style={{
-                                backgroundColor: 'white',
-                                borderRadius: '12px',
-                                border: '1px solid #E5E7EB',
-                            }}
-                        >
-                            <Clock size={48} className="text-muted mb-3" style={{ display: 'block', margin: '0 auto 1rem' }} />
-                            <h4 className="fw-semibold">No pending requests</h4>
-                            <p className="text-muted">You're all caught up! Check back later for new connection requests.</p>
+                        <div className="connections-empty-state">
+                            <Clock size={56} className="connections-empty-icon" />
+                            <h3 className="connections-empty-title">No pending requests</h3>
+                            <p className="connections-empty-text">
+                                You're all caught up! Check back later for new connection requests.
+                            </p>
                         </div>
                     ) : (
-                        <div className="space-y-3">
+                        <div className="connection-requests-list">
                             {requests.map(request => (
                                 <div
                                     key={request.id}
-                                    style={{
-                                        backgroundColor: 'white',
-                                        borderRadius: '12px',
-                                        border: '1px solid #E5E7EB',
-                                        padding: '1.5rem',
-                                        transition: 'all 0.3s ease',
-                                    }}
-                                    className="mb-3"
+                                    className="connection-request-item"
                                 >
-                                    {/* User Info */}
-                                    <div className="d-flex align-items-center mb-3">
+                                    {/* User Info Header */}
+                                    <div className="connection-request-header">
                                         <img
                                             src={request.requester.profile_image_url || 'https://via.placeholder.com/56'}
                                             alt={request.requester.name}
-                                            style={{
-                                                width: '56px',
-                                                height: '56px',
-                                                borderRadius: '50%',
-                                                marginRight: '1rem',
-                                                objectFit: 'cover',
-                                            }}
+                                            className="connection-request-avatar"
                                         />
-                                        <div className="flex-grow-1">
-                                            <h5 className="mb-0 fw-semibold">{request.requester.name}</h5>
-                                            <small className="text-muted">@{request.requester.username}</small>
+                                        <div className="connection-request-info">
+                                            <h4 className="connection-request-name">{request.requester.name}</h4>
+                                            <p className="connection-request-username">@{request.requester.username}</p>
                                         </div>
-                                        <ChevronRight size={20} className="text-muted" />
+                                        <span className="connection-request-badge">
+                                            ⏳ Pending
+                                        </span>
                                     </div>
 
                                     {/* Request Details */}
-                                    <div className="mb-3 p-3" style={{ backgroundColor: '#F8F9FA', borderRadius: '8px' }}>
-                                        <p className="mb-1 small">
-                                            <strong>Claimed Relationship:</strong> {request.relationship_label}
+                                    <div className="connection-request-details">
+                                        <p className="connection-detail-row">
+                                            <span className="connection-detail-label">Claimed Relationship:</span>
+                                            <strong>{request.relationship_label}</strong>
                                         </p>
-                                        <p className="mb-0 small text-muted">
+                                        <p className="connection-detail-row connection-detail-date">
                                             Requested {new Date(request.requested_at).toLocaleDateString()}
                                         </p>
                                     </div>
 
                                     {/* Actions */}
-                                    <div className="d-flex gap-2">
+                                    <div className="connection-request-actions">
                                         <button
-                                            className="btn flex-grow-1"
-                                            style={{
-                                                background: 'linear-gradient(135deg, #00D97F 0%, #00B981 100%)',
-                                                color: 'white',
-                                                border: 'none',
-                                            }}
+                                            className="connection-request-btn-accept"
                                             onClick={() => handleAccept(request.id)}
                                             disabled={loading === request.id}
+                                            title="Accept this connection request"
                                         >
                                             {loading === request.id ? (
                                                 <>
@@ -160,15 +141,16 @@ export default function PendingRequests({ requests: initialRequests, count }: Pr
                                                 </>
                                             ) : (
                                                 <>
-                                                    <Check size={18} className="me-2" style={{ display: 'inline' }} />
+                                                    <Check size={18} style={{ display: 'inline' }} />
                                                     Accept
                                                 </>
                                             )}
                                         </button>
                                         <button
-                                            className="btn btn-outline-danger"
+                                            className="connection-request-btn-decline"
                                             onClick={() => handleDecline(request.id)}
                                             disabled={loading === request.id}
+                                            title="Decline this connection request"
                                         >
                                             {loading === request.id ? (
                                                 <>
@@ -177,7 +159,7 @@ export default function PendingRequests({ requests: initialRequests, count }: Pr
                                                 </>
                                             ) : (
                                                 <>
-                                                    <X size={18} className="me-2" style={{ display: 'inline' }} />
+                                                    <X size={18} style={{ display: 'inline' }} />
                                                     Decline
                                                 </>
                                             )}

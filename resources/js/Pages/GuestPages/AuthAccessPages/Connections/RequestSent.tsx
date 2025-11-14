@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { usePage, router } from '@inertiajs/react';
 import GuestLayout from '@/Layouts/GuestLayout';
-import { Send, Trash2, ChevronRight } from 'lucide-react';
+import { Send, Trash2 } from 'lucide-react';
 
 interface SentRequest {
     id: number;
@@ -52,107 +52,77 @@ export default function RequestSent({ requests: initialRequests, count }: Props)
 
     return (
         <GuestLayout>
-            <div className="min-vh-100" style={{ backgroundColor: '#F8F9FA', paddingTop: '3rem', paddingBottom: '3rem' }}>
-                <div className="container" style={{ maxWidth: '700px' }}>
+            <div className="connections-page">
+                <div className="connections-container">
                     {/* Header */}
-                    <div className="mb-4">
-                        <h1 className="h2 fw-bold mb-1">Sent Requests</h1>
-                        <p className="text-muted">
+                    <div className="connections-header-simple">
+                        <h1 className="connections-title">Sent Requests</h1>
+                        <p className="connections-subtitle">
                             You have <strong>{count}</strong> pending connection request{count !== 1 ? 's' : ''} awaiting response
                         </p>
                     </div>
 
                     {/* Requests List */}
                     {requests.length === 0 ? (
-                        <div
-                            className="text-center py-5"
-                            style={{
-                                backgroundColor: 'white',
-                                borderRadius: '12px',
-                                border: '1px solid #E5E7EB',
-                            }}
-                        >
-                            <Send size={48} className="text-muted mb-3" style={{ display: 'block', margin: '0 auto 1rem' }} />
-                            <h4 className="fw-semibold">No sent requests</h4>
-                            <p className="text-muted mb-4">You haven't sent any connection requests yet.</p>
+                        <div className="connections-empty-state">
+                            <Send size={56} className="connections-empty-icon" />
+                            <h3 className="connections-empty-title">No sent requests</h3>
+                            <p className="connections-empty-text">
+                                You haven't sent any connection requests yet.
+                            </p>
                             <button
-                                className="btn"
-                                style={{
-                                    background: 'linear-gradient(135deg, #0052E8 0%, #00D4FF 100%)',
-                                    color: 'white',
-                                    border: 'none',
-                                }}
+                                className="connections-btn-primary"
                                 onClick={() => router.visit(route('connections.create'))}
                             >
+                                <Send size={18} className="me-2" style={{ display: 'inline' }} />
                                 Send a Connection Request
                             </button>
                         </div>
                     ) : (
-                        <div className="space-y-3">
+                        <div className="connection-requests-list">
                             {requests.map(request => (
                                 <div
                                     key={request.id}
-                                    style={{
-                                        backgroundColor: 'white',
-                                        borderRadius: '12px',
-                                        border: '1px solid #E5E7EB',
-                                        padding: '1.5rem',
-                                        transition: 'all 0.3s ease',
-                                    }}
-                                    className="mb-3"
+                                    className="connection-request-item"
                                 >
-                                    {/* User Info */}
-                                    <div className="d-flex align-items-center mb-3">
+                                    {/* User Info Header */}
+                                    <div className="connection-request-header">
                                         <img
                                             src={request.recipient.profile_image_url || 'https://via.placeholder.com/56'}
                                             alt={request.recipient.name}
-                                            style={{
-                                                width: '56px',
-                                                height: '56px',
-                                                borderRadius: '50%',
-                                                marginRight: '1rem',
-                                                objectFit: 'cover',
-                                            }}
+                                            className="connection-request-avatar"
                                         />
-                                        <div className="flex-grow-1">
-                                            <h5 className="mb-0 fw-semibold">{request.recipient.name}</h5>
-                                            <small className="text-muted">@{request.recipient.username}</small>
+                                        <div className="connection-request-info">
+                                            <h4 className="connection-request-name">{request.recipient.name}</h4>
+                                            <p className="connection-request-username">@{request.recipient.username}</p>
                                         </div>
-                                        <span
-                                            style={{
-                                                display: 'inline-block',
-                                                backgroundColor: '#FEF3C7',
-                                                color: '#92400E',
-                                                padding: '0.25rem 0.75rem',
-                                                borderRadius: '9999px',
-                                                fontSize: '0.75rem',
-                                                fontWeight: '600',
-                                            }}
-                                        >
+                                        <span className="connection-request-badge connection-request-badge-sent">
                                             ⏳ Pending
                                         </span>
                                     </div>
 
                                     {/* Request Details */}
-                                    <div className="mb-3 p-3" style={{ backgroundColor: '#F8F9FA', borderRadius: '8px' }}>
-                                        <p className="mb-1 small">
-                                            <strong>Proposed Relationship:</strong> {request.relationship_label}
+                                    <div className="connection-request-details">
+                                        <p className="connection-detail-row">
+                                            <span className="connection-detail-label">Proposed Relationship:</span>
+                                            <strong>{request.relationship_label}</strong>
                                         </p>
-                                        <p className="mb-0 small text-muted">
+                                        <p className="connection-detail-row connection-detail-date">
                                             Sent {new Date(request.requested_at).toLocaleDateString()}
                                         </p>
                                     </div>
 
                                     {/* Actions */}
-                                    <div className="d-flex gap-2">
+                                    <div className="connection-request-actions connection-request-actions-sent">
                                         <button
-                                            className="btn flex-grow-1 btn-outline-secondary"
+                                            className="connection-request-btn-view"
                                             onClick={() => router.visit(route('connections.index'))}
+                                            title="View all connections"
                                         >
                                             View My Connections
                                         </button>
                                         <button
-                                            className="btn btn-outline-danger"
+                                            className="connection-request-btn-unsend"
                                             onClick={() => handleUnsend(request.id)}
                                             disabled={loading === request.id}
                                             title="Unsend this request"
@@ -175,16 +145,7 @@ export default function RequestSent({ requests: initialRequests, count }: Props)
                     )}
 
                     {/* Info Box */}
-                    <div
-                        className="mt-4 p-3"
-                        style={{
-                            backgroundColor: '#DBEAFE',
-                            border: '1px solid #93C5FD',
-                            borderRadius: '8px',
-                            color: '#0C4A6E',
-                            fontSize: '0.875rem',
-                        }}
-                    >
+                    <div className="connections-info-box">
                         <strong>💡 Tip:</strong> Requests will automatically be removed if declined. You can also unsend requests that haven't been responded to yet.
                     </div>
                 </div>
