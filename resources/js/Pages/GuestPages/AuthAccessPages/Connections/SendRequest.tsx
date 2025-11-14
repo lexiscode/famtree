@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { Search, Send, AlertCircle, CheckCircle, Loader } from 'lucide-react';
+import { Search, Send, AlertCircle, CheckCircle, Loader, ArrowLeft } from 'lucide-react';
 
 interface User {
     id: number;
@@ -135,6 +135,16 @@ export default function SendRequest({ current_user_id }: Props) {
         <AuthAccessLayout>
             <div className="connections-page">
                 <div className="connections-container" style={{ maxWidth: '650px' }}>
+                    {/* Back Button */}
+                    <button
+                        className="connections-btn-back"
+                        onClick={() => router.visit(route('profile.show'))}
+                        title="Back to profile"
+                    >
+                        <ArrowLeft size={18} className="me-2" style={{ display: 'inline' }} />
+                        Back to Profile
+                    </button>
+
                     {/* Header */}
                     <div className="connections-header-simple">
                         <h1 className="connections-title">Send Connection Request</h1>

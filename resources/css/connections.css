@@ -1237,6 +1237,30 @@
   min-height: 48px;
 }
 
+.connections-btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  background: rgba(0, 82, 232, 0.1);
+  color: #87CEEB;
+  border: 1px solid rgba(0, 82, 232, 0.3);
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-bottom: 1.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+.connections-btn-back:hover {
+  background: rgba(0, 82, 232, 0.15);
+  border-color: rgba(0, 82, 232, 0.5);
+  transform: translateX(-2px);
+}
+
 /* ============================================================================
    ANIMATIONS
    ============================================================================ */
