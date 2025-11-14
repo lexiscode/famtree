@@ -17,7 +17,7 @@
 
 .onboarding-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #F8F9FA 0%, #E8EAEF 100%);
+  background: linear-gradient(135deg, #0F1419 0%, #1a1f2e 50%, #0052E8 100%);
   padding: 2rem 1rem;
   display: flex;
   align-items: center;
@@ -42,13 +42,13 @@
 .onboarding-header h1 {
   font-size: 2.5rem;
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: #FFFFFF;
   margin-bottom: 0.5rem;
   letter-spacing: -0.02em;
 }
 
 .onboarding-header .brand-text {
-  background: var(--onboarding-gradient-1);
+  background: linear-gradient(135deg, #00D4FF 0%, #0052E8 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -57,7 +57,7 @@
 
 .onboarding-header p {
   font-size: 1rem;
-  color: var(--color-text-secondary);
+  color: #B0B8C8;
   line-height: 1.6;
 }
 
@@ -195,11 +195,11 @@
 
 .onboarding-card {
   background: var(--onboarding-card-bg);
-  border-radius: 16px;
+  border-radius: 20px;
   padding: 2.5rem;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  animation: slideUp 0.6s ease-out;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  animation: slideUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
   backdrop-filter: blur(10px);
 }
 
