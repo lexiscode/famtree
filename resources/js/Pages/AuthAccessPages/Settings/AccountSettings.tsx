@@ -19,7 +19,7 @@ interface PageProps {
 
 export default function AccountSettings() {
     const { props } = usePage<PageProps>();
-    const { user } = props.auth;
+    const user = props?.auth?.user;
 
     // Password state
     const [passwords, setPasswords] = useState({
@@ -98,7 +98,7 @@ export default function AccountSettings() {
             return;
         }
 
-        if (newEmail === user.email) {
+        if (user && newEmail === user.email) {
             setEmailMessage({ type: 'error', text: 'New email must be different from current email' });
             setEmailLoading(false);
             return;
@@ -312,7 +312,7 @@ export default function AccountSettings() {
                             </div>
                             <div className="settings-section-title-wrapper">
                                 <h2 className="settings-section-title">Change Email Address</h2>
-                                <p className="settings-section-subtitle">Current email: <strong>{user.email}</strong></p>
+                                <p className="settings-section-subtitle">Current email: <strong>{user?.email || 'Not available'}</strong></p>
                             </div>
                         </div>
 
