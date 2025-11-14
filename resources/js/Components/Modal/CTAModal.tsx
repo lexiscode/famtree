@@ -1,20 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from '@inertiajs/react';
-import { z } from 'zod';
 import './CTAModal.css';
 
-// Validation schema for login only (keep Zod validation for login)
-const loginSchema = z.object({
-  emailOrUsername: z.string().min(1, 'Email or username is required'),
-  password: z.string().min(1, 'Password is required'),
-  rememberMe: z.boolean().optional().default(false),
-});
+// Login form data type (no client-side validation - backend handles all validation)
+interface LoginFormData {
+  emailOrUsername: string;
+  password: string;
+  rememberMe: boolean;
+}
 
-type LoginFormData = z.infer<typeof loginSchema>;
-
-// Registration form data type (no Zod validation - backend handles all validation)
+// Registration form data type (no client-side validation - backend handles all validation)
 interface RegisterFormData {
   firstName: string;
   lastName: string;
@@ -44,28 +39,21 @@ export default function CTAModal({
   const modalRef = useRef<HTMLDivElement>(null);
   const firstInputRef = useRef<HTMLInputElement>(null);
 
-  // Login form
-  const loginForm = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
-    mode: 'onSubmit',
-    defaultValues: {
-      emailOrUsername: '',
-      password: '',
-      rememberMe: false,
-    },
+  // Login form state
+  const [loginFormData, setLoginFormData] = useState<LoginFormData>({
+    emailOrUsername: '',
+    password: '',
+    rememberMe: false,
   });
 
-  // Register form (no client-side validation - backend handles all validation)
-  const registerForm = useForm<RegisterFormData>({
-    mode: 'onSubmit',
-    defaultValues: {
-      firstName: '',
-      lastName: '',
-      username: '',
-      email: '',
-      password: '',
-      password_confirmation: '',
-    },
+  // Register form state
+  const [registerFormData, setRegisterFormData] = useState<RegisterFormData>({
+    firstName: '',
+    lastName: '',
+    username: '',
+    email: '',
+    password: '',
+    password_confirmation: '',
   });
 
   // Focus management for accessibility
@@ -102,11 +90,12 @@ export default function CTAModal({
   };
 
   // Handle login submission
-  const handleLoginSubmit = (data: LoginFormData) => {
+  const handleLoginSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     setIsSubmitting(true);
     setApiError(null);
 
-    router.post(route('auth.login'), data, {
+    router.post(route('auth.login'), loginFormData, {
       onSuccess: () => {
         setSuccessMessage('Login successful! Redirecting...');
         onClose();
@@ -122,19 +111,15 @@ export default function CTAModal({
   };
 
   // Handle register submission (all validation done by Laravel backend)
-  const handleRegisterSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleRegisterSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
     setApiError(null);
 
-    // Get form data directly without any client-side validation
-    const formData = new FormData(e.currentTarget);
-    const data = Object.fromEntries(formData);
-
-    router.post(route('auth.register'), data, {
+    router.post(route('auth.register'), registerFormData, {
       onSuccess: () => {
         setSuccessMessage('Account created successfully! Logging you in...');
-        registerForm.reset({
+        setRegisterFormData({
           firstName: '',
           lastName: '',
           username: '',
@@ -191,15 +176,14 @@ export default function CTAModal({
               setActiveTab('login');
               setApiError(null);
               setSuccessMessage(null);
-              registerForm.reset({
+              setRegisterFormData({
                 firstName: '',
                 lastName: '',
                 username: '',
                 email: '',
                 password: '',
-                confirmPassword: '',
-              }, { keepErrors: false, keepDirty: false, keepTouched: false });
-              loginForm.clearErrors();
+                password_confirmation: '',
+              });
             }}
             type="button"
           >
@@ -211,12 +195,11 @@ export default function CTAModal({
               setActiveTab('register');
               setApiError(null);
               setSuccessMessage(null);
-              loginForm.reset({
+              setLoginFormData({
                 emailOrUsername: '',
                 password: '',
                 rememberMe: false,
-              }, { keepErrors: false, keepDirty: false, keepTouched: false });
-              registerForm.clearErrors();
+              });
             }}
             type="button"
           >
@@ -249,7 +232,7 @@ export default function CTAModal({
           {/* LOGIN TAB */}
           {activeTab === 'login' && (
             <form
-              onSubmit={loginForm.handleSubmit(handleLoginSubmit)}
+              onSubmit={handleLoginSubmit}
               className="modal-form"
               noValidate
             >
@@ -260,23 +243,16 @@ export default function CTAModal({
                   id="login-emailOrUsername"
                   type="text"
                   placeholder="your@email.com or username"
-                  {...loginForm.register('emailOrUsername')}
+                  value={loginFormData.emailOrUsername}
+                  onChange={(e) =>
+                    setLoginFormData({
+                      ...loginFormData,
+                      emailOrUsername: e.target.value,
+                    })
+                  }
                   ref={firstInputRef}
                   disabled={isSubmitting}
-                  aria-invalid={loginForm.formState.errors.emailOrUsername ? 'true' : 'false'}
-                  aria-describedby={
-                    loginForm.formState.errors.emailOrUsername ? 'login-emailOrUsername-error' : undefined
-                  }
                 />
-                {loginForm.formState.errors.emailOrUsername && (
-                  <span
-                    id="login-emailOrUsername-error"
-                    className="form-error"
-                    role="alert"
-                  >
-                    {loginForm.formState.errors.emailOrUsername.message}
-                  </span>
-                )}
               </div>
 
               {/* Password Field */}
@@ -287,16 +263,14 @@ export default function CTAModal({
                     id="login-password"
                     type={showPassword ? 'text' : 'password'}
                     placeholder="••••••••"
-                    {...loginForm.register('password')}
+                    value={loginFormData.password}
+                    onChange={(e) =>
+                      setLoginFormData({
+                        ...loginFormData,
+                        password: e.target.value,
+                      })
+                    }
                     disabled={isSubmitting}
-                    aria-invalid={
-                      loginForm.formState.errors.password ? 'true' : 'false'
-                    }
-                    aria-describedby={
-                      loginForm.formState.errors.password
-                        ? 'login-password-error'
-                        : undefined
-                    }
                   />
                   <button
                     type="button"
@@ -308,15 +282,6 @@ export default function CTAModal({
                     {showPassword ? '👁️' : '👁️‍🗨️'}
                   </button>
                 </div>
-                {loginForm.formState.errors.password && (
-                  <span
-                    id="login-password-error"
-                    className="form-error"
-                    role="alert"
-                  >
-                    {loginForm.formState.errors.password.message}
-                  </span>
-                )}
               </div>
 
               {/* Remember Me */}
@@ -324,7 +289,13 @@ export default function CTAModal({
                 <input
                   id="remember-me"
                   type="checkbox"
-                  {...loginForm.register('rememberMe')}
+                  checked={loginFormData.rememberMe}
+                  onChange={(e) =>
+                    setLoginFormData({
+                      ...loginFormData,
+                      rememberMe: e.target.checked,
+                    })
+                  }
                   disabled={isSubmitting}
                 />
                 <label htmlFor="remember-me">Remember me</label>
@@ -361,7 +332,7 @@ export default function CTAModal({
                     setActiveTab('register');
                     setApiError(null);
                     setSuccessMessage(null);
-                    loginForm.reset({
+                    setLoginFormData({
                       emailOrUsername: '',
                       password: '',
                       rememberMe: false,
@@ -390,7 +361,13 @@ export default function CTAModal({
                   <input
                     id="register-firstName"
                     type="text"
-                    name="firstName"
+                    value={registerFormData.firstName}
+                    onChange={(e) =>
+                      setRegisterFormData({
+                        ...registerFormData,
+                        firstName: e.target.value,
+                      })
+                    }
                     placeholder="John"
                     ref={firstInputRef}
                     disabled={isSubmitting}
@@ -403,7 +380,13 @@ export default function CTAModal({
                   <input
                     id="register-lastName"
                     type="text"
-                    name="lastName"
+                    value={registerFormData.lastName}
+                    onChange={(e) =>
+                      setRegisterFormData({
+                        ...registerFormData,
+                        lastName: e.target.value,
+                      })
+                    }
                     placeholder="Doe"
                     disabled={isSubmitting}
                   />
@@ -416,7 +399,13 @@ export default function CTAModal({
                 <input
                   id="register-username"
                   type="text"
-                  name="username"
+                  value={registerFormData.username}
+                  onChange={(e) =>
+                    setRegisterFormData({
+                      ...registerFormData,
+                      username: e.target.value,
+                    })
+                  }
                   placeholder="johndoe123"
                   disabled={isSubmitting}
                 />
@@ -428,7 +417,13 @@ export default function CTAModal({
                 <input
                   id="register-email"
                   type="email"
-                  name="email"
+                  value={registerFormData.email}
+                  onChange={(e) =>
+                    setRegisterFormData({
+                      ...registerFormData,
+                      email: e.target.value,
+                    })
+                  }
                   placeholder="your@email.com"
                   disabled={isSubmitting}
                 />
@@ -441,7 +436,13 @@ export default function CTAModal({
                   <input
                     id="register-password"
                     type={showPassword ? 'text' : 'password'}
-                    name="password"
+                    value={registerFormData.password}
+                    onChange={(e) =>
+                      setRegisterFormData({
+                        ...registerFormData,
+                        password: e.target.value,
+                      })
+                    }
                     placeholder="••••••••"
                     disabled={isSubmitting}
                   />
@@ -469,7 +470,13 @@ export default function CTAModal({
                   <input
                     id="register-confirm-password"
                     type={showConfirmPassword ? 'text' : 'password'}
-                    name="password_confirmation"
+                    value={registerFormData.password_confirmation}
+                    onChange={(e) =>
+                      setRegisterFormData({
+                        ...registerFormData,
+                        password_confirmation: e.target.value,
+                      })
+                    }
                     placeholder="••••••••"
                     disabled={isSubmitting}
                   />
