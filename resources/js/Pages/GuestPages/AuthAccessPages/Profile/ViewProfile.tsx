@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { router } from '@inertiajs/react';
 import GuestLayout from '@/Layouts/GuestLayout';
-import { Mail, Phone, MapPin, Cake, FileText, Users, Send, Clock, CheckCircle, Lock, Briefcase, BookOpen } from 'lucide-react';
+import { Mail, Phone, MapPin, Cake, FileText, Users, Send, Clock, CheckCircle, Lock, Briefcase, BookOpen, ArrowRight } from 'lucide-react';
 
 interface Profile {
     id: number;
@@ -66,6 +66,15 @@ export default function ViewProfile({
         }[relationshipContext] || 'Profile';
     };
 
+    const getRelationshipIcon = () => {
+        return {
+            self: null,
+            nuclear_family: '👨‍👩‍👧',
+            connected: '🤝',
+            public: '👁️',
+        }[relationshipContext];
+    };
+
     return (
         <GuestLayout>
             <div className="profile-page">
@@ -75,7 +84,7 @@ export default function ViewProfile({
                         <div className="profile-header">
                             <div className="profile-avatar-section">
                                 <img
-                                    src={profile.profile_image_url || 'https://via.placeholder.com/120'}
+                                    src={profile.profile_image_url || 'https://via.placeholder.com/140'}
                                     alt={profile.name}
                                     className="profile-avatar"
                                 />
@@ -88,13 +97,13 @@ export default function ViewProfile({
 
                                 {profile.bio && <p className="profile-bio">{profile.bio}</p>}
 
-                                {/* Visibility Context */}
+                                {/* Visibility Context Badge */}
                                 <div className="profile-connection-status">
-                                    <div className="profile-connection-label">Access Level:</div>
+                                    <div className="profile-connection-label">🔍 Access Level</div>
                                     <div className="profile-connection-type">{getRelationshipContextLabel()}</div>
                                 </div>
 
-                                {/* Connection Status */}
+                                {/* Connection Status Badge */}
                                 {connectionStatus === 'connected' && relationshipType && (
                                     <span className="profile-relationship-badge">
                                         ✓ {relationshipType.charAt(0).toUpperCase() + relationshipType.slice(1)}
@@ -114,8 +123,9 @@ export default function ViewProfile({
                                                     <button
                                                         className="profile-btn profile-btn-primary"
                                                         onClick={() => router.visit(route('connections.pending'))}
+                                                        style={{ marginTop: '0.5rem' }}
                                                     >
-                                                        <CheckCircle size={18} style={{ display: 'inline', marginRight: '0.5rem' }} />
+                                                        <CheckCircle size={18} />
                                                         View & Respond
                                                     </button>
                                                 </div>
@@ -130,18 +140,20 @@ export default function ViewProfile({
                                                     <button
                                                         className="profile-btn profile-btn-secondary"
                                                         onClick={() => router.visit(route('connections.sent'))}
+                                                        style={{ marginTop: '0.5rem', width: '100%' }}
                                                     >
-                                                        <Clock size={18} style={{ display: 'inline', marginRight: '0.5rem' }} />
+                                                        <Clock size={18} />
                                                         View Request
                                                     </button>
                                                 </div>
                                             </div>
                                         ) : (
                                             <button
-                                                className="profile-btn profile-btn-primary w-100"
+                                                className="profile-btn profile-btn-primary"
                                                 onClick={() => router.visit(route('connections.create'))}
+                                                style={{ width: '100%', marginTop: '1rem' }}
                                             >
-                                                <Send size={18} style={{ display: 'inline', marginRight: '0.5rem' }} />
+                                                <Send size={18} />
                                                 Send Connection Request
                                             </button>
                                         )}
@@ -150,8 +162,8 @@ export default function ViewProfile({
 
                                 {/* Mutual Connections Count */}
                                 {mutualConnectionsCount > 0 && (
-                                    <div className="mt-3 p-2 bg-light rounded text-center">
-                                        <small className="text-muted">
+                                    <div className="mt-3 p-2 rounded text-center" style={{ backgroundColor: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: '12px' }}>
+                                        <small className="text-muted" style={{ color: '#0C4A6E', fontWeight: '600' }}>
                                             <Users size={14} style={{ display: 'inline', marginRight: '0.5rem' }} />
                                             {mutualConnectionsCount} mutual connection{mutualConnectionsCount !== 1 ? 's' : ''}
                                         </small>
@@ -166,7 +178,7 @@ export default function ViewProfile({
                             <div className="profile-card">
                                 <div className="profile-card-header">
                                     <h2 className="profile-card-title">
-                                        <FileText size={20} />
+                                        <FileText size={24} />
                                         Profile Information
                                     </h2>
                                 </div>
@@ -180,13 +192,13 @@ export default function ViewProfile({
                                         return (
                                             <div key={field.key} className={`profile-field ${!isVisible ? 'hidden' : ''}`}>
                                                 <label className="profile-field-label">
-                                                    <IconComponent size={14} style={{ display: 'inline', marginRight: '0.5rem' }} />
+                                                    <IconComponent size={16} />
                                                     {field.label}
                                                 </label>
                                                 <div className={`profile-field-value ${!field.value || !isVisible ? 'empty' : ''}`}>
                                                     {isVisible && field.value ? field.value : (
-                                                        <span>
-                                                            <Lock size={14} style={{ display: 'inline', marginRight: '0.3rem' }} />
+                                                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                                                            <Lock size={14} />
                                                             Hidden from you
                                                         </span>
                                                     )}
@@ -202,9 +214,19 @@ export default function ViewProfile({
                                 <div className="profile-card">
                                     <div className="profile-card-header">
                                         <h2 className="profile-card-title">
-                                            <Users size={20} />
-                                            Mutual Connections ({mutualConnectionsCount})
+                                            <Users size={24} />
+                                            Mutual Connections
                                         </h2>
+                                        <span style={{
+                                            background: 'linear-gradient(135deg, #0052E8 0%, #00D4FF 100%)',
+                                            color: 'white',
+                                            padding: '0.35rem 0.75rem',
+                                            borderRadius: '8px',
+                                            fontSize: '0.85rem',
+                                            fontWeight: '700'
+                                        }}>
+                                            {mutualConnectionsCount}
+                                        </span>
                                     </div>
 
                                     <div className="profile-mutual-list">
@@ -213,9 +235,11 @@ export default function ViewProfile({
                                                 key={connection.id}
                                                 className="profile-mutual-item"
                                                 onClick={() => router.visit(route('profile.view', connection.id))}
+                                                style={{ cursor: 'pointer' }}
+                                                title={`View ${connection.name}'s profile`}
                                             >
                                                 <img
-                                                    src={connection.profile_image_url || 'https://via.placeholder.com/60'}
+                                                    src={connection.profile_image_url || 'https://via.placeholder.com/70'}
                                                     alt={connection.name}
                                                     className="profile-mutual-avatar"
                                                 />
@@ -226,22 +250,24 @@ export default function ViewProfile({
                                     </div>
 
                                     {mutualConnectionsCount > 5 && (
-                                        <div className="text-center mt-3">
+                                        <div className="text-center mt-4">
                                             <button
-                                                className="btn btn-outline-primary btn-sm"
+                                                className="btn btn-outline-primary"
                                                 onClick={() => router.visit(route('connections.index'))}
+                                                style={{ fontSize: '0.95rem', fontWeight: '600' }}
                                             >
                                                 View All {mutualConnectionsCount} Connections
+                                                <ArrowRight size={16} style={{ marginLeft: '0.5rem' }} />
                                             </button>
                                         </div>
                                     )}
                                 </div>
                             )}
 
-                            {/* Privacy Notice */}
+                            {/* Privacy Notice Info Box */}
                             <div className="profile-info-box">
-                                <strong>🔒 Privacy Notice:</strong> Fields marked with 🔒 are hidden from you based on {profile.name}'s
-                                privacy settings. Your access level is: <strong>{getRelationshipContextLabel()}</strong>
+                                <strong>🔒 Privacy Notice:</strong> Fields marked with <strong>🔒</strong> are hidden based on {profile.name}'s privacy settings.
+                                Your access level is <strong>{getRelationshipContextLabel()}</strong>.
                             </div>
                         </div>
                     </div>

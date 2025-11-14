@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
-import { usePage, router } from '@inertiajs/react';
+import { router } from '@inertiajs/react';
 import GuestLayout from '@/Layouts/GuestLayout';
-import { Mail, Phone, MapPin, Cake, FileText, Users, Edit, Settings, Briefcase, BookOpen } from 'lucide-react';
+import { Mail, Phone, MapPin, Cake, FileText, Users, Edit, Settings, Briefcase, BookOpen, ArrowRight } from 'lucide-react';
 
 interface User {
     id: number;
@@ -47,7 +47,7 @@ export default function MyProfile({ user, connections, connectionCount, pendingR
                         <div className="profile-header">
                             <div className="profile-avatar-section">
                                 <img
-                                    src={user.profile_image_url || 'https://via.placeholder.com/120'}
+                                    src={user.profile_image_url || 'https://via.placeholder.com/140'}
                                     alt={user.name}
                                     className="profile-avatar"
                                 />
@@ -77,22 +77,25 @@ export default function MyProfile({ user, connections, connectionCount, pendingR
                                     <button
                                         className="profile-btn profile-btn-primary"
                                         onClick={() => router.visit(route('profile.edit'))}
+                                        title="Edit your profile information"
                                     >
-                                        <Edit size={18} style={{ display: 'inline', marginRight: '0.5rem' }} />
+                                        <Edit size={18} />
                                         Edit Profile
                                     </button>
                                     <button
                                         className="profile-btn profile-btn-secondary"
                                         onClick={() => router.visit(route('profile.privacy'))}
+                                        title="Control who sees what"
                                     >
-                                        <Settings size={18} style={{ display: 'inline', marginRight: '0.5rem' }} />
+                                        <Settings size={18} />
                                         Privacy Settings
                                     </button>
                                     <button
                                         className="profile-btn profile-btn-secondary"
                                         onClick={() => router.visit(route('connections.index'))}
+                                        title="View all your connections"
                                     >
-                                        <Users size={18} style={{ display: 'inline', marginRight: '0.5rem' }} />
+                                        <Users size={18} />
                                         View Connections
                                     </button>
                                 </div>
@@ -105,7 +108,7 @@ export default function MyProfile({ user, connections, connectionCount, pendingR
                             <div className="profile-card">
                                 <div className="profile-card-header">
                                     <h2 className="profile-card-title">
-                                        <FileText size={20} />
+                                        <FileText size={24} />
                                         Profile Information
                                     </h2>
                                 </div>
@@ -116,7 +119,7 @@ export default function MyProfile({ user, connections, connectionCount, pendingR
                                         return (
                                             <div key={field.key} className="profile-field">
                                                 <label className="profile-field-label">
-                                                    <IconComponent size={14} style={{ display: 'inline', marginRight: '0.5rem' }} />
+                                                    <IconComponent size={16} />
                                                     {field.label}
                                                 </label>
                                                 <div className={`profile-field-value ${!field.value ? 'empty' : ''}`}>
@@ -128,55 +131,69 @@ export default function MyProfile({ user, connections, connectionCount, pendingR
                                 </div>
                             </div>
 
-                            {/* Quick Links Card */}
+                            {/* Quick Actions Card */}
                             <div className="profile-card">
                                 <div className="profile-card-header">
                                     <h2 className="profile-card-title">
-                                        <Users size={20} />
-                                        Quick Links
+                                        <Users size={24} />
+                                        Connection Overview
                                     </h2>
                                 </div>
 
                                 <div className="row g-3">
                                     <div className="col-md-6">
                                         <button
-                                            className="btn btn-outline-primary w-100"
+                                            className="btn btn-outline-primary w-100 d-flex align-items-center justify-content-between"
                                             onClick={() => router.visit(route('connections.index'))}
+                                            style={{ padding: '0.85rem 1.25rem' }}
                                         >
-                                            <strong>{connectionCount}</strong> Connections
+                                            <span>
+                                                <strong>{connectionCount}</strong> Connected
+                                            </span>
+                                            <ArrowRight size={18} />
                                         </button>
                                     </div>
                                     <div className="col-md-6">
                                         <button
-                                            className="btn btn-outline-warning w-100"
+                                            className="btn btn-outline-warning w-100 d-flex align-items-center justify-content-between"
                                             onClick={() => router.visit(route('connections.pending'))}
+                                            style={{ padding: '0.85rem 1.25rem' }}
                                         >
-                                            <strong>{pendingRequestCount}</strong> Pending Requests
+                                            <span>
+                                                <strong>{pendingRequestCount}</strong> Pending
+                                            </span>
+                                            <ArrowRight size={18} />
                                         </button>
                                     </div>
                                     <div className="col-md-6">
                                         <button
-                                            className="btn btn-outline-info w-100"
+                                            className="btn btn-outline-info w-100 d-flex align-items-center justify-content-between"
                                             onClick={() => router.visit(route('connections.sent'))}
+                                            style={{ padding: '0.85rem 1.25rem' }}
                                         >
-                                            <strong>{sentRequestCount}</strong> Sent Requests
+                                            <span>
+                                                <strong>{sentRequestCount}</strong> Sent
+                                            </span>
+                                            <ArrowRight size={18} />
                                         </button>
                                     </div>
                                     <div className="col-md-6">
                                         <button
-                                            className="btn btn-outline-success w-100"
+                                            className="btn btn-outline-success w-100 d-flex align-items-center justify-content-between"
                                             onClick={() => router.visit(route('connections.create'))}
+                                            style={{ padding: '0.85rem 1.25rem' }}
                                         >
-                                            Add Connection
+                                            <span>Add Connection</span>
+                                            <ArrowRight size={18} />
                                         </button>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Info Box */}
+                            {/* Tips & Info Box */}
                             <div className="profile-info-box">
-                                <strong>💡 Tip:</strong> You can control who sees each field of your profile by visiting Privacy Settings.
-                                Only you can always see your complete profile!
+                                <strong>💡 Pro Tip:</strong> Your profile is completely visible to you. Use
+                                <strong> Privacy Settings</strong> to control who sees each field across the platform.
                             </div>
                         </div>
                     </div>
