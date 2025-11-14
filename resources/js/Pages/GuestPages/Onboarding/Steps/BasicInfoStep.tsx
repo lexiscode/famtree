@@ -1,6 +1,6 @@
 import { useState, FormEvent } from 'react';
 import { router } from '@inertiajs/react';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, User, Calendar } from 'lucide-react';
 
 interface BasicInfoStepProps {
     onComplete: (progress: any) => void;
@@ -24,7 +24,6 @@ export default function BasicInfoStep({ onComplete, data }: BasicInfoStepProps) 
             ...prev,
             [name]: value,
         }));
-        // Clear error for this field when user starts typing
         if (errors[name]) {
             setErrors(prev => ({
                 ...prev,
@@ -53,75 +52,120 @@ export default function BasicInfoStep({ onComplete, data }: BasicInfoStepProps) 
 
     return (
         <div className="basic-info-step">
-            <h3 className="h4 mb-4 fw-bold">Let's start with your basic information</h3>
+            <h3>Let's start with your basic information</h3>
+            <p>This helps us personalize your FamTree experience and connect you with family members.</p>
 
             <form onSubmit={handleSubmit}>
-                {/* First Name */}
-                <div className="mb-4">
-                    <label htmlFor="first_name" className="form-label fw-semibold">
-                        First Name *
-                    </label>
-                    <input
-                        type="text"
-                        className={`form-control ${errors.first_name ? 'is-invalid' : ''}`}
-                        id="first_name"
-                        name="first_name"
-                        value={formData.first_name}
-                        onChange={handleChange}
-                        placeholder="John"
-                        disabled={isSubmitting}
-                    />
-                    {errors.first_name && (
-                        <div className="invalid-feedback d-block mt-2">
-                            <AlertCircle size={16} className="me-1" style={{ display: 'inline' }} />
-                            {errors.first_name}
+                {/* Name Row */}
+                <div className="row">
+                    <div className="col-md-6">
+                        <div className="form-group">
+                            <label htmlFor="first_name" className="form-label">
+                                First Name <span className="required">*</span>
+                            </label>
+                            <div style={{ position: 'relative' }}>
+                                <User
+                                    size={18}
+                                    style={{
+                                        position: 'absolute',
+                                        left: '12px',
+                                        top: '15px',
+                                        color: '#9CA3AF',
+                                        pointerEvents: 'none'
+                                    }}
+                                />
+                                <input
+                                    type="text"
+                                    className={`form-control ${errors.first_name ? 'is-invalid' : ''}`}
+                                    id="first_name"
+                                    name="first_name"
+                                    value={formData.first_name}
+                                    onChange={handleChange}
+                                    placeholder="John"
+                                    disabled={isSubmitting}
+                                    style={{ paddingLeft: '40px' }}
+                                />
+                            </div>
+                            {errors.first_name && (
+                                <div className="error-message">
+                                    <AlertCircle size={16} />
+                                    {errors.first_name}
+                                </div>
+                            )}
                         </div>
-                    )}
-                </div>
+                    </div>
 
-                {/* Last Name */}
-                <div className="mb-4">
-                    <label htmlFor="last_name" className="form-label fw-semibold">
-                        Last Name *
-                    </label>
-                    <input
-                        type="text"
-                        className={`form-control ${errors.last_name ? 'is-invalid' : ''}`}
-                        id="last_name"
-                        name="last_name"
-                        value={formData.last_name}
-                        onChange={handleChange}
-                        placeholder="Doe"
-                        disabled={isSubmitting}
-                    />
-                    {errors.last_name && (
-                        <div className="invalid-feedback d-block mt-2">
-                            <AlertCircle size={16} className="me-1" style={{ display: 'inline' }} />
-                            {errors.last_name}
+                    <div className="col-md-6">
+                        <div className="form-group">
+                            <label htmlFor="last_name" className="form-label">
+                                Last Name <span className="required">*</span>
+                            </label>
+                            <div style={{ position: 'relative' }}>
+                                <User
+                                    size={18}
+                                    style={{
+                                        position: 'absolute',
+                                        left: '12px',
+                                        top: '15px',
+                                        color: '#9CA3AF',
+                                        pointerEvents: 'none'
+                                    }}
+                                />
+                                <input
+                                    type="text"
+                                    className={`form-control ${errors.last_name ? 'is-invalid' : ''}`}
+                                    id="last_name"
+                                    name="last_name"
+                                    value={formData.last_name}
+                                    onChange={handleChange}
+                                    placeholder="Doe"
+                                    disabled={isSubmitting}
+                                    style={{ paddingLeft: '40px' }}
+                                />
+                            </div>
+                            {errors.last_name && (
+                                <div className="error-message">
+                                    <AlertCircle size={16} />
+                                    {errors.last_name}
+                                </div>
+                            )}
                         </div>
-                    )}
+                    </div>
                 </div>
 
                 {/* Date of Birth */}
-                <div className="mb-4">
-                    <label htmlFor="date_of_birth" className="form-label fw-semibold">
+                <div className="form-group">
+                    <label htmlFor="date_of_birth" className="form-label">
                         Date of Birth
                     </label>
-                    <input
-                        type="date"
-                        className="form-control"
-                        id="date_of_birth"
-                        name="date_of_birth"
-                        value={formData.date_of_birth}
-                        onChange={handleChange}
-                        disabled={isSubmitting}
-                    />
+                    <div style={{ position: 'relative' }}>
+                        <Calendar
+                            size={18}
+                            style={{
+                                position: 'absolute',
+                                left: '12px',
+                                top: '15px',
+                                color: '#9CA3AF',
+                                pointerEvents: 'none'
+                            }}
+                        />
+                        <input
+                            type="date"
+                            className="form-control"
+                            id="date_of_birth"
+                            name="date_of_birth"
+                            value={formData.date_of_birth}
+                            onChange={handleChange}
+                            disabled={isSubmitting}
+                            style={{ paddingLeft: '40px' }}
+                        />
+                    </div>
                 </div>
 
                 {/* Bio */}
-                <div className="mb-4">
-                    <label htmlFor="bio" className="form-label fw-semibold">
-                        About You (Optional)
+                <div className="form-group">
+                    <label htmlFor="bio" className="form-label">
+                        About You
                     </label>
                     <textarea
                         className="form-control"
@@ -129,34 +173,31 @@ export default function BasicInfoStep({ onComplete, data }: BasicInfoStepProps) 
                         name="bio"
                         value={formData.bio}
                         onChange={handleChange}
-                        placeholder="Tell us a bit about yourself..."
-                        rows={3}
+                        placeholder="Tell us a bit about yourself... (Optional)"
+                        rows={4}
                         maxLength={500}
                         disabled={isSubmitting}
+                        style={{ paddingTop: '12px' }}
                     />
-                    <small className="text-muted d-block mt-1">
+                    <div className="char-count">
                         {formData.bio.length}/500 characters
-                    </small>
+                    </div>
                 </div>
 
                 {/* Submit Button */}
-                <div className="mt-5">
+                <div className="btn-group">
                     <button
                         type="submit"
-                        className="btn btn-primary w-100"
+                        className="btn btn-primary btn-full-width"
                         disabled={isSubmitting}
                     >
                         {isSubmitting ? (
                             <>
-                                <span
-                                    className="spinner-border spinner-border-sm me-2"
-                                    role="status"
-                                    aria-hidden="true"
-                                />
+                                <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" />
                                 Saving...
                             </>
                         ) : (
-                            'Continue'
+                            'Continue to Next Step'
                         )}
                     </button>
                 </div>

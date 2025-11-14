@@ -1,6 +1,6 @@
 import { useState, FormEvent } from 'react';
 import { router } from '@inertiajs/react';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Heart, Users } from 'lucide-react';
 
 interface FamilyStatusStepProps {
     onComplete: (progress: any) => void;
@@ -18,11 +18,11 @@ export default function FamilyStatusStep({ onComplete, data }: FamilyStatusStepP
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const familyStatuses = [
-        { value: 'single', label: 'Single' },
-        { value: 'married', label: 'Married' },
-        { value: 'divorced', label: 'Divorced' },
-        { value: 'widowed', label: 'Widowed' },
-        { value: 'prefer_not_to_say', label: 'Prefer not to say' },
+        { value: 'single', label: 'Single', icon: '💫' },
+        { value: 'married', label: 'Married', icon: '💕' },
+        { value: 'divorced', label: 'Divorced', icon: '🤝' },
+        { value: 'widowed', label: 'Widowed', icon: '🕊️' },
+        { value: 'prefer_not_to_say', label: 'Prefer not to say', icon: '❓' },
     ];
 
     const handleChange = (e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>) => {
@@ -59,13 +59,14 @@ export default function FamilyStatusStep({ onComplete, data }: FamilyStatusStepP
 
     return (
         <div className="family-status-step">
-            <h3 className="h4 mb-4 fw-bold">Tell us about your family</h3>
+            <h3>Tell us about your family</h3>
+            <p>This helps us understand your family structure and find connections.</p>
 
             <form onSubmit={handleSubmit}>
                 {/* Family Status */}
-                <div className="mb-4">
-                    <label htmlFor="family_status" className="form-label fw-semibold">
-                        Family Status *
+                <div className="form-group">
+                    <label htmlFor="family_status" className="form-label">
+                        Current Family Status <span className="required">*</span>
                     </label>
                     <select
                         className={`form-select ${errors.family_status ? 'is-invalid' : ''}`}
@@ -78,72 +79,99 @@ export default function FamilyStatusStep({ onComplete, data }: FamilyStatusStepP
                         <option value="">Select your family status</option>
                         {familyStatuses.map(status => (
                             <option key={status.value} value={status.value}>
-                                {status.label}
+                                {status.icon} {status.label}
                             </option>
                         ))}
                     </select>
                     {errors.family_status && (
-                        <div className="invalid-feedback d-block mt-2">
-                            <AlertCircle size={16} className="me-1" style={{ display: 'inline' }} />
+                        <div className="error-message">
+                            <AlertCircle size={16} />
                             {errors.family_status}
                         </div>
                     )}
                 </div>
 
-                {/* Number of Siblings */}
-                <div className="mb-4">
-                    <label htmlFor="number_of_siblings" className="form-label fw-semibold">
-                        Number of Siblings (Optional)
-                    </label>
-                    <input
-                        type="number"
-                        className="form-control"
-                        id="number_of_siblings"
-                        name="number_of_siblings"
-                        value={formData.number_of_siblings}
-                        onChange={handleChange}
-                        min="0"
-                        placeholder="0"
-                        disabled={isSubmitting}
-                    />
-                </div>
+                {/* Numbers Row */}
+                <div className="row">
+                    <div className="col-md-6">
+                        <div className="form-group">
+                            <label htmlFor="number_of_siblings" className="form-label">
+                                Number of Siblings
+                            </label>
+                            <div style={{ position: 'relative' }}>
+                                <Users
+                                    size={18}
+                                    style={{
+                                        position: 'absolute',
+                                        left: '12px',
+                                        top: '15px',
+                                        color: '#9CA3AF',
+                                        pointerEvents: 'none'
+                                    }}
+                                />
+                                <input
+                                    type="number"
+                                    className="form-control"
+                                    id="number_of_siblings"
+                                    name="number_of_siblings"
+                                    value={formData.number_of_siblings}
+                                    onChange={handleChange}
+                                    min="0"
+                                    placeholder="0"
+                                    disabled={isSubmitting}
+                                    style={{ paddingLeft: '40px' }}
+                                />
+                            </div>
+                        </div>
+                    </div>
 
-                {/* Number of Children */}
-                <div className="mb-4">
-                    <label htmlFor="number_of_children" className="form-label fw-semibold">
-                        Number of Children (Optional)
-                    </label>
-                    <input
-                        type="number"
-                        className="form-control"
-                        id="number_of_children"
-                        name="number_of_children"
-                        value={formData.number_of_children}
-                        onChange={handleChange}
-                        min="0"
-                        placeholder="0"
-                        disabled={isSubmitting}
-                    />
+                    <div className="col-md-6">
+                        <div className="form-group">
+                            <label htmlFor="number_of_children" className="form-label">
+                                Number of Children
+                            </label>
+                            <div style={{ position: 'relative' }}>
+                                <Heart
+                                    size={18}
+                                    style={{
+                                        position: 'absolute',
+                                        left: '12px',
+                                        top: '15px',
+                                        color: '#9CA3AF',
+                                        pointerEvents: 'none'
+                                    }}
+                                />
+                                <input
+                                    type="number"
+                                    className="form-control"
+                                    id="number_of_children"
+                                    name="number_of_children"
+                                    value={formData.number_of_children}
+                                    onChange={handleChange}
+                                    min="0"
+                                    placeholder="0"
+                                    disabled={isSubmitting}
+                                    style={{ paddingLeft: '40px' }}
+                                />
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Submit Button */}
-                <div className="mt-5 d-flex gap-3">
+                <div className="btn-group">
                     <button
                         type="submit"
-                        className="btn btn-primary flex-grow-1"
+                        className="btn btn-primary btn-full-width"
                         disabled={isSubmitting}
                     >
                         {isSubmitting ? (
                             <>
-                                <span
-                                    className="spinner-border spinner-border-sm me-2"
-                                    role="status"
-                                    aria-hidden="true"
-                                />
+                                <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" />
                                 Saving...
                             </>
                         ) : (
-                            'Continue'
+                            'Continue to Next Step'
                         )}
                     </button>
                 </div>

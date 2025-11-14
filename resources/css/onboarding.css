@@ -1,0 +1,611 @@
+/* ============================================================================
+   ONBOARDING - SLEEK & PROFESSIONAL DESIGN
+   ============================================================================ */
+
+:root {
+  --onboarding-gradient-1: linear-gradient(135deg, #0052E8 0%, #00D4FF 100%);
+  --onboarding-gradient-2: linear-gradient(135deg, #FFD700 0%, #FF9800 100%);
+  --onboarding-card-bg: #FFFFFF;
+  --onboarding-step-active: #0052E8;
+  --onboarding-step-completed: #00D97F;
+  --onboarding-step-inactive: #E5E7EB;
+}
+
+/* ============================================================================
+   MAIN ONBOARDING CONTAINER
+   ============================================================================ */
+
+.onboarding-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #F8F9FA 0%, #E8EAEF 100%);
+  padding: 2rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.onboarding-wrapper {
+  width: 100%;
+  max-width: 700px;
+}
+
+/* ============================================================================
+   ONBOARDING HEADER
+   ============================================================================ */
+
+.onboarding-header {
+  text-align: center;
+  margin-bottom: 3rem;
+  animation: fadeInDown 0.6s ease-out;
+}
+
+.onboarding-header h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.02em;
+}
+
+.onboarding-header .brand-text {
+  background: var(--onboarding-gradient-1);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 800;
+}
+
+.onboarding-header p {
+  font-size: 1rem;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+/* ============================================================================
+   PROGRESS TRACKER
+   ============================================================================ */
+
+.onboarding-progress {
+  margin-bottom: 2.5rem;
+}
+
+.progress-bar-container {
+  margin-bottom: 2rem;
+}
+
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.progress-info-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.progress-info-percentage {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.progress-bar {
+  height: 6px;
+  background-color: var(--color-bg-secondary);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: var(--onboarding-gradient-1);
+  border-radius: 9999px;
+  transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 0 10px rgba(0, 82, 232, 0.3);
+}
+
+/* Step Indicators */
+.step-indicators {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  position: relative;
+  padding: 0 10px;
+}
+
+.step-indicator {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.step-indicator:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  width: calc(100% - 10px);
+  height: 2px;
+  background-color: var(--onboarding-step-inactive);
+  z-index: 0;
+}
+
+.step-indicator.completed:not(:last-child)::after {
+  background: linear-gradient(90deg, var(--onboarding-step-completed) 0%, var(--onboarding-step-inactive) 100%);
+}
+
+.step-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 1;
+  background-color: var(--onboarding-step-inactive);
+  color: var(--color-text-secondary);
+  border: 2px solid transparent;
+}
+
+.step-indicator.completed .step-circle {
+  background-color: var(--onboarding-step-completed);
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 217, 127, 0.3);
+}
+
+.step-indicator.active .step-circle {
+  background-color: var(--onboarding-step-active);
+  color: white;
+  border-color: var(--color-gold);
+  box-shadow: 0 4px 16px rgba(0, 82, 232, 0.4), 0 0 0 4px rgba(0, 82, 232, 0.1);
+  transform: scale(1.1);
+}
+
+.step-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-align: center;
+  max-width: 60px;
+  line-height: 1.2;
+  transition: color 0.3s ease;
+}
+
+.step-indicator.active .step-label {
+  color: var(--color-text-primary);
+}
+
+.step-indicator.completed .step-label {
+  color: var(--onboarding-step-completed);
+}
+
+/* ============================================================================
+   ONBOARDING CARD
+   ============================================================================ */
+
+.onboarding-card {
+  background: var(--onboarding-card-bg);
+  border-radius: 16px;
+  padding: 2.5rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  animation: slideUp 0.6s ease-out;
+  backdrop-filter: blur(10px);
+}
+
+@media (max-width: 768px) {
+  .onboarding-card {
+    padding: 1.75rem;
+  }
+}
+
+/* ============================================================================
+   STEP CONTENT
+   ============================================================================ */
+
+.step-content h3 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.02em;
+}
+
+.step-content > p:first-of-type {
+  font-size: 1rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 2rem;
+  line-height: 1.6;
+}
+
+/* ============================================================================
+   FORM STYLES
+   ============================================================================ */
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.form-label .required {
+  color: #EF4444;
+  margin-left: 2px;
+}
+
+.form-control,
+.form-select {
+  height: 48px;
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 1rem;
+  color: var(--color-text-primary);
+  background-color: #FFFFFF;
+  transition: all 0.3s ease;
+  font-family: var(--font-body);
+}
+
+.form-control::placeholder {
+  color: #9CA3AF;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--color-gold);
+  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1), 0 0 0 0 rgba(0, 82, 232, 0.2);
+  outline: none;
+}
+
+.form-control:disabled,
+.form-select:disabled {
+  background-color: var(--color-bg-secondary);
+  color: var(--color-text-secondary);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+textarea.form-control {
+  height: auto;
+  min-height: 100px;
+  resize: vertical;
+  font-family: var(--font-body);
+}
+
+.form-control.is-invalid {
+  border-color: #EF4444;
+}
+
+.form-control.is-invalid:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.error-message {
+  font-size: 0.875rem;
+  color: #EF4444;
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  animation: slideIn 0.3s ease;
+}
+
+.char-count {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  margin-top: 0.5rem;
+  text-align: right;
+}
+
+/* ============================================================================
+   BUTTON STYLES
+   ============================================================================ */
+
+.btn {
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--onboarding-gradient-1);
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 82, 232, 0.3);
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 82, 232, 0.4);
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  border-color: var(--color-border);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--color-border);
+  transform: translateY(-2px);
+}
+
+.btn-outline-secondary {
+  background: transparent;
+  color: var(--color-text-primary);
+  border-color: var(--color-border);
+}
+
+.btn-outline-secondary:hover:not(:disabled) {
+  background: var(--color-bg-secondary);
+  border-color: var(--color-text-secondary);
+}
+
+.btn-group {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.btn-group .btn {
+  flex: 1;
+}
+
+.btn-full-width {
+  width: 100%;
+}
+
+/* ============================================================================
+   CHOICE CARDS (for siblings search, etc.)
+   ============================================================================ */
+
+.choice-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin: 2rem 0;
+}
+
+.choice-card {
+  position: relative;
+  cursor: pointer;
+  background: var(--onboarding-card-bg);
+  border: 2px solid var(--color-border);
+  border-radius: 12px;
+  padding: 1.75rem;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.choice-card:hover {
+  border-color: var(--color-gold);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  transform: translateY(-4px);
+}
+
+.choice-card.selected {
+  border-color: var(--color-gold);
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.05) 0%, rgba(0, 82, 232, 0.05) 100%);
+  box-shadow: 0 8px 24px rgba(0, 82, 232, 0.15);
+}
+
+.choice-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+  transition: all 0.3s ease;
+}
+
+.choice-card.selected .choice-icon {
+  transform: scale(1.1);
+}
+
+.choice-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.choice-description {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+/* ============================================================================
+   COMPLETION SCREEN
+   ============================================================================ */
+
+.completion-screen {
+  text-align: center;
+  padding: 2rem 0;
+}
+
+.completion-icon {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #D1FAE5 0%, #B7E4C7 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 2rem;
+  animation: scaleIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 8px 24px rgba(0, 217, 127, 0.2);
+}
+
+.completion-icon svg {
+  color: var(--onboarding-step-completed);
+  width: 60px;
+  height: 60px;
+}
+
+.completion-screen h3 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: 1rem;
+}
+
+.completion-screen p {
+  font-size: 1rem;
+  color: var(--color-text-secondary);
+  line-height: 1.7;
+  margin-bottom: 2rem;
+}
+
+.alert-tip {
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.05) 0%, rgba(0, 82, 232, 0.05) 100%);
+  border: 2px solid rgba(6, 182, 212, 0.2);
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin-bottom: 2rem;
+  color: var(--color-text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+/* ============================================================================
+   ANIMATIONS
+   ============================================================================ */
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.spinner-border {
+  animation: spinner-border 0.75s linear infinite;
+}
+
+@keyframes spinner-border {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ============================================================================
+   RESPONSIVE DESIGN
+   ============================================================================ */
+
+@media (max-width: 768px) {
+  .onboarding-header h1 {
+    font-size: 1.75rem;
+  }
+
+  .step-indicators {
+    padding: 0 5px;
+  }
+
+  .step-label {
+    font-size: 0.65rem;
+  }
+
+  .choice-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .btn-group {
+    flex-direction: column;
+  }
+
+  .onboarding-card {
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+  }
+}
+
+/* ============================================================================
+   ACCESSIBILITY
+   ============================================================================ */
+
+.btn:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 2px;
+}
+
+.form-control:focus-visible,
+.form-select:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 2px;
+}
+
+/* ============================================================================
+   END OF ONBOARDING STYLES
+   ============================================================================ */

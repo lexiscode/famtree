@@ -1,6 +1,6 @@
 import { useState, FormEvent } from 'react';
 import { router } from '@inertiajs/react';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, MapPin, Globe } from 'lucide-react';
 
 interface LocationInfoStepProps {
     onComplete: (progress: any) => void;
@@ -52,101 +52,155 @@ export default function LocationInfoStep({ onComplete, data }: LocationInfoStepP
 
     return (
         <div className="location-info-step">
-            <h3 className="h4 mb-4 fw-bold">Where are you from?</h3>
+            <h3>Where are you from?</h3>
+            <p>Share your location to help find family members in your area and communities.</p>
 
             <form onSubmit={handleSubmit}>
-                {/* Address */}
-                <div className="mb-4">
-                    <label htmlFor="address" className="form-label fw-semibold">
-                        Address (Optional)
+                {/* Country - Most Important */}
+                <div className="form-group">
+                    <label htmlFor="country" className="form-label">
+                        Country <span className="required">*</span>
                     </label>
-                    <input
-                        type="text"
-                        className="form-control"
-                        id="address"
-                        name="address"
-                        value={formData.address}
-                        onChange={handleChange}
-                        placeholder="123 Main Street"
-                        disabled={isSubmitting}
-                    />
-                </div>
-
-                {/* City */}
-                <div className="mb-4">
-                    <label htmlFor="city" className="form-label fw-semibold">
-                        City (Optional)
-                    </label>
-                    <input
-                        type="text"
-                        className="form-control"
-                        id="city"
-                        name="city"
-                        value={formData.city}
-                        onChange={handleChange}
-                        placeholder="New York"
-                        disabled={isSubmitting}
-                    />
-                </div>
-
-                {/* State/Province */}
-                <div className="mb-4">
-                    <label htmlFor="state_province" className="form-label fw-semibold">
-                        State/Province (Optional)
-                    </label>
-                    <input
-                        type="text"
-                        className="form-control"
-                        id="state_province"
-                        name="state_province"
-                        value={formData.state_province}
-                        onChange={handleChange}
-                        placeholder="New York"
-                        disabled={isSubmitting}
-                    />
-                </div>
-
-                {/* Country */}
-                <div className="mb-4">
-                    <label htmlFor="country" className="form-label fw-semibold">
-                        Country *
-                    </label>
-                    <input
-                        type="text"
-                        className={`form-control ${errors.country ? 'is-invalid' : ''}`}
-                        id="country"
-                        name="country"
-                        value={formData.country}
-                        onChange={handleChange}
-                        placeholder="United States"
-                        disabled={isSubmitting}
-                    />
+                    <div style={{ position: 'relative' }}>
+                        <Globe
+                            size={18}
+                            style={{
+                                position: 'absolute',
+                                left: '12px',
+                                top: '15px',
+                                color: '#9CA3AF',
+                                pointerEvents: 'none'
+                            }}
+                        />
+                        <input
+                            type="text"
+                            className={`form-control ${errors.country ? 'is-invalid' : ''}`}
+                            id="country"
+                            name="country"
+                            value={formData.country}
+                            onChange={handleChange}
+                            placeholder="United States"
+                            disabled={isSubmitting}
+                            style={{ paddingLeft: '40px' }}
+                        />
+                    </div>
                     {errors.country && (
-                        <div className="invalid-feedback d-block mt-2">
-                            <AlertCircle size={16} className="me-1" style={{ display: 'inline' }} />
+                        <div className="error-message">
+                            <AlertCircle size={16} />
                             {errors.country}
                         </div>
                     )}
                 </div>
 
+                {/* State/Province and City Row */}
+                <div className="row">
+                    <div className="col-md-6">
+                        <div className="form-group">
+                            <label htmlFor="state_province" className="form-label">
+                                State/Province
+                            </label>
+                            <div style={{ position: 'relative' }}>
+                                <MapPin
+                                    size={18}
+                                    style={{
+                                        position: 'absolute',
+                                        left: '12px',
+                                        top: '15px',
+                                        color: '#9CA3AF',
+                                        pointerEvents: 'none'
+                                    }}
+                                />
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    id="state_province"
+                                    name="state_province"
+                                    value={formData.state_province}
+                                    onChange={handleChange}
+                                    placeholder="New York"
+                                    disabled={isSubmitting}
+                                    style={{ paddingLeft: '40px' }}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="col-md-6">
+                        <div className="form-group">
+                            <label htmlFor="city" className="form-label">
+                                City
+                            </label>
+                            <div style={{ position: 'relative' }}>
+                                <MapPin
+                                    size={18}
+                                    style={{
+                                        position: 'absolute',
+                                        left: '12px',
+                                        top: '15px',
+                                        color: '#9CA3AF',
+                                        pointerEvents: 'none'
+                                    }}
+                                />
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    id="city"
+                                    name="city"
+                                    value={formData.city}
+                                    onChange={handleChange}
+                                    placeholder="New York"
+                                    disabled={isSubmitting}
+                                    style={{ paddingLeft: '40px' }}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Address */}
+                <div className="form-group">
+                    <label htmlFor="address" className="form-label">
+                        Street Address
+                    </label>
+                    <div style={{ position: 'relative' }}>
+                        <MapPin
+                            size={18}
+                            style={{
+                                position: 'absolute',
+                                left: '12px',
+                                top: '15px',
+                                color: '#9CA3AF',
+                                pointerEvents: 'none'
+                            }}
+                        />
+                        <input
+                            type="text"
+                            className="form-control"
+                            id="address"
+                            name="address"
+                            value={formData.address}
+                            onChange={handleChange}
+                            placeholder="123 Main Street"
+                            disabled={isSubmitting}
+                            style={{ paddingLeft: '40px' }}
+                        />
+                    </div>
+                </div>
+
                 {/* Submit Button */}
-                <div className="mt-5">
+                <div className="btn-group">
                     <button
                         type="submit"
-                        className="btn btn-primary w-100"
+                        className="btn btn-primary btn-full-width"
                         disabled={isSubmitting}
                     >
                         {isSubmitting ? (
                             <>
-                                <span
-                                    className="spinner-border spinner-border-sm me-2"
-                                    role="status"
-                                    aria-hidden="true"
-                                />
+                                <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" />
                                 Saving...
                             </>
                         ) : (
-                            'Continue'
+                            'Continue to Next Step'
                         )}
                     </button>
                 </div>

@@ -1,6 +1,6 @@
-import { useState, FormEvent } from 'react';
+import { useState } from 'react';
 import { router } from '@inertiajs/react';
-import { Users, Search } from 'lucide-react';
+import { Users, Sparkles } from 'lucide-react';
 
 interface SiblingsSearchStepProps {
     onComplete: (progress: any) => void;
@@ -8,14 +8,12 @@ interface SiblingsSearchStepProps {
 }
 
 export default function SiblingsSearchStep({ onComplete, data }: SiblingsSearchStepProps) {
-    const [formData, setFormData] = useState({
-        searched: data?.searched ?? false,
-    });
-
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [selectedOption, setSelectedOption] = useState<'search' | 'skip' | null>(null);
 
     const handleSubmit = async (shouldSearch: boolean) => {
         setIsSubmitting(true);
+        setSelectedOption(shouldSearch ? 'search' : 'skip');
 
         router.post(route('onboarding.save.siblings-search'), { searched: shouldSearch }, {
             onSuccess: (page) => {
@@ -25,112 +23,69 @@ export default function SiblingsSearchStep({ onComplete, data }: SiblingsSearchS
             },
             onError: () => {
                 setIsSubmitting(false);
+                setSelectedOption(null);
             },
         });
     };
 
     return (
         <div className="siblings-search-step">
-            <h3 className="h4 mb-4 fw-bold">Want to find your siblings?</h3>
-            <p className="text-muted mb-5">
-                FamTree can help you discover and connect with your siblings based on shared family information.
-            </p>
+            <h3>Want to find your siblings?</h3>
+            <p>FamTree uses advanced matching to help you discover and connect with your siblings based on shared family information.</p>
 
-            <div className="row gap-3">
+            <div className="choice-cards">
                 {/* Search Yes Option */}
-                <div className="col-md-6">
-                    <div
-                        className="card border-0 shadow-sm cursor-pointer h-100"
-                        style={{ cursor: 'pointer' }}
-                        onClick={() => handleSubmit(true)}
-                    >
-                        <div className="card-body text-center py-5">
-                            <div className="mb-4">
-                                <div
-                                    className="d-inline-flex align-items-center justify-content-center"
-                                    style={{
-                                        width: '64px',
-                                        height: '64px',
-                                        borderRadius: '12px',
-                                        backgroundColor: '#0052E8',
-                                    }}
-                                >
-                                    <Search size={32} className="text-white" />
-                                </div>
-                            </div>
-                            <h5 className="card-title fw-semibold">Yes, find my siblings</h5>
-                            <p className="card-text text-muted small">
-                                Help us discover your siblings through our matching algorithm
-                            </p>
-                            <button
-                                type="button"
-                                className="btn btn-primary w-100 mt-4"
-                                onClick={() => handleSubmit(true)}
-                                disabled={isSubmitting}
-                            >
-                                {isSubmitting ? (
-                                    <>
-                                        <span
-                                            className="spinner-border spinner-border-sm me-2"
-                                            role="status"
-                                            aria-hidden="true"
-                                        />
-                                        Processing...
-                                    </>
-                                ) : (
-                                    'Continue'
-                                )}
-                            </button>
-                        </div>
+                <div className={`choice-card ${selectedOption === 'search' ? 'selected' : ''}`}>
+                    <div className="choice-icon" style={{ backgroundColor: '#E3F2FD' }}>
+                        <Sparkles size={28} style={{ color: '#0052E8' }} />
                     </div>
+                    <h5 className="choice-title">Yes, find my siblings</h5>
+                    <p className="choice-description">
+                        Let us discover your siblings through our intelligent matching algorithm
+                    </p>
+                    <button
+                        type="button"
+                        className="btn btn-primary btn-full-width"
+                        onClick={() => handleSubmit(true)}
+                        disabled={isSubmitting}
+                        style={{ marginTop: '1.25rem' }}
+                    >
+                        {isSubmitting && selectedOption === 'search' ? (
+                            <>
+                                <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" />
+                                Processing...
+                            </>
+                        ) : (
+                            'Continue'
+                        )}
+                    </button>
                 </div>
 
                 {/* Skip Option */}
-                <div className="col-md-6">
-                    <div
-                        className="card border-0 shadow-sm cursor-pointer h-100"
-                        style={{ cursor: 'pointer' }}
-                        onClick={() => handleSubmit(false)}
-                    >
-                        <div className="card-body text-center py-5">
-                            <div className="mb-4">
-                                <div
-                                    className="d-inline-flex align-items-center justify-content-center"
-                                    style={{
-                                        width: '64px',
-                                        height: '64px',
-                                        borderRadius: '12px',
-                                        backgroundColor: '#e5e7eb',
-                                    }}
-                                >
-                                    <Users size={32} className="text-muted" />
-                                </div>
-                            </div>
-                            <h5 className="card-title fw-semibold">Skip for now</h5>
-                            <p className="card-text text-muted small">
-                                I'll explore this feature later
-                            </p>
-                            <button
-                                type="button"
-                                className="btn btn-outline-secondary w-100 mt-4"
-                                onClick={() => handleSubmit(false)}
-                                disabled={isSubmitting}
-                            >
-                                {isSubmitting ? (
-                                    <>
-                                        <span
-                                            className="spinner-border spinner-border-sm me-2"
-                                            role="status"
-                                            aria-hidden="true"
-                                        />
-                                        Processing...
-                                    </>
-                                ) : (
-                                    'Skip'
-                                )}
-                            </button>
-                        </div>
+                <div className={`choice-card ${selectedOption === 'skip' ? 'selected' : ''}`}>
+                    <div className="choice-icon" style={{ backgroundColor: '#F3E8FF' }}>
+                        <Users size={28} style={{ color: '#7C3AED' }} />
                     </div>
+                    <h5 className="choice-title">Skip for now</h5>
+                    <p className="choice-description">
+                        I'll explore this feature later and find siblings anytime
+                    </p>
+                    <button
+                        type="button"
+                        className="btn btn-outline-secondary btn-full-width"
+                        onClick={() => handleSubmit(false)}
+                        disabled={isSubmitting}
+                        style={{ marginTop: '1.25rem' }}
+                    >
+                        {isSubmitting && selectedOption === 'skip' ? (
+                            <>
+                                <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" />
+                                Processing...
+                            </>
+                        ) : (
+                            'Skip'
+                        )}
+                    </button>
                 </div>
             </div>
         </div>

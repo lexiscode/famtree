@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { usePage, router } from '@inertiajs/react';
+import { useState } from 'react';
+import { usePage } from '@inertiajs/react';
 import GuestLayout from '@/Layouts/GuestLayout';
 import OnboardingProgress from '@/Components/Onboarding/OnboardingProgress';
 import BasicInfoStep from './Steps/BasicInfoStep';
@@ -33,7 +33,6 @@ interface Props {
 export default function OnboardingIndex({ onboarding, progress }: Props) {
     const [currentStep, setCurrentStep] = useState<string>(onboarding?.progress?.current_step || 'basic_info');
     const [progressData, setProgressData] = useState(onboarding?.progress || {});
-    const [isLoading, setIsLoading] = useState(false);
 
     const handleStepComplete = (newProgress: any) => {
         setProgressData(newProgress);
@@ -71,29 +70,27 @@ export default function OnboardingIndex({ onboarding, progress }: Props) {
 
     return (
         <GuestLayout>
-            <div className="min-vh-100 bg-light py-5">
-                <div className="container">
-                    <div className="row justify-content-center">
-                        <div className="col-lg-8">
-                            {/* Header */}
-                            <div className="mb-5 text-center">
-                                <h1 className="h2 fw-bold mb-2">Welcome to FamTree</h1>
-                                <p className="text-muted">Let's get your profile set up. Complete these steps to start exploring your family connections.</p>
-                            </div>
+            <div className="onboarding-container">
+                <div className="onboarding-wrapper">
+                    {/* Header */}
+                    <div className="onboarding-header">
+                        <h1>
+                            Welcome to <span className="brand-text">FamTree</span>
+                        </h1>
+                        <p>Complete these steps to set up your profile and start exploring your family connections.</p>
+                    </div>
 
-                            {/* Progress Bar */}
-                            <OnboardingProgress
-                                completedCount={progressData.completed_count || 0}
-                                totalCount={progressData.total_count || 0}
-                                progressPercentage={progressData.progress_percentage || 0}
-                            />
+                    {/* Progress Bar */}
+                    <OnboardingProgress
+                        completedCount={progressData.completed_count || 0}
+                        totalCount={progressData.total_count || 0}
+                        progressPercentage={progressData.progress_percentage || 0}
+                    />
 
-                            {/* Steps Container */}
-                            <div className="card shadow-sm border-0 mt-5">
-                                <div className="card-body p-5">
-                                    {renderStep()}
-                                </div>
-                            </div>
+                    {/* Steps Container */}
+                    <div className="onboarding-card">
+                        <div className="step-content">
+                            {renderStep()}
                         </div>
                     </div>
                 </div>
