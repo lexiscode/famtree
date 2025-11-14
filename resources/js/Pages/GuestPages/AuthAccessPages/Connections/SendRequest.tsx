@@ -135,16 +135,6 @@ export default function SendRequest({ current_user_id }: Props) {
         <AuthAccessLayout>
             <div className="connections-page">
                 <div className="connections-container" style={{ maxWidth: '650px' }}>
-                    {/* Back Button */}
-                    <button
-                        className="connections-btn-back"
-                        onClick={() => router.visit(route('profile.show'))}
-                        title="Back to profile"
-                    >
-                        <ArrowLeft size={18} className="me-2" style={{ display: 'inline' }} />
-                        Back to Profile
-                    </button>
-
                     {/* Header */}
                     <div className="connections-header-simple">
                         <h1 className="connections-title">Send Connection Request</h1>
@@ -276,6 +266,16 @@ export default function SendRequest({ current_user_id }: Props) {
                             <strong>💡 Tip:</strong> Once the other person accepts your request, you'll both be able to see each other's family connections.
                         </div>
                     </div>
+
+                    {/* Back to Profile Button */}
+                    <button
+                        className="connections-btn-back"
+                        onClick={() => router.visit(route('profile.me'))}
+                        title="Back to profile"
+                    >
+                        <ArrowLeft size={18} className="me-2" style={{ display: 'inline' }} />
+                        Back to Profile
+                    </button>
                 </div>
             </div>
         </AuthAccessLayout>

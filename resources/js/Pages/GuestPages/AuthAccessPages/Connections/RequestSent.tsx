@@ -54,16 +54,6 @@ export default function RequestSent({ requests: initialRequests, count }: Props)
         <AuthAccessLayout>
             <div className="connections-page">
                 <div className="connections-container">
-                    {/* Back Button */}
-                    <button
-                        className="connections-btn-back"
-                        onClick={() => router.visit(route('profile.show'))}
-                        title="Back to profile"
-                    >
-                        <ArrowLeft size={18} className="me-2" style={{ display: 'inline' }} />
-                        Back to Profile
-                    </button>
-
                     {/* Header */}
                     <div className="connections-header-simple">
                         <h1 className="connections-title">Sent Requests</h1>
@@ -158,6 +148,16 @@ export default function RequestSent({ requests: initialRequests, count }: Props)
                     <div className="connections-info-box">
                         <strong>💡 Tip:</strong> Requests will automatically be removed if declined. You can also unsend requests that haven't been responded to yet.
                     </div>
+
+                    {/* Back to Profile Button */}
+                    <button
+                        className="connections-btn-back"
+                        onClick={() => router.visit(route('profile.me'))}
+                        title="Back to profile"
+                    >
+                        <ArrowLeft size={18} className="me-2" style={{ display: 'inline' }} />
+                        Back to Profile
+                    </button>
                 </div>
             </div>
         </AuthAccessLayout>
