@@ -126,9 +126,22 @@
   margin-bottom: 0;
 }
 
+.connections-filters {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
 .connections-search-wrapper {
   position: relative;
   flex: 1;
+  min-width: 250px;
+}
+
+.connections-filter-wrapper {
+  position: relative;
+  min-width: 200px;
 }
 
 .connections-input-icon {
@@ -164,6 +177,34 @@
 
 .connections-search-input::placeholder {
   color: #808080;
+}
+
+.connections-filter-select {
+  width: 100%;
+  height: 48px;
+  padding: 0.75rem 1rem 0.75rem 44px;
+  border: 2px solid rgba(0, 82, 232, 0.2);
+  border-radius: 10px;
+  font-size: 1rem;
+  color: #FFFFFF;
+  background-color: rgba(20, 25, 35, 0.8);
+  transition: all 0.3s ease;
+  font-family: var(--font-body);
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+  appearance: none;
+  padding-right: 2rem;
+}
+
+.connections-filter-select:focus {
+  border-color: #FFD700;
+  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1), 0 4px 12px rgba(0, 82, 232, 0.25);
+  outline: none;
+}
+
+.connections-filter-select option {
+  background-color: rgba(20, 25, 35, 0.95);
+  color: #FFFFFF;
 }
 
 .connections-badge {
