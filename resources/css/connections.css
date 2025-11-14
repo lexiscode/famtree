@@ -1183,7 +1183,7 @@
   flex-shrink: 0;
 }
 
-.connections-btn-primary {
+.connections-btn-form {
   width: 100%;
   padding: 0.875rem 1.5rem;
   background: linear-gradient(135deg, #0052E8 0%, #FFD700 100%);
@@ -1205,7 +1205,7 @@
   min-height: 44px;
 }
 
-.connections-btn-primary::before {
+.connections-btn-form::before {
   content: '';
   position: absolute;
   left: 0;
@@ -1216,16 +1216,16 @@
   transition: left 0.3s ease;
 }
 
-.connections-btn-primary:hover:not(:disabled) {
+.connections-btn-form:hover:not(:disabled) {
   transform: translateY(-3px);
   box-shadow: 0 12px 36px rgba(0, 82, 232, 0.4);
 }
 
-.connections-btn-primary:hover:not(:disabled)::before {
+.connections-btn-form:hover:not(:disabled)::before {
   left: 100%;
 }
 
-.connections-btn-primary:disabled {
+.connections-btn-form:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;

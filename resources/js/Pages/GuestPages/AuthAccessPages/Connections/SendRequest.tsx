@@ -244,7 +244,7 @@ export default function SendRequest({ current_user_id }: Props) {
 
                         {/* Submit Button */}
                         <button
-                            className="connections-btn-primary connections-btn-large"
+                            className="connections-btn-form"
                             onClick={handleSendRequest}
                             disabled={loading || !selectedUser || !relationshipType}
                         >
