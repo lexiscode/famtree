@@ -505,6 +505,13 @@
   margin-bottom: 2rem;
 }
 
+.connections-empty-text {
+  font-size: 1rem;
+  color: #B0B0B0;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+
 .connections-empty-cta {
   display: inline-flex;
   align-items: center;
