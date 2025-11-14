@@ -57,7 +57,7 @@
 }
 
 /* Floating orb 2 - Blue */
-.connections-page .connections-header::before {
+.connections-container::after {
     content: '';
     position: fixed;
     bottom: 20%;
