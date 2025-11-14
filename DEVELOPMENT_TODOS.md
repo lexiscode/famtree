@@ -370,22 +370,6 @@ Pls the UI needs to be very sleek as usual, in a much attractive and professiona
 
 ---
 
-## 🎯 Phase 11: Admin Features
-
-### 11.1 Admin Dashboard (Future)
-- [ ] **Backend**: Create AdminUserManagementController
-  - `GET /admin/users` - List all users
-  - `POST /admin/users/{id}/status` - Change user status (for deceased scenarios)
-  - `POST /admin/connections/{id}/resolve` - Resolve disputed connections
-
-- [ ] **Frontend**: Create `AdminPages/Dashboard/Users.tsx` (Future)
-  - List users
-  - Search/filter
-  - View user details
-  - Manage reported users
-
----
-
 ## 🎯 Database Schema Summary
 
 ### Core Tables

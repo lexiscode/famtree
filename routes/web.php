@@ -19,6 +19,7 @@ use App\Http\Controllers\GuestControllers\AuthAccessControllers\ChildAccountCont
 use App\Http\Controllers\GuestControllers\OnboardingController;
 use App\Http\Controllers\GuestControllers\StatusController;
 use App\Http\Controllers\GuestControllers\NotificationController;
+use App\Http\Controllers\GuestControllers\SearchController;
 
 
 
@@ -142,4 +143,16 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::delete('/{notificationId}', [NotificationController::class, 'delete'])->name('notifications.delete');
         Route::get('/{notificationId}', [NotificationController::class, 'show'])->name('notifications.show');
     });
+
+    // Search & Discovery routes
+    Route::prefix('search')->group(function () {
+        Route::get('/users', [SearchController::class, 'searchUsers'])->name('search.users');
+        Route::get('/featured', [SearchController::class, 'getFeatured'])->name('search.featured');
+        Route::get('/suggested', [SearchController::class, 'getSuggested'])->name('search.suggested');
+    });
+
+    // Search pages
+    Route::get('/search', function () {
+        return Inertia::render('AuthAccessPages/Search/Users');
+    })->name('search.index');
 });
