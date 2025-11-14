@@ -212,12 +212,13 @@ class ConnectionRequestController extends Controller
 
         $userId = $request->user()->id;
         $limit = $validated['limit'] ?? 20;
+        $query = $validated['query'];
 
-        $users = \App\Models\GuestModels\User::where(function ($q) use ($validated['query']) {
-            $q->where('first_name', 'like', '%' . $validated['query'] . '%')
-              ->orWhere('last_name', 'like', '%' . $validated['query'] . '%')
-              ->orWhere('username', 'like', '%' . $validated['query'] . '%')
-              ->orWhere('email', 'like', '%' . $validated['query'] . '%');
+        $users = \App\Models\GuestModels\User::where(function ($q) use ($query) {
+            $q->where('first_name', 'like', '%' . $query . '%')
+              ->orWhere('last_name', 'like', '%' . $query . '%')
+              ->orWhere('username', 'like', '%' . $query . '%')
+              ->orWhere('email', 'like', '%' . $query . '%');
         })
         ->where('id', '!=', $userId)
         ->limit($limit)

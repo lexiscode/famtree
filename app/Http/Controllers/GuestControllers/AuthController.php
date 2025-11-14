@@ -29,7 +29,13 @@ class AuthController extends Controller
             // Log the user in after registration
             Auth::guard('web')->login($user);
 
-            return redirect()->route('home')->with('success', 'Account created successfully!');
+            // Redirect to onboarding if not completed
+            if (!$user->onboarding_completed) {
+                return redirect()->route('onboarding.show')->with('success', 'Account created successfully! Let\'s get started with your profile.');
+            }
+
+            // Otherwise redirect to profile
+            return redirect()->route('profile.me')->with('success', 'Account created successfully!');
         } catch (\Exception $e) {
             return redirect()->back()->withInput()->with('error', $e->getMessage());
         }
@@ -51,7 +57,13 @@ class AuthController extends Controller
             // Log user in with remember me option
             Auth::guard('web')->login($user, $validated['rememberMe'] ?? false);
 
-            return redirect()->route('home')->with('success', 'Login successful!');
+            // Redirect to onboarding if not completed
+            if (!$user->onboarding_completed) {
+                return redirect()->route('onboarding.show')->with('success', 'Login successful! Let\'s complete your profile setup.');
+            }
+
+            // Otherwise redirect to profile
+            return redirect()->route('profile.me')->with('success', 'Login successful!');
         } catch (\Exception $e) {
             return redirect()->back()->withInput()->with('error', $e->getMessage());
         }
