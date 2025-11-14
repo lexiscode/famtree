@@ -345,6 +345,21 @@
     box-shadow: 0 8px 20px rgba(0, 82, 232, 0.12);
 }
 
+.profile-btn-logout {
+    background: rgba(239, 68, 68, 0.1);
+    color: #EF4444;
+    border: 1.5px solid rgba(239, 68, 68, 0.3);
+    backdrop-filter: blur(5px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.05);
+}
+
+.profile-btn-logout:hover {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.5);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(239, 68, 68, 0.15);
+}
+
 .profile-btn-outline {
     background: transparent;
     color: #0052E8;

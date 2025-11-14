@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { Mail, Phone, MapPin, Cake, FileText, Users, Edit, Settings, Briefcase, BookOpen, ArrowRight } from 'lucide-react';
+import { Mail, Phone, MapPin, Cake, FileText, Users, Edit, Settings, Briefcase, BookOpen, ArrowRight, LogOut } from 'lucide-react';
 
 interface User {
     id: number;
@@ -97,6 +97,14 @@ export default function MyProfile({ user, connections, connectionCount, pendingR
                                     >
                                         <Users size={18} />
                                         View Connections
+                                    </button>
+                                    <button
+                                        className="profile-btn profile-btn-logout"
+                                        onClick={() => router.post(route('auth.logout'))}
+                                        title="Sign out of your account"
+                                    >
+                                        <LogOut size={18} />
+                                        Logout
                                     </button>
                                 </div>
                             </div>
