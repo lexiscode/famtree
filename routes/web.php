@@ -18,6 +18,7 @@ use App\Http\Controllers\GuestControllers\AuthAccessControllers\FamilyTreeContro
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\ChildAccountController;
 use App\Http\Controllers\GuestControllers\OnboardingController;
 use App\Http\Controllers\GuestControllers\StatusController;
+use App\Http\Controllers\GuestControllers\NotificationController;
 
 
 
@@ -126,5 +127,19 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::post('/update', [StatusController::class, 'updateStatus'])->name('status.update');
         Route::get('/{userId}', [StatusController::class, 'getStatus'])->name('status.get');
         Route::post('/can-update', [StatusController::class, 'canUpdateStatus'])->name('status.can-update');
+    });
+
+    // Notification routes
+    Route::prefix('notifications')->group(function () {
+        Route::get('/', function () {
+            return 'Notifications page'; // Placeholder for full notifications page
+        })->name('notifications.index');
+        Route::get('/unread', [NotificationController::class, 'getUnread'])->name('notifications.get-unread');
+        Route::get('/all', [NotificationController::class, 'getAll'])->name('notifications.get-all');
+        Route::get('/count', [NotificationController::class, 'getCount'])->name('notifications.get-count');
+        Route::post('/{notificationId}/read', [NotificationController::class, 'markAsRead'])->name('notifications.mark-as-read');
+        Route::post('/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-as-read');
+        Route::delete('/{notificationId}', [NotificationController::class, 'delete'])->name('notifications.delete');
+        Route::get('/{notificationId}', [NotificationController::class, 'show'])->name('notifications.show');
     });
 });

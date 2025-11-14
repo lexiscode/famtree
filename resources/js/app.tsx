@@ -9,6 +9,7 @@ import '../css/profile.css';
 import '../css/family-tree.css';
 import '../css/child-accounts.css';
 import '../css/status-management.css';
+import '../css/notifications.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 
