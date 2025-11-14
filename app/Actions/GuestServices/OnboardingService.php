@@ -279,6 +279,14 @@ class OnboardingService
         $familyInfo = $this->onboardingRepository->getFamilyInfo($userId);
 
         return [
+            'user' => [
+                'id' => $user->id,
+                'first_name' => $user->first_name,
+                'last_name' => $user->last_name,
+                'bio' => $user->bio,
+                'date_of_birth' => $user->date_of_birth?->format('Y-m-d'),
+                'address' => $user->address,
+            ],
             'steps' => $steps->map(function ($step) {
                 return [
                     'name' => $step->step_name,

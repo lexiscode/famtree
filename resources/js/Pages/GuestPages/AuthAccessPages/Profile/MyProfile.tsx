@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { router } from '@inertiajs/react';
-import GuestLayout from '@/Layouts/GuestLayout';
+import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
 import { Mail, Phone, MapPin, Cake, FileText, Users, Edit, Settings, Briefcase, BookOpen, ArrowRight } from 'lucide-react';
 
 interface User {
@@ -39,7 +39,7 @@ export default function MyProfile({ user, connections, connectionCount, pendingR
     ], [user]);
 
     return (
-        <GuestLayout>
+        <AuthAccessLayout>
             <div className="profile-page">
                 <div className="profile-container">
                     <div className="profile-grid">
@@ -199,6 +199,6 @@ export default function MyProfile({ user, connections, connectionCount, pendingR
                     </div>
                 </div>
             </div>
-        </GuestLayout>
+        </AuthAccessLayout>
     );
 }

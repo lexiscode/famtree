@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { router } from '@inertiajs/react';
-import GuestLayout from '@/Layouts/GuestLayout';
+import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
 import { Mail, Phone, MapPin, Cake, FileText, Users, Send, Clock, CheckCircle, Lock, Briefcase, BookOpen, ArrowRight } from 'lucide-react';
 
 interface Profile {
@@ -76,7 +76,7 @@ export default function ViewProfile({
     };
 
     return (
-        <GuestLayout>
+        <AuthAccessLayout>
             <div className="profile-page">
                 <div className="profile-container">
                     <div className="profile-grid">
@@ -273,6 +273,6 @@ export default function ViewProfile({
                     </div>
                 </div>
             </div>
-        </GuestLayout>
+        </AuthAccessLayout>
     );
 }

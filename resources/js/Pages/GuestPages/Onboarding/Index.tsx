@@ -10,6 +10,14 @@ import SiblingsSearchStep from './Steps/SiblingsSearchStep';
 import CompleteStep from './Steps/CompleteStep';
 
 interface OnboardingData {
+    user: {
+        id: number;
+        first_name: string;
+        last_name: string;
+        bio: string | null;
+        date_of_birth: string | null;
+        address: string | null;
+    };
     steps: Array<{
         name: string;
         completed: boolean;
@@ -52,7 +60,7 @@ export default function OnboardingIndex({ onboarding, progress }: Props) {
     const renderStep = () => {
         switch (currentStep) {
             case 'basic_info':
-                return <BasicInfoStep onComplete={handleStepComplete} data={onboarding.steps.find(s => s.name === 'basic_info')?.data} />;
+                return <BasicInfoStep onComplete={handleStepComplete} data={onboarding.steps.find(s => s.name === 'basic_info')?.data} user={onboarding.user} />;
             case 'family_status':
                 return <FamilyStatusStep onComplete={handleStepComplete} data={onboarding.steps.find(s => s.name === 'family_status')?.data} />;
             case 'location_info':
@@ -64,7 +72,7 @@ export default function OnboardingIndex({ onboarding, progress }: Props) {
             case 'complete':
                 return <CompleteStep onComplete={handleStepComplete} />;
             default:
-                return <BasicInfoStep onComplete={handleStepComplete} data={null} />;
+                return <BasicInfoStep onComplete={handleStepComplete} data={null} user={onboarding.user} />;
         }
     };
 

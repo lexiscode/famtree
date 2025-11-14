@@ -9,6 +9,9 @@
   --onboarding-step-active: #0052E8;
   --onboarding-step-completed: #00D97F;
   --onboarding-step-inactive: #E5E7EB;
+  /* Onboarding-specific text colors for proper contrast */
+  --onboarding-text-primary: #1F2937;
+  --onboarding-text-secondary: #4B5563;
 }
 
 /* ============================================================================
@@ -83,13 +86,13 @@
 .progress-info-label {
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--color-text-secondary);
+  color: #6B7280;
 }
 
 .progress-info-percentage {
   font-size: 0.875rem;
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: var(--onboarding-text-primary);
 }
 
 .progress-bar {
@@ -174,7 +177,7 @@
 .step-label {
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--color-text-secondary);
+  color: #6B7280;
   text-align: center;
   max-width: 60px;
   line-height: 1.2;
@@ -182,7 +185,7 @@
 }
 
 .step-indicator.active .step-label {
-  color: var(--color-text-primary);
+  color: var(--onboarding-text-primary);
 }
 
 .step-indicator.completed .step-label {
@@ -216,14 +219,14 @@
 .step-content h3 {
   font-size: 1.75rem;
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: var(--onboarding-text-primary);
   margin-bottom: 0.5rem;
   letter-spacing: -0.02em;
 }
 
 .step-content > p:first-of-type {
   font-size: 1rem;
-  color: var(--color-text-secondary);
+  color: var(--onboarding-text-secondary);
   margin-bottom: 2rem;
   line-height: 1.6;
 }
@@ -239,7 +242,7 @@
 .form-label {
   font-size: 0.95rem;
   font-weight: 600;
-  color: var(--color-text-primary);
+  color: var(--onboarding-text-primary);
   margin-bottom: 0.5rem;
   display: block;
 }
@@ -256,7 +259,7 @@
   border: 2px solid var(--color-border);
   border-radius: 8px;
   font-size: 1rem;
-  color: var(--color-text-primary);
+  color: var(--onboarding-text-primary);
   background-color: #FFFFFF;
   transition: all 0.3s ease;
   font-family: var(--font-body);
@@ -276,7 +279,7 @@
 .form-control:disabled,
 .form-select:disabled {
   background-color: var(--color-bg-secondary);
-  color: var(--color-text-secondary);
+  color: #9CA3AF;
   cursor: not-allowed;
   opacity: 0.6;
 }
@@ -308,7 +311,7 @@ textarea.form-control {
 
 .char-count {
   font-size: 0.875rem;
-  color: var(--color-text-secondary);
+  color: #9CA3AF;
   margin-top: 0.5rem;
   text-align: right;
 }
@@ -354,7 +357,7 @@ textarea.form-control {
 
 .btn-secondary {
   background: var(--color-bg-secondary);
-  color: var(--color-text-primary);
+  color: var(--onboarding-text-primary);
   border-color: var(--color-border);
 }
 
@@ -365,13 +368,13 @@ textarea.form-control {
 
 .btn-outline-secondary {
   background: transparent;
-  color: var(--color-text-primary);
+  color: var(--onboarding-text-primary);
   border-color: var(--color-border);
 }
 
 .btn-outline-secondary:hover:not(:disabled) {
   background: var(--color-bg-secondary);
-  border-color: var(--color-text-secondary);
+  border-color: var(--onboarding-text-secondary);
 }
 
 .btn-group {
@@ -440,13 +443,13 @@ textarea.form-control {
 .choice-title {
   font-size: 1.125rem;
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: var(--onboarding-text-primary);
   margin-bottom: 0.5rem;
 }
 
 .choice-description {
   font-size: 0.875rem;
-  color: var(--color-text-secondary);
+  color: var(--onboarding-text-secondary);
   line-height: 1.5;
 }
 
@@ -481,13 +484,13 @@ textarea.form-control {
 .completion-screen h3 {
   font-size: 2rem;
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: var(--onboarding-text-primary);
   margin-bottom: 1rem;
 }
 
 .completion-screen p {
   font-size: 1rem;
-  color: var(--color-text-secondary);
+  color: var(--onboarding-text-secondary);
   line-height: 1.7;
   margin-bottom: 2rem;
 }
@@ -498,7 +501,7 @@ textarea.form-control {
   border-radius: 12px;
   padding: 1.25rem;
   margin-bottom: 2rem;
-  color: #1a1a1a;
+  color: var(--onboarding-text-primary);
   font-size: 0.95rem;
   line-height: 1.6;
   backdrop-filter: blur(4px);

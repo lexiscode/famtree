@@ -5,14 +5,22 @@ import { AlertCircle, User, Calendar } from 'lucide-react';
 interface BasicInfoStepProps {
     onComplete: (progress: any) => void;
     data: Record<string, any> | null | undefined;
+    user?: {
+        id: number;
+        first_name: string;
+        last_name: string;
+        bio: string | null;
+        date_of_birth: string | null;
+        address: string | null;
+    };
 }
 
-export default function BasicInfoStep({ onComplete, data }: BasicInfoStepProps) {
+export default function BasicInfoStep({ onComplete, data, user }: BasicInfoStepProps) {
     const [formData, setFormData] = useState({
-        first_name: data?.first_name || '',
-        last_name: data?.last_name || '',
-        bio: data?.bio || '',
-        date_of_birth: data?.date_of_birth || '',
+        first_name: data?.first_name || user?.first_name || '',
+        last_name: data?.last_name || user?.last_name || '',
+        bio: data?.bio || user?.bio || '',
+        date_of_birth: data?.date_of_birth || user?.date_of_birth || '',
     });
 
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -54,6 +62,19 @@ export default function BasicInfoStep({ onComplete, data }: BasicInfoStepProps) 
         <div className="basic-info-step">
             <h3>Let's start with your basic information</h3>
             <p>This helps us personalize your FamTree experience and connect you with family members.</p>
+            {user && (
+                <div style={{
+                    backgroundColor: 'rgba(0, 212, 255, 0.08)',
+                    borderLeft: '4px solid rgba(0, 212, 255, 0.5)',
+                    padding: '12px 16px',
+                    borderRadius: '6px',
+                    marginBottom: '20px',
+                    fontSize: '0.875rem',
+                    color: '#555',
+                }}>
+                    Your name has been pre-filled from your registration. Feel free to update if needed.
+                </div>
+            )}
 
             <form onSubmit={handleSubmit}>
                 {/* Name Row */}

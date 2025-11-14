@@ -6,14 +6,17 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\GuestRequests\LoginRequest;
 use App\Http\Requests\GuestRequests\RegisterRequest;
 use App\Actions\GuestServices\AuthService;
+use App\Actions\GuestServices\OnboardingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
-    public function __construct(private AuthService $authService)
-    {
+    public function __construct(
+        private AuthService $authService,
+        private OnboardingService $onboardingService
+    ) {
     }
 
     /**
@@ -28,6 +31,9 @@ class AuthController extends Controller
 
             // Log the user in after registration
             Auth::guard('web')->login($user);
+
+            // Initialize onboarding steps for new user
+            $this->onboardingService->initializeOnboarding($user->id);
 
             // Redirect to onboarding if not completed
             if (!$user->onboarding_completed) {
@@ -57,8 +63,12 @@ class AuthController extends Controller
             // Log user in with remember me option
             Auth::guard('web')->login($user, $validated['rememberMe'] ?? false);
 
-            // Redirect to onboarding if not completed
+            // Initialize onboarding steps if not already done (for users who didn't complete it)
             if (!$user->onboarding_completed) {
+                $existingSteps = $user->onboardingSteps()->count();
+                if ($existingSteps === 0) {
+                    $this->onboardingService->initializeOnboarding($user->id);
+                }
                 return redirect()->route('onboarding.show')->with('success', 'Login successful! Let\'s complete your profile setup.');
             }
 
