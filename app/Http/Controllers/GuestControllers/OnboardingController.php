@@ -52,16 +52,12 @@ class OnboardingController extends Controller
 
             $progress = $this->onboardingService->saveBasicInfoStep($userId, $validated);
 
-            return response()->json([
-                'success' => true,
+            return back()->with([
+                'success' => 'Basic information saved successfully',
                 'progress' => $progress,
-                'message' => 'Basic information saved successfully',
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'errors' => $e->errors(),
-            ], 422);
+            return back()->withErrors($e->errors());
         }
     }
 
@@ -81,16 +77,12 @@ class OnboardingController extends Controller
 
             $progress = $this->onboardingService->saveFamilyStatusStep($userId, $validated);
 
-            return response()->json([
-                'success' => true,
+            return back()->with([
+                'success' => 'Family status saved successfully',
                 'progress' => $progress,
-                'message' => 'Family status saved successfully',
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'errors' => $e->errors(),
-            ], 422);
+            return back()->withErrors($e->errors());
         }
     }
 
@@ -111,16 +103,12 @@ class OnboardingController extends Controller
 
             $progress = $this->onboardingService->saveLocationInfoStep($userId, $validated);
 
-            return response()->json([
-                'success' => true,
+            return back()->with([
+                'success' => 'Location information saved successfully',
                 'progress' => $progress,
-                'message' => 'Location information saved successfully',
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'errors' => $e->errors(),
-            ], 422);
+            return back()->withErrors($e->errors());
         }
     }
 
@@ -139,16 +127,12 @@ class OnboardingController extends Controller
 
             $progress = $this->onboardingService->saveEducationWorkStep($userId, $validated);
 
-            return response()->json([
-                'success' => true,
+            return back()->with([
+                'success' => 'Education and work information saved successfully',
                 'progress' => $progress,
-                'message' => 'Education and work information saved successfully',
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'errors' => $e->errors(),
-            ], 422);
+            return back()->withErrors($e->errors());
         }
     }
 
@@ -166,16 +150,12 @@ class OnboardingController extends Controller
 
             $progress = $this->onboardingService->saveSiblingsSearchStep($userId, $validated);
 
-            return response()->json([
-                'success' => true,
+            return back()->with([
+                'success' => 'Siblings search preference saved successfully',
                 'progress' => $progress,
-                'message' => 'Siblings search preference saved successfully',
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'errors' => $e->errors(),
-            ], 422);
+            return back()->withErrors($e->errors());
         }
     }
 
@@ -189,14 +169,12 @@ class OnboardingController extends Controller
         try {
             $progress = $this->onboardingService->completeOnboarding($userId);
 
-            return response()->json([
-                'success' => true,
+            return back()->with([
+                'success' => 'Onboarding completed successfully',
                 'progress' => $progress,
-                'message' => 'Onboarding completed successfully',
             ]);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
+            return back()->with([
                 'error' => 'Failed to complete onboarding',
             ], 500);
         }
