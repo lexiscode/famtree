@@ -3,15 +3,65 @@
 namespace App\Http\Controllers\GuestControllers\AuthAccessControllers;
 
 use App\Http\Controllers\Controller;
+use App\Repositories\GuestRepositories\UserConnectionRepository;
 use Inertia\Inertia;
 
 class LandingPageController extends Controller
 {
+    public function __construct(
+        private UserConnectionRepository $connectionRepository,
+    ) {}
+
     /**
-     * Display the home page
+     * Display the home page for authenticated users
+     * Redirects to onboarding if user hasn't completed it yet
+     * Otherwise shows the user's profile page
      */
     public function index()
     {
-        return Inertia::render('GuestPages/AuthAccessPages/LandingPage/Index');
+        $user = auth()->user();
+
+        if (!$user) {
+            return redirect()->route('home');
+        }
+
+        // If user hasn't completed onboarding, redirect to onboarding
+        if (!$user->onboarding_completed) {
+            return redirect()->route('onboarding.show');
+        }
+
+        // User has completed onboarding, show their profile
+        // Get all user connections
+        $connections = $this->connectionRepository->getConnections($user->id);
+        $connectionCount = count($connections);
+
+        // Get pending requests
+        $pendingRequests = $this->connectionRepository->getPendingRequests($user->id);
+        $sentRequests = $this->connectionRepository->getSentRequests($user->id);
+
+        // Format user data
+        $userData = [
+            'id' => $user->id,
+            'name' => $user->name,
+            'username' => $user->username,
+            'email' => $user->email,
+            'phone' => $user->phone,
+            'address' => $user->address,
+            'bio' => $user->bio,
+            'date_of_birth' => $user->date_of_birth,
+            'profile_image_url' => $user->profile_image_url,
+            'status' => $user->status,
+            'job_title' => $user->job_title ?? null,
+            'education' => $user->education ?? null,
+            'created_at' => $user->created_at,
+        ];
+
+        return Inertia::render('GuestPages/AuthAccessPages/Profile/MyProfile', [
+            'user' => $userData,
+            'connections' => $connections,
+            'connectionCount' => $connectionCount,
+            'pendingRequestCount' => count($pendingRequests),
+            'sentRequestCount' => count($sentRequests),
+        ]);
     }
 }

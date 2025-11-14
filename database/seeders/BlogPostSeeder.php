@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\BlogPost;
+use App\Models\GuestModels\BlogPost;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
