@@ -13,7 +13,7 @@
    PAGE CONTAINER
    ============================================================================ */
 
-.connections-page-wrapper {
+.connections-page {
   min-height: 100vh;
   background: linear-gradient(135deg, #0F1419 0%, #1a2332 50%, #0F1419 100%);
   padding-top: 2rem;
@@ -23,7 +23,7 @@
 }
 
 /* Animated floating shapes in background */
-.connections-page-wrapper::before {
+.connections-page::before {
     content: '';
     position: fixed;
     top: 0;
@@ -35,7 +35,7 @@
 }
 
 /* Floating orb 1 - Gold */
-.connections-page-wrapper::after {
+.connections-page::after {
     content: '';
     position: fixed;
     top: 10%;
@@ -57,7 +57,7 @@
 }
 
 /* Floating orb 2 - Blue */
-.connections-page-wrapper .connections-header::before {
+.connections-page .connections-header::before {
     content: '';
     position: fixed;
     bottom: 20%;
@@ -76,6 +76,14 @@
     0%, 100% { transform: translateY(0px) translateX(0px); }
     33% { transform: translateY(30px) translateX(-30px); }
     66% { transform: translateY(-30px) translateX(30px); }
+}
+
+.connections-container {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  position: relative;
+  z-index: 1;
 }
 
 .connections-header {
