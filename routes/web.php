@@ -15,6 +15,7 @@ use App\Http\Controllers\GuestControllers\AuthAccessControllers\LandingPageContr
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\ConnectionRequestController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\ProfileController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\FamilyTreeController;
+use App\Http\Controllers\GuestControllers\AuthAccessControllers\ChildAccountController;
 use App\Http\Controllers\GuestControllers\OnboardingController;
 
 
@@ -105,5 +106,17 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::post('/{treeId}/add-member', [FamilyTreeController::class, 'addMember'])->name('family-tree.add-member');
         Route::delete('/{treeId}/members/{userId}', [FamilyTreeController::class, 'removeMember'])->name('family-tree.remove-member');
         Route::get('/{treeId}/data', [FamilyTreeController::class, 'getTreeData'])->name('family-tree.data');
+    });
+
+    // Child Account routes
+    Route::prefix('child-accounts')->group(function () {
+        Route::get('/', [ChildAccountController::class, 'index'])->name('child-accounts.index');
+        Route::get('/create', [ChildAccountController::class, 'create'])->name('child-accounts.create');
+        Route::post('/', [ChildAccountController::class, 'store'])->name('child-accounts.store');
+        Route::get('/credentials/{childId}', [ChildAccountController::class, 'showCredentials'])->name('child-accounts.show-credentials');
+        Route::get('/{childId}', [ChildAccountController::class, 'show'])->name('child-accounts.show');
+        Route::delete('/{childId}', [ChildAccountController::class, 'destroy'])->name('child-accounts.destroy');
+        Route::post('/{childId}/set-email', [ChildAccountController::class, 'setEmail'])->name('child-accounts.set-email');
+        Route::get('/api/children', [ChildAccountController::class, 'getChildren'])->name('child-accounts.get-children');
     });
 });

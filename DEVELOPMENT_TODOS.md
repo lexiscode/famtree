@@ -210,6 +210,7 @@ Pls the UI needs to be very sleek as usual, in a much attractive and professiona
   - Logic to determine tree hierarchy (parents at top, children at bottom, siblings side-by-side)
 
 ### 5.2 Family Tree Frontend
+Pls the UI needs to be very sleek as usual, in a much attractive and professional look, that can increase conversation rate. Use the app platform's brand colors too. Use both bootstrap, bootstrap icons and css in your designs.
 - [ ] **Frontend**: Create `AuthAccessPages/FamilyTree/MyFamilyTree.tsx`
   - Visual family tree display using library (e.g., react-family-tree or d3.js)
   - Zoom in/out controls
