@@ -151,7 +151,7 @@ export default function NotificationDropdown() {
     };
 
     return (
-        <div ref={dropdownRef} style={{ position: 'relative' }}>
+        <div ref={dropdownRef} className="notification-dropdown-container">
             {/* Bell Icon Button */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
@@ -161,7 +161,7 @@ export default function NotificationDropdown() {
             >
                 <Bell size={24} />
                 {unreadCount > 0 && (
-                    <span className="notification-badge">
+                    <span className="notification-badge" title={`${unreadCount} unread notifications`}>
                         {unreadCount > 99 ? '99+' : unreadCount}
                     </span>
                 )}
@@ -170,17 +170,25 @@ export default function NotificationDropdown() {
             {/* Dropdown Menu */}
             {isOpen && (
                 <div className="notification-dropdown">
-                    {/* Header */}
+                    {/* Header with gradient background */}
                     <div className="notification-dropdown-header">
-                        <h3 className="notification-dropdown-title">
-                            Notifications
-                        </h3>
+                        <div className="notification-dropdown-title-section">
+                            <h3 className="notification-dropdown-title">
+                                Notifications
+                            </h3>
+                            {unreadCount > 0 && (
+                                <span className="notification-unread-badge">
+                                    {unreadCount > 99 ? '99+' : unreadCount} unread
+                                </span>
+                            )}
+                        </div>
                         <div className="notification-dropdown-actions">
                             {unreadCount > 0 && (
                                 <button
                                     onClick={handleMarkAllAsRead}
                                     className="notification-action-btn"
                                     title="Mark all as read"
+                                    aria-label="Mark all as read"
                                 >
                                     <CheckCheck size={16} />
                                 </button>
@@ -188,22 +196,28 @@ export default function NotificationDropdown() {
                             <button
                                 onClick={() => setIsOpen(false)}
                                 className="notification-action-btn"
-                                title="Close"
+                                title="Close notifications"
+                                aria-label="Close notifications"
                             >
                                 <X size={16} />
                             </button>
                         </div>
                     </div>
 
+                    {/* Separator line */}
+                    <div className="notification-dropdown-separator"></div>
+
                     {/* Notification List */}
                     {loading ? (
                         <div className="notification-empty">
-                            <div className="notification-empty-text">Loading...</div>
+                            <div className="notification-loading-spinner"></div>
+                            <div className="notification-empty-text">Loading notifications...</div>
                         </div>
                     ) : notifications.length === 0 ? (
                         <div className="notification-empty">
                             <div className="notification-empty-icon">📭</div>
                             <p className="notification-empty-text">No notifications yet</p>
+                            <p className="notification-empty-subtitle">You're all caught up!</p>
                         </div>
                     ) : (
                         <div className="notification-list">
@@ -223,7 +237,8 @@ export default function NotificationDropdown() {
                     {notifications.length > 0 && (
                         <div className="notification-dropdown-footer">
                             <a href={route('notifications.index')} className="notification-view-all-btn">
-                                View All Notifications →
+                                <span>View All Notifications</span>
+                                <span className="notification-arrow">→</span>
                             </a>
                         </div>
                     )}

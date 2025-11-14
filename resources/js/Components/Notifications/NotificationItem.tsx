@@ -54,36 +54,41 @@ export default function NotificationItem({
         return iconMap[notification.type_icon] || LucideIcons.Bell;
     }, [notification.type_icon]);
 
-    // Get color class based on type
-    const colorClass = `notification-icon-container.${notification.type_color}`;
-
     return (
         <div
             className={`notification-item ${!notification.is_read ? 'unread' : ''}`}
             onClick={onClick}
+            role="article"
+            aria-label={`${notification.title}: ${notification.message}`}
         >
-            {/* Icon Container */}
-            <div className={`notification-icon-container ${notification.type_color}`}>
+            {/* Icon Container with type-specific styling */}
+            <div className={`notification-icon-container ${notification.type_color}`} aria-hidden="true">
                 {IconComponent && <IconComponent size={20} />}
             </div>
 
-            {/* Content */}
+            {/* Content Section */}
             <div className="notification-content">
-                <h4 className="notification-title">{notification.title}</h4>
+                <div className="notification-header">
+                    <h4 className="notification-title">{notification.title}</h4>
+                    {!notification.is_read && (
+                        <span className="notification-item-unread-indicator" title="Unread"></span>
+                    )}
+                </div>
                 <p className="notification-message">{notification.message}</p>
-                <p className="notification-time">{notification.created_at_human}</p>
+                <p className="notification-time" title={notification.created_at}>{notification.created_at_human}</p>
             </div>
 
-            {/* Actions */}
-            <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
+            {/* Action Buttons Section */}
+            <div className="notification-item-actions">
                 {!notification.is_read && (
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
                             onMarkAsRead();
                         }}
-                        className="notification-item-action"
+                        className="notification-item-action read"
                         title="Mark as read"
+                        aria-label="Mark as read"
                     >
                         <Check size={16} />
                     </button>
@@ -93,8 +98,9 @@ export default function NotificationItem({
                         e.stopPropagation();
                         onDelete();
                     }}
-                    className="notification-item-action"
-                    title="Delete"
+                    className="notification-item-action delete"
+                    title="Delete notification"
+                    aria-label="Delete notification"
                 >
                     <Trash2 size={16} />
                 </button>
