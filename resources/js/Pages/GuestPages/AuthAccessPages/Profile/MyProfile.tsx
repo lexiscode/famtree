@@ -76,15 +76,15 @@ export default function MyProfile({ user, connections, connectionCount, pendingR
                                 <div className="profile-actions">
                                     <button
                                         className="profile-btn profile-btn-primary"
-                                        onClick={() => router.visit(route('profile.edit'))}
-                                        title="Edit your profile information"
+                                        onClick={() => router.visit(route('settings.account'))}
+                                        title="Edit your account settings"
                                     >
                                         <Edit size={18} />
-                                        Edit Profile
+                                        Account Settings
                                     </button>
                                     <button
                                         className="profile-btn profile-btn-secondary"
-                                        onClick={() => router.visit(route('profile.privacy'))}
+                                        onClick={() => router.visit(route('settings.privacy'))}
                                         title="Control who sees what"
                                     >
                                         <Settings size={18} />
