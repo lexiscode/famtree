@@ -48,8 +48,8 @@ class ProfileController extends Controller
             'date_of_birth' => $user->date_of_birth,
             'profile_image_url' => $user->profile_image_url,
             'status' => $user->status,
-            'job_title' => $user->job_title ?? null,
-            'education' => $user->education ?? null,
+            'job_title' => $user->familyInfo?->current_occupation ?? null,
+            'education' => $user->familyInfo?->education_level ?? null,
             'created_at' => $user->created_at,
         ];
 

@@ -19,7 +19,8 @@ export default function FamilyStatusStep({ onComplete, data }: FamilyStatusStepP
 
     const familyStatuses = [
         { value: 'single', label: 'Single', icon: '💫' },
-        { value: 'married', label: 'Married', icon: '💕' },
+        { value: 'dating', label: 'Dating', icon: '💕' },
+        { value: 'married', label: 'Married', icon: '💍' },
         { value: 'divorced', label: 'Divorced', icon: '🤝' },
         { value: 'widowed', label: 'Widowed', icon: '🕊️' },
         { value: 'prefer_not_to_say', label: 'Prefer not to say', icon: '❓' },
@@ -76,7 +77,7 @@ export default function FamilyStatusStep({ onComplete, data }: FamilyStatusStepP
                         onChange={handleChange}
                         disabled={isSubmitting}
                     >
-                        <option value="">Select your family status</option>
+                        <option value="">Select your current status</option>
                         {familyStatuses.map(status => (
                             <option key={status.value} value={status.value}>
                                 {status.icon} {status.label}

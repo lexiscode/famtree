@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Support\Facades\Storage;
 
 class User extends Authenticatable
 {
@@ -27,6 +28,7 @@ class User extends Authenticatable
         'address',
         'bio',
         'date_of_birth',
+        'profile_image',
         'profile_image_url',
         'status',
         'death_date',
@@ -102,5 +104,16 @@ class User extends Authenticatable
     public function familyInfo()
     {
         return $this->hasOne(UserFamilyInfo::class);
+    }
+
+    /**
+     * Get the full URL for the profile image
+     */
+    public function getProfileImageUrlAttribute()
+    {
+        if ($this->profile_image) {
+            return Storage::disk('public')->url($this->profile_image);
+        }
+        return null;
     }
 }

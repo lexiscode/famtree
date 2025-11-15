@@ -120,7 +120,7 @@ class OnboardingService
         }
 
         // Validate family_status
-        $validStatuses = ['single', 'married', 'divorced', 'widowed', 'prefer_not_to_say'];
+        $validStatuses = ['single', 'dating', 'married', 'divorced', 'widowed', 'prefer_not_to_say'];
         if (empty($data['family_status']) || !in_array($data['family_status'], $validStatuses)) {
             throw ValidationException::withMessages([
                 'family_status' => ['Please select a valid family status'],
@@ -307,5 +307,32 @@ class OnboardingService
             ] : null,
             'progress' => $this->getProgress($userId),
         ];
+    }
+
+    /**
+     * Save profile image step
+     */
+    public function saveProfileImageStep(int $userId, ?string $profileImagePath = null): array
+    {
+        $user = $this->userProfileRepository->getProfile($userId);
+
+        if (!$user) {
+            throw ValidationException::withMessages([
+                'user' => ['User not found'],
+            ]);
+        }
+
+        // Update user's profile image if provided
+        if ($profileImagePath) {
+            $this->userProfileRepository->updateProfile($userId, [
+                'profile_image' => $profileImagePath,
+            ]);
+        }
+
+        // Complete the step
+        $stepData = $profileImagePath ? ['profile_image' => $profileImagePath] : [];
+        $this->onboardingRepository->completeOnboardingStep($userId, 'profile_image', $stepData);
+
+        return $this->getProgress($userId);
     }
 }

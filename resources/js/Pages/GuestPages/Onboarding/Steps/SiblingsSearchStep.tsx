@@ -30,8 +30,8 @@ export default function SiblingsSearchStep({ onComplete, data }: SiblingsSearchS
 
     return (
         <div className="siblings-search-step">
-            <h3>Want to find your siblings?</h3>
-            <p>FamTree uses advanced matching to help you discover and connect with your siblings based on shared family information.</p>
+            <h3>Want to find your family members?</h3>
+            <p>FamTree uses advanced matching to help you discover and connect with your family members based on shared family information.</p>
 
             <div className="choice-cards">
                 {/* Search Yes Option */}
@@ -39,9 +39,9 @@ export default function SiblingsSearchStep({ onComplete, data }: SiblingsSearchS
                     <div className="choice-icon" style={{ backgroundColor: '#E3F2FD' }}>
                         <Sparkles size={28} style={{ color: '#0052E8' }} />
                     </div>
-                    <h5 className="choice-title">Yes, find my siblings</h5>
+                    <h5 className="choice-title">Yes, find my relations</h5>
                     <p className="choice-description">
-                        Let us discover your siblings through our intelligent matching algorithm
+                        Let us discover your relations through our intelligent matching algorithm
                     </p>
                     <button
                         type="button"

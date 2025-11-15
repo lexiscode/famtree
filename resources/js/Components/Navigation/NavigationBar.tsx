@@ -46,7 +46,7 @@ export default function NavigationBar() {
     { label: 'How It Works', href: '/how-it-works', name: 'how-it-works' },
     { label: 'Blog', href: '/blog', name: 'blog' },
     { label: 'Contact', href: '/contact', name: 'contact' },
-    { label: 'Families', href: '/families', name: 'families' },
+    { label: '', href: '#', name: '' },
   ];
 
   return (
@@ -83,15 +83,25 @@ export default function NavigationBar() {
           <ul className="navbar-nav me-auto">
             {menuItems.map((item) => (
               <li key={item.name} className="nav-item">
-                <Link
-                  href={item.href}
-                  className={`nav-link ${isActive(item.href) ? 'active' : ''} ${
-                    item.name === 'families' ? 'nav-link-families' : ''
-                  }`}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  {item.label}
-                </Link>
+                {item.name === 'features' ? (
+                  <a
+                    href={item.href}
+                    className={`nav-link ${isActive(item.href) ? 'active' : ''}`}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    {item.label}
+                  </a>
+                ) : (
+                  <Link
+                    href={item.href}
+                    className={`nav-link ${isActive(item.href) ? 'active' : ''} ${
+                      item.name === 'families' ? 'nav-link-families' : ''
+                    }`}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    {item.label}
+                  </Link>
+                )}
               </li>
             ))}
           </ul>

@@ -70,7 +70,7 @@ class OnboardingController extends Controller
 
         try {
             $validated = $request->validate([
-                'family_status' => 'required|in:single,married,divorced,widowed,prefer_not_to_say',
+                'family_status' => 'required|in:single,dating,married,divorced,widowed,prefer_not_to_say',
                 'number_of_siblings' => 'nullable|integer|min:0',
                 'number_of_children' => 'nullable|integer|min:0',
             ]);
@@ -79,8 +79,37 @@ class OnboardingController extends Controller
 
             return back()->with([
                 'success' => 'Family status saved successfully',
-                'progress' => $progress,
+            ])->with('progress', $progress);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return back()->withErrors($e->errors());
+        }
+    }
+
+    /**
+     * Save profile image step
+     */
+    public function saveProfileImage(Request $request)
+    {
+        $userId = $request->user()->id;
+
+        try {
+            $validated = $request->validate([
+                'profile_image' => 'nullable|image|mimes:jpeg,png,gif,webp|max:5120',
             ]);
+
+            $profileImagePath = null;
+
+            // Handle file upload
+            if ($request->hasFile('profile_image')) {
+                $file = $request->file('profile_image');
+                $profileImagePath = $file->store('profile-images/' . $userId, 'public');
+            }
+
+            $progress = $this->onboardingService->saveProfileImageStep($userId, $profileImagePath);
+
+            return back()->with([
+                'success' => 'Profile image saved successfully',
+            ])->with('progress', $progress);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return back()->withErrors($e->errors());
         }

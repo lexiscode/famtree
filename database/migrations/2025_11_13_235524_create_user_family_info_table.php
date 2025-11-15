@@ -16,7 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('user_id')->unique();
 
             // Family Status Information
-            $table->enum('family_status', ['single', 'married', 'divorced', 'widowed', 'prefer_not_to_say'])->nullable();
+            $table->enum('family_status', ['single', 'dating', 'married', 'divorced', 'widowed', 'prefer_not_to_say'])->nullable();
             $table->integer('number_of_siblings')->nullable();
             $table->integer('number_of_children')->nullable();
 

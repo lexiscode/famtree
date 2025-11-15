@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { router } from '@inertiajs/react';
 import './HeroSection.css';
 
 export default function HeroSection() {
@@ -41,6 +42,7 @@ export default function HeroSection() {
                                 className="btn btn-outline btn-lg hero-btn"
                                 onMouseEnter={() => setCtaHovered('login')}
                                 onMouseLeave={() => setCtaHovered(null)}
+                                onClick={() => router.visit('/families')}
                             >
                                 {ctaHovered === 'login' && <span className="btn-icon">→</span>}
                                 Explore Public Families

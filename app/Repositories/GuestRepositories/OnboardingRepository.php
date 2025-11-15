@@ -13,9 +13,22 @@ class OnboardingRepository
      */
     public function getUserOnboardingSteps(int $userId)
     {
+        $stepOrder = [
+            'basic_info',
+            'family_status',
+            'location_info',
+            'profile_image',
+            'education_work',
+            'siblings_search',
+            'complete',
+        ];
+
         return OnboardingStep::where('user_id', $userId)
-            ->orderBy('created_at', 'asc')
-            ->get();
+            ->get()
+            ->sortBy(function ($step) use ($stepOrder) {
+                return array_search($step->step_name, $stepOrder);
+            })
+            ->values();
     }
 
     /**
@@ -95,6 +108,7 @@ class OnboardingRepository
             'basic_info',
             'family_status',
             'location_info',
+            'profile_image',
             'education_work',
             'siblings_search',
             'complete',

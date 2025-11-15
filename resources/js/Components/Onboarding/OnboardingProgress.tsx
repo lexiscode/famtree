@@ -27,7 +27,7 @@ export default function OnboardingProgress({
             <div className="progress-bar-container">
                 <div className="progress-info">
                     <span className="progress-info-label">Your Progress</span>
-                    <span className="progress-info-percentage">{Math.round(progressPercentage)}%</span>
+                    <span className="progress-info-label">{Math.round(progressPercentage)}%</span>
                 </div>
                 <div className="progress-bar">
                     <div

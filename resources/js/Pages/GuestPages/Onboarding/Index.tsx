@@ -5,6 +5,7 @@ import OnboardingProgress from '@/Components/Onboarding/OnboardingProgress';
 import BasicInfoStep from './Steps/BasicInfoStep';
 import FamilyStatusStep from './Steps/FamilyStatusStep';
 import LocationInfoStep from './Steps/LocationInfoStep';
+import ProfileImageStep from './Steps/ProfileImageStep';
 import EducationWorkStep from './Steps/EducationWorkStep';
 import SiblingsSearchStep from './Steps/SiblingsSearchStep';
 import CompleteStep from './Steps/CompleteStep';
@@ -45,15 +46,9 @@ export default function OnboardingIndex({ onboarding, progress }: Props) {
     const handleStepComplete = (newProgress: any) => {
         setProgressData(newProgress);
 
-        // Find the next incomplete step
-        const steps = ['basic_info', 'family_status', 'location_info', 'education_work', 'siblings_search', 'complete'];
-        const nextStep = steps.find(step => {
-            const stepData = onboarding.steps.find(s => s.name === step);
-            return stepData && !stepData.completed && step !== currentStep;
-        });
-
-        if (nextStep) {
-            setCurrentStep(nextStep);
+        // Navigate to the next incomplete step returned from the server
+        if (newProgress && newProgress.current_step) {
+            setCurrentStep(newProgress.current_step);
         }
     };
 
@@ -65,6 +60,8 @@ export default function OnboardingIndex({ onboarding, progress }: Props) {
                 return <FamilyStatusStep onComplete={handleStepComplete} data={onboarding.steps.find(s => s.name === 'family_status')?.data} />;
             case 'location_info':
                 return <LocationInfoStep onComplete={handleStepComplete} data={onboarding.steps.find(s => s.name === 'location_info')?.data} />;
+            case 'profile_image':
+                return <ProfileImageStep onComplete={handleStepComplete} data={onboarding.steps.find(s => s.name === 'profile_image')?.data} />;
             case 'education_work':
                 return <EducationWorkStep onComplete={handleStepComplete} data={onboarding.steps.find(s => s.name === 'education_work')?.data} />;
             case 'siblings_search':
