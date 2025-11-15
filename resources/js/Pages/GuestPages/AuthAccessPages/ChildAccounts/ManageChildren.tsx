@@ -88,11 +88,11 @@ export default function ManageChildren({ childAccounts, childCount }: Props) {
                     <div className="child-accounts-container">
                         {/* Back Button */}
                         <button
-                            onClick={() => router.visit(route('dashboard'))}
+                            onClick={() => router.visit(route('profile.show'))}
                             className="child-back-button"
                         >
                             <ArrowLeft size={20} />
-                            Back to Dashboard
+                            Back to Profile
                         </button>
 
                         {/* Header */}
