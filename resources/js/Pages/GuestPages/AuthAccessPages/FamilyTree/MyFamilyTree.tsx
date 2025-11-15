@@ -1,7 +1,8 @@
 import { useCallback, useState } from 'react';
 import { usePage, router, Link } from '@inertiajs/react';
-import GuestLayout from '@/Layouts/GuestLayout';
+import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
 import { Users, Plus, Edit, Trash2, Download, Share2, Lock, Globe, Home, CheckCircle, XCircle } from 'lucide-react';
+import './MyFamilyTree.css';
 
 interface User {
     id: number;
@@ -115,7 +116,7 @@ export default function MyFamilyTree({ tree, members, connections, stats, isOwne
     }, [tree, members, connections]);
 
     return (
-        <GuestLayout>
+        <AuthAccessLayout>
             <div className="family-tree-page">
                 <div className="family-tree-container">
                     {/* Premium Header */}
@@ -314,6 +315,6 @@ export default function MyFamilyTree({ tree, members, connections, stats, isOwne
                     )}
                 </div>
             </div>
-        </GuestLayout>
+        </AuthAccessLayout>
     );
 }
