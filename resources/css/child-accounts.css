@@ -659,6 +659,286 @@
 }
 
 /* ============================================
+   CHILD CREDENTIALS STYLES
+   ============================================ */
+
+.child-credentials-container {
+    background: var(--child-bg-card);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    border: 1px solid var(--child-border);
+    padding: 3rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    position: relative;
+    overflow: hidden;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.child-credentials-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 8px;
+    background: var(--child-primary-gradient);
+}
+
+.child-credentials-header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+    position: relative;
+    z-index: 2;
+}
+
+.child-credentials-success-icon {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+    color: var(--child-success);
+    animation: bounceIn 0.6s ease-out;
+}
+
+@keyframes bounceIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.child-credentials-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--child-text-primary);
+    margin: 0 0 0.75rem 0;
+    letter-spacing: -0.5px;
+}
+
+.child-credentials-subtitle {
+    font-size: 1rem;
+    color: var(--child-text-muted);
+    margin: 0;
+    font-weight: 500;
+    line-height: 1.6;
+}
+
+/* Success Box */
+.child-credentials-success-box {
+    background: linear-gradient(135deg, rgba(0, 217, 127, 0.08) 0%, rgba(0, 82, 232, 0.05) 100%);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(0, 217, 127, 0.25);
+    border-radius: 14px;
+    padding: 1.75rem;
+    margin-bottom: 2.5rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    color: var(--child-text-muted);
+    font-size: 0.95rem;
+    font-weight: 500;
+    line-height: 1.7;
+    box-shadow: 0 4px 16px rgba(0, 217, 127, 0.12);
+    transition: all 0.3s ease;
+    position: relative;
+    z-index: 2;
+}
+
+.child-credentials-success-box:hover {
+    background: linear-gradient(135deg, rgba(0, 217, 127, 0.12) 0%, rgba(0, 82, 232, 0.08) 100%);
+    border-color: rgba(0, 217, 127, 0.35);
+    box-shadow: 0 8px 24px rgba(0, 217, 127, 0.18);
+}
+
+.child-credentials-success-box svg {
+    color: var(--child-success);
+    flex-shrink: 0;
+    margin-top: 0.2rem;
+}
+
+.child-credentials-box-title {
+    display: block;
+    margin-bottom: 0.75rem;
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--child-text-primary);
+}
+
+.child-credentials-list {
+    margin: 0;
+    padding-left: 1.5rem;
+    list-style: disc;
+}
+
+.child-credentials-list li {
+    margin-bottom: 0.5rem;
+    color: var(--child-text-muted);
+}
+
+.child-credentials-list li:last-child {
+    margin-bottom: 0;
+}
+
+/* Credentials Inputs */
+.child-credentials-inputs {
+    margin-bottom: 2.5rem;
+    position: relative;
+    z-index: 2;
+}
+
+.child-credentials-input-wrapper {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.child-credentials-copy-btn,
+.child-credentials-toggle-btn {
+    flex-shrink: 0;
+    padding: 0.95rem 1.2rem;
+    border: 2px solid var(--child-border);
+    border-radius: 10px;
+    background: rgba(30, 40, 55, 0.4);
+    color: #00D4FF;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 48px;
+}
+
+.child-credentials-copy-btn:hover,
+.child-credentials-toggle-btn:hover {
+    border-color: rgba(0, 82, 232, 0.5);
+    background: rgba(30, 40, 55, 0.6);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 82, 232, 0.25);
+}
+
+.child-credentials-copy-btn:active,
+.child-credentials-toggle-btn:active {
+    transform: translateY(0);
+}
+
+/* Warning Box */
+.child-credentials-warning-box {
+    background: linear-gradient(135deg, rgba(255, 71, 87, 0.08) 0%, rgba(255, 107, 53, 0.05) 100%);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255, 71, 87, 0.25);
+    border-radius: 14px;
+    padding: 1.75rem;
+    margin-bottom: 2.5rem;
+    color: var(--child-text-muted);
+    font-size: 0.95rem;
+    font-weight: 500;
+    line-height: 1.7;
+    box-shadow: 0 4px 16px rgba(255, 71, 87, 0.12);
+    transition: all 0.3s ease;
+    position: relative;
+    z-index: 2;
+}
+
+.child-credentials-warning-box:hover {
+    background: linear-gradient(135deg, rgba(255, 71, 87, 0.12) 0%, rgba(255, 107, 53, 0.08) 100%);
+    border-color: rgba(255, 71, 87, 0.35);
+    box-shadow: 0 8px 24px rgba(255, 71, 87, 0.18);
+}
+
+.child-credentials-warning-title {
+    display: block;
+    margin-bottom: 0.75rem;
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--child-danger);
+}
+
+.child-credentials-warning-list {
+    margin: 0;
+    padding-left: 1.5rem;
+    list-style: disc;
+}
+
+.child-credentials-warning-list li {
+    margin-bottom: 0.5rem;
+    color: var(--child-text-muted);
+}
+
+.child-credentials-warning-list li:last-child {
+    margin-bottom: 0;
+}
+
+/* Account Details Box */
+.child-credentials-details-box {
+    background: rgba(0, 82, 232, 0.08);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(0, 82, 232, 0.25);
+    border-radius: 14px;
+    padding: 1.75rem;
+    margin-bottom: 2.5rem;
+    text-align: center;
+    color: var(--child-text-muted);
+    font-size: 0.95rem;
+    font-weight: 500;
+    line-height: 1.7;
+    box-shadow: 0 4px 16px rgba(0, 82, 232, 0.12);
+    transition: all 0.3s ease;
+    position: relative;
+    z-index: 2;
+}
+
+.child-credentials-details-box:hover {
+    background: rgba(0, 82, 232, 0.12);
+    border-color: rgba(0, 82, 232, 0.35);
+    box-shadow: 0 8px 24px rgba(0, 82, 232, 0.18);
+}
+
+.child-credentials-details-title {
+    display: block;
+    margin-bottom: 1rem;
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--child-text-primary);
+}
+
+.child-credentials-details-content {
+    text-align: center;
+}
+
+.child-credentials-detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-bottom: 0.75rem;
+}
+
+.child-credentials-detail-item:last-child {
+    margin-bottom: 0;
+}
+
+.child-credentials-detail-label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--child-text-light);
+}
+
+.child-credentials-detail-value {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--child-text-primary);
+}
+
+/* ============================================
    CREATE FORM STYLES
    ============================================ */
 
@@ -1248,5 +1528,69 @@
         padding: 0.85rem 1rem;
         font-size: 0.9rem;
         width: 100%;
+    }
+
+    /* Credentials Mobile Responsive */
+    .child-credentials-container {
+        padding: 1.5rem;
+        max-width: 100%;
+    }
+
+    .child-credentials-title {
+        font-size: 1.35rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .child-credentials-subtitle {
+        font-size: 0.9rem;
+    }
+
+    .child-credentials-input-wrapper {
+        flex-wrap: wrap;
+    }
+
+    .child-credentials-copy-btn,
+    .child-credentials-toggle-btn {
+        padding: 0.85rem 1rem;
+    }
+
+    .child-credentials-success-box,
+    .child-credentials-warning-box,
+    .child-credentials-details-box {
+        padding: 1.25rem;
+        margin-bottom: 1.75rem;
+        flex-direction: column;
+        gap: 0.75rem;
+        font-size: 0.9rem;
+    }
+
+    .child-credentials-box-title,
+    .child-credentials-warning-title,
+    .child-credentials-details-title {
+        font-size: 0.95rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .child-credentials-list,
+    .child-credentials-warning-list {
+        padding-left: 1.25rem;
+        font-size: 0.85rem;
+    }
+
+    .child-credentials-list li,
+    .child-credentials-warning-list li {
+        margin-bottom: 0.35rem;
+    }
+
+    .child-credentials-detail-item {
+        margin-bottom: 0.5rem;
+    }
+
+    .child-credentials-detail-label {
+        font-size: 0.8rem;
+    }
+
+    .child-credentials-detail-value {
+        font-size: 0.9rem;
     }
 }
