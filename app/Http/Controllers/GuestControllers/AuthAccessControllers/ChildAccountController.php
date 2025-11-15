@@ -28,7 +28,10 @@ class ChildAccountController extends Controller
 
         // Check if user is eligible to manage child accounts
         if (!$this->childAccountService->canManageChildAccounts($user)) {
-            abort(403, 'You must be 18 or older to manage child accounts.');
+            return Inertia::render('GuestPages/AuthAccessPages/ChildAccounts/AgeRestricted', [
+                'currentAge' => $this->getAge($user->date_of_birth),
+                'requiredAge' => 18,
+            ]);
         }
 
         $childAccounts = $this->childAccountService->getParentChildAccounts($user->id);
@@ -52,7 +55,10 @@ class ChildAccountController extends Controller
 
         // Check if user is eligible to manage child accounts
         if (!$this->childAccountService->canManageChildAccounts($user)) {
-            abort(403, 'You must be 18 or older to create child accounts.');
+            return Inertia::render('GuestPages/AuthAccessPages/ChildAccounts/AgeRestricted', [
+                'currentAge' => $this->getAge($user->date_of_birth),
+                'requiredAge' => 18,
+            ]);
         }
 
         return Inertia::render('GuestPages/AuthAccessPages/ChildAccounts/CreateChild', [
@@ -233,5 +239,19 @@ class ChildAccountController extends Controller
         return Inertia::render('GuestPages/AuthAccessPages/ChildAccounts/ViewChild', [
             'child' => $childDetails,
         ]);
+    }
+
+    /**
+     * Calculate age from date of birth
+     */
+    private function getAge($dateOfBirth)
+    {
+        if (!$dateOfBirth) {
+            return null;
+        }
+
+        $date = new \DateTime($dateOfBirth);
+        $today = new \DateTime();
+        return $today->diff($date)->y;
     }
 }
