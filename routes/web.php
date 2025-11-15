@@ -18,6 +18,7 @@ use App\Http\Controllers\GuestControllers\AuthAccessControllers\FamilyTreeContro
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\ChildAccountController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\GalleryController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\AccountSettingsController;
+use App\Http\Controllers\GuestControllers\AuthAccessControllers\PostController;
 use App\Http\Controllers\GuestControllers\OnboardingController;
 use App\Http\Controllers\GuestControllers\StatusController;
 use App\Http\Controllers\GuestControllers\NotificationController;
@@ -158,6 +159,25 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::get('/', [GalleryController::class, 'index'])->name('galleries.index');
         Route::post('/', [GalleryController::class, 'store'])->name('galleries.store');
         Route::delete('/{galleryId}', [GalleryController::class, 'destroy'])->name('galleries.destroy');
+    });
+
+    // Stories / Posts routes
+    Route::prefix('stories')->group(function () {
+        Route::get('/', [PostController::class, 'index'])->name('stories.index');
+        Route::post('/', [PostController::class, 'store'])->name('stories.store');
+        Route::get('/search', [PostController::class, 'search'])->name('stories.search');
+        Route::get('/filter', [PostController::class, 'filterByType'])->name('stories.filter');
+        Route::get('/{postId}', [PostController::class, 'show'])->name('stories.show');
+        Route::put('/{postId}', [PostController::class, 'update'])->name('stories.update');
+        Route::delete('/{postId}', [PostController::class, 'destroy'])->name('stories.destroy');
+
+        // Comments
+        Route::post('/{postId}/comments', [PostController::class, 'addComment'])->name('stories.comments.store');
+        Route::delete('/comments/{commentId}', [PostController::class, 'deleteComment'])->name('stories.comments.destroy');
+
+        // Reactions
+        Route::post('/{postId}/reactions', [PostController::class, 'addReaction'])->name('stories.reactions.store');
+        Route::delete('/{postId}/reactions', [PostController::class, 'removeReaction'])->name('stories.reactions.destroy');
     });
 
     // Settings routes
