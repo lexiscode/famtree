@@ -30,6 +30,9 @@ export default function GalleriesIndex({ galleries, total, count }: Props) {
     const [previewUrls, setPreviewUrls] = useState<string[]>([]);
     const [dragActive, setDragActive] = useState(false);
     const [showUploadModal, setShowUploadModal] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [galleryToDelete, setGalleryToDelete] = useState<number | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const validateAndAddFiles = (files: File[]) => {
         // Validate files
@@ -118,19 +121,36 @@ export default function GalleriesIndex({ galleries, total, count }: Props) {
         }, 1500);
     };
 
-    const handleDelete = (galleryId: number) => {
-        if (!confirm('Are you sure you want to delete this item?')) return;
+    const handleDeleteClick = (galleryId: number) => {
+        setGalleryToDelete(galleryId);
+        setShowDeleteConfirm(true);
+    };
 
-        router.delete(`/galleries/${galleryId}`, {
+    const confirmDelete = () => {
+        if (galleryToDelete === null) return;
+
+        setIsDeleting(true);
+
+        router.delete(`/galleries/${galleryToDelete}`, {
             onSuccess: () => {
                 // Item deleted successfully - page will refresh automatically
+                setShowDeleteConfirm(false);
+                setGalleryToDelete(null);
+                setIsDeleting(false);
                 router.reload();
             },
             onError: (errors) => {
                 console.error('Delete error:', errors);
-                alert('Failed to delete item. Please try again.');
+                setIsDeleting(false);
+                setShowDeleteConfirm(false);
+                setGalleryToDelete(null);
             },
         });
+    };
+
+    const cancelDelete = () => {
+        setShowDeleteConfirm(false);
+        setGalleryToDelete(null);
     };
 
     const removeSelectedFile = (index: number) => {
@@ -338,7 +358,7 @@ export default function GalleriesIndex({ galleries, total, count }: Props) {
                                         </div>
                                         <button
                                             className="btn-delete"
-                                            onClick={() => handleDelete(gallery.id)}
+                                            onClick={() => handleDeleteClick(gallery.id)}
                                             title="Delete this item"
                                         >
                                             <Trash2 size={18} />
@@ -352,6 +372,55 @@ export default function GalleriesIndex({ galleries, total, count }: Props) {
                             <ImageIcon size={64} />
                             <h3>No galleries yet</h3>
                             <p>Upload your first image or video to get started</p>
+                        </div>
+                    )}
+
+                    {/* Delete Confirmation Modal */}
+                    {showDeleteConfirm && (
+                        <div className="modal-overlay" onClick={cancelDelete}>
+                            <div className="modal-content" style={{ maxWidth: '400px' }} onClick={(e) => e.stopPropagation()}>
+                                <div className="modal-header">
+                                    <h2>Delete Item</h2>
+                                    <button
+                                        className="modal-close"
+                                        onClick={cancelDelete}
+                                        disabled={isDeleting}
+                                    >
+                                        <X size={24} />
+                                    </button>
+                                </div>
+
+                                <div className="modal-body" style={{ textAlign: 'center', padding: '2rem' }}>
+                                    <div style={{ marginBottom: '1rem' }}>
+                                        <Trash2 size={48} style={{ color: '#ff3b30', opacity: 0.8 }} />
+                                    </div>
+                                    <h3 style={{ color: '#fff', marginBottom: '0.5rem' }}>Delete This Item?</h3>
+                                    <p style={{ color: '#b0c4de', margin: 0 }}>
+                                        This action cannot be undone. The file will be permanently deleted.
+                                    </p>
+                                </div>
+
+                                <div className="modal-footer">
+                                    <button
+                                        className="btn btn-outline"
+                                        onClick={cancelDelete}
+                                        disabled={isDeleting}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        className="btn"
+                                        onClick={confirmDelete}
+                                        disabled={isDeleting}
+                                        style={{
+                                            background: '#ff3b30',
+                                            color: 'white',
+                                        }}
+                                    >
+                                        {isDeleting ? 'Deleting...' : 'Delete'}
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     )}
                 </div>
