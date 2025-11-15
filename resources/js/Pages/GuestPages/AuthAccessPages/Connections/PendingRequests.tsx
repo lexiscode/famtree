@@ -173,7 +173,7 @@ export default function PendingRequests({ requests: initialRequests, count }: Pr
                     {/* Back to Profile Button */}
                     <button
                         className="connections-btn-back"
-                        onClick={() => router.visit(route('profile.me'))}
+                        onClick={() => router.visit(route('home'))}
                         title="Back to profile"
                     >
                         <ArrowLeft size={18} className="me-2" style={{ display: 'inline' }} />

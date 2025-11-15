@@ -49,7 +49,7 @@ export default function SettingsSidebar({ active }: SettingsSidebarProps) {
             {/* Back to Profile Button */}
             <div className="settings-sidebar-footer">
                 <a
-                    href={route('profile.me')}
+                    href={route('home')}
                     className="settings-nav-link settings-nav-back"
                     title="Back to your profile"
                 >

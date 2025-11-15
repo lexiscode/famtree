@@ -94,11 +94,8 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::get('/relationship-types', [ConnectionRequestController::class, 'relationshipTypes'])->name('connections.relationship-types');
     });
 
-    // Profile routes
-    Route::prefix('profile')->group(function () {
-        Route::get('/me', [ProfileController::class, 'myProfile'])->name('profile.me');
-        Route::get('/{userId}', [ProfileController::class, 'viewProfile'])->name('profile.view');
-    });
+    // Profile routes - only for viewing other users' profiles
+    Route::get('/profile/{userId}', [ProfileController::class, 'viewProfile'])->name('profile.view');
 
     // Family Tree routes
     Route::prefix('family-tree')->group(function () {
