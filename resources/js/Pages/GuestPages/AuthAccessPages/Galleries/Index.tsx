@@ -131,21 +131,24 @@ export default function GalleriesIndex({ galleries, total, count }: Props) {
 
         setIsDeleting(true);
 
-        router.delete(`/galleries/${galleryToDelete}`, {
-            onSuccess: () => {
-                // Item deleted successfully - page will refresh automatically
-                setShowDeleteConfirm(false);
-                setGalleryToDelete(null);
-                setIsDeleting(false);
-                router.reload();
-            },
-            onError: (errors) => {
-                console.error('Delete error:', errors);
-                setIsDeleting(false);
-                setShowDeleteConfirm(false);
-                setGalleryToDelete(null);
-            },
-        });
+        router.post(`/galleries/${galleryToDelete}`,
+            { _method: 'DELETE' },
+            {
+                onSuccess: () => {
+                    // Item deleted successfully - page will refresh automatically
+                    setShowDeleteConfirm(false);
+                    setGalleryToDelete(null);
+                    setIsDeleting(false);
+                    router.reload();
+                },
+                onError: (errors) => {
+                    console.error('Delete error:', errors);
+                    setIsDeleting(false);
+                    setShowDeleteConfirm(false);
+                    setGalleryToDelete(null);
+                },
+            }
+        );
     };
 
     const cancelDelete = () => {
