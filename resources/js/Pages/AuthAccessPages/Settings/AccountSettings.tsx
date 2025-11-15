@@ -406,15 +406,15 @@ export default function AccountSettings() {
                             {canManageChildAccounts ? (
                                 <>
                                     <p style={{ color: '#6C757D', marginBottom: '1.5rem', lineHeight: 1.6 }}>
-                                        As a parent or guardian, you can create child accounts for family members who are under 18. Child accounts allow younger family members to participate in the family tree while maintaining parental control.
+                                        As a parent or guardian, you can create your child accounts for family members who are under 18. Child accounts allow younger family members to participate in the family tree while maintaining parental control.
                                     </p>
                                     <div className="settings-button-group">
                                         <button
-                                            onClick={() => router.visit(route('child-accounts.create'))}
+                                            onClick={() => router.visit(route('child-accounts.index'))}
                                             className="settings-btn settings-btn-primary"
                                         >
                                             <Plus size={18} />
-                                            Create Child Account
+                                            Manage Child Accounts
                                         </button>
                                     </div>
                                 </>
