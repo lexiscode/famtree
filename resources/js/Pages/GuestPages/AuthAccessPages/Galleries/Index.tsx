@@ -33,6 +33,7 @@ export default function GalleriesIndex({ galleries, total, count }: Props) {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [galleryToDelete, setGalleryToDelete] = useState<number | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [selectedGalleryItem, setSelectedGalleryItem] = useState<Gallery | null>(null);
 
     const validateAndAddFiles = (files: File[]) => {
         // Validate files
@@ -329,7 +330,11 @@ export default function GalleriesIndex({ galleries, total, count }: Props) {
                             <div className="galleries-grid">
                                 {galleries.map((gallery) => (
                                     <div key={gallery.id} className="gallery-item">
-                                        <div className="gallery-item-image">
+                                        <div
+                                            className="gallery-item-image"
+                                            onClick={() => gallery.file_type === 'image' && setSelectedGalleryItem(gallery)}
+                                            style={{ cursor: gallery.file_type === 'image' ? 'pointer' : 'default' }}
+                                        >
                                             {gallery.file_type === 'image' ? (
                                                 <img
                                                     src={gallery.file_url}
@@ -433,6 +438,31 @@ export default function GalleriesIndex({ galleries, total, count }: Props) {
                                         {isDeleting ? 'Deleting...' : 'Delete'}
                                     </button>
                                 </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Image Popup Modal */}
+                    {selectedGalleryItem && selectedGalleryItem.file_type === 'image' && (
+                        <div
+                            className="gallery-image-popup-overlay"
+                            onClick={() => setSelectedGalleryItem(null)}
+                        >
+                            <div className="gallery-image-popup-container">
+                                <button
+                                    className="gallery-image-popup-close"
+                                    onClick={() => setSelectedGalleryItem(null)}
+                                    title="Close"
+                                    aria-label="Close image"
+                                >
+                                    <X size={32} />
+                                </button>
+                                <img
+                                    src={selectedGalleryItem.file_url}
+                                    alt={selectedGalleryItem.title || 'Gallery item'}
+                                    className="gallery-image-popup-img"
+                                    onClick={(e) => e.stopPropagation()}
+                                />
                             </div>
                         </div>
                     )}
