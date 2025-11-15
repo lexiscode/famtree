@@ -58,6 +58,7 @@ class HandleInertiaRequests extends Middleware
                     'last_name' => $user->last_name,
                     'username' => $user->username,
                     'email' => $user->email,
+                    'date_of_birth' => $user->date_of_birth,
                 ] : null,
             ],
             'progress' => $progress,
