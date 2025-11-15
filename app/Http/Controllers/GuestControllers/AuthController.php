@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\GuestRequests\LoginRequest;
 use App\Http\Requests\GuestRequests\RegisterRequest;
 use App\Actions\GuestServices\AuthService;
+use App\Actions\GuestServices\AuthAccessServices\AccountService;
 use App\Actions\GuestServices\OnboardingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,7 +16,8 @@ class AuthController extends Controller
 {
     public function __construct(
         private AuthService $authService,
-        private OnboardingService $onboardingService
+        private OnboardingService $onboardingService,
+        private AccountService $accountService
     ) {
     }
 
@@ -59,6 +61,11 @@ class AuthController extends Controller
                 $validated['emailOrUsername'],
                 $validated['password']
             );
+
+            // Check if user's account is soft deleted and restore it
+            if ($user->trashed()) {
+                $this->accountService->restoreAccount($user);
+            }
 
             // Log user in with remember me option
             Auth::guard('web')->login($user, $validated['rememberMe'] ?? false);

@@ -126,21 +126,25 @@ export default function AccountSettings() {
         }
     };
 
-    const handleDeleteAccount = async () => {
+    const handleDeleteAccount = () => {
         if (!deletePassword) {
             return;
         }
 
         setDeleteLoading(true);
-        try {
-            setTimeout(() => {
-                // Simulate deletion
+
+        router.post(route('settings.delete-account'), {
+            password: deletePassword,
+        }, {
+            onSuccess: () => {
                 setDeleteLoading(false);
                 setShowDeleteModal(false);
-            }, 1500);
-        } catch (error) {
-            setDeleteLoading(false);
-        }
+                setDeletePassword('');
+            },
+            onError: () => {
+                setDeleteLoading(false);
+            },
+        });
     };
 
     return (
