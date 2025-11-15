@@ -384,6 +384,50 @@ export default function AccountSettings() {
                         </div>
                     </div>
 
+                    {/* Child Accounts Section */}
+                    <div className="settings-section">
+                        <div className="settings-section-header">
+                            <div className="settings-section-icon">
+                                <Users size={24} />
+                            </div>
+                            <div className="settings-section-title-wrapper">
+                                <h2 className="settings-section-title">Child Accounts</h2>
+                                <p className="settings-section-subtitle">Create and manage accounts for family members under 18</p>
+                            </div>
+                        </div>
+
+                        <div className="settings-section-body">
+                            {canManageChildAccounts ? (
+                                <>
+                                    <p style={{ color: '#6C757D', marginBottom: '1.5rem', lineHeight: 1.6 }}>
+                                        As a parent or guardian, you can create child accounts for family members who are under 18. Child accounts allow younger family members to participate in the family tree while maintaining parental control.
+                                    </p>
+                                    <div className="settings-button-group">
+                                        <button
+                                            onClick={() => router.visit(route('child-accounts.create'))}
+                                            className="settings-btn settings-btn-primary"
+                                        >
+                                            <Plus size={18} />
+                                            Create Child Account
+                                        </button>
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="settings-alert settings-alert-info">
+                                    <div className="settings-alert-icon">
+                                        <AlertTriangle size={20} />
+                                    </div>
+                                    <div className="settings-alert-content">
+                                        <p className="settings-alert-title">Age Requirement</p>
+                                        <p className="settings-alert-message">
+                                            You must be at least 18 years old to create and manage your child accounts. {userAge !== null && `You are currently ${userAge} years old.`}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
                     {/* Two-Factor Authentication Section */}
                     <div className="settings-section">
                         <div className="settings-section-header">
@@ -423,50 +467,6 @@ export default function AccountSettings() {
                                     <div className="settings-alert-content">
                                         <p className="settings-alert-title">2FA is enabled</p>
                                         <p className="settings-alert-message">Your account is protected with two-factor authentication</p>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Child Accounts Section */}
-                    <div className="settings-section">
-                        <div className="settings-section-header">
-                            <div className="settings-section-icon">
-                                <Users size={24} />
-                            </div>
-                            <div className="settings-section-title-wrapper">
-                                <h2 className="settings-section-title">Child Accounts</h2>
-                                <p className="settings-section-subtitle">Create and manage accounts for family members under 18</p>
-                            </div>
-                        </div>
-
-                        <div className="settings-section-body">
-                            {canManageChildAccounts ? (
-                                <>
-                                    <p style={{ color: '#6C757D', marginBottom: '1.5rem', lineHeight: 1.6 }}>
-                                        As a parent or guardian, you can create child accounts for family members who are under 18. Child accounts allow younger family members to participate in the family tree while maintaining parental control.
-                                    </p>
-                                    <div className="settings-button-group">
-                                        <button
-                                            onClick={() => router.visit(route('child-accounts.create'))}
-                                            className="settings-btn settings-btn-primary"
-                                        >
-                                            <Plus size={18} />
-                                            Create Child Account
-                                        </button>
-                                    </div>
-                                </>
-                            ) : (
-                                <div className="settings-alert settings-alert-info">
-                                    <div className="settings-alert-icon">
-                                        <AlertTriangle size={20} />
-                                    </div>
-                                    <div className="settings-alert-content">
-                                        <p className="settings-alert-title">Age Requirement</p>
-                                        <p className="settings-alert-message">
-                                            You must be at least 18 years old to create and manage child accounts. {userAge !== null && `You are currently ${userAge} years old.`}
-                                        </p>
                                     </div>
                                 </div>
                             )}
