@@ -9,7 +9,8 @@ interface User {
     email: string;
     first_name: string;
     last_name: string;
-    date_of_birth?: string;
+    username: string;
+    date_of_birth?: string | null;
 }
 
 interface PageProps {
@@ -22,9 +23,16 @@ export default function AccountSettings() {
     const { props } = usePage<PageProps>();
     const user = props?.auth?.user;
 
+    // Debug log
+    console.log('AccountSettings - user data:', user);
+    console.log('AccountSettings - date_of_birth:', user?.date_of_birth);
+
     // Calculate user age
     const getAge = (dateOfBirth?: string) => {
-        if (!dateOfBirth) return null;
+        if (!dateOfBirth) {
+            console.log('No date of birth provided');
+            return null;
+        }
         const date = new Date(dateOfBirth);
         const today = new Date();
         let age = today.getFullYear() - date.getFullYear();
@@ -32,10 +40,12 @@ export default function AccountSettings() {
         if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < date.getDate())) {
             age--;
         }
+        console.log('Calculated age:', age);
         return age;
     };
 
     const userAge = getAge(user?.date_of_birth);
+    console.log('userAge:', userAge, 'canManageChildAccounts:', userAge !== null && userAge >= 18);
     const canManageChildAccounts = userAge !== null && userAge >= 18;
 
     // Password state
