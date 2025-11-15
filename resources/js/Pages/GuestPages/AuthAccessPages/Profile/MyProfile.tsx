@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { Mail, Phone, MapPin, Cake, FileText, Users, Edit, Settings, Briefcase, BookOpen, ArrowRight, LogOut, X } from 'lucide-react';
+import { Mail, Phone, MapPin, Cake, FileText, Users, Edit, Settings, Briefcase, BookOpen, ArrowRight, LogOut, X, Bell } from 'lucide-react';
 
 interface User {
     id: number;
@@ -25,9 +25,10 @@ interface Props {
     connectionCount: number;
     pendingRequestCount: number;
     sentRequestCount: number;
+    unreadNotificationCount: number;
 }
 
-export default function MyProfile({ user, connections, connectionCount, pendingRequestCount, sentRequestCount }: Props) {
+export default function MyProfile({ user, connections, connectionCount, pendingRequestCount, sentRequestCount, unreadNotificationCount }: Props) {
     const [showImagePopup, setShowImagePopup] = useState(false);
 
     const fields = useMemo(() => [
@@ -86,6 +87,37 @@ export default function MyProfile({ user, connections, connectionCount, pendingR
                                     >
                                         <Edit size={18} />
                                         Account Settings
+                                    </button>
+                                    <button
+                                        className="profile-btn profile-btn-secondary"
+                                        onClick={() => router.visit(route('notifications.index'))}
+                                        title="View your notifications"
+                                        style={{ position: 'relative' }}
+                                    >
+                                        <Bell size={18} />
+                                        Notifications
+                                        {unreadNotificationCount > 0 && (
+                                            <span
+                                                style={{
+                                                    position: 'absolute',
+                                                    top: '-6px',
+                                                    right: '-6px',
+                                                    backgroundColor: '#FF6B9D',
+                                                    color: 'white',
+                                                    borderRadius: '50%',
+                                                    width: '20px',
+                                                    height: '20px',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    fontSize: '12px',
+                                                    fontWeight: 'bold',
+                                                    border: '2px solid #1a1a1a',
+                                                }}
+                                            >
+                                                {unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}
+                                            </span>
+                                        )}
                                     </button>
                                     <button
                                         className="profile-btn profile-btn-secondary"

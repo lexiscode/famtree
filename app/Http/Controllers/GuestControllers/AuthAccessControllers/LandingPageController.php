@@ -6,12 +6,14 @@ use Inertia\Inertia;
 use App\Models\GuestModels\User;
 use App\Http\Controllers\Controller;
 use App\Actions\GuestServices\ProfilePrivacyService;
+use App\Actions\GuestServices\NotificationService;
 use App\Repositories\GuestRepositories\UserConnectionRepository;
 
 class LandingPageController extends Controller
 {
     public function __construct(
         private UserConnectionRepository $connectionRepository,
+        private NotificationService $notificationService,
     ) {}
 
     /**
@@ -58,12 +60,16 @@ class LandingPageController extends Controller
             'created_at' => $user->created_at,
         ];
 
+        // Get unread notification count
+        $unreadNotificationCount = $this->notificationService->getUnreadCount($user->id);
+
         return Inertia::render('GuestPages/AuthAccessPages/Profile/MyProfile', [
             'user' => $userData,
             'connections' => $connections,
             'connectionCount' => $connectionCount,
             'pendingRequestCount' => count($pendingRequests),
             'sentRequestCount' => count($sentRequests),
+            'unreadNotificationCount' => $unreadNotificationCount,
         ]);
     }
 }
