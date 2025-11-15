@@ -578,6 +578,25 @@ export default function AccountSettings() {
                                     placeholder="Enter your password"
                                     value={deletePassword}
                                     onChange={(e) => setDeletePassword(e.target.value)}
+                                    style={{
+                                        width: '100%',
+                                        padding: '0.625rem 0.75rem',
+                                        borderRadius: '6px',
+                                        border: '1px solid #DEE2E6',
+                                        background: 'white',
+                                        color: '#212529',
+                                        fontSize: '0.9rem',
+                                        fontFamily: 'inherit',
+                                        transition: 'border-color 0.2s ease',
+                                    }}
+                                    onFocus={(e) => {
+                                        e.currentTarget.style.borderColor = '#0052E8';
+                                        e.currentTarget.style.boxShadow = '0 0 0 3px rgba(0, 82, 232, 0.1)';
+                                    }}
+                                    onBlur={(e) => {
+                                        e.currentTarget.style.borderColor = '#DEE2E6';
+                                        e.currentTarget.style.boxShadow = 'none';
+                                    }}
                                     required
                                 />
                             </div>
