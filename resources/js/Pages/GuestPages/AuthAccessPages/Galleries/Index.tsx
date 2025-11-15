@@ -121,12 +121,14 @@ export default function GalleriesIndex({ galleries, total, count }: Props) {
     const handleDelete = (galleryId: number) => {
         if (!confirm('Are you sure you want to delete this item?')) return;
 
-        router.delete(route('galleries.destroy', { galleryId }), {
+        router.delete(route('galleries.destroy', galleryId), {
             onSuccess: () => {
-                // Item deleted successfully
+                // Item deleted successfully - page will refresh automatically
+                router.reload();
             },
             onError: (errors) => {
                 console.error('Delete error:', errors);
+                alert('Failed to delete item. Please try again.');
             },
         });
     };
