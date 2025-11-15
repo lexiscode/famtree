@@ -68,71 +68,50 @@ export default function AccountSettings() {
     const [deletePassword, setDeletePassword] = useState('');
     const [deleteLoading, setDeleteLoading] = useState(false);
 
-    const handlePasswordChange = async (e: React.FormEvent) => {
+    const handlePasswordChange = (e: React.FormEvent) => {
         e.preventDefault();
         setPasswordLoading(true);
         setPasswordMessage(null);
 
-        // Validation
-        if (!passwords.current || !passwords.new || !passwords.confirm) {
-            setPasswordMessage({ type: 'error', text: 'All password fields are required' });
-            setPasswordLoading(false);
-            return;
-        }
-
-        if (passwords.new !== passwords.confirm) {
-            setPasswordMessage({ type: 'error', text: 'New passwords do not match' });
-            setPasswordLoading(false);
-            return;
-        }
-
-        if (passwords.new.length < 8) {
-            setPasswordMessage({ type: 'error', text: 'New password must be at least 8 characters' });
-            setPasswordLoading(false);
-            return;
-        }
-
-        try {
-            // Simulate API call
-            setTimeout(() => {
+        router.post(route('settings.change-password'), {
+            current: passwords.current,
+            new: passwords.new,
+            confirm: passwords.confirm,
+        }, {
+            onSuccess: () => {
                 setPasswordMessage({ type: 'success', text: 'Password changed successfully' });
                 setPasswords({ current: '', new: '', confirm: '' });
                 setPasswordLoading(false);
-            }, 1000);
-        } catch (error) {
-            setPasswordMessage({ type: 'error', text: 'Failed to change password' });
-            setPasswordLoading(false);
-        }
+            },
+            onError: (errors: Record<string, string>) => {
+                setPasswordLoading(false);
+                const errorMessage = Object.values(errors)[0] || 'Failed to change password';
+                setPasswordMessage({ type: 'error', text: errorMessage });
+            },
+        });
     };
 
-    const handleEmailChange = async (e: React.FormEvent) => {
+    const handleEmailChange = (e: React.FormEvent) => {
         e.preventDefault();
         setEmailLoading(true);
         setEmailMessage(null);
 
-        if (!newEmail || !emailPassword) {
-            setEmailMessage({ type: 'error', text: 'Email and password are required' });
-            setEmailLoading(false);
-            return;
-        }
-
-        if (user && newEmail === user.email) {
-            setEmailMessage({ type: 'error', text: 'New email must be different from current email' });
-            setEmailLoading(false);
-            return;
-        }
-
-        try {
-            setTimeout(() => {
+        router.post(route('settings.change-email'), {
+            email: newEmail,
+            password: emailPassword,
+        }, {
+            onSuccess: () => {
                 setEmailMessage({ type: 'success', text: 'Email changed successfully. Please verify your new email.' });
                 setNewEmail('');
                 setEmailPassword('');
                 setEmailLoading(false);
-            }, 1000);
-        } catch (error) {
-            setEmailMessage({ type: 'error', text: 'Failed to change email' });
-            setEmailLoading(false);
-        }
+            },
+            onError: (errors: Record<string, string>) => {
+                setEmailLoading(false);
+                const errorMessage = Object.values(errors)[0] || 'Failed to change email';
+                setEmailMessage({ type: 'error', text: errorMessage });
+            },
+        });
     };
 
     const handleToggle2FA = async () => {

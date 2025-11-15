@@ -17,6 +17,7 @@ use App\Http\Controllers\GuestControllers\AuthAccessControllers\ProfileControlle
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\FamilyTreeController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\ChildAccountController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\GalleryController;
+use App\Http\Controllers\GuestControllers\AuthAccessControllers\AccountSettingsController;
 use App\Http\Controllers\GuestControllers\OnboardingController;
 use App\Http\Controllers\GuestControllers\StatusController;
 use App\Http\Controllers\GuestControllers\NotificationController;
@@ -166,6 +167,9 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::get('/account', function () {
             return Inertia::render('AuthAccessPages/Settings/AccountSettings');
         })->name('settings.account');
+
+        Route::post('/account/change-password', [AccountSettingsController::class, 'changePassword'])->name('settings.change-password');
+        Route::post('/account/change-email', [AccountSettingsController::class, 'changeEmail'])->name('settings.change-email');
 
         Route::get('/privacy', function () {
             return Inertia::render('AuthAccessPages/Settings/PrivacySettings');
