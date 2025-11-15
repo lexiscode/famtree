@@ -104,7 +104,7 @@ export default function Index({ myTrees, memberTrees }: Props) {
                     <div style={{ marginBottom: '3rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
                             <Zap size={24} style={{ color: '#0052E8' }} />
-                            <h2 style={{ margin: 0, color: '#1a1a1a', fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.3px' }}>
+                            <h2 style={{ margin: 0, color: '#faf8f8ff', fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.3px' }}>
                                 My Trees
                             </h2>
                             <span style={{ background: 'linear-gradient(135deg, #0052E8, #00D4FF)', color: 'white', padding: '0.35rem 0.75rem', borderRadius: '50px', fontSize: '0.8rem', fontWeight: 700, marginLeft: '0.5rem' }}>
@@ -165,7 +165,7 @@ export default function Index({ myTrees, memberTrees }: Props) {
                             }}
                         >
                             <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>👨‍👩‍👧‍👦</div>
-                            <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#1a1a1a', marginBottom: '0.75rem' }}>
+                            <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#f8f2f2ff', marginBottom: '0.75rem' }}>
                                 Start Your Family Journey
                             </h3>
                             <p style={{ color: '#6C757D', fontSize: '1rem', marginBottom: '1.5rem', lineHeight: 1.6, maxWidth: '500px', margin: '0 auto 1.5rem' }}>

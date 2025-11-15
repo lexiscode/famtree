@@ -1,7 +1,8 @@
 import { useCallback, useState } from 'react';
 import { router } from '@inertiajs/react';
-import GuestLayout from '@/Layouts/GuestLayout';
+import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
 import { ArrowLeft, AlertCircle, Info, Lightbulb } from 'lucide-react';
+import './CreateTree.css';
 
 interface Props {
     connectionCount: number;
@@ -60,7 +61,7 @@ export default function CreateTree({ connectionCount }: Props) {
     }, []);
 
     return (
-        <GuestLayout>
+        <AuthAccessLayout>
             <div className="family-tree-page">
                 <div className="family-tree-container">
                     {/* Back Button */}
@@ -200,6 +201,6 @@ export default function CreateTree({ connectionCount }: Props) {
                     </div>
                 </div>
             </div>
-        </GuestLayout>
+        </AuthAccessLayout>
     );
 }
