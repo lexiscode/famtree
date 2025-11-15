@@ -582,18 +582,59 @@ export default function AccountSettings() {
                                 />
                             </div>
 
-                            <div className="settings-button-group">
+                            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
                                 <button
                                     onClick={() => setShowDeleteModal(false)}
-                                    className="settings-btn settings-btn-secondary"
+                                    style={{
+                                        padding: '0.625rem 1.25rem',
+                                        borderRadius: '6px',
+                                        border: '1px solid #DEE2E6',
+                                        background: '#F8F9FA',
+                                        color: '#495057',
+                                        fontSize: '0.9rem',
+                                        fontWeight: 500,
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
+                                    }}
                                     disabled={deleteLoading}
+                                    onMouseEnter={(e) => {
+                                        if (!deleteLoading) {
+                                            e.currentTarget.style.background = '#E9ECEF';
+                                            e.currentTarget.style.borderColor = '#ADB5BD';
+                                        }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.background = '#F8F9FA';
+                                        e.currentTarget.style.borderColor = '#DEE2E6';
+                                    }}
                                 >
-                                    Cancel
+                                    Back
                                 </button>
                                 <button
                                     onClick={handleDeleteAccount}
                                     disabled={!deletePassword || deleteLoading}
-                                    className="settings-btn settings-btn-danger"
+                                    style={{
+                                        padding: '0.625rem 1.25rem',
+                                        borderRadius: '6px',
+                                        border: 'none',
+                                        background: deleteLoading || !deletePassword ? '#FFB3B3' : '#FF4757',
+                                        color: 'white',
+                                        fontSize: '0.9rem',
+                                        fontWeight: 500,
+                                        cursor: deleteLoading || !deletePassword ? 'not-allowed' : 'pointer',
+                                        transition: 'all 0.2s ease',
+                                        opacity: deleteLoading || !deletePassword ? 0.7 : 1,
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        if (!deleteLoading && deletePassword) {
+                                            e.currentTarget.style.background = '#E63946';
+                                        }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        if (!deleteLoading && deletePassword) {
+                                            e.currentTarget.style.background = '#FF4757';
+                                        }
+                                    }}
                                 >
                                     {deleteLoading ? 'Scheduling Deletion...' : 'Schedule Deletion'}
                                 </button>
