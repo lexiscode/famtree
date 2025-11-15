@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { Mail, Phone, MapPin, Cake, FileText, Users, Edit, Settings, Briefcase, BookOpen, ArrowRight, LogOut } from 'lucide-react';
+import { Mail, Phone, MapPin, Cake, FileText, Users, Edit, Settings, Briefcase, BookOpen, ArrowRight, LogOut, X } from 'lucide-react';
 
 interface User {
     id: number;
@@ -28,6 +28,8 @@ interface Props {
 }
 
 export default function MyProfile({ user, connections, connectionCount, pendingRequestCount, sentRequestCount }: Props) {
+    const [showImagePopup, setShowImagePopup] = useState(false);
+
     const fields = useMemo(() => [
         { key: 'email', label: 'Email', icon: Mail, value: user.email },
         { key: 'phone', label: 'Phone', icon: Phone, value: user.phone },
@@ -50,6 +52,9 @@ export default function MyProfile({ user, connections, connectionCount, pendingR
                                     src={user.profile_image_url || 'https://via.placeholder.com/140'}
                                     alt={user.name}
                                     className="profile-avatar"
+                                    onClick={() => setShowImagePopup(true)}
+                                    style={{ cursor: 'pointer' }}
+                                    title="Click to view full size"
                                 />
                                 <h1 className="profile-name">{user.name}</h1>
                                 <p className="profile-username">@{user.username}</p>
@@ -205,6 +210,35 @@ export default function MyProfile({ user, connections, connectionCount, pendingR
                         </div>
                     </div>
                 </div>
+
+                {/* Image Popup Modal */}
+                {showImagePopup && (
+                    <div
+                        className="profile-image-popup-overlay"
+                        onClick={() => setShowImagePopup(false)}
+                    >
+                        <div className="profile-image-popup-container">
+                            <button
+                                className="profile-image-popup-close"
+                                onClick={() => setShowImagePopup(false)}
+                                title="Close"
+                                aria-label="Close image"
+                            >
+                                <X size={32} />
+                            </button>
+                            <img
+                                src={user.profile_image_url || 'https://via.placeholder.com/140'}
+                                alt={user.name}
+                                className="profile-image-popup-img"
+                                onClick={(e) => e.stopPropagation()}
+                            />
+                            <div className="profile-image-popup-info">
+                                <h3>{user.name}</h3>
+                                <p>@{user.username}</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </AuthAccessLayout>
     );
