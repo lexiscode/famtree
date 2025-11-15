@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { Upload, Trash2, Image as ImageIcon, Play, X } from 'lucide-react';
+import { Upload, Trash2, Image as ImageIcon, Play, X, ArrowLeft } from 'lucide-react';
 import './Galleries.css';
 
 interface Gallery {
@@ -180,6 +180,16 @@ export default function GalleriesIndex({ galleries, total, count }: Props) {
                 </div>
 
                 <div className="galleries-container">
+                    {/* Back Button */}
+                    <button
+                        className="back-button"
+                        onClick={() => router.visit(route('profile.me'))}
+                        title="Back to profile"
+                    >
+                        <ArrowLeft size={20} />
+                        Back to Profile
+                    </button>
+
                     {/* Header */}
                     <div className="galleries-header">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
