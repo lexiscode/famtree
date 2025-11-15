@@ -156,69 +156,77 @@ export default function BasicInfoStep({ onComplete, data, user }: BasicInfoStepP
                     </div>
                 </div>
 
-                {/* Phone Number */}
-                <div className="form-group">
-                    <label htmlFor="phone" className="form-label">
-                        Phone Number
-                    </label>
-                    <div style={{ position: 'relative' }}>
-                        <Phone
-                            size={18}
-                            style={{
-                                position: 'absolute',
-                                left: '12px',
-                                top: '15px',
-                                color: '#9CA3AF',
-                                pointerEvents: 'none'
-                            }}
-                        />
-                        <input
-                            type="tel"
-                            className={`form-control ${errors.phone ? 'is-invalid' : ''}`}
-                            id="phone"
-                            name="phone"
-                            value={formData.phone}
-                            onChange={handleChange}
-                            placeholder="+1 (555) 000-0000"
-                            disabled={isSubmitting}
-                            style={{ paddingLeft: '40px' }}
-                        />
-                    </div>
-                    {errors.phone && (
-                        <div className="error-message">
-                            <AlertCircle size={16} />
-                            {errors.phone}
-                        </div>
-                    )}
-                </div>
+                <div className="row">
 
-                {/* Date of Birth */}
-                <div className="form-group">
-                    <label htmlFor="date_of_birth" className="form-label">
-                        Date of Birth
-                    </label>
-                    <div style={{ position: 'relative' }}>
-                        <Calendar
-                            size={18}
-                            style={{
-                                position: 'absolute',
-                                left: '12px',
-                                top: '15px',
-                                color: '#9CA3AF',
-                                pointerEvents: 'none'
-                            }}
-                        />
-                        <input
-                            type="date"
-                            className="form-control"
-                            id="date_of_birth"
-                            name="date_of_birth"
-                            value={formData.date_of_birth}
-                            onChange={handleChange}
-                            disabled={isSubmitting}
-                            style={{ paddingLeft: '40px' }}
-                        />
+                    <div className="col-md-6">
+                        {/* Phone Number */}
+                        <div className="form-group">
+                            <label htmlFor="phone" className="form-label">
+                                Phone Number
+                            </label>
+                            <div style={{ position: 'relative' }}>
+                                <Phone
+                                    size={18}
+                                    style={{
+                                        position: 'absolute',
+                                        left: '12px',
+                                        top: '15px',
+                                        color: '#9CA3AF',
+                                        pointerEvents: 'none'
+                                    }}
+                                />
+                                <input
+                                    type="tel"
+                                    className={`form-control ${errors.phone ? 'is-invalid' : ''}`}
+                                    id="phone"
+                                    name="phone"
+                                    value={formData.phone}
+                                    onChange={handleChange}
+                                    placeholder="+1 (555) 000-0000"
+                                    disabled={isSubmitting}
+                                    style={{ paddingLeft: '40px' }}
+                                />
+                            </div>
+                            {errors.phone && (
+                                <div className="error-message">
+                                    <AlertCircle size={16} />
+                                    {errors.phone}
+                                </div>
+                            )}
+                        </div>
                     </div>
+
+                    <div className="col-md-6">
+                        {/* Date of Birth */}
+                        <div className="form-group">
+                            <label htmlFor="date_of_birth" className="form-label">
+                                Date of Birth
+                            </label>
+                            <div style={{ position: 'relative' }}>
+                                <Calendar
+                                    size={18}
+                                    style={{
+                                        position: 'absolute',
+                                        left: '12px',
+                                        top: '15px',
+                                        color: '#9CA3AF',
+                                        pointerEvents: 'none'
+                                    }}
+                                />
+                                <input
+                                    type="date"
+                                    className="form-control"
+                                    id="date_of_birth"
+                                    name="date_of_birth"
+                                    value={formData.date_of_birth}
+                                    onChange={handleChange}
+                                    disabled={isSubmitting}
+                                    style={{ paddingLeft: '40px' }}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
 
                 {/* Bio */}

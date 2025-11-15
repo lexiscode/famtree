@@ -66,7 +66,7 @@ export default function FamilyStatusStep({ onComplete, data }: FamilyStatusStepP
             <form onSubmit={handleSubmit}>
                 {/* Family Status */}
                 <div className="form-group">
-                    <label htmlFor="family_status" className="form-label">
+                    <label htmlFor="family_status" className="form-label" style={{ color: '#e0e0e0' }}>
                         Current Family Status <span className="required">*</span>
                     </label>
                     <select
@@ -96,7 +96,7 @@ export default function FamilyStatusStep({ onComplete, data }: FamilyStatusStepP
                 <div className="row">
                     <div className="col-md-6">
                         <div className="form-group">
-                            <label htmlFor="number_of_siblings" className="form-label">
+                            <label htmlFor="number_of_siblings" className="form-label" style={{ color: '#e0e0e0' }}>
                                 Number of Siblings
                             </label>
                             <div style={{ position: 'relative' }}>
@@ -128,7 +128,7 @@ export default function FamilyStatusStep({ onComplete, data }: FamilyStatusStepP
 
                     <div className="col-md-6">
                         <div className="form-group">
-                            <label htmlFor="number_of_children" className="form-label">
+                            <label htmlFor="number_of_children" className="form-label" style={{ color: '#e0e0e0' }}>
                                 Number of Children
                             </label>
                             <div style={{ position: 'relative' }}>
