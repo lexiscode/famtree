@@ -1,6 +1,6 @@
 import { useState, FormEvent } from 'react';
 import { router } from '@inertiajs/react';
-import { AlertCircle, User, Calendar } from 'lucide-react';
+import { AlertCircle, User, Calendar, Phone } from 'lucide-react';
 
 interface BasicInfoStepProps {
     onComplete: (progress: any) => void;
@@ -12,6 +12,7 @@ interface BasicInfoStepProps {
         bio: string | null;
         date_of_birth: string | null;
         address: string | null;
+        phone: string | null;
     };
 }
 
@@ -19,6 +20,7 @@ export default function BasicInfoStep({ onComplete, data, user }: BasicInfoStepP
     const [formData, setFormData] = useState({
         first_name: data?.first_name || user?.first_name || '',
         last_name: data?.last_name || user?.last_name || '',
+        phone: data?.phone || user?.phone || '',
         bio: data?.bio || user?.bio || '',
         date_of_birth: data?.date_of_birth || user?.date_of_birth || '',
     });
@@ -152,6 +154,42 @@ export default function BasicInfoStep({ onComplete, data, user }: BasicInfoStepP
                             )}
                         </div>
                     </div>
+                </div>
+
+                {/* Phone Number */}
+                <div className="form-group">
+                    <label htmlFor="phone" className="form-label">
+                        Phone Number
+                    </label>
+                    <div style={{ position: 'relative' }}>
+                        <Phone
+                            size={18}
+                            style={{
+                                position: 'absolute',
+                                left: '12px',
+                                top: '15px',
+                                color: '#9CA3AF',
+                                pointerEvents: 'none'
+                            }}
+                        />
+                        <input
+                            type="tel"
+                            className={`form-control ${errors.phone ? 'is-invalid' : ''}`}
+                            id="phone"
+                            name="phone"
+                            value={formData.phone}
+                            onChange={handleChange}
+                            placeholder="+1 (555) 000-0000"
+                            disabled={isSubmitting}
+                            style={{ paddingLeft: '40px' }}
+                        />
+                    </div>
+                    {errors.phone && (
+                        <div className="error-message">
+                            <AlertCircle size={16} />
+                            {errors.phone}
+                        </div>
+                    )}
                 </div>
 
                 {/* Date of Birth */}

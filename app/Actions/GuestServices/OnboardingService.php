@@ -96,6 +96,7 @@ class OnboardingService
         $this->userProfileRepository->updateProfile($userId, [
             'first_name' => $data['first_name'],
             'last_name' => $data['last_name'],
+            'phone' => $data['phone'] ?? null,
             'bio' => $data['bio'] ?? null,
             'date_of_birth' => $data['date_of_birth'] ?? null,
         ]);
@@ -283,6 +284,7 @@ class OnboardingService
                 'id' => $user->id,
                 'first_name' => $user->first_name,
                 'last_name' => $user->last_name,
+                'phone' => $user->phone,
                 'bio' => $user->bio,
                 'date_of_birth' => $user->date_of_birth?->format('Y-m-d'),
                 'address' => $user->address,

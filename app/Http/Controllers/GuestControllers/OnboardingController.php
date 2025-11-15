@@ -46,6 +46,7 @@ class OnboardingController extends Controller
             $validated = $request->validate([
                 'first_name' => 'required|string|max:255',
                 'last_name' => 'required|string|max:255',
+                'phone' => 'nullable|string|max:20',
                 'bio' => 'nullable|string|max:500',
                 'date_of_birth' => 'nullable|date',
             ]);
