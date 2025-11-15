@@ -121,7 +121,7 @@ export default function GalleriesIndex({ galleries, total, count }: Props) {
     const handleDelete = (galleryId: number) => {
         if (!confirm('Are you sure you want to delete this item?')) return;
 
-        router.delete(route('galleries.destroy', galleryId), {
+        router.delete(`/galleries/${galleryId}`, {
             onSuccess: () => {
                 // Item deleted successfully - page will refresh automatically
                 router.reload();
