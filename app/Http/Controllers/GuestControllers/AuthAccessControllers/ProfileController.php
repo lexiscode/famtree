@@ -22,7 +22,7 @@ class ProfileController extends Controller
      */
     public function myProfile()
     {
-        $user = auth()->user();
+        $user = auth()->user()->load('familyInfo');
 
         if (!$user) {
             return redirect()->route('login');
@@ -73,7 +73,7 @@ class ProfileController extends Controller
             return redirect()->route('login');
         }
 
-        $owner = User::findOrFail($userId);
+        $owner = User::with('familyInfo')->findOrFail($userId);
 
         // Get visible profile data based on privacy settings
         $visibleData = $this->privacyService->getFormattedProfileData($viewer->id, $owner->id);
