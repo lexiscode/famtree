@@ -13,10 +13,10 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule): void
     {
         // Delete expired user accounts (those scheduled for deletion 30 days ago)
-        // Runs daily at 2:00 AM
+        // Runs daily at 12:00 AM
         $schedule->command('accounts:delete-expired --force')
             ->daily()
-            ->at('02:00')
+            ->at('00:00')
             ->onOneServer()
             ->withoutOverlapping()
             ->name('delete-expired-accounts');

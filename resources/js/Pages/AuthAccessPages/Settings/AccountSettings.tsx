@@ -470,18 +470,64 @@ export default function AccountSettings() {
                             </div>
                             <div className="settings-section-title-wrapper">
                                 <h2 className="settings-section-title" style={{ color: '#FF4757' }}>Delete Account</h2>
-                                <p className="settings-section-subtitle">Permanently delete your account and all associated data</p>
+                                <p className="settings-section-subtitle">Schedule your account for permanent deletion with a 30-day grace period</p>
                             </div>
                         </div>
 
                         <div className="settings-section-body">
+                            {/* How it Works Section */}
+                            <div style={{
+                                background: '#FFF5F5',
+                                border: '1px solid #FFE0E0',
+                                borderRadius: '8px',
+                                padding: '1.25rem',
+                                marginBottom: '1.5rem'
+                            }}>
+                                <h4 style={{ color: '#FF4757', marginTop: 0, marginBottom: '0.75rem', fontSize: '0.95rem', fontWeight: 600 }}>
+                                    How Account Deletion Works
+                                </h4>
+                                <ul style={{ color: '#495057', marginBottom: 0, paddingLeft: '1.25rem', lineHeight: 1.7, fontSize: '0.9rem' }}>
+                                    <li>
+                                        <strong>Step 1 - Temporary Deletion</strong>: When you delete your account, it is not immediately removed. Instead, it is scheduled for permanent deletion after 30 days.
+                                    </li>
+                                    <li>
+                                        <strong>Step 2 - 30-Day Grace Period</strong>: Your account will remain inaccessible for 30 days. During this time, all your data (connections, family trees, photos, settings) is protected and will not be visible to others.
+                                    </li>
+                                    <li>
+                                        <strong>Step 3 - Account Recovery</strong>: If you change your mind within 30 days, simply log back in with your email/username and password. Your account will be automatically restored with all your data intact.
+                                    </li>
+                                    <li>
+                                        <strong>Step 4 - Permanent Deletion</strong>: If you do not log back in within 30 days, your account and all associated data will be permanently deleted and cannot be recovered.
+                                    </li>
+                                </ul>
+                            </div>
+
+                            {/* Key Points Section */}
+                            <div style={{
+                                background: '#FFF8F0',
+                                border: '1px solid #FFE8D6',
+                                borderRadius: '8px',
+                                padding: '1.25rem',
+                                marginBottom: '1.5rem'
+                            }}>
+                                <h4 style={{ color: '#FF7A3B', marginTop: 0, marginBottom: '0.75rem', fontSize: '0.95rem', fontWeight: 600 }}>
+                                    Important Information
+                                </h4>
+                                <ul style={{ color: '#495057', marginBottom: 0, paddingLeft: '1.25rem', lineHeight: 1.7, fontSize: '0.9rem' }}>
+                                    <li>✓ You can recover your account anytime within the 30-day period by logging in</li>
+                                    <li>✓ Your data is completely hidden from other users during the grace period</li>
+                                    <li>✗ After 30 days, permanent deletion is automatic and irreversible</li>
+                                    <li>✗ Once permanently deleted, all your data including photos, connections, and family trees cannot be recovered</li>
+                                </ul>
+                            </div>
+
                             <div className="settings-alert settings-alert-danger">
                                 <div className="settings-alert-icon">
                                     <AlertTriangle size={20} />
                                 </div>
                                 <div className="settings-alert-content">
-                                    <p className="settings-alert-title">Warning: This action cannot be undone</p>
-                                    <p className="settings-alert-message">Deleting your account will permanently remove all your data including connections, family trees, and settings.</p>
+                                    <p className="settings-alert-title">Warning: This action starts the deletion process</p>
+                                    <p className="settings-alert-message">By clicking "Delete My Account", you will schedule your account for permanent deletion. You have 30 days to recover it by logging back in.</p>
                                 </div>
                             </div>
 
@@ -522,15 +568,27 @@ export default function AccountSettings() {
                             animation: 'slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
                         }}>
                             <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#FF4757', margin: '0 0 1rem' }}>
-                                Delete Account?
+                                Schedule Account Deletion?
                             </h3>
-                            <p style={{ color: '#495057', marginBottom: '1.5rem', lineHeight: 1.6 }}>
-                                Are you sure you want to delete your account? This action is permanent and cannot be reversed. All your data will be lost.
+                            <p style={{ color: '#495057', marginBottom: '1rem', lineHeight: 1.6 }}>
+                                Your account will be scheduled for permanent deletion in 30 days. You can recover it anytime within this period by logging back in.
                             </p>
+                            <div style={{
+                                background: '#FFF5F5',
+                                border: '1px solid #FFE0E0',
+                                borderRadius: '6px',
+                                padding: '0.75rem',
+                                marginBottom: '1.5rem',
+                                fontSize: '0.85rem',
+                                color: '#FF4757',
+                                fontWeight: 500
+                            }}>
+                                ⏱️ 30-day grace period: Log back in anytime to restore your account and all data.
+                            </div>
 
                             <div className="settings-form-group" style={{ marginBottom: '1.5rem' }}>
                                 <label className="settings-label">
-                                    Enter your password to confirm
+                                    Enter your password to confirm deletion
                                     <span className="settings-label-required">*</span>
                                 </label>
                                 <input
@@ -556,7 +614,7 @@ export default function AccountSettings() {
                                     disabled={!deletePassword || deleteLoading}
                                     className="settings-btn settings-btn-danger"
                                 >
-                                    {deleteLoading ? 'Deleting...' : 'Delete Permanently'}
+                                    {deleteLoading ? 'Scheduling Deletion...' : 'Schedule Deletion'}
                                 </button>
                             </div>
                         </div>
