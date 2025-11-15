@@ -22,39 +22,28 @@ export default function UpdateStatus({
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const handleSubmit = useCallback(async () => {
-        setLoading(true);
+    const handleSubmit = useCallback(() => {
         setError(null);
 
-        try {
-            const response = await fetch(route('status.update'), {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                },
-                body: JSON.stringify({
-                    user_id: userId,
-                    status: selectedStatus,
-                    death_date: selectedStatus === 'deceased' ? deathDate : null,
-                }),
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || 'Failed to update status');
-            }
-
-            setLoading(false);
-            if (onSuccess) {
-                onSuccess();
-            }
-            onClose();
-        } catch (err) {
-            setLoading(false);
-            setError(err instanceof Error ? err.message : 'An error occurred');
-        }
+        router.post(route('status.update'), {
+            user_id: userId,
+            status: selectedStatus,
+            death_date: selectedStatus === 'deceased' ? deathDate : null,
+        }, {
+            onSuccess: () => {
+                setLoading(false);
+                if (onSuccess) {
+                    onSuccess();
+                }
+                onClose();
+            },
+            onError: (errors: Record<string, string>) => {
+                setLoading(false);
+                const errorMessage = errors.status || 'Failed to update status';
+                setError(errorMessage);
+            },
+        });
+        setLoading(true);
     }, [userId, selectedStatus, deathDate, onClose, onSuccess]);
 
     const isFormValid = selectedStatus === 'deceased' ? deathDate : true;

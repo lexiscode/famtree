@@ -126,8 +126,6 @@ Route::middleware(['web', 'auth'])->group(function () {
     // Status Management routes
     Route::prefix('status')->group(function () {
         Route::post('/update', [StatusController::class, 'updateStatus'])->name('status.update');
-        Route::get('/{userId}', [StatusController::class, 'getStatus'])->name('status.get');
-        Route::post('/can-update', [StatusController::class, 'canUpdateStatus'])->name('status.can-update');
     });
 
     // Notification routes
