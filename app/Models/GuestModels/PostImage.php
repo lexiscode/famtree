@@ -1,0 +1,32 @@
+<?php
+
+namespace App\Models\GuestModels;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class PostImage extends Model
+{
+    use HasFactory;
+
+    protected $table = 'post_images';
+
+    protected $fillable = [
+        'post_id',
+        'image_url',
+        'order',
+    ];
+
+    protected $casts = [
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
+
+    /**
+     * Get the post this image belongs to
+     */
+    public function post()
+    {
+        return $this->belongsTo(Post::class);
+    }
+}
