@@ -1,7 +1,8 @@
 import { useCallback } from 'react';
 import { Link } from '@inertiajs/react';
-import GuestLayout from '@/Layouts/GuestLayout';
+import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
 import { Plus, Globe, Lock, Users, Calendar, ArrowRight, Sparkles, Zap } from 'lucide-react';
+import './Index.css';
 
 interface User {
     id: number;
@@ -78,7 +79,7 @@ export default function Index({ myTrees, memberTrees }: Props) {
     );
 
     return (
-        <GuestLayout>
+        <AuthAccessLayout>
             <div className="family-tree-page">
                 <div className="family-tree-container">
                     {/* Page Header */}
@@ -178,6 +179,6 @@ export default function Index({ myTrees, memberTrees }: Props) {
                     )}
                 </div>
             </div>
-        </GuestLayout>
+        </AuthAccessLayout>
     );
 }
