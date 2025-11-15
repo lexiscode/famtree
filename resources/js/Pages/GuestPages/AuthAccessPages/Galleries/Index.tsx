@@ -332,8 +332,8 @@ export default function GalleriesIndex({ galleries, total, count }: Props) {
                                     <div key={gallery.id} className="gallery-item">
                                         <div
                                             className="gallery-item-image"
-                                            onClick={() => gallery.file_type === 'image' && setSelectedGalleryItem(gallery)}
-                                            style={{ cursor: gallery.file_type === 'image' ? 'pointer' : 'default' }}
+                                            onClick={() => setSelectedGalleryItem(gallery)}
+                                            style={{ cursor: 'pointer' }}
                                         >
                                             {gallery.file_type === 'image' ? (
                                                 <img
@@ -442,8 +442,8 @@ export default function GalleriesIndex({ galleries, total, count }: Props) {
                         </div>
                     )}
 
-                    {/* Image Popup Modal */}
-                    {selectedGalleryItem && selectedGalleryItem.file_type === 'image' && (
+                    {/* Media Popup Modal */}
+                    {selectedGalleryItem && (
                         <div
                             className="gallery-image-popup-overlay"
                             onClick={() => setSelectedGalleryItem(null)}
@@ -453,16 +453,26 @@ export default function GalleriesIndex({ galleries, total, count }: Props) {
                                     className="gallery-image-popup-close"
                                     onClick={() => setSelectedGalleryItem(null)}
                                     title="Close"
-                                    aria-label="Close image"
+                                    aria-label="Close media"
                                 >
                                     <X size={32} />
                                 </button>
-                                <img
-                                    src={selectedGalleryItem.file_url}
-                                    alt={selectedGalleryItem.title || 'Gallery item'}
-                                    className="gallery-image-popup-img"
-                                    onClick={(e) => e.stopPropagation()}
-                                />
+                                {selectedGalleryItem.file_type === 'image' ? (
+                                    <img
+                                        src={selectedGalleryItem.file_url}
+                                        alt={selectedGalleryItem.title || 'Gallery item'}
+                                        className="gallery-image-popup-img"
+                                        onClick={(e) => e.stopPropagation()}
+                                    />
+                                ) : (
+                                    <video
+                                        src={selectedGalleryItem.file_url}
+                                        className="gallery-video-popup-video"
+                                        controls
+                                        autoPlay
+                                        onClick={(e) => e.stopPropagation()}
+                                    />
+                                )}
                             </div>
                         </div>
                     )}
