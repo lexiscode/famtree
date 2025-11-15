@@ -27,11 +27,16 @@ export default function AccountSettings() {
         if (!dateOfBirth) return null;
         const date = new Date(dateOfBirth);
         const today = new Date();
-        return today.getFullYear() - date.getFullYear() - (today < new Date(today.getFullYear(), date.getMonth(), date.getDate()) ? 1 : 0);
+        let age = today.getFullYear() - date.getFullYear();
+        const monthDiff = today.getMonth() - date.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < date.getDate())) {
+            age--;
+        }
+        return age;
     };
 
     const userAge = getAge(user?.date_of_birth);
-    const canManageChildAccounts = userAge && userAge >= 18;
+    const canManageChildAccounts = userAge !== null && userAge >= 18;
 
     // Password state
     const [passwords, setPasswords] = useState({
