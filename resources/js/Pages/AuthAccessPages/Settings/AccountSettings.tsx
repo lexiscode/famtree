@@ -20,10 +20,11 @@ interface PageProps {
 }
 
 export default function AccountSettings() {
-    const { props } = usePage<PageProps>();
-    const user = props?.auth?.user;
+    const page = usePage();
+    const user = page.props.auth?.user;
 
     // Debug log
+    console.log('Full page props:', page.props);
     console.log('AccountSettings - user data:', user);
     console.log('AccountSettings - date_of_birth:', user?.date_of_birth);
 
