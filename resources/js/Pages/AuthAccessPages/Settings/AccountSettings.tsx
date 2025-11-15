@@ -13,18 +13,18 @@ interface User {
     date_of_birth?: string | null;
 }
 
-interface PageProps {
+interface SharedProps {
     auth: {
         user: User;
     };
 }
 
 export default function AccountSettings() {
-    const page = usePage();
-    const user = page.props.auth?.user;
+    const { auth } = usePage<SharedProps>().props;
+    const user = auth?.user;
 
     // Debug log
-    console.log('Full page props:', page.props);
+    console.log('AccountSettings - full auth:', auth);
     console.log('AccountSettings - user data:', user);
     console.log('AccountSettings - date_of_birth:', user?.date_of_birth);
 
