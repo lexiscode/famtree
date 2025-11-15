@@ -88,7 +88,7 @@ export default function ManageChildren({ childAccounts, childCount }: Props) {
                     <div className="child-accounts-container">
                         {/* Back Button */}
                         <Link
-                            href={route('profile.show')}
+                            href={route('home')}
                             className="child-back-button"
                         >
                             <ArrowLeft size={20} />
