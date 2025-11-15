@@ -502,25 +502,6 @@ export default function AccountSettings() {
                                 </ul>
                             </div>
 
-                            {/* Key Points Section */}
-                            <div style={{
-                                background: '#FFF8F0',
-                                border: '1px solid #FFE8D6',
-                                borderRadius: '8px',
-                                padding: '1.25rem',
-                                marginBottom: '1.5rem'
-                            }}>
-                                <h4 style={{ color: '#FF7A3B', marginTop: 0, marginBottom: '0.75rem', fontSize: '0.95rem', fontWeight: 600 }}>
-                                    Important Information
-                                </h4>
-                                <ul style={{ color: '#495057', marginBottom: 0, paddingLeft: '1.25rem', lineHeight: 1.7, fontSize: '0.9rem' }}>
-                                    <li>✓ You can recover your account anytime within the 30-day period by logging in</li>
-                                    <li>✓ Your data is completely hidden from other users during the grace period</li>
-                                    <li>✗ After 30 days, permanent deletion is automatic and irreversible</li>
-                                    <li>✗ Once permanently deleted, all your data including photos, connections, and family trees cannot be recovered</li>
-                                </ul>
-                            </div>
-
                             <div className="settings-alert settings-alert-danger">
                                 <div className="settings-alert-icon">
                                     <AlertTriangle size={20} />
