@@ -57,9 +57,7 @@ class GalleryService
             // Generate thumbnail for videos
             $thumbnailPath = null;
             if ($fileType === 'video') {
-                // For now, we'll use a placeholder for video thumbnails
-                // In production, you'd want to generate actual video thumbnails
-                $thumbnailPath = null;
+                $thumbnailPath = $this->generateVideoThumbnail($filePath, $storagePath, $userId);
             }
 
             // Create gallery record
@@ -153,5 +151,56 @@ class GalleryService
             'last_page' => $galleries->lastPage(),
             'count' => $this->galleryRepository->countByUser($userId),
         ];
+    }
+
+    /**
+     * Generate a thumbnail from the first frame of a video
+     */
+    private function generateVideoThumbnail(string $videoPath, string $storagePath, int $userId): ?string
+    {
+        try {
+            $fullPath = Storage::disk('public')->path($videoPath);
+
+            // Check if FFmpeg is available
+            if (!$this->isFFmpegAvailable()) {
+                return null;
+            }
+
+            // Generate thumbnail filename
+            $thumbnailName = pathinfo($videoPath, PATHINFO_FILENAME) . '_thumb.jpg';
+            $thumbnailStoragePath = $storagePath . '/' . $thumbnailName;
+            $thumbnailFullPath = Storage::disk('public')->path($thumbnailStoragePath);
+
+            // Ensure directory exists
+            @mkdir(dirname($thumbnailFullPath), 0755, true);
+
+            // Use FFmpeg to extract first frame
+            $command = sprintf(
+                'ffmpeg -i %s -ss 00:00:01 -vf scale=320:-1 -frames:v 1 %s 2>/dev/null',
+                escapeshellarg($fullPath),
+                escapeshellarg($thumbnailFullPath)
+            );
+
+            exec($command, $output, $returnCode);
+
+            if ($returnCode === 0 && file_exists($thumbnailFullPath)) {
+                return $thumbnailStoragePath;
+            }
+
+            return null;
+        } catch (\Exception $e) {
+            // If thumbnail generation fails, return null
+            return null;
+        }
+    }
+
+    /**
+     * Check if FFmpeg is available
+     */
+    private function isFFmpegAvailable(): bool
+    {
+        $command = 'which ffmpeg 2>/dev/null || where ffmpeg 2>nul';
+        exec($command, $output, $returnCode);
+        return $returnCode === 0;
     }
 }
