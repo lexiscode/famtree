@@ -138,7 +138,7 @@ export default function LocationInfoStep({ onComplete, data }: LocationInfoStepP
             <form onSubmit={handleSubmit}>
                 {/* Country - Most Important */}
                 <div className="form-group">
-                    <label htmlFor="country" className="form-label">
+                    <label htmlFor="country" className="form-label" style={{ color: '#4a4545ff' }}>
                         Country <span className="required">*</span>
                     </label>
                     <div style={{ position: 'relative' }}>
@@ -176,7 +176,7 @@ export default function LocationInfoStep({ onComplete, data }: LocationInfoStepP
                 <div className="row">
                     <div className="col-md-6">
                         <div className="form-group">
-                            <label htmlFor="state_province" className="form-label">
+                            <label htmlFor="state_province" className="form-label" style={{ color: '#4a4545ff' }}>
                                 State
                             </label>
                             <div style={{ position: 'relative' }}>
@@ -219,7 +219,7 @@ export default function LocationInfoStep({ onComplete, data }: LocationInfoStepP
 
                     <div className="col-md-6">
                         <div className="form-group">
-                            <label htmlFor="city" className="form-label">
+                            <label htmlFor="city" className="form-label" style={{ color: '#4a4545ff' }}>
                                 City
                             </label>
                             <div style={{ position: 'relative' }}>
@@ -263,7 +263,7 @@ export default function LocationInfoStep({ onComplete, data }: LocationInfoStepP
 
                 {/* Address */}
                 <div className="form-group">
-                    <label htmlFor="address" className="form-label">
+                    <label htmlFor="address" className="form-label" style={{ color: '#4a4545ff' }}>
                         Street Address
                     </label>
                     <div style={{ position: 'relative' }}>
