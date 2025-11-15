@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\GuestControllers\AuthAccessControllers;
 
-use App\Http\Controllers\Controller;
-use App\Repositories\GuestRepositories\UserConnectionRepository;
 use Inertia\Inertia;
+use App\Models\GuestModels\User;
+use App\Http\Controllers\Controller;
+use App\Actions\GuestServices\ProfilePrivacyService;
+use App\Repositories\GuestRepositories\UserConnectionRepository;
 
 class LandingPageController extends Controller
 {

@@ -232,9 +232,7 @@ export default function MyProfile({ user, connections, connectionCount, pendingR
                                 className="profile-image-popup-img"
                                 onClick={(e) => e.stopPropagation()}
                             />
-                            <div className="profile-image-popup-info">
-                                <h3>{user.name}</h3>
-                            </div>
+                           
                         </div>
                     </div>
                 )}

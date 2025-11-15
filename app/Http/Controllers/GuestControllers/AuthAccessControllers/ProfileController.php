@@ -4,7 +4,6 @@ namespace App\Http\Controllers\GuestControllers\AuthAccessControllers;
 
 use App\Http\Controllers\Controller;
 use App\Actions\GuestServices\ProfilePrivacyService;
-use App\Actions\GuestServices\UserConnectionService;
 use App\Repositories\GuestRepositories\UserConnectionRepository;
 use App\Models\GuestModels\User;
 use Inertia\Inertia;
@@ -13,54 +12,8 @@ class ProfileController extends Controller
 {
     public function __construct(
         private ProfilePrivacyService $privacyService,
-        private UserConnectionService $connectionService,
         private UserConnectionRepository $connectionRepository,
     ) {}
-
-    /**
-     * Display the current user's profile
-     */
-    public function myProfile()
-    {
-        $user = auth()->user()->load('familyInfo');
-
-        if (!$user) {
-            return redirect()->route('login');
-        }
-
-        // Get all user connections
-        $connections = $this->connectionRepository->getConnections($user->id);
-        $connectionCount = count($connections);
-
-        // Get pending requests
-        $pendingRequests = $this->connectionRepository->getPendingRequests($user->id);
-        $sentRequests = $this->connectionRepository->getSentRequests($user->id);
-
-        // Format user data
-        $userData = [
-            'id' => $user->id,
-            'name' => $user->name,
-            'username' => $user->username,
-            'email' => $user->email,
-            'phone' => $user->phone,
-            'address' => $user->address,
-            'bio' => $user->bio,
-            'date_of_birth' => $user->date_of_birth,
-            'profile_image_url' => $user->profile_image_url,
-            'status' => $user->status,
-            'job_title' => $user->familyInfo?->current_occupation ?? null,
-            'education' => $user->familyInfo?->education_level ?? null,
-            'created_at' => $user->created_at,
-        ];
-
-        return Inertia::render('GuestPages/AuthAccessPages/Profile/MyProfile', [
-            'user' => $userData,
-            'connections' => $connections,
-            'connectionCount' => $connectionCount,
-            'pendingRequestCount' => count($pendingRequests),
-            'sentRequestCount' => count($sentRequests),
-        ]);
-    }
 
     /**
      * View another user's profile (with privacy filtering)
