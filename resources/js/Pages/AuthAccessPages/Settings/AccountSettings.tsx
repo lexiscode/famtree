@@ -23,17 +23,9 @@ export default function AccountSettings() {
     const { auth } = usePage<SharedProps>().props;
     const user = auth?.user;
 
-    // Debug log
-    console.log('AccountSettings - full auth:', auth);
-    console.log('AccountSettings - user data:', user);
-    console.log('AccountSettings - date_of_birth:', user?.date_of_birth);
-
     // Calculate user age
-    const getAge = (dateOfBirth?: string) => {
-        if (!dateOfBirth) {
-            console.log('No date of birth provided');
-            return null;
-        }
+    const getAge = (dateOfBirth?: string | null) => {
+        if (!dateOfBirth) return null;
         const date = new Date(dateOfBirth);
         const today = new Date();
         let age = today.getFullYear() - date.getFullYear();
@@ -41,12 +33,10 @@ export default function AccountSettings() {
         if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < date.getDate())) {
             age--;
         }
-        console.log('Calculated age:', age);
         return age;
     };
 
     const userAge = getAge(user?.date_of_birth);
-    console.log('userAge:', userAge, 'canManageChildAccounts:', userAge !== null && userAge >= 18);
     const canManageChildAccounts = userAge !== null && userAge >= 18;
 
     // Password state
