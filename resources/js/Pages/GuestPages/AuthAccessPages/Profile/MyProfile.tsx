@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { Mail, Phone, MapPin, Cake, FileText, Users, Edit, Settings, Briefcase, BookOpen, ArrowRight, LogOut, X, Bell } from 'lucide-react';
+import { Mail, Phone, MapPin, Cake, FileText, Users, Edit, Settings, Briefcase, BookOpen, ArrowRight, LogOut, X, Bell, BookMarked } from 'lucide-react';
 
 interface User {
     id: number;
@@ -118,6 +118,14 @@ export default function MyProfile({ user, connections, connectionCount, pendingR
                                                 {unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}
                                             </span>
                                         )}
+                                    </button>
+                                    <button
+                                        className="profile-btn profile-btn-secondary"
+                                        onClick={() => router.visit(route('stories.index'))}
+                                        title="View and create your stories"
+                                    >
+                                        <BookMarked size={18} />
+                                        My Stories
                                     </button>
                                     <button
                                         className="profile-btn profile-btn-secondary"
