@@ -12,7 +12,14 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
+        // Delete expired user accounts (those scheduled for deletion 30 days ago)
+        // Runs daily at 2:00 AM
+        $schedule->command('accounts:delete-expired --force')
+            ->daily()
+            ->at('02:00')
+            ->onOneServer()
+            ->withoutOverlapping()
+            ->name('delete-expired-accounts');
     }
 
     /**
