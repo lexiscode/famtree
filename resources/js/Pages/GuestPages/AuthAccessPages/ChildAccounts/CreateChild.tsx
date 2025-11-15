@@ -1,10 +1,43 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, PropsWithChildren } from 'react';
 import { router } from '@inertiajs/react';
-import GuestLayout from '@/Layouts/GuestLayout';
 import { ArrowLeft, Info, Lightbulb } from 'lucide-react';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { ModalProvider } from '@/Context/ModalContext';
+import CTAModal from '@/Components/Modal/CTAModal';
+import { useModal } from '@/Context/ModalContext';
 
 interface Props {
     parentName: string;
+}
+
+// Child Accounts Layout (no header/footer)
+function ChildAccountsLayout({ children }: PropsWithChildren) {
+    const { isCtaModalOpen, ctaModalTab, closeCtaModal } = useModal();
+
+    return (
+        <div className="child-accounts-layout">
+            <main className="child-accounts-main-content">
+                {children}
+            </main>
+            <CTAModal
+                isOpen={isCtaModalOpen}
+                onClose={closeCtaModal}
+                initialTab={ctaModalTab}
+            />
+            <ToastContainer
+                position="top-right"
+                autoClose={3000}
+                hideProgressBar={true}
+                newestOnTop
+                closeOnClick
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme="dark"
+            />
+        </div>
+    );
 }
 
 export default function CreateChild({ parentName }: Props) {
@@ -61,136 +94,140 @@ export default function CreateChild({ parentName }: Props) {
     const isFormValid = formData.first_name.trim() && formData.last_name.trim() && formData.username.trim() && formData.date_of_birth;
 
     return (
-        <GuestLayout>
-            <div className="child-accounts-page">
-                <div className="container-lg" style={{ maxWidth: '700px', margin: '0 auto', padding: '0 1.5rem' }}>
-                    {/* Back Button */}
-                    <button
-                        onClick={handleCancel}
-                        className="child-back-btn"
-                    >
-                        <ArrowLeft size={18} />
-                        Back to Child Accounts
-                    </button>
+        <ModalProvider>
+            <ChildAccountsLayout>
+                <div className="child-accounts-page">
+                    <div className="child-accounts-container">
+                        {/* Back Button */}
+                        <button
+                            onClick={handleCancel}
+                            className="child-back-button"
+                        >
+                            <ArrowLeft size={20} />
+                            Back to Child Accounts
+                        </button>
 
-                    {/* Form Container */}
-                    <div className="child-form-container">
-                        <h1 className="child-form-title">Create Child Account</h1>
-                        <p className="child-form-subtitle">Set up a new account for a family member under 18</p>
+                        {/* Form Container */}
+                        <div className="child-create-form-container">
+                            <div className="child-create-header">
+                                <h1 className="child-create-title">Create Child Account</h1>
+                                <p className="child-create-subtitle">Set up a new account for a family member under 18</p>
+                            </div>
 
-                        <form onSubmit={handleSubmit}>
-                            {/* Info Box */}
-                            <div className="child-info-alert" style={{ marginBottom: '2rem' }}>
-                                <Info size={20} />
-                                <div>
-                                    <strong>Creating an account as {parentName}</strong>. A temporary password will be generated and shown after creation.
+                            <form onSubmit={handleSubmit}>
+                                {/* Info Box */}
+                                <div className="child-create-info-box">
+                                    <Info size={20} />
+                                    <div>
+                                        <strong>Creating an account as {parentName}</strong>. A temporary password will be generated and shown after creation.
+                                    </div>
                                 </div>
-                            </div>
 
-                            {/* First Name */}
-                            <div className="child-form-group">
-                                <label className="child-form-label">First Name *</label>
-                                <input
-                                    type="text"
-                                    name="first_name"
-                                    className="child-form-input"
-                                    placeholder="e.g., John"
-                                    value={formData.first_name}
-                                    onChange={handleInputChange}
-                                    required
-                                />
-                                {errors.first_name && (
-                                    <div className="child-error-alert">{errors.first_name}</div>
-                                )}
-                            </div>
-
-                            {/* Last Name */}
-                            <div className="child-form-group">
-                                <label className="child-form-label">Last Name *</label>
-                                <input
-                                    type="text"
-                                    name="last_name"
-                                    className="child-form-input"
-                                    placeholder="e.g., Smith"
-                                    value={formData.last_name}
-                                    onChange={handleInputChange}
-                                    required
-                                />
-                                {errors.last_name && (
-                                    <div className="child-error-alert">{errors.last_name}</div>
-                                )}
-                            </div>
-
-                            {/* Username */}
-                            <div className="child-form-group">
-                                <label className="child-form-label">Username *</label>
-                                <input
-                                    type="text"
-                                    name="username"
-                                    className="child-form-input"
-                                    placeholder="e.g., john_smith"
-                                    value={formData.username}
-                                    onChange={handleInputChange}
-                                    required
-                                />
-                                {errors.username && (
-                                    <div className="child-error-alert">{errors.username}</div>
-                                )}
-                                <div className="child-form-help">Must be unique and at least 3 characters long</div>
-                            </div>
-
-                            {/* Date of Birth */}
-                            <div className="child-form-group">
-                                <label className="child-form-label">Date of Birth *</label>
-                                <input
-                                    type="date"
-                                    name="date_of_birth"
-                                    className="child-form-input"
-                                    value={formData.date_of_birth}
-                                    onChange={handleInputChange}
-                                    required
-                                />
-                                {errors.date_of_birth && (
-                                    <div className="child-error-alert">{errors.date_of_birth}</div>
-                                )}
-                                <div className="child-form-help">Child must be under 18 years old</div>
-                            </div>
-
-                            {/* Tips Box */}
-                            <div className="child-tips-alert">
-                                <Lightbulb size={22} />
-                                <div>
-                                    <div className="child-alert-title">After creating the account:</div>
-                                    <ul className="child-alert-list">
-                                        <li>You'll receive a temporary password</li>
-                                        <li>Share the username and temporary password with your child</li>
-                                        <li>They can log in and change their password</li>
-                                        <li>At 18, they can set their own email address</li>
-                                    </ul>
+                                {/* First Name */}
+                                <div className="child-create-form-group">
+                                    <label className="child-create-label">First Name *</label>
+                                    <input
+                                        type="text"
+                                        name="first_name"
+                                        className="child-create-input"
+                                        placeholder="e.g., John"
+                                        value={formData.first_name}
+                                        onChange={handleInputChange}
+                                        required
+                                    />
+                                    {errors.first_name && (
+                                        <div className="child-create-error">{errors.first_name}</div>
+                                    )}
                                 </div>
-                            </div>
 
-                            {/* Action Buttons */}
-                            <div className="child-form-actions">
-                                <button
-                                    type="button"
-                                    onClick={handleCancel}
-                                    className="child-form-cancel"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="child-form-submit"
-                                    disabled={loading || !isFormValid}
-                                >
-                                    {loading ? 'Creating Account...' : 'Create Child Account'}
-                                </button>
-                            </div>
-                        </form>
+                                {/* Last Name */}
+                                <div className="child-create-form-group">
+                                    <label className="child-create-label">Last Name *</label>
+                                    <input
+                                        type="text"
+                                        name="last_name"
+                                        className="child-create-input"
+                                        placeholder="e.g., Smith"
+                                        value={formData.last_name}
+                                        onChange={handleInputChange}
+                                        required
+                                    />
+                                    {errors.last_name && (
+                                        <div className="child-create-error">{errors.last_name}</div>
+                                    )}
+                                </div>
+
+                                {/* Username */}
+                                <div className="child-create-form-group">
+                                    <label className="child-create-label">Username *</label>
+                                    <input
+                                        type="text"
+                                        name="username"
+                                        className="child-create-input"
+                                        placeholder="e.g., john_smith"
+                                        value={formData.username}
+                                        onChange={handleInputChange}
+                                        required
+                                    />
+                                    {errors.username && (
+                                        <div className="child-create-error">{errors.username}</div>
+                                    )}
+                                    <div className="child-create-help">Must be unique and at least 3 characters long</div>
+                                </div>
+
+                                {/* Date of Birth */}
+                                <div className="child-create-form-group">
+                                    <label className="child-create-label">Date of Birth *</label>
+                                    <input
+                                        type="date"
+                                        name="date_of_birth"
+                                        className="child-create-input"
+                                        value={formData.date_of_birth}
+                                        onChange={handleInputChange}
+                                        required
+                                    />
+                                    {errors.date_of_birth && (
+                                        <div className="child-create-error">{errors.date_of_birth}</div>
+                                    )}
+                                    <div className="child-create-help">Child must be under 18 years old</div>
+                                </div>
+
+                                {/* Tips Box */}
+                                <div className="child-create-tips-box">
+                                    <Lightbulb size={22} />
+                                    <div>
+                                        <div className="child-create-tips-title">After creating the account:</div>
+                                        <ul className="child-create-tips-list">
+                                            <li>You'll receive a temporary password</li>
+                                            <li>Share the username and temporary password with your child</li>
+                                            <li>They can log in and change their password</li>
+                                            <li>At 18, they can set their own email address</li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                {/* Action Buttons */}
+                                <div className="child-create-actions">
+                                    <button
+                                        type="button"
+                                        onClick={handleCancel}
+                                        className="child-create-btn-cancel"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="child-create-btn-submit"
+                                        disabled={loading || !isFormValid}
+                                    >
+                                        {loading ? 'Creating Account...' : 'Create Child Account'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </GuestLayout>
+            </ChildAccountsLayout>
+        </ModalProvider>
     );
 }

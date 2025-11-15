@@ -659,6 +659,285 @@
 }
 
 /* ============================================
+   CREATE FORM STYLES
+   ============================================ */
+
+.child-create-form-container {
+    background: var(--child-bg-card);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    border: 1px solid var(--child-border);
+    padding: 3rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    position: relative;
+    overflow: hidden;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.child-create-form-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 8px;
+    background: var(--child-primary-gradient);
+}
+
+.child-create-header {
+    margin-bottom: 2.5rem;
+    position: relative;
+    z-index: 2;
+}
+
+.child-create-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--child-text-primary);
+    margin: 0 0 0.75rem 0;
+    letter-spacing: -0.5px;
+}
+
+.child-create-subtitle {
+    font-size: 1rem;
+    color: var(--child-text-muted);
+    margin: 0;
+    font-weight: 500;
+    line-height: 1.6;
+}
+
+.child-create-form-group {
+    margin-bottom: 1.75rem;
+    position: relative;
+    z-index: 2;
+}
+
+.child-create-label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--child-text-primary);
+    margin-bottom: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.child-create-input {
+    width: 100%;
+    padding: 0.95rem 1.2rem;
+    border: 2px solid var(--child-border);
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    transition: all 0.3s ease;
+    background: rgba(30, 40, 55, 0.4);
+    color: var(--child-text-primary);
+    box-sizing: border-box;
+}
+
+.child-create-input::placeholder {
+    color: var(--child-text-light);
+}
+
+.child-create-input:focus {
+    outline: none;
+    border-color: rgba(0, 82, 232, 0.5);
+    background: rgba(30, 40, 55, 0.6);
+    box-shadow: 0 0 0 4px rgba(0, 82, 232, 0.15);
+}
+
+.child-create-error {
+    font-size: 0.85rem;
+    color: #FF6B7A;
+    margin-top: 0.5rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.child-create-help {
+    font-size: 0.8rem;
+    color: var(--child-text-light);
+    margin-top: 0.4rem;
+    font-weight: 600;
+}
+
+/* Info Box */
+.child-create-info-box {
+    background: rgba(0, 82, 232, 0.08);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(0, 82, 232, 0.25);
+    border-radius: 14px;
+    padding: 1.5rem;
+    margin-bottom: 2.5rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    color: var(--child-text-muted);
+    font-size: 0.95rem;
+    font-weight: 500;
+    line-height: 1.7;
+    box-shadow: 0 4px 16px rgba(0, 82, 232, 0.12);
+    transition: all 0.3s ease;
+    position: relative;
+    z-index: 2;
+}
+
+.child-create-info-box:hover {
+    background: rgba(0, 82, 232, 0.12);
+    border-color: rgba(0, 82, 232, 0.35);
+    box-shadow: 0 8px 24px rgba(0, 82, 232, 0.18);
+}
+
+.child-create-info-box svg {
+    color: #0052E8;
+    flex-shrink: 0;
+    margin-top: 0.2rem;
+}
+
+.child-create-info-box strong {
+    color: var(--child-text-primary);
+    font-weight: 700;
+}
+
+/* Tips Box */
+.child-create-tips-box {
+    background: rgba(124, 58, 237, 0.08);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(124, 58, 237, 0.25);
+    border-radius: 14px;
+    padding: 1.75rem;
+    margin-bottom: 2.5rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    color: var(--child-text-muted);
+    font-size: 0.95rem;
+    font-weight: 500;
+    line-height: 1.7;
+    box-shadow: 0 4px 16px rgba(124, 58, 237, 0.12);
+    transition: all 0.3s ease;
+    position: relative;
+    z-index: 2;
+}
+
+.child-create-tips-box:hover {
+    background: rgba(124, 58, 237, 0.12);
+    border-color: rgba(124, 58, 237, 0.35);
+    box-shadow: 0 8px 24px rgba(124, 58, 237, 0.18);
+}
+
+.child-create-tips-box svg {
+    color: #7c3aed;
+    flex-shrink: 0;
+    margin-top: 0.2rem;
+}
+
+.child-create-tips-title {
+    display: block;
+    margin-bottom: 0.75rem;
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--child-text-primary);
+}
+
+.child-create-tips-list {
+    margin: 0;
+    padding-left: 1.5rem;
+    list-style: disc;
+}
+
+.child-create-tips-list li {
+    margin-bottom: 0.5rem;
+    color: var(--child-text-muted);
+}
+
+.child-create-tips-list li:last-child {
+    margin-bottom: 0;
+}
+
+/* Action Buttons */
+.child-create-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2.5rem;
+    padding-top: 2.5rem;
+    border-top: 1px solid var(--child-border);
+    position: relative;
+    z-index: 2;
+}
+
+.child-create-btn-submit,
+.child-create-btn-cancel {
+    flex: 1;
+    padding: 1rem 1.5rem;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    border: none;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.child-create-btn-submit {
+    background: var(--child-primary-gradient);
+    color: white;
+    box-shadow: 0 8px 24px rgba(0, 82, 232, 0.3);
+}
+
+.child-create-btn-submit::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.2);
+    transition: left 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.child-create-btn-submit:hover:not(:disabled) {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 40px rgba(0, 82, 232, 0.4);
+}
+
+.child-create-btn-submit:hover:not(:disabled)::before {
+    left: 100%;
+}
+
+.child-create-btn-submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.child-create-btn-cancel {
+    background: rgba(0, 82, 232, 0.1);
+    color: #00D4FF;
+    border: 2px solid rgba(0, 82, 232, 0.3);
+    backdrop-filter: blur(5px);
+    box-shadow: 0 4px 12px rgba(0, 82, 232, 0.1);
+}
+
+.child-create-btn-cancel:hover {
+    background: rgba(0, 82, 232, 0.2);
+    border-color: rgba(0, 82, 232, 0.5);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 82, 232, 0.2);
+}
+
+/* ============================================
    RESPONSIVE DESIGN
    ============================================ */
 
@@ -744,6 +1023,30 @@
 
     .child-info-list {
         padding-left: 1.25rem;
+    }
+
+    /* Create Form Responsive */
+    .child-create-form-container {
+        padding: 2rem;
+        max-width: 100%;
+    }
+
+    .child-create-title {
+        font-size: 1.5rem;
+    }
+
+    .child-create-subtitle {
+        font-size: 0.95rem;
+    }
+
+    .child-create-actions {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .child-create-btn-submit,
+    .child-create-btn-cancel {
+        width: 100%;
     }
 }
 
@@ -870,5 +1173,80 @@
         padding: 0.65rem 1rem;
         font-size: 0.9rem;
         margin-bottom: 1.5rem;
+    }
+
+    /* Create Form Mobile Responsive */
+    .child-create-form-container {
+        padding: 1.5rem;
+        margin: 0;
+    }
+
+    .child-create-header {
+        margin-bottom: 2rem;
+    }
+
+    .child-create-title {
+        font-size: 1.35rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .child-create-subtitle {
+        font-size: 0.9rem;
+    }
+
+    .child-create-form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .child-create-label {
+        font-size: 0.85rem;
+    }
+
+    .child-create-input {
+        padding: 0.85rem 1rem;
+        font-size: 0.9rem;
+    }
+
+    .child-create-info-box,
+    .child-create-tips-box {
+        padding: 1.25rem;
+        margin-bottom: 1.75rem;
+        flex-direction: column;
+        gap: 0.75rem;
+        font-size: 0.9rem;
+    }
+
+    .child-create-info-box svg,
+    .child-create-tips-box svg {
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .child-create-tips-title {
+        font-size: 0.95rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .child-create-tips-list {
+        padding-left: 1.25rem;
+        font-size: 0.85rem;
+    }
+
+    .child-create-tips-list li {
+        margin-bottom: 0.35rem;
+    }
+
+    .child-create-actions {
+        margin-top: 2rem;
+        padding-top: 2rem;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .child-create-btn-submit,
+    .child-create-btn-cancel {
+        padding: 0.85rem 1rem;
+        font-size: 0.9rem;
+        width: 100%;
     }
 }
