@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { Upload, Trash2, Image as ImageIcon, Play } from 'lucide-react';
+import { Upload, Trash2, Image as ImageIcon, Play, X } from 'lucide-react';
 import './Galleries.css';
 
 interface Gallery {
@@ -29,6 +29,7 @@ export default function GalleriesIndex({ galleries, total, count }: Props) {
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [previewUrls, setPreviewUrls] = useState<string[]>([]);
     const [dragActive, setDragActive] = useState(false);
+    const [showUploadModal, setShowUploadModal] = useState(false);
 
     const validateAndAddFiles = (files: File[]) => {
         // Validate files
@@ -102,16 +103,19 @@ export default function GalleriesIndex({ galleries, total, count }: Props) {
                 },
                 onError: (errors) => {
                     console.error('Upload error:', errors);
+                    setIsUploading(false);
                 },
             });
         }
 
-        // Reset after uploading
+        // Close modal and refresh page after uploading
         setTimeout(() => {
             setSelectedFiles([]);
             setPreviewUrls([]);
             setIsUploading(false);
-        }, 1000);
+            setShowUploadModal(false);
+            router.reload();
+        }, 1500);
     };
 
     const handleDelete = (galleryId: number) => {
@@ -153,99 +157,132 @@ export default function GalleriesIndex({ galleries, total, count }: Props) {
                 <div className="galleries-container">
                     {/* Header */}
                     <div className="galleries-header">
-                        <div>
-                            <h1>My Galleries</h1>
-                            <p>Upload and manage your personal photos and videos</p>
-                            <span className="gallery-count">{count} items in gallery</span>
-                        </div>
-                    </div>
-
-                    {/* Upload Section */}
-                    <div className="galleries-upload-section">
-                        <div
-                            className={`upload-card ${dragActive ? 'drag-active' : ''}`}
-                            onDragEnter={handleDrag}
-                            onDragLeave={handleDrag}
-                            onDragOver={handleDrag}
-                            onDrop={handleDrop}
-                        >
-                            <div className="upload-icon">
-                                <Upload size={48} />
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                            <div>
+                                <h1>My Galleries</h1>
+                                <p>Upload and manage your personal photos and videos</p>
+                                <span className="gallery-count">{count} items in gallery</span>
                             </div>
-                            <h2>Upload Files</h2>
-                            <p>Drag and drop your images or videos here, or click to select</p>
-                            <input
-                                type="file"
-                                id="file-input"
-                                multiple
-                                accept="image/*,video/*"
-                                onChange={handleFileSelect}
-                                style={{ display: 'none' }}
-                            />
                             <button
                                 className="btn btn-primary"
-                                onClick={() => document.getElementById('file-input')?.click()}
-                                disabled={isUploading}
+                                onClick={() => setShowUploadModal(true)}
+                                style={{ height: 'fit-content' }}
                             >
-                                Select Files
+                                <Upload size={18} style={{ marginRight: '0.5rem' }} />
+                                Upload Files
                             </button>
-                            <p className="upload-note">
-                                Supported: JPG, PNG, GIF, WebP, MP4, WebM, MOV • Max 50MB per file
-                            </p>
                         </div>
                     </div>
 
-                    {/* Selected Files Preview */}
-                    {selectedFiles.length > 0 && (
-                        <div className="selected-files-section">
-                            <h3>Selected Files ({selectedFiles.length})</h3>
-                            <div className="selected-files-grid">
-                                {selectedFiles.map((file, index) => (
-                                    <div key={index} className="selected-file-item">
-                                        <div className="selected-file-preview">
-                                            {file.type.startsWith('image/') ? (
-                                                <img
-                                                    src={previewUrls[index]}
-                                                    alt={file.name}
-                                                />
-                                            ) : (
-                                                <div className="video-placeholder">
-                                                    <Play size={32} />
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="selected-file-info">
-                                            <p className="file-name">{file.name}</p>
-                                            <p className="file-size">{formatFileSize(file.size)}</p>
-                                        </div>
-                                        <button
-                                            className="btn-remove"
-                                            onClick={() => removeSelectedFile(index)}
-                                            title="Remove this file"
+                    {/* Upload Modal */}
+                    {showUploadModal && (
+                        <div className="modal-overlay" onClick={() => !isUploading && setShowUploadModal(false)}>
+                            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                                <div className="modal-header">
+                                    <h2>Upload Files</h2>
+                                    <button
+                                        className="modal-close"
+                                        onClick={() => !isUploading && setShowUploadModal(false)}
+                                        disabled={isUploading}
+                                    >
+                                        <X size={24} />
+                                    </button>
+                                </div>
+
+                                <div className="modal-body">
+                                    {selectedFiles.length === 0 ? (
+                                        <div
+                                            className={`upload-card ${dragActive ? 'drag-active' : ''}`}
+                                            onDragEnter={handleDrag}
+                                            onDragLeave={handleDrag}
+                                            onDragOver={handleDrag}
+                                            onDrop={handleDrop}
                                         >
-                                            ✕
+                                            <div className="upload-icon">
+                                                <Upload size={48} />
+                                            </div>
+                                            <h3>Select or Drag Files</h3>
+                                            <p>Drag and drop your images or videos here, or click to select</p>
+                                            <input
+                                                type="file"
+                                                id="file-input"
+                                                multiple
+                                                accept="image/*,video/*"
+                                                onChange={handleFileSelect}
+                                                style={{ display: 'none' }}
+                                            />
+                                            <button
+                                                className="btn btn-primary"
+                                                onClick={() => document.getElementById('file-input')?.click()}
+                                                disabled={isUploading}
+                                            >
+                                                Select Files
+                                            </button>
+                                            <p className="upload-note">
+                                                Supported: JPG, PNG, GIF, WebP, MP4, WebM, MOV • Max 50MB per file
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <div className="selected-files-preview">
+                                            <h3>Selected Files ({selectedFiles.length})</h3>
+                                            <div className="modal-files-grid">
+                                                {selectedFiles.map((file, index) => (
+                                                    <div key={index} className="modal-file-item">
+                                                        <div className="modal-file-preview">
+                                                            {file.type.startsWith('image/') ? (
+                                                                <img
+                                                                    src={previewUrls[index]}
+                                                                    alt={file.name}
+                                                                />
+                                                            ) : (
+                                                                <div className="video-placeholder">
+                                                                    <Play size={32} />
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <div className="modal-file-info">
+                                                            <p className="file-name">{file.name}</p>
+                                                            <p className="file-size">{formatFileSize(file.size)}</p>
+                                                        </div>
+                                                        <button
+                                                            className="btn-remove"
+                                                            onClick={() => removeSelectedFile(index)}
+                                                            title="Remove this file"
+                                                            disabled={isUploading}
+                                                        >
+                                                            ✕
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="modal-footer">
+                                    {selectedFiles.length > 0 && (
+                                        <button
+                                            className="btn btn-primary"
+                                            onClick={handleUpload}
+                                            disabled={isUploading}
+                                        >
+                                            {isUploading ? 'Uploading...' : `Upload ${selectedFiles.length} File${selectedFiles.length !== 1 ? 's' : ''}`}
                                         </button>
-                                    </div>
-                                ))}
-                            </div>
-                            <div className="upload-actions">
-                                <button
-                                    className="btn btn-primary"
-                                    onClick={handleUpload}
-                                    disabled={isUploading}
-                                >
-                                    {isUploading ? 'Uploading...' : `Upload ${selectedFiles.length} File${selectedFiles.length !== 1 ? 's' : ''}`}
-                                </button>
-                                <button
-                                    className="btn btn-outline"
-                                    onClick={() => {
-                                        setSelectedFiles([]);
-                                        setPreviewUrls([]);
-                                    }}
-                                    disabled={isUploading}
-                                >
-                                    Clear All
-                                </button>
+                                    )}
+                                    <button
+                                        className="btn btn-outline"
+                                        onClick={() => {
+                                            if (!isUploading) {
+                                                setSelectedFiles([]);
+                                                setPreviewUrls([]);
+                                                setShowUploadModal(false);
+                                            }
+                                        }}
+                                        disabled={isUploading}
+                                    >
+                                        {selectedFiles.length > 0 ? 'Cancel' : 'Close'}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     )}
