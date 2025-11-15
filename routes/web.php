@@ -131,9 +131,7 @@ Route::middleware(['web', 'auth'])->group(function () {
 
     // Notification routes
     Route::prefix('notifications')->group(function () {
-        Route::get('/', function () {
-            return 'Notifications page'; // Placeholder for full notifications page
-        })->name('notifications.index');
+        Route::get('/', [NotificationController::class, 'index'])->name('notifications.index');
         Route::get('/unread', [NotificationController::class, 'getUnread'])->name('notifications.get-unread');
         Route::get('/all', [NotificationController::class, 'getAll'])->name('notifications.get-all');
         Route::get('/count', [NotificationController::class, 'getCount'])->name('notifications.get-count');

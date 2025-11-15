@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Actions\GuestServices\NotificationService;
 use App\Repositories\GuestRepositories\NotificationRepository;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class NotificationController extends Controller
 {
@@ -13,6 +14,41 @@ class NotificationController extends Controller
         private NotificationService $notificationService,
         private NotificationRepository $notificationRepository,
     ) {}
+
+    /**
+     * Display notifications index page
+     */
+    public function index(Request $request)
+    {
+        $user = auth()->user();
+
+        if (!$user) {
+            return redirect()->route('home');
+        }
+
+        $notifications = $this->notificationRepository->get($user->id, 100);
+        $unreadCount = $this->notificationService->getUnreadCount($user->id);
+
+        $formattedNotifications = $notifications->map(fn($n) => [
+            'id' => $n->id,
+            'type' => $n->type,
+            'title' => $n->title,
+            'message' => $n->message,
+            'read' => $n->is_read,
+            'created_at' => $n->created_at->format('Y-m-d H:i:s'),
+            'data' => [
+                'user_id' => $n->related_user_id,
+                'user_name' => $n->relatedUser ? $n->relatedUser->first_name . ' ' . $n->relatedUser->last_name : null,
+                'action' => $n->type,
+                'target' => $n->action_url,
+            ],
+        ]);
+
+        return Inertia::render('GuestPages/AuthAccessPages/Notifications/Index', [
+            'notifications' => $formattedNotifications,
+            'unreadCount' => $unreadCount,
+        ]);
+    }
 
     /**
      * Get unread notifications for current user
@@ -90,24 +126,21 @@ class NotificationController extends Controller
         $user = auth()->user();
 
         if (!$user) {
-            return response()->json(['error' => 'Unauthorized'], 401);
+            return back();
         }
 
         try {
             $notification = $this->notificationRepository->find($notificationId);
 
             if (!$notification || $notification->user_id !== $user->id) {
-                return response()->json(['error' => 'Not found'], 404);
+                return back();
             }
 
             $this->notificationService->markAsRead($notificationId);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Notification marked as read',
-            ]);
+            return back();
         } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+            return back()->withErrors(['error' => $e->getMessage()]);
         }
     }
 
@@ -119,18 +152,15 @@ class NotificationController extends Controller
         $user = auth()->user();
 
         if (!$user) {
-            return response()->json(['error' => 'Unauthorized'], 401);
+            return back();
         }
 
         try {
             $this->notificationService->markAllAsRead($user->id);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'All notifications marked as read',
-            ]);
+            return back()->with('success', 'All notifications marked as read');
         } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+            return back()->withErrors(['error' => $e->getMessage()]);
         }
     }
 
@@ -142,24 +172,21 @@ class NotificationController extends Controller
         $user = auth()->user();
 
         if (!$user) {
-            return response()->json(['error' => 'Unauthorized'], 401);
+            return back();
         }
 
         try {
             $notification = $this->notificationRepository->find($notificationId);
 
             if (!$notification || $notification->user_id !== $user->id) {
-                return response()->json(['error' => 'Not found'], 404);
+                return back();
             }
 
             $this->notificationService->deleteNotification($notificationId);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Notification deleted',
-            ]);
+            return back();
         } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+            return back()->withErrors(['error' => $e->getMessage()]);
         }
     }
 
