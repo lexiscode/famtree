@@ -90,8 +90,8 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::post('/{connection}/decline', [ConnectionRequestController::class, 'decline'])->name('connections.decline');
         Route::post('/{connection}/undo-request', [ConnectionRequestController::class, 'undoRequest'])->name('connections.undo-request');
         Route::post('/{connection}/undo-acceptance', [ConnectionRequestController::class, 'undoAcceptance'])->name('connections.undo-acceptance');
-        Route::get('/api/search-users', [ConnectionRequestController::class, 'searchUsers'])->name('connections.search-users');
-        Route::get('/api/relationship-types', [ConnectionRequestController::class, 'relationshipTypes'])->name('connections.relationship-types');
+        Route::get('/search-users', [ConnectionRequestController::class, 'searchUsers'])->name('connections.search-users');
+        Route::get('/relationship-types', [ConnectionRequestController::class, 'relationshipTypes'])->name('connections.relationship-types');
     });
 
     // Profile routes

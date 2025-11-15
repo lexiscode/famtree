@@ -201,7 +201,7 @@ class ConnectionRequestController extends Controller
     }
 
     /**
-     * Search for users to send connection to (API)
+     * Search for users to send connection to
      */
     public function searchUsers(Request $request)
     {
@@ -233,14 +233,16 @@ class ConnectionRequestController extends Controller
             ];
         });
 
-        return response()->json([
-            'users' => $users,
-            'count' => $users->count(),
+        return back()->with([
+            'search_results' => [
+                'users' => $users,
+                'count' => $users->count(),
+            ],
         ]);
     }
 
     /**
-     * Get relationship types (API)
+     * Get relationship types
      */
     public function relationshipTypes()
     {
@@ -252,8 +254,8 @@ class ConnectionRequestController extends Controller
             ];
         });
 
-        return response()->json([
-            'types' => $types,
+        return back()->with([
+            'relationship_types' => $types,
         ]);
     }
 }
