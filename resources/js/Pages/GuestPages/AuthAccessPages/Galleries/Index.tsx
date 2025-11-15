@@ -28,10 +28,9 @@ export default function GalleriesIndex({ galleries, total, count }: Props) {
     const [isUploading, setIsUploading] = useState(false);
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+    const [dragActive, setDragActive] = useState(false);
 
-    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = Array.from(e.target.files || []);
-
+    const validateAndAddFiles = (files: File[]) => {
         // Validate files
         const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
         const validVideoTypes = ['video/mp4', 'video/webm', 'video/quicktime'];
@@ -59,6 +58,30 @@ export default function GalleriesIndex({ galleries, total, count }: Props) {
             };
             reader.readAsDataURL(file);
         });
+    };
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []);
+        validateAndAddFiles(files);
+    };
+
+    const handleDrag = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.type === 'dragenter' || e.type === 'dragover') {
+            setDragActive(true);
+        } else if (e.type === 'dragleave') {
+            setDragActive(false);
+        }
+    };
+
+    const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragActive(false);
+
+        const files = Array.from(e.dataTransfer.files || []);
+        validateAndAddFiles(files);
     };
 
     const handleUpload = async () => {
@@ -139,7 +162,13 @@ export default function GalleriesIndex({ galleries, total, count }: Props) {
 
                     {/* Upload Section */}
                     <div className="galleries-upload-section">
-                        <div className="upload-card">
+                        <div
+                            className={`upload-card ${dragActive ? 'drag-active' : ''}`}
+                            onDragEnter={handleDrag}
+                            onDragLeave={handleDrag}
+                            onDragOver={handleDrag}
+                            onDrop={handleDrop}
+                        >
                             <div className="upload-icon">
                                 <Upload size={48} />
                             </div>

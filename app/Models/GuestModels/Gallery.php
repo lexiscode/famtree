@@ -28,6 +28,11 @@ class Gallery extends Model
         'uploaded_at' => 'datetime',
     ];
 
+    protected $appends = [
+        'file_url',
+        'thumbnail_url',
+    ];
+
     /**
      * Get the user that owns this gallery item
      */

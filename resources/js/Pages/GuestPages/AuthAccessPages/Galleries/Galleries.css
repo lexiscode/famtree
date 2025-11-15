@@ -152,6 +152,17 @@
     opacity: 1;
 }
 
+.upload-card.drag-active {
+    border-color: rgba(0, 212, 255, 0.6);
+    background: linear-gradient(135deg, rgba(10, 14, 39, 0.95), rgba(26, 31, 58, 0.95));
+    box-shadow: 0 0 30px rgba(0, 212, 255, 0.3);
+    transform: scale(1.02);
+}
+
+.upload-card.drag-active::before {
+    opacity: 1;
+}
+
 .upload-icon {
     display: inline-block;
     width: 80px;
