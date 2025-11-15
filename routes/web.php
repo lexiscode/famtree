@@ -16,6 +16,7 @@ use App\Http\Controllers\GuestControllers\AuthAccessControllers\ConnectionReques
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\ProfileController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\FamilyTreeController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\ChildAccountController;
+use App\Http\Controllers\GuestControllers\AuthAccessControllers\GalleryController;
 use App\Http\Controllers\GuestControllers\OnboardingController;
 use App\Http\Controllers\GuestControllers\StatusController;
 use App\Http\Controllers\GuestControllers\NotificationController;
@@ -157,6 +158,13 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/search', function () {
         return Inertia::render('AuthAccessPages/Search/Users');
     })->name('search.index');
+
+    // Gallery routes
+    Route::prefix('galleries')->group(function () {
+        Route::get('/', [GalleryController::class, 'index'])->name('galleries.index');
+        Route::post('/', [GalleryController::class, 'store'])->name('galleries.store');
+        Route::delete('/{galleryId}', [GalleryController::class, 'destroy'])->name('galleries.destroy');
+    });
 
     // Settings routes
     Route::prefix('settings')->group(function () {

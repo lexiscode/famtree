@@ -84,11 +84,11 @@ export default function MyProfile({ user, connections, connectionCount, pendingR
                                     </button>
                                     <button
                                         className="profile-btn profile-btn-secondary"
-                                        onClick={() => router.visit(route('settings.privacy'))}
-                                        title="Control who sees what"
+                                        onClick={() => router.visit(route('galleries.index'))}
+                                        title="View and manage your galleries"
                                     >
                                         <Settings size={18} />
-                                        Privacy Settings
+                                        My Galleries
                                     </button>
                                     <button
                                         className="profile-btn profile-btn-secondary"
@@ -199,9 +199,8 @@ export default function MyProfile({ user, connections, connectionCount, pendingR
                             </div>
 
                             {/* Tips & Info Box */}
-                            <div className="profile-info-box">
-                                <strong>💡 Pro Tip:</strong> Your profile is completely visible to you. Use
-                                <strong> Privacy Settings</strong> to control who sees each field across the platform.
+                            <div className="profile-info-box" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                <span style={{ fontWeight: 700 }}>💡 Pro Tip:</span> Your profile is completely visible to you. Use <span style={{ fontWeight: 700 }}>Privacy Settings</span> to control who sees each field across the platform.
                             </div>
                         </div>
                     </div>

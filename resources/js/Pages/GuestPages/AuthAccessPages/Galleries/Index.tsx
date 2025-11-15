@@ -1,0 +1,293 @@
+import { useState } from 'react';
+import { router, usePage } from '@inertiajs/react';
+import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
+import { Upload, Trash2, Image as ImageIcon, Play } from 'lucide-react';
+import './Galleries.css';
+
+interface Gallery {
+    id: number;
+    title: string | null;
+    description: string | null;
+    file_url: string;
+    thumbnail_url: string | null;
+    file_type: 'image' | 'video';
+    file_size: number;
+    uploaded_at: string;
+}
+
+interface Props {
+    galleries: Gallery[];
+    total: number;
+    per_page: number;
+    current_page: number;
+    last_page: number;
+    count: number;
+}
+
+export default function GalleriesIndex({ galleries, total, count }: Props) {
+    const [isUploading, setIsUploading] = useState(false);
+    const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+    const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []);
+
+        // Validate files
+        const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        const validVideoTypes = ['video/mp4', 'video/webm', 'video/quicktime'];
+        const allValidTypes = [...validImageTypes, ...validVideoTypes];
+
+        const validFiles = files.filter(file => {
+            if (!allValidTypes.includes(file.type)) {
+                alert(`${file.name} has an unsupported format`);
+                return false;
+            }
+            if (file.size > 50 * 1024 * 1024) {
+                alert(`${file.name} exceeds 50MB limit`);
+                return false;
+            }
+            return true;
+        });
+
+        setSelectedFiles(prevFiles => [...prevFiles, ...validFiles]);
+
+        // Create previews
+        validFiles.forEach(file => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setPreviewUrls(prev => [...prev, reader.result as string]);
+            };
+            reader.readAsDataURL(file);
+        });
+    };
+
+    const handleUpload = async () => {
+        if (selectedFiles.length === 0) {
+            alert('Please select at least one file');
+            return;
+        }
+
+        setIsUploading(true);
+
+        for (const file of selectedFiles) {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            router.post(route('galleries.store'), formData, {
+                onSuccess: () => {
+                    // File uploaded successfully
+                },
+                onError: (errors) => {
+                    console.error('Upload error:', errors);
+                },
+            });
+        }
+
+        // Reset after uploading
+        setTimeout(() => {
+            setSelectedFiles([]);
+            setPreviewUrls([]);
+            setIsUploading(false);
+        }, 1000);
+    };
+
+    const handleDelete = (galleryId: number) => {
+        if (!confirm('Are you sure you want to delete this item?')) return;
+
+        router.delete(route('galleries.destroy', { galleryId }), {
+            onSuccess: () => {
+                // Item deleted successfully
+            },
+            onError: (errors) => {
+                console.error('Delete error:', errors);
+            },
+        });
+    };
+
+    const removeSelectedFile = (index: number) => {
+        setSelectedFiles(prevFiles => prevFiles.filter((_, i) => i !== index));
+        setPreviewUrls(prevUrls => prevUrls.filter((_, i) => i !== index));
+    };
+
+    const formatFileSize = (bytes: number) => {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+    };
+
+    return (
+        <AuthAccessLayout>
+            <div className="galleries-page">
+                {/* Background Orbs */}
+                <div className="galleries-background">
+                    <div className="gallery-orb gallery-orb-1"></div>
+                    <div className="gallery-orb gallery-orb-2"></div>
+                    <div className="gallery-orb gallery-orb-3"></div>
+                </div>
+
+                <div className="galleries-container">
+                    {/* Header */}
+                    <div className="galleries-header">
+                        <div>
+                            <h1>My Galleries</h1>
+                            <p>Upload and manage your personal photos and videos</p>
+                            <span className="gallery-count">{count} items in gallery</span>
+                        </div>
+                    </div>
+
+                    {/* Upload Section */}
+                    <div className="galleries-upload-section">
+                        <div className="upload-card">
+                            <div className="upload-icon">
+                                <Upload size={48} />
+                            </div>
+                            <h2>Upload Files</h2>
+                            <p>Drag and drop your images or videos here, or click to select</p>
+                            <input
+                                type="file"
+                                id="file-input"
+                                multiple
+                                accept="image/*,video/*"
+                                onChange={handleFileSelect}
+                                style={{ display: 'none' }}
+                            />
+                            <button
+                                className="btn btn-primary"
+                                onClick={() => document.getElementById('file-input')?.click()}
+                                disabled={isUploading}
+                            >
+                                Select Files
+                            </button>
+                            <p className="upload-note">
+                                Supported: JPG, PNG, GIF, WebP, MP4, WebM, MOV • Max 50MB per file
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Selected Files Preview */}
+                    {selectedFiles.length > 0 && (
+                        <div className="selected-files-section">
+                            <h3>Selected Files ({selectedFiles.length})</h3>
+                            <div className="selected-files-grid">
+                                {selectedFiles.map((file, index) => (
+                                    <div key={index} className="selected-file-item">
+                                        <div className="selected-file-preview">
+                                            {file.type.startsWith('image/') ? (
+                                                <img
+                                                    src={previewUrls[index]}
+                                                    alt={file.name}
+                                                />
+                                            ) : (
+                                                <div className="video-placeholder">
+                                                    <Play size={32} />
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="selected-file-info">
+                                            <p className="file-name">{file.name}</p>
+                                            <p className="file-size">{formatFileSize(file.size)}</p>
+                                        </div>
+                                        <button
+                                            className="btn-remove"
+                                            onClick={() => removeSelectedFile(index)}
+                                            title="Remove this file"
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="upload-actions">
+                                <button
+                                    className="btn btn-primary"
+                                    onClick={handleUpload}
+                                    disabled={isUploading}
+                                >
+                                    {isUploading ? 'Uploading...' : `Upload ${selectedFiles.length} File${selectedFiles.length !== 1 ? 's' : ''}`}
+                                </button>
+                                <button
+                                    className="btn btn-outline"
+                                    onClick={() => {
+                                        setSelectedFiles([]);
+                                        setPreviewUrls([]);
+                                    }}
+                                    disabled={isUploading}
+                                >
+                                    Clear All
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Galleries Grid */}
+                    {galleries.length > 0 ? (
+                        <div className="galleries-section">
+                            <h3>Your Galleries ({count})</h3>
+                            <div className="galleries-grid">
+                                {galleries.map((gallery) => (
+                                    <div key={gallery.id} className="gallery-item">
+                                        <div className="gallery-item-image">
+                                            {gallery.file_type === 'image' ? (
+                                                <img
+                                                    src={gallery.file_url}
+                                                    alt={gallery.title || 'Gallery item'}
+                                                />
+                                            ) : (
+                                                <div className="video-item">
+                                                    <img
+                                                        src={gallery.thumbnail_url || 'https://via.placeholder.com/300x300?text=Video'}
+                                                        alt={gallery.title || 'Video'}
+                                                    />
+                                                    <div className="play-overlay">
+                                                        <Play size={48} fill="white" />
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="gallery-item-info">
+                                            {gallery.title && (
+                                                <h4>{gallery.title}</h4>
+                                            )}
+                                            {gallery.description && (
+                                                <p>{gallery.description}</p>
+                                            )}
+                                            <div className="gallery-item-meta">
+                                                <span className="file-type">
+                                                    {gallery.file_type === 'image' ? (
+                                                        <ImageIcon size={14} />
+                                                    ) : (
+                                                        <Play size={14} />
+                                                    )}
+                                                    {gallery.file_type}
+                                                </span>
+                                                <span className="file-size">{formatFileSize(gallery.file_size)}</span>
+                                            </div>
+                                            <div className="gallery-item-date">
+                                                {new Date(gallery.uploaded_at).toLocaleDateString()}
+                                            </div>
+                                        </div>
+                                        <button
+                                            className="btn-delete"
+                                            onClick={() => handleDelete(gallery.id)}
+                                            title="Delete this item"
+                                        >
+                                            <Trash2 size={18} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="empty-state">
+                            <ImageIcon size={64} />
+                            <h3>No galleries yet</h3>
+                            <p>Upload your first image or video to get started</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </AuthAccessLayout>
+    );
+}

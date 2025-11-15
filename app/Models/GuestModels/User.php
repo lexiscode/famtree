@@ -107,6 +107,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Get gallery items for this user
+     */
+    public function galleries()
+    {
+        return $this->hasMany(Gallery::class);
+    }
+
+    /**
      * Get the full URL for the profile image
      */
     public function getProfileImageUrlAttribute()
