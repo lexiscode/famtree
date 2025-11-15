@@ -234,7 +234,6 @@ export default function MyProfile({ user, connections, connectionCount, pendingR
                             />
                             <div className="profile-image-popup-info">
                                 <h3>{user.name}</h3>
-                                <p>@{user.username}</p>
                             </div>
                         </div>
                     </div>
