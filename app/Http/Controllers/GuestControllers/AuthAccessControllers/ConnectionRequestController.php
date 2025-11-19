@@ -21,7 +21,7 @@ class ConnectionRequestController extends Controller
      */
     public function index(Request $request)
     {
-        $user = $request->user();
+        $user = $request->user()->load('familyInfo');
         $userId = $user->id;
         $relationshipFilter = $request->query('relationship_type');
 
@@ -38,9 +38,9 @@ class ConnectionRequestController extends Controller
             'address' => $user->address,
             'bio' => $user->bio,
             'date_of_birth' => $user->date_of_birth,
-            'status' => 'Alive', // Default status
-            'job_title' => $user->job_title,
-            'education' => $user->education,
+            'status' => $user->status ?? 'Alive',
+            'job_title' => $user->familyInfo?->current_occupation ?? null,
+            'education' => $user->familyInfo?->education_level ?? null,
             'profile_image_url' => $user->profile_image_url,
             'created_at' => $user->created_at,
         ];
@@ -65,7 +65,7 @@ class ConnectionRequestController extends Controller
      */
     public function pending(Request $request)
     {
-        $user = $request->user();
+        $user = $request->user()->load('familyInfo');
         $userId = $user->id;
 
         $requestsData = $this->connectionService->getPendingRequests($userId);
@@ -80,9 +80,9 @@ class ConnectionRequestController extends Controller
             'address' => $user->address,
             'bio' => $user->bio,
             'date_of_birth' => $user->date_of_birth,
-            'status' => 'Alive', // Default status
-            'job_title' => $user->job_title,
-            'education' => $user->education,
+            'status' => $user->status ?? 'Alive',
+            'job_title' => $user->familyInfo?->current_occupation ?? null,
+            'education' => $user->familyInfo?->education_level ?? null,
             'profile_image_url' => $user->profile_image_url,
             'created_at' => $user->created_at,
         ];
@@ -107,7 +107,7 @@ class ConnectionRequestController extends Controller
      */
     public function sent(Request $request)
     {
-        $user = $request->user();
+        $user = $request->user()->load('familyInfo');
         $userId = $user->id;
 
         $requestsData = $this->connectionService->getSentRequests($userId);
@@ -122,9 +122,9 @@ class ConnectionRequestController extends Controller
             'address' => $user->address,
             'bio' => $user->bio,
             'date_of_birth' => $user->date_of_birth,
-            'status' => 'Alive', // Default status
-            'job_title' => $user->job_title,
-            'education' => $user->education,
+            'status' => $user->status ?? 'Alive',
+            'job_title' => $user->familyInfo?->current_occupation ?? null,
+            'education' => $user->familyInfo?->education_level ?? null,
             'profile_image_url' => $user->profile_image_url,
             'created_at' => $user->created_at,
         ];
@@ -149,7 +149,7 @@ class ConnectionRequestController extends Controller
      */
     public function create(Request $request)
     {
-        $user = $request->user();
+        $user = $request->user()->load('familyInfo');
         $userId = $user->id;
 
         // Get user profile data for sidebar
@@ -162,9 +162,9 @@ class ConnectionRequestController extends Controller
             'address' => $user->address,
             'bio' => $user->bio,
             'date_of_birth' => $user->date_of_birth,
-            'status' => 'Alive', // Default status
-            'job_title' => $user->job_title,
-            'education' => $user->education,
+            'status' => $user->status ?? 'Alive',
+            'job_title' => $user->familyInfo?->current_occupation ?? null,
+            'education' => $user->familyInfo?->education_level ?? null,
             'profile_image_url' => $user->profile_image_url,
             'created_at' => $user->created_at,
         ];
