@@ -35,6 +35,10 @@ export default function MyConnections({
         return acc;
     }, {} as Record<string, Connection[]>);
 
+    const isUndoWindowExpired = (expiryDate: string): boolean => {
+        return new Date() > new Date(expiryDate);
+    };
+
     const handleUndoConnection = async (connectionId: number) => {
         if (!confirm('Are you sure you want to undo this connection? This action can only be done within 24 hours of acceptance.')) {
             return;
@@ -177,7 +181,7 @@ export default function MyConnections({
                                                 <strong>{connection.relationship_label}</strong>
                                             </div>
 
-                                            <div className="connection-card-actions pb-2">
+                                            <div className={`connection-card-actions pb-2 ${connection.can_undo && !isUndoWindowExpired(connection.undo_expires_at) ? '' : 'single-button'}`}>
                                                 <button
                                                     className="connection-action-btn connection-action-view"
                                                     title="View profile"
@@ -185,7 +189,7 @@ export default function MyConnections({
                                                     <ExternalLink size={16} className="me-1" style={{ display: 'inline' }} />
                                                     View Profile
                                                 </button>
-                                                {connection.can_undo && (
+                                                {connection.can_undo && !isUndoWindowExpired(connection.undo_expires_at) && (
                                                     <button
                                                         className="connection-action-btn connection-action-undo"
                                                         onClick={() => handleUndoConnection(connection.id)}
@@ -196,7 +200,7 @@ export default function MyConnections({
                                                 )}
                                             </div>
 
-                                            {connection.can_undo && (
+                                            {connection.can_undo && !isUndoWindowExpired(connection.undo_expires_at) && (
                                                 <p className="connection-undo-expiry text-center" style={{ color: '#9c9595ff' }}>
                                                     ⏰ Can undo until {new Date(connection.undo_expires_at).toLocaleDateString()}
                                                 </p>

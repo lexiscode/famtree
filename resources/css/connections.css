@@ -518,6 +518,15 @@
   margin-top: 1.25rem;
 }
 
+.connection-card-actions.single-button {
+  gap: 0;
+}
+
+.connection-card-actions.single-button .connection-action-view {
+  flex: 1;
+  border-radius: 8px;
+}
+
 .connection-action-view {
   background: linear-gradient(135deg, #0052E8 0%, #00D4FF 100%);
   color: #FFFFFF;
@@ -1603,6 +1612,10 @@
   .connection-card-actions {
     flex-direction: column;
     gap: 0.75rem;
+  }
+
+  .connection-card-actions.single-button {
+    gap: 0;
   }
 
   .connection-action-view {
