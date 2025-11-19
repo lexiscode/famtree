@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { usePage, router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { Clock, Check, X, ArrowLeft } from 'lucide-react';
+import { Clock, Check, X, ArrowLeft, AlertCircle } from 'lucide-react';
 import { PendingRequest, PendingRequestsProps } from '@/types';
 import ProfileSidebar from '../Stories/ProfileSidebar';
 
@@ -16,6 +16,18 @@ export default function PendingRequests({
 }: PendingRequestsProps) {
     const [requests, setRequests] = useState(initialRequests);
     const [loading, setLoading] = useState<number | null>(null);
+    const [showDeclineModal, setShowDeclineModal] = useState(false);
+    const [selectedRequestId, setSelectedRequestId] = useState<number | null>(null);
+
+    const openDeclineModal = (connectionId: number) => {
+        setSelectedRequestId(connectionId);
+        setShowDeclineModal(true);
+    };
+
+    const closeDeclineModal = () => {
+        setShowDeclineModal(false);
+        setSelectedRequestId(null);
+    };
 
     const handleAccept = async (connectionId: number) => {
         setLoading(connectionId);
@@ -38,14 +50,14 @@ export default function PendingRequests({
         }
     };
 
-    const handleDecline = async (connectionId: number) => {
-        if (!confirm('Are you sure you want to decline this connection request?')) {
-            return;
-        }
+    const handleDecline = async () => {
+        if (selectedRequestId === null) return;
 
-        setLoading(connectionId);
+        setLoading(selectedRequestId);
+        closeDeclineModal();
+
         try {
-            const response = await fetch(route('connections.decline', connectionId), {
+            const response = await fetch(route('connections.decline', selectedRequestId), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -54,7 +66,7 @@ export default function PendingRequests({
             });
 
             if (response.ok) {
-                setRequests(requests.filter(r => r.id !== connectionId));
+                setRequests(requests.filter(r => r.id !== selectedRequestId));
             }
         } catch (error) {
             console.error('Error declining request:', error);
@@ -118,18 +130,18 @@ export default function PendingRequests({
                                             <h4 className="connection-request-name">{request.requester.name}</h4>
                                             <p className="connection-request-username">@{request.requester.username}</p>
                                         </div>
-                                        <span className="connection-request-badge">
+                                        <span className="connection-request-badge connection-request-badge-sent">
                                             ⏳ Pending
                                         </span>
                                     </div>
 
                                     {/* Request Details */}
                                     <div className="connection-request-details">
-                                        <p className="connection-detail-row">
-                                            <span className="connection-detail-label">Claimed Relationship:</span>
+                                        <p className="connection-detail-row" style={{ color: '#9c9595ff' }} >
+                                            <span className="connection-detail-label">Claimed Relationship: </span>
                                             <strong>{request.relationship_label}</strong>
                                         </p>
-                                        <p className="connection-detail-row connection-detail-date">
+                                        <p className="connection-detail-row connection-detail-date" style={{ color: '#9c9595ff' }}>
                                             Requested {new Date(request.requested_at).toLocaleDateString()}
                                         </p>
                                     </div>
@@ -156,7 +168,7 @@ export default function PendingRequests({
                                         </button>
                                         <button
                                             className="connection-request-btn-decline"
-                                            onClick={() => handleDecline(request.id)}
+                                            onClick={() => openDeclineModal(request.id)}
                                             disabled={loading === request.id}
                                             title="Decline this connection request"
                                         >
@@ -190,6 +202,60 @@ export default function PendingRequests({
                 </div>
                     </div>
                 </div>
+
+                {/* Decline Confirmation Modal */}
+                {showDeclineModal && (
+                    <div className="modal-backdrop-decline" onClick={closeDeclineModal}>
+                        <div className="modal-content-decline" onClick={(e) => e.stopPropagation()}>
+                            <div className="modal-header-decline">
+                                <div className="modal-icon-decline">
+                                    <AlertCircle size={24} />
+                                </div>
+                                <button
+                                    className="modal-close-btn-decline"
+                                    onClick={closeDeclineModal}
+                                    title="Close modal"
+                                >
+                                    <X size={20} />
+                                </button>
+                            </div>
+
+                            <div className="modal-body-decline">
+                                <h2 className="modal-title-decline">Decline Request?</h2>
+                                <p className="modal-message-decline">
+                                    Are you sure you want to decline this connection request? This action cannot be undone.
+                                </p>
+                            </div>
+
+                            <div className="modal-footer-decline">
+                                <button
+                                    className="modal-btn-cancel-decline"
+                                    onClick={closeDeclineModal}
+                                    disabled={loading !== null}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    className="modal-btn-confirm-decline"
+                                    onClick={handleDecline}
+                                    disabled={loading !== null}
+                                >
+                                    {loading !== null ? (
+                                        <>
+                                            <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
+                                            Declining...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <X size={18} style={{ display: 'inline' }} />
+                                            Decline Request
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </AuthAccessLayout>
     );
