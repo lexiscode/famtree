@@ -180,11 +180,21 @@ class UserConnectionRepository
     }
 
     /**
-     * Get pending requests count for user
+     * Get pending requests count for user (received)
      */
     public function getPendingRequestCount(int $userId): int
     {
         return UserConnection::where('recipient_user_id', $userId)
+            ->where('status', 'pending')
+            ->count();
+    }
+
+    /**
+     * Get sent requests count for user
+     */
+    public function getSentRequestCount(int $userId): int
+    {
+        return UserConnection::where('requester_user_id', $userId)
             ->where('status', 'pending')
             ->count();
     }
