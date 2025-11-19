@@ -290,8 +290,16 @@ class UserConnectionService
         $otherUser = $connection->requester_user_id === $userId ? $connection->recipient : $connection->requester;
         $isRequester = $connection->requester_user_id === $userId;
 
-        // Get the relationship type from the viewer's perspective (inverse if needed)
-        $relationshipTypeFromViewerPerspective = $this->connectionRepository->getRelationshipFromViewerPerspective($userId, $otherUser->id);
+        // Determine the correct relationship label based on who is viewing
+        // If the current user is the requester, use the stored relationship type as-is
+        // If the current user is the recipient, use the inverse relationship
+        if ($isRequester) {
+            // User is the requester: use stored relationship type
+            $relationshipLabel = $connection->relationshipType?->label ?? $connection->relationship_type;
+        } else {
+            // User is the recipient: use inverse relationship
+            $relationshipLabel = $this->connectionRepository->getRelationshipFromViewerPerspective($userId, $otherUser->id);
+        }
 
         return [
             'id' => $connection->id,
@@ -302,7 +310,7 @@ class UserConnectionService
                 'profile_image_url' => $otherUser->profile_image_url,
             ],
             'relationship_type' => $connection->relationship_type,
-            'relationship_label' => $relationshipTypeFromViewerPerspective,
+            'relationship_label' => $relationshipLabel,
             'status' => $connection->status,
             'accepted_at' => $connection->accepted_at,
             'can_undo' => $connection->canUndo(),
