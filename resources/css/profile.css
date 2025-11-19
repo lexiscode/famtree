@@ -204,6 +204,20 @@
     letter-spacing: -0.5px;
 }
 
+.profile-name-section {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.profile-last-name {
+    background: var(--profile-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 800;
+}
+
 .profile-username {
     font-size: 0.95rem;
     color: var(--profile-text-muted);

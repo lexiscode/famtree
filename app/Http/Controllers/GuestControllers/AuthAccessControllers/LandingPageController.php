@@ -46,7 +46,9 @@ class LandingPageController extends Controller
         // Format user data
         $userData = [
             'id' => $user->id,
-            'name' => $user->name,
+            'first_name' => $user->first_name,
+            'last_name' => $user->last_name,
+            'name' => $user->first_name . ' ' . $user->last_name,
             'username' => $user->username,
             'email' => $user->email,
             'phone' => $user->phone,
@@ -54,7 +56,7 @@ class LandingPageController extends Controller
             'bio' => $user->bio,
             'date_of_birth' => $user->date_of_birth,
             'profile_image_url' => $user->profile_image_url,
-            'status' => $user->status,
+            'status' => $user->status ?? 'Alive',
             'job_title' => $user->familyInfo?->current_occupation ?? null,
             'education' => $user->familyInfo?->education_level ?? null,
             'created_at' => $user->created_at,

@@ -5,6 +5,8 @@ import { Mail, Phone, MapPin, Cake, FileText, Users, Edit, Settings, Briefcase, 
 
 interface User {
     id: number;
+    first_name: string;
+    last_name: string;
     name: string;
     username: string;
     email: string;
@@ -57,7 +59,11 @@ export default function MyProfile({ user, connections, connectionCount, pendingR
                                     style={{ cursor: 'pointer' }}
                                     title="Click to view full size"
                                 />
-                                <h1 className="profile-name">{user.name}</h1>
+                                <div className="profile-name-section">
+                                    <h1 className="profile-name">
+                                        {user.first_name} <span className="profile-last-name">{user.last_name}</span>
+                                    </h1>
+                                </div>
                                 <p className="profile-username">@{user.username}</p>
 
                                 <span className={`profile-status-badge ${user.status === 'alive' ? 'alive' : 'deceased'}`}>
