@@ -35,7 +35,7 @@
 
 .family-tree-page {
     min-height: 100vh;
-    background: linear-gradient(135deg, #F8F9FA 0%, #F0F5FF 50%, #F0F9FF 100%);
+    background: linear-gradient(135deg, #0F172A 0%, #1E3A8A 50%, #1E293B 100%);
     padding: 3rem 0;
     position: relative;
     overflow-x: hidden;
@@ -48,7 +48,7 @@
     right: -10%;
     width: 600px;
     height: 600px;
-    background: radial-gradient(circle, rgba(0, 82, 232, 0.08) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%);
     border-radius: 50%;
     pointer-events: none;
     z-index: 0;
@@ -61,7 +61,7 @@
     left: -10%;
     width: 500px;
     height: 500px;
-    background: radial-gradient(circle, rgba(0, 212, 255, 0.06) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(0, 212, 255, 0.12) 0%, transparent 70%);
     border-radius: 50%;
     pointer-events: none;
     z-index: 0;
@@ -80,14 +80,15 @@
    ============================================ */
 
 .tree-header {
-    background: linear-gradient(135deg, var(--tree-white) 0%, var(--tree-primary-lighter) 100%);
-    border-radius: 16px;
-    padding: 2.5rem;
-    margin-bottom: 2.5rem;
-    box-shadow: var(--tree-shadow-lg);
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
+    border-radius: 20px;
+    padding: 3rem;
+    margin-bottom: 3rem;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
     position: relative;
     overflow: hidden;
-    border: 2px solid var(--tree-primary);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    backdrop-filter: blur(10px);
 }
 
 .tree-header::before {
@@ -125,16 +126,19 @@
 
 .tree-title-section h1 {
     font-family: 'Playfair Display', serif;
-    font-size: 2.25rem;
+    font-size: 2.5rem;
     font-weight: 800;
-    color: var(--tree-text);
-    margin: 0 0 0.5rem 0;
+    background: linear-gradient(135deg, #FFFFFF 0%, #E0F2FE 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0 0 0.75rem 0;
     letter-spacing: -0.8px;
     line-height: 1.2;
 }
 
 .tree-title-section p {
-    color: var(--tree-gray-500);
+    color: rgba(255, 255, 255, 0.7);
     font-size: 1rem;
     margin: 0;
     line-height: 1.6;
@@ -153,35 +157,35 @@
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    padding: 0.65rem 1.25rem;
-    background: var(--tree-primary-light);
-    color: var(--tree-primary);
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(0, 212, 255, 0.15) 100%);
+    color: #E0F2FE;
     border-radius: 50px;
     font-size: 0.8rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     backdrop-filter: blur(10px);
-    border: 1px solid rgba(0, 82, 232, 0.15);
-    box-shadow: 0 2px 8px rgba(0, 82, 232, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.4);
+    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.15);
 }
 
 .tree-badge.public {
-    background: rgba(0, 217, 127, 0.12);
-    color: var(--tree-success);
-    border-color: rgba(0, 217, 127, 0.2);
+    background: linear-gradient(135deg, rgba(0, 217, 127, 0.2) 0%, rgba(0, 232, 160, 0.15) 100%);
+    color: #A7F3D0;
+    border-color: rgba(0, 217, 127, 0.3);
 }
 
 .tree-badge.private {
-    background: rgba(255, 71, 87, 0.12);
-    color: var(--tree-danger);
-    border-color: rgba(255, 71, 87, 0.2);
+    background: linear-gradient(135deg, rgba(255, 71, 87, 0.2) 0%, rgba(255, 107, 122, 0.15) 100%);
+    color: #FCA5AC;
+    border-color: rgba(255, 71, 87, 0.3);
 }
 
 .tree-badge.owner {
-    background: rgba(255, 183, 77, 0.12);
-    color: #FFA726;
-    border-color: rgba(255, 183, 77, 0.2);
+    background: linear-gradient(135deg, rgba(255, 183, 77, 0.2) 0%, rgba(255, 183, 77, 0.15) 100%);
+    color: #FFD699;
+    border-color: rgba(255, 183, 77, 0.3);
 }
 
 .tree-header-actions {
@@ -261,40 +265,45 @@
 .tree-stats {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 1.25rem;
-    margin-top: 2rem;
-    padding-top: 2rem;
-    border-top: 1px solid var(--tree-gray-300);
+    gap: 1.5rem;
+    margin-top: 2.5rem;
+    padding-top: 2.5rem;
+    border-top: 1px solid rgba(59, 130, 246, 0.2);
     position: relative;
     z-index: 2;
 }
 
 .tree-stat {
     text-align: center;
-    padding: 1.5rem;
-    border-radius: 12px;
-    background: linear-gradient(135deg, var(--tree-primary) 0%, var(--tree-secondary) 100%);
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 16px rgba(0, 82, 232, 0.2);
+    padding: 1.75rem;
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(0, 212, 255, 0.1) 100%);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.1);
+    backdrop-filter: blur(10px);
 }
 
 .tree-stat:hover {
-    background: linear-gradient(135deg, #0052E8 0%, #00D4FF 100%);
-    transform: translateY(-3px);
-    box-shadow: 0 8px 24px rgba(0, 82, 232, 0.3);
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(0, 212, 255, 0.15) 100%);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(59, 130, 246, 0.2);
 }
 
 .tree-stat-value {
-    font-size: 2rem;
+    font-size: 2.5rem;
     font-weight: 800;
-    color: var(--tree-white);
+    background: linear-gradient(135deg, #38BDF8 0%, #06B6D4 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     margin: 0;
 }
 
 .tree-stat-label {
     font-size: 0.8rem;
-    color: rgba(255, 255, 255, 0.9);
-    margin-top: 0.5rem;
+    color: rgba(226, 232, 240, 0.8);
+    margin-top: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.6px;
     font-weight: 700;
@@ -305,14 +314,15 @@
    ============================================ */
 
 .tree-visualization-wrapper {
-    background: linear-gradient(135deg, var(--tree-white) 0%, var(--tree-primary-lighter) 100%);
-    border-radius: 16px;
-    padding: 2.5rem;
-    box-shadow: var(--tree-shadow-lg);
-    margin-bottom: 2.5rem;
-    border: 2px solid var(--tree-primary);
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
+    border-radius: 20px;
+    padding: 3rem;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    margin-bottom: 3rem;
+    border: 1px solid rgba(59, 130, 246, 0.3);
     position: relative;
     overflow: hidden;
+    backdrop-filter: blur(10px);
 }
 
 .tree-visualization-wrapper::before {
@@ -328,20 +338,23 @@
 }
 
 .tree-visualization-wrapper h2 {
-    font-size: 1.5rem;
+    font-size: 1.75rem;
     font-weight: 800;
-    color: var(--tree-text);
-    margin: 0 0 1.5rem 0;
+    background: linear-gradient(135deg, #FFFFFF 0%, #E0F2FE 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0 0 2rem 0;
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 1rem;
     position: relative;
     z-index: 2;
 }
 
 .tree-visualization-wrapper h2 svg {
-    color: var(--tree-primary);
-    filter: drop-shadow(0 2px 4px rgba(0, 82, 232, 0.2));
+    color: #38BDF8;
+    filter: drop-shadow(0 4px 12px rgba(56, 189, 248, 0.3));
 }
 
 .tree-members-container {
@@ -353,16 +366,17 @@
 }
 
 .tree-member-card {
-    background: linear-gradient(135deg, var(--tree-white) 0%, var(--tree-primary-lighter) 100%);
-    border: 2px solid var(--tree-primary);
-    border-radius: 14px;
-    padding: 1.75rem;
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.8) 100%);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 16px;
+    padding: 2rem;
     text-align: center;
     transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     cursor: pointer;
     position: relative;
     overflow: hidden;
-    box-shadow: var(--tree-shadow-md);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
 }
 
 .tree-member-card::before {
@@ -391,9 +405,10 @@
 }
 
 .tree-member-card:hover {
-    border-color: var(--tree-primary);
-    box-shadow: var(--tree-shadow-hover);
-    transform: translateY(-6px);
+    border-color: rgba(59, 130, 246, 0.6);
+    box-shadow: 0 20px 60px rgba(59, 130, 246, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    transform: translateY(-8px);
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.9) 100%);
 }
 
 .tree-member-card:hover::before {
@@ -419,7 +434,7 @@
 .tree-member-name {
     font-size: 1.1rem;
     font-weight: 800;
-    color: var(--tree-text);
+    color: #F1F5F9;
     margin: 0 0 0.3rem 0;
     white-space: nowrap;
     overflow: hidden;
@@ -429,30 +444,31 @@
 
 .tree-member-username {
     font-size: 0.85rem;
-    color: var(--tree-gray-500);
-    margin-bottom: 0.85rem;
+    color: rgba(226, 232, 240, 0.6);
+    margin-bottom: 1rem;
     font-weight: 600;
 }
 
 .tree-member-relation {
     display: inline-block;
-    padding: 0.5rem 1.2rem;
-    background: linear-gradient(135deg, var(--tree-primary) 0%, var(--tree-secondary) 100%);
-    color: var(--tree-white);
+    padding: 0.6rem 1.4rem;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.25) 0%, rgba(0, 212, 255, 0.2) 100%);
+    color: #E0F2FE;
     border-radius: 50px;
     font-size: 0.75rem;
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.4px;
-    margin-bottom: 0.85rem;
-    border: 2px solid var(--tree-primary);
-    box-shadow: 0 4px 12px rgba(0, 82, 232, 0.2);
+    margin-bottom: 1rem;
+    border: 1px solid rgba(59, 130, 246, 0.4);
+    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.15);
+    backdrop-filter: blur(10px);
 }
 
 .tree-member-status {
     font-size: 0.9rem;
-    color: var(--tree-gray-500);
-    margin: 0.85rem 0;
+    color: rgba(226, 232, 240, 0.7);
+    margin: 1rem 0;
     font-weight: 700;
     display: flex;
     align-items: center;
@@ -461,63 +477,68 @@
 }
 
 .tree-member-status.alive {
-    color: var(--tree-success);
-    background: rgba(0, 217, 127, 0.1);
-    padding: 0.4rem 0.8rem;
+    color: #A7F3D0;
+    background: rgba(0, 217, 127, 0.15);
+    padding: 0.5rem 1rem;
     border-radius: 50px;
-    border: 1px solid rgba(0, 217, 127, 0.2);
+    border: 1px solid rgba(0, 217, 127, 0.3);
+    box-shadow: 0 2px 8px rgba(0, 217, 127, 0.1);
 }
 
 .tree-member-status.deceased {
-    color: var(--tree-danger);
-    background: rgba(255, 71, 87, 0.1);
-    padding: 0.4rem 0.8rem;
+    color: #FCA5AC;
+    background: rgba(255, 71, 87, 0.15);
+    padding: 0.5rem 1rem;
     border-radius: 50px;
-    border: 1px solid rgba(255, 71, 87, 0.2);
+    border: 1px solid rgba(255, 71, 87, 0.3);
+    box-shadow: 0 2px 8px rgba(255, 71, 87, 0.1);
 }
 
 .tree-member-action {
     display: flex;
-    gap: 0.65rem;
-    margin-top: 1.25rem;
-    padding-top: 1.25rem;
-    border-top: 1px solid var(--tree-gray-300);
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(59, 130, 246, 0.2);
 }
 
 .tree-member-action-btn {
     flex: 1;
-    padding: 0.75rem 1rem;
-    background: var(--tree-primary);
-    color: var(--tree-white);
-    border: 2px solid var(--tree-primary);
-    border-radius: 8px;
+    padding: 0.8rem 1.2rem;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.3) 0%, rgba(0, 212, 255, 0.25) 100%);
+    color: #E0F2FE;
+    border: 1px solid rgba(59, 130, 246, 0.4);
+    border-radius: 10px;
     font-size: 0.8rem;
     font-weight: 700;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     text-decoration: none;
     display: inline-block;
-    box-shadow: 0 4px 12px rgba(0, 82, 232, 0.15);
+    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.1);
+    backdrop-filter: blur(10px);
 }
 
 .tree-member-action-btn:hover {
-    background: #003ab8;
-    color: var(--tree-white);
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.4) 0%, rgba(0, 212, 255, 0.35) 100%);
+    color: #FFFFFF;
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 82, 232, 0.25);
+    box-shadow: 0 8px 24px rgba(59, 130, 246, 0.25);
+    border-color: rgba(59, 130, 246, 0.6);
 }
 
 .tree-member-action-btn.danger {
-    background: var(--tree-danger);
-    color: var(--tree-white);
-    border-color: var(--tree-danger);
-    box-shadow: 0 4px 12px rgba(255, 71, 87, 0.15);
+    background: linear-gradient(135deg, rgba(255, 71, 87, 0.3) 0%, rgba(255, 107, 122, 0.25) 100%);
+    color: #FCA5AC;
+    border-color: rgba(255, 71, 87, 0.4);
+    box-shadow: 0 4px 16px rgba(255, 71, 87, 0.1);
 }
 
 .tree-member-action-btn.danger:hover {
-    background: #e63946;
-    color: var(--tree-white);
-    box-shadow: 0 6px 20px rgba(255, 71, 87, 0.25);
+    background: linear-gradient(135deg, rgba(255, 71, 87, 0.4) 0%, rgba(255, 107, 122, 0.35) 100%);
+    color: #FFFFFF;
+    box-shadow: 0 8px 24px rgba(255, 71, 87, 0.25);
+    border-color: rgba(255, 71, 87, 0.6);
 }
 
 /* ============================================
