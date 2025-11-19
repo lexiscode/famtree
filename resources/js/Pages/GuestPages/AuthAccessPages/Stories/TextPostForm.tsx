@@ -1,13 +1,9 @@
 import { useState, useRef } from 'react';
 import { Upload, Send, X } from 'lucide-react';
 import { router } from '@inertiajs/react';
+import { TextPostFormProps } from '@/types';
 
-interface Props {
-    onClose: () => void;
-    onPostCreated: () => void;
-}
-
-export default function TextPostForm({ onClose, onPostCreated }: Props) {
+export default function TextPostForm({ onClose, onPostCreated }: TextPostFormProps) {
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
     const [images, setImages] = useState<File[]>([]);

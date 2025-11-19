@@ -1,31 +1,7 @@
 import { BarChart3, Heart, MessageCircle, Eye, TrendingUp, Clock } from 'lucide-react';
+import { Post, EngagementStats, EngagedPostsSidebarProps } from '@/types';
 
-interface Post {
-    id: number;
-    type: 'text' | 'voice';
-    title: string;
-    content: string | null;
-    reactions_count: number;
-    comments_count: number;
-    views_count: number;
-    created_at_human: string;
-}
-
-interface Stats {
-    total_posts: number;
-    total_reactions: number;
-    total_comments: number;
-    total_views: number;
-    text_posts: number;
-    voice_posts: number;
-}
-
-interface Props {
-    stats: Stats;
-    topPosts: Post[];
-}
-
-export default function EngagedPostsSidebar({ stats, topPosts }: Props) {
+export default function EngagedPostsSidebar({ stats, topPosts }: EngagedPostsSidebarProps) {
     const totalEngagement = stats.total_reactions + stats.total_comments + stats.total_views;
 
     const formatNumber = (num: number): string => {

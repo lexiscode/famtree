@@ -1,14 +1,10 @@
 import { useState } from 'react';
 import { X, Type, Mic } from 'lucide-react';
+import { CreatePostModalProps } from '@/types';
 import TextPostForm from './TextPostForm';
 import VoicePostForm from './VoicePostForm';
 
-interface Props {
-    onClose: () => void;
-    onPostCreated: () => void;
-}
-
-export default function CreatePostModal({ onClose, onPostCreated }: Props) {
+export default function CreatePostModal({ onClose, onPostCreated }: CreatePostModalProps) {
     const [postType, setPostType] = useState<'text' | 'voice'>('text');
 
     return (

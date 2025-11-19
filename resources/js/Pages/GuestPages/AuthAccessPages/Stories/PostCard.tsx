@@ -1,42 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { Heart, MessageCircle, Share2, Trash2, Play, Pause, Volume2, X, AlertTriangle } from 'lucide-react';
 import { router } from '@inertiajs/react';
+import { Post, PostCardProps } from '@/types';
 
-interface Image {
-    id: number;
-    url: string;
-    order: number;
-}
-
-interface User {
-    id: number;
-    name: string;
-    username: string;
-    profile_image_url: string;
-}
-
-interface Post {
-    id: number;
-    type: 'text' | 'voice';
-    title: string;
-    content: string | null;
-    voice_url: string | null;
-    voice_duration: number | null;
-    views_count: number;
-    comments_count: number;
-    reactions_count: number;
-    images: Image[];
-    user: User;
-    created_at: string;
-    created_at_human: string;
-}
-
-interface Props {
-    post: Post;
-    onPostDeleted: (postId: number) => void;
-}
-
-export default function PostCard({ post, onPostDeleted }: Props) {
+export default function PostCard({ post, onPostDeleted }: PostCardProps) {
     const [isLiked, setIsLiked] = useState(false);
     const [likeCount, setLikeCount] = useState(post.reactions_count);
     const [isPlaying, setIsPlaying] = useState(false);

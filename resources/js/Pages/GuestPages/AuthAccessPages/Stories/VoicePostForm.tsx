@@ -1,14 +1,10 @@
 import { useState, useRef } from 'react';
 import { Upload, Send, X } from 'lucide-react';
 import { router } from '@inertiajs/react';
+import { VoicePostFormProps } from '@/types';
 import VoiceRecorder from '@/Components/VoiceRecorder';
 
-interface Props {
-    onClose: () => void;
-    onPostCreated: () => void;
-}
-
-export default function VoicePostForm({ onClose, onPostCreated }: Props) {
+export default function VoicePostForm({ onClose, onPostCreated }: VoicePostFormProps) {
     const [title, setTitle] = useState('');
     const [recordingBlob, setRecordingBlob] = useState<Blob | null>(null);
     const [recordingDuration, setRecordingDuration] = useState(0);

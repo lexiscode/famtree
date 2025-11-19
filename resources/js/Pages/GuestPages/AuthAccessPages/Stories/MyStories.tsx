@@ -2,76 +2,11 @@ import { useState, useCallback, useMemo } from 'react';
 import { router, usePage } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
 import { Plus, Search, Filter, MessageCircle, Heart, Share2, Trash2, Mic, Type, Clock, ArrowLeft } from 'lucide-react';
+import { Post, MyStoriesProps } from '@/types';
 import CreatePostModal from './CreatePostModal';
 import PostCard from './PostCard';
 import ProfileSidebar from './ProfileSidebar';
 import EngagedPostsSidebar from './EngagedPostsSidebar';
-
-interface Image {
-    id: number;
-    url: string;
-    order: number;
-}
-
-interface User {
-    id: number;
-    name: string;
-    username: string;
-    profile_image_url: string;
-}
-
-interface Post {
-    id: number;
-    type: 'text' | 'voice';
-    title: string;
-    content: string | null;
-    voice_url: string | null;
-    voice_duration: number | null;
-    views_count: number;
-    comments_count: number;
-    reactions_count: number;
-    images: Image[];
-    user: User;
-    created_at: string;
-    created_at_human: string;
-}
-
-interface Stats {
-    total_posts: number;
-    total_reactions: number;
-    total_comments: number;
-    total_views: number;
-    text_posts: number;
-    voice_posts: number;
-}
-
-interface User {
-    id: number;
-    name: string;
-    username: string;
-    email: string;
-    phone: string | null;
-    address: string | null;
-    bio: string | null;
-    date_of_birth: string | null;
-    profile_image_url: string | null;
-    status: string;
-    job_title: string | null;
-    education: string | null;
-    created_at: string;
-}
-
-interface Props {
-    user: User;
-    posts: Post[];
-    postCount: number;
-    stats: Stats;
-    topPosts: Post[];
-    connectionCount: number;
-    pendingRequestCount: number;
-    sentRequestCount: number;
-    unreadNotificationCount: number;
-}
 
 export default function MyStories({
     user: currentUser,
@@ -83,7 +18,7 @@ export default function MyStories({
     pendingRequestCount,
     sentRequestCount,
     unreadNotificationCount,
-}: Props) {
+}: MyStoriesProps) {
 
     const [posts, setPosts] = useState<Post[]>(initialPosts);
     const [showCreateModal, setShowCreateModal] = useState(false);

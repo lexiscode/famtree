@@ -2,28 +2,9 @@ import { useState, useCallback, useMemo } from 'react';
 import { router, usePage } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
 import { Bell, Trash2, CheckCircle, Clock, AlertCircle, Users, Heart, MapPin, Search, Filter, ArrowLeft } from 'lucide-react';
+import { Notification, NotificationsIndexProps } from '@/types';
 
-interface Notification {
-    id: number;
-    type: string;
-    title: string;
-    message: string;
-    read: boolean;
-    created_at: string;
-    data?: {
-        user_id?: number;
-        user_name?: string;
-        action?: string;
-        target?: string;
-    };
-}
-
-interface Props {
-    notifications: Notification[];
-    unreadCount: number;
-}
-
-export default function NotificationsIndex({ notifications, unreadCount }: Props) {
+export default function NotificationsIndex({ notifications, unreadCount }: NotificationsIndexProps) {
     const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all');
     const [searchQuery, setSearchQuery] = useState('');
     const [deleteLoading, setDeleteLoading] = useState<number | null>(null);

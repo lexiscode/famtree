@@ -1,30 +1,7 @@
 import { useMemo, useState } from 'react';
 import { router } from '@inertiajs/react';
 import { Edit, Settings, Bell, BookMarked, Settings as GalleryIcon, Users, LogOut, X } from 'lucide-react';
-
-interface User {
-    id: number;
-    name: string;
-    username: string;
-    email: string;
-    phone: string | null;
-    address: string | null;
-    bio: string | null;
-    date_of_birth: string | null;
-    profile_image_url: string | null;
-    status: string;
-    job_title: string | null;
-    education: string | null;
-    created_at: string;
-}
-
-interface Props {
-    user: User;
-    connectionCount: number;
-    pendingRequestCount: number;
-    sentRequestCount: number;
-    unreadNotificationCount: number;
-}
+import { UserProfile, ProfileSidebarProps } from '@/types';
 
 export default function ProfileSidebar({
     user,
@@ -32,7 +9,7 @@ export default function ProfileSidebar({
     pendingRequestCount,
     sentRequestCount,
     unreadNotificationCount,
-}: Props) {
+}: ProfileSidebarProps) {
     const [showImagePopup, setShowImagePopup] = useState(false);
 
     return (
