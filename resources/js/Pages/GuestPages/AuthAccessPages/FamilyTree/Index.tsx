@@ -37,16 +37,19 @@ export default function Index({ myTrees, memberTrees }: Props) {
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                     {tree.is_public ? (
                         <div className="tree-card-badge public">
-                            <Globe size={14} />
+                            <Globe size={16} />
+                            <span>Public</span>
                         </div>
                     ) : (
                         <div className="tree-card-badge private">
-                            <Lock size={14} />
+                            <Lock size={16} />
+                            <span>Private</span>
                         </div>
                     )}
                     {isOwner && (
                         <div className="tree-card-badge owner">
-                            <Sparkles size={14} />
+                            <Sparkles size={16} />
+                            <span>Owner</span>
                         </div>
                     )}
                 </div>

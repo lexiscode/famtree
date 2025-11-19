@@ -940,36 +940,37 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.4rem;
-    padding: 0.5rem 0.85rem;
-    background: var(--tree-primary-light);
-    color: var(--tree-primary);
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(0, 212, 255, 0.15) 100%);
+    color: #E0F2FE;
     border-radius: 50px;
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     font-weight: 800;
     white-space: nowrap;
     text-transform: uppercase;
     letter-spacing: 0.3px;
-    border: 1px solid rgba(0, 82, 232, 0.2);
-    box-shadow: 0 2px 8px rgba(0, 82, 232, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.4);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+    backdrop-filter: blur(10px);
 }
 
 .tree-card-badge.public {
-    background: rgba(0, 217, 127, 0.12);
-    color: var(--tree-success);
-    border-color: rgba(0, 217, 127, 0.2);
+    background: linear-gradient(135deg, rgba(0, 217, 127, 0.2) 0%, rgba(0, 232, 160, 0.15) 100%);
+    color: #A7F3D0;
+    border-color: rgba(0, 217, 127, 0.4);
 }
 
 .tree-card-badge.private {
-    background: rgba(255, 71, 87, 0.12);
-    color: var(--tree-danger);
-    border-color: rgba(255, 71, 87, 0.2);
+    background: linear-gradient(135deg, rgba(255, 71, 87, 0.2) 0%, rgba(255, 107, 122, 0.15) 100%);
+    color: #FCA5AC;
+    border-color: rgba(255, 71, 87, 0.4);
 }
 
 .tree-card-badge.owner {
-    background: rgba(255, 183, 77, 0.12);
-    color: #FFA726;
-    border-color: rgba(255, 183, 77, 0.2);
+    background: linear-gradient(135deg, rgba(255, 183, 77, 0.2) 0%, rgba(255, 183, 77, 0.15) 100%);
+    color: #FFD699;
+    border-color: rgba(255, 183, 77, 0.4);
 }
 
 .tree-card-description {
