@@ -16,8 +16,19 @@ export default function PendingRequests({
 }: PendingRequestsProps) {
     const [requests, setRequests] = useState(initialRequests);
     const [loading, setLoading] = useState<number | null>(null);
+    const [showAcceptModal, setShowAcceptModal] = useState(false);
     const [showDeclineModal, setShowDeclineModal] = useState(false);
     const [selectedRequestId, setSelectedRequestId] = useState<number | null>(null);
+
+    const openAcceptModal = (connectionId: number) => {
+        setSelectedRequestId(connectionId);
+        setShowAcceptModal(true);
+    };
+
+    const closeAcceptModal = () => {
+        setShowAcceptModal(false);
+        setSelectedRequestId(null);
+    };
 
     const openDeclineModal = (connectionId: number) => {
         setSelectedRequestId(connectionId);
@@ -29,10 +40,14 @@ export default function PendingRequests({
         setSelectedRequestId(null);
     };
 
-    const handleAccept = async (connectionId: number) => {
-        setLoading(connectionId);
+    const handleAccept = async () => {
+        if (selectedRequestId === null) return;
+
+        setLoading(selectedRequestId);
+        closeAcceptModal();
+
         try {
-            const response = await fetch(route('connections.accept', connectionId), {
+            const response = await fetch(route('connections.accept', selectedRequestId), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -41,7 +56,7 @@ export default function PendingRequests({
             });
 
             if (response.ok) {
-                setRequests(requests.filter(r => r.id !== connectionId));
+                setRequests(requests.filter(r => r.id !== selectedRequestId));
             }
         } catch (error) {
             console.error('Error accepting request:', error);
@@ -136,7 +151,7 @@ export default function PendingRequests({
                                     </div>
 
                                     {/* Request Details */}
-                                    <div className="connection-request-details">
+                                    <div className="connection-request-details pb-3">
                                         <p className="connection-detail-row" style={{ color: '#9c9595ff' }} >
                                             <span className="connection-detail-label">Claimed Relationship: </span>
                                             <strong>{request.relationship_label}</strong>
@@ -150,7 +165,7 @@ export default function PendingRequests({
                                     <div className="connection-request-actions">
                                         <button
                                             className="connection-request-btn-accept"
-                                            onClick={() => handleAccept(request.id)}
+                                            onClick={() => openAcceptModal(request.id)}
                                             disabled={loading === request.id}
                                             title="Accept this connection request"
                                         >
@@ -202,6 +217,60 @@ export default function PendingRequests({
                 </div>
                     </div>
                 </div>
+
+                {/* Accept Confirmation Modal */}
+                {showAcceptModal && (
+                    <div className="modal-backdrop-accept" onClick={closeAcceptModal}>
+                        <div className="modal-content-accept" onClick={(e) => e.stopPropagation()}>
+                            <div className="modal-header-accept">
+                                <div className="modal-icon-accept">
+                                    <Check size={24} />
+                                </div>
+                                <button
+                                    className="modal-close-btn-accept"
+                                    onClick={closeAcceptModal}
+                                    title="Close modal"
+                                >
+                                    <X size={20} />
+                                </button>
+                            </div>
+
+                            <div className="modal-body-accept">
+                                <h2 className="modal-title-accept">Accept Request?</h2>
+                                <p className="modal-message-accept">
+                                    Are you sure you want to accept this connection request? You will be connected with this person.
+                                </p>
+                            </div>
+
+                            <div className="modal-footer-accept">
+                                <button
+                                    className="modal-btn-cancel-accept"
+                                    onClick={closeAcceptModal}
+                                    disabled={loading !== null}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    className="modal-btn-confirm-accept"
+                                    onClick={handleAccept}
+                                    disabled={loading !== null}
+                                >
+                                    {loading !== null ? (
+                                        <>
+                                            <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
+                                            Accepting...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Check size={18} style={{ display: 'inline' }} />
+                                            Accept Request
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Decline Confirmation Modal */}
                 {showDeclineModal && (
