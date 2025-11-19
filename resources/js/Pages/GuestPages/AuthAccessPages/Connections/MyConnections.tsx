@@ -172,12 +172,12 @@ export default function MyConnections({
                                                 </span>
                                             </div>
 
-                                            <div className="connection-relationship">
-                                                <span className="relationship-label">Relationship:</span>
+                                            <div className="connection-relationship pb-2" style={{ color: '#9c9595ff' }}>
+                                                <span className="relationship-label">My Relationship: </span>
                                                 <strong>{connection.relationship_label}</strong>
                                             </div>
 
-                                            <div className="connection-card-actions">
+                                            <div className="connection-card-actions pb-2">
                                                 <button
                                                     className="connection-action-btn connection-action-view"
                                                     title="View profile"
@@ -197,7 +197,7 @@ export default function MyConnections({
                                             </div>
 
                                             {connection.can_undo && (
-                                                <p className="connection-undo-expiry">
+                                                <p className="connection-undo-expiry text-center" style={{ color: '#9c9595ff' }}>
                                                     ⏰ Can undo until {new Date(connection.undo_expires_at).toLocaleDateString()}
                                                 </p>
                                             )}
