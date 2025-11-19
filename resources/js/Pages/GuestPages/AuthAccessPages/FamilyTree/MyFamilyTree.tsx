@@ -306,14 +306,14 @@ export default function MyFamilyTree({ tree, members, connections, stats, isOwne
                                     const fromMember = members.find((m) => m.id === connection.from);
                                     const toMember = members.find((m) => m.id === connection.to);
 
-                                    return fromMember && toMember ? (
+                                    return fromMember && toMember && fromMember.name && toMember.name ? (
                                         <div key={idx} style={{ padding: '1rem', background: 'linear-gradient(135deg, #F0F6FF 0%, rgba(0, 212, 255, 0.05) 100%)', borderRadius: '12px', border: '1px solid rgba(0, 82, 232, 0.1)', display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                             <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'linear-gradient(135deg, #0052E8, #00D4FF)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '0.9rem', fontWeight: 'bold', flexShrink: 0 }}>
-                                                {fromMember.name.charAt(0)}
+                                                {fromMember.name?.charAt(0) || '?'}
                                             </div>
                                             <div style={{ flex: 1 }}>
                                                 <div style={{ fontSize: '0.9rem', fontWeight: '700', color: '#1a1a1a' }}>
-                                                    {fromMember.name}
+                                                    {fromMember.name || 'Unknown'}
                                                 </div>
                                                 <div style={{ fontSize: '0.8rem', color: '#6C757D', marginTop: '0.2rem' }}>
                                                     <span style={{ background: 'rgba(0, 82, 232, 0.1)', padding: '0.2rem 0.6rem', borderRadius: '4px', color: '#0052E8', fontWeight: '600' }}>
@@ -323,14 +323,14 @@ export default function MyFamilyTree({ tree, members, connections, stats, isOwne
                                             </div>
                                             <div style={{ textAlign: 'right' }}>
                                                 <div style={{ fontSize: '0.9rem', fontWeight: '700', color: '#1a1a1a' }}>
-                                                    {toMember.name}
+                                                    {toMember.name || 'Unknown'}
                                                 </div>
                                                 <div style={{ fontSize: '0.8rem', color: '#6C757D', marginTop: '0.2rem' }}>
-                                                    @{toMember.username}
+                                                    @{toMember.username || 'unknown'}
                                                 </div>
                                             </div>
                                             <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'linear-gradient(135deg, #00D97F, #00E8A0)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '0.9rem', fontWeight: 'bold', flexShrink: 0 }}>
-                                                {toMember.name.charAt(0)}
+                                                {toMember.name?.charAt(0) || '?'}
                                             </div>
                                         </div>
                                     ) : null;
