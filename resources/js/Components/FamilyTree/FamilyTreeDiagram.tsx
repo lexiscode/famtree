@@ -47,7 +47,7 @@ const getRelationshipColor = (relationship: string): string => {
 
 const FamilyTreeDiagram: React.FC<Props> = ({ members, connections, rootUserId }) => {
     const diagramData = useMemo(() => {
-        if (members.length === 0) return null;
+        if (members.length === 0 || !members.some(m => m.name)) return null;
 
         // Calculate positions for nodes using a simple layout algorithm
         const nodePositions: Record<number, { x: number; y: number; level: number }> = {};
@@ -118,14 +118,24 @@ const FamilyTreeDiagram: React.FC<Props> = ({ members, connections, rootUserId }
     }
 
     const { nodePositions } = diagramData;
-    const minX = Math.min(...Object.values(nodePositions).map((p) => p.x));
-    const maxX = Math.max(...Object.values(nodePositions).map((p) => p.x));
-    const minY = Math.min(...Object.values(nodePositions).map((p) => p.y));
-    const maxY = Math.max(...Object.values(nodePositions).map((p) => p.y));
+    const positions = Object.values(nodePositions);
+
+    if (positions.length === 0) {
+        return (
+            <div style={{ textAlign: 'center', padding: '2rem', color: '#94A3B8' }}>
+                No family members to display
+            </div>
+        );
+    }
+
+    const minX = Math.min(...positions.map((p) => p.x));
+    const maxX = Math.max(...positions.map((p) => p.x));
+    const minY = Math.min(...positions.map((p) => p.y));
+    const maxY = Math.max(...positions.map((p) => p.y));
 
     const padding = 60;
-    const svgWidth = maxX - minX + padding * 2;
-    const svgHeight = maxY - minY + padding * 2;
+    const svgWidth = Math.max(maxX - minX + padding * 2, 600);
+    const svgHeight = Math.max(maxY - minY + padding * 2, 400);
 
     return (
         <div style={{ overflowX: 'auto', width: '100%' }}>
@@ -136,6 +146,7 @@ const FamilyTreeDiagram: React.FC<Props> = ({ members, connections, rootUserId }
                     minWidth: '100%',
                     height: 'auto',
                     background: 'transparent',
+                    display: 'block',
                 }}
             >
                 {/* Draw connections */}
