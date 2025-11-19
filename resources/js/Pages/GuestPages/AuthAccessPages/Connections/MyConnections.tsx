@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { usePage, router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { Users, UserPlus, Search, Filter, ExternalLink, Undo2, ArrowLeft } from 'lucide-react';
+import { Users, UserPlus, Search, Filter, ExternalLink, Undo2, ArrowLeft, AlertCircle, X } from 'lucide-react';
 import { Connection, MyConnectionsProps } from '@/types';
 import ProfileSidebar from '../Stories/ProfileSidebar';
 
@@ -18,6 +18,9 @@ export default function MyConnections({
     const [connections, setConnections] = useState(initialConnections);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterType, setFilterType] = useState(relationship_filter || '');
+    const [showUndoModal, setShowUndoModal] = useState(false);
+    const [selectedConnectionId, setSelectedConnectionId] = useState<number | null>(null);
+    const [loading, setLoading] = useState(false);
 
     const filteredConnections = connections.filter(conn => {
         const matchesSearch = conn.user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -39,13 +42,24 @@ export default function MyConnections({
         return new Date() > new Date(expiryDate);
     };
 
-    const handleUndoConnection = async (connectionId: number) => {
-        if (!confirm('Are you sure you want to undo this connection? This action can only be done within 24 hours of acceptance.')) {
-            return;
-        }
+    const openUndoModal = (connectionId: number) => {
+        setSelectedConnectionId(connectionId);
+        setShowUndoModal(true);
+    };
+
+    const closeUndoModal = () => {
+        setShowUndoModal(false);
+        setSelectedConnectionId(null);
+    };
+
+    const handleUndoConnection = async () => {
+        if (selectedConnectionId === null) return;
+
+        setLoading(true);
+        closeUndoModal();
 
         try {
-            const response = await fetch(route('connections.undo-acceptance', connectionId), {
+            const response = await fetch(route('connections.undo-acceptance', selectedConnectionId), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -54,10 +68,12 @@ export default function MyConnections({
             });
 
             if (response.ok) {
-                setConnections(connections.filter(c => c.id !== connectionId));
+                setConnections(connections.filter(c => c.id !== selectedConnectionId));
             }
         } catch (error) {
             console.error('Error undoing connection:', error);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -192,10 +208,15 @@ export default function MyConnections({
                                                 {connection.can_undo && !isUndoWindowExpired(connection.undo_expires_at) && (
                                                     <button
                                                         className="connection-action-btn connection-action-undo"
-                                                        onClick={() => handleUndoConnection(connection.id)}
+                                                        onClick={() => openUndoModal(connection.id)}
+                                                        disabled={loading}
                                                         title="Undo this connection within 24 hours"
                                                     >
-                                                        <Undo2 size={16} style={{ display: 'inline' }} />
+                                                        {loading ? (
+                                                            <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" />
+                                                        ) : (
+                                                            <Undo2 size={16} style={{ display: 'inline' }} />
+                                                        )}
                                                     </button>
                                                 )}
                                             </div>
@@ -224,6 +245,60 @@ export default function MyConnections({
                 </div>
                     </div>
                 </div>
+
+                {/* Undo Connection Confirmation Modal */}
+                {showUndoModal && (
+                    <div className="modal-backdrop-undo" onClick={closeUndoModal}>
+                        <div className="modal-content-undo" onClick={(e) => e.stopPropagation()}>
+                            <div className="modal-header-undo">
+                                <div className="modal-icon-undo">
+                                    <AlertCircle size={24} />
+                                </div>
+                                <button
+                                    className="modal-close-btn-undo"
+                                    onClick={closeUndoModal}
+                                    title="Close modal"
+                                >
+                                    <X size={20} />
+                                </button>
+                            </div>
+
+                            <div className="modal-body-undo">
+                                <h2 className="modal-title-undo">Undo Connection?</h2>
+                                <p className="modal-message-undo">
+                                    Are you sure you want to undo this connection? This action can only be done within 24 hours of acceptance.
+                                </p>
+                            </div>
+
+                            <div className="modal-footer-undo">
+                                <button
+                                    className="modal-btn-cancel-undo"
+                                    onClick={closeUndoModal}
+                                    disabled={loading}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    className="modal-btn-confirm-undo"
+                                    onClick={handleUndoConnection}
+                                    disabled={loading}
+                                >
+                                    {loading ? (
+                                        <>
+                                            <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
+                                            Undoing...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Undo2 size={18} style={{ display: 'inline' }} />
+                                            Undo Connection
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </AuthAccessLayout>
     );
