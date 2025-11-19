@@ -34,7 +34,7 @@ export default function Index({ myTrees, memberTrees }: Props) {
         <Link href={route('family-tree.show', { treeId: tree.id })} className="tree-card">
             <div className="tree-card-header">
                 <h3 className="tree-card-title">{tree.name}</h3>
-                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: '1.3rem', flexWrap: 'wrap' }}>
                     {tree.is_public ? (
                         <div className="tree-card-badge public">
                             <Globe size={16} />

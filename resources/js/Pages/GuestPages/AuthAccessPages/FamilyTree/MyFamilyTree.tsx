@@ -1,7 +1,8 @@
 import { useCallback, useState } from 'react';
 import { usePage, router, Link } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { Users, Plus, Edit, Trash2, Download, Share2, Lock, Globe, Home, CheckCircle, XCircle } from 'lucide-react';
+import { Users, Plus, Edit, Trash2, Download, Share2, Lock, Globe, Home, CheckCircle, XCircle, Network } from 'lucide-react';
+import FamilyTreeDiagram from '@/Components/FamilyTree/FamilyTreeDiagram';
 import './MyFamilyTree.css';
 
 interface User {
@@ -185,6 +186,30 @@ export default function MyFamilyTree({ tree, members, connections, stats, isOwne
                             </div>
                         </div>
                     </div>
+
+                    {/* Family Tree Diagram */}
+                    {members.length > 1 && (
+                        <div className="tree-visualization-wrapper">
+                            <h2>
+                                <Network size={24} />
+                                Family Tree Diagram
+                            </h2>
+
+                            <div style={{
+                                background: 'rgba(15, 23, 42, 0.6)',
+                                borderRadius: '16px',
+                                padding: '2rem',
+                                border: '1px solid rgba(59, 130, 246, 0.2)',
+                                overflowX: 'auto'
+                            }}>
+                                <FamilyTreeDiagram
+                                    members={members}
+                                    connections={connections}
+                                    rootUserId={tree.root_user_id}
+                                />
+                            </div>
+                        </div>
+                    )}
 
                     {/* Members Grid */}
                     <div className="tree-visualization-wrapper">
