@@ -138,16 +138,20 @@ const FamilyTreeDiagram: React.FC<Props> = ({ members, connections, rootUserId }
     const svgHeight = Math.max(maxY - minY + padding * 2, 400);
 
     return (
-        <div style={{ overflowX: 'auto', width: '100%' }}>
+        <div style={{ width: '100%', overflowX: 'auto', overflowY: 'visible' }}>
             <svg
                 width={svgWidth}
                 height={svgHeight}
+                viewBox={`0 0 ${svgWidth} ${svgHeight}`}
                 style={{
-                    minWidth: '100%',
-                    height: 'auto',
-                    background: 'transparent',
+                    minWidth: `${Math.max(svgWidth, 600)}px`,
+                    height: `${svgHeight}px`,
+                    background: 'rgba(15, 23, 42, 0.4)',
+                    border: '1px solid rgba(59, 130, 246, 0.2)',
+                    borderRadius: '8px',
                     display: 'block',
                 }}
+                preserveAspectRatio="xMidYMid meet"
             >
                 {/* Draw connections */}
                 {connections.map((conn, idx) => {
@@ -171,21 +175,31 @@ const FamilyTreeDiagram: React.FC<Props> = ({ members, connections, rootUserId }
                                 stroke={color}
                                 strokeWidth="3"
                                 fill="none"
-                                strokeOpacity="0.6"
-                                style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))' }}
+                                strokeOpacity="0.8"
+                                style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }}
+                            />
+                            {/* Relationship label background */}
+                            <rect
+                                x={(x1 + x2) / 2 - 40}
+                                y={(y1 + y2) / 2 - 10}
+                                width="80"
+                                height="20"
+                                fill="rgba(15, 23, 42, 0.95)"
+                                rx="4"
+                                ry="4"
                             />
                             {/* Relationship label */}
                             <text
                                 x={(x1 + x2) / 2}
-                                y={(y1 + y2) / 2}
+                                y={(y1 + y2) / 2 + 4}
                                 textAnchor="middle"
                                 fontSize="11"
                                 fontWeight="700"
                                 fill={color}
                                 style={{
-                                    background: 'rgba(15, 23, 42, 0.9)',
                                     textTransform: 'uppercase',
                                     letterSpacing: '0.5px',
+                                    pointerEvents: 'none',
                                 }}
                             >
                                 {conn.relationship}
@@ -210,29 +224,22 @@ const FamilyTreeDiagram: React.FC<Props> = ({ members, connections, rootUserId }
                                 cx={x}
                                 cy={y}
                                 r={isRoot ? 55 : 45}
-                                fill={isRoot ? '#0052E8' : 'rgba(59, 130, 246, 0.8)'}
+                                fill={isRoot ? '#0052E8' : 'rgba(59, 130, 246, 0.9)'}
                                 stroke={isRoot ? '#38BDF8' : '#38BDF8'}
                                 strokeWidth={isRoot ? 3 : 2}
                                 style={{
                                     filter: isRoot
-                                        ? 'drop-shadow(0 8px 24px rgba(0, 82, 232, 0.4))'
-                                        : 'drop-shadow(0 4px 12px rgba(59, 130, 246, 0.3))',
+                                        ? 'drop-shadow(0 8px 24px rgba(0, 82, 232, 0.5))'
+                                        : 'drop-shadow(0 4px 12px rgba(59, 130, 246, 0.4))',
                                 }}
                             />
 
-                            {/* Initial circle */}
+                            {/* Inner circle */}
                             <circle
                                 cx={x}
                                 cy={y}
                                 r={isRoot ? 35 : 28}
                                 fill={isRoot ? '#38BDF8' : '#E0F2FE'}
-                                style={{
-                                    fontSize: isRoot ? '24px' : '18px',
-                                    fontWeight: 'bold',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                }}
                             />
 
                             {/* Member initial text */}
@@ -241,28 +248,29 @@ const FamilyTreeDiagram: React.FC<Props> = ({ members, connections, rootUserId }
                                 y={y}
                                 textAnchor="middle"
                                 dominantBaseline="middle"
-                                fontSize={isRoot ? '20' : '14'}
+                                fontSize={isRoot ? '24' : '16'}
                                 fontWeight="800"
                                 fill={isRoot ? '#FFFFFF' : '#0052E8'}
                                 style={{ pointerEvents: 'none' }}
                             >
-                                {member.name.charAt(0).toUpperCase()}
+                                {member.name?.charAt(0)?.toUpperCase() || '?'}
                             </text>
 
                             {/* Member name label below node */}
                             <text
                                 x={x}
-                                y={y + (isRoot ? 70 : 65)}
+                                y={y + (isRoot ? 75 : 70)}
                                 textAnchor="middle"
-                                fontSize="12"
+                                fontSize="13"
                                 fontWeight="700"
-                                fill="#E2E8F0"
+                                fill="#FFFFFF"
                                 style={{
-                                    textShadow: '0 2px 4px rgba(0,0,0,0.5)',
-                                    maxWidth: '120px',
+                                    pointerEvents: 'none',
+                                    textShadow: '0 2px 8px rgba(0,0,0,0.8)',
+                                    filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))',
                                 }}
                             >
-                                {member.name.split(' ')[0]}
+                                {member.name?.split(' ')[0] || 'Unknown'}
                             </text>
                         </g>
                     );
