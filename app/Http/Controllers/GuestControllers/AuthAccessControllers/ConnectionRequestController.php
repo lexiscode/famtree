@@ -21,16 +21,42 @@ class ConnectionRequestController extends Controller
      */
     public function index(Request $request)
     {
-        $userId = $request->user()->id;
+        $user = $request->user();
+        $userId = $user->id;
         $relationshipFilter = $request->query('relationship_type');
 
         $connectionsData = $this->connectionService->getConnections($userId, $relationshipFilter);
         $connectionCount = $this->connectionRepository->getConnectionCount($userId);
 
+        // Get user profile data for sidebar
+        $userProfile = [
+            'id' => $user->id,
+            'name' => $user->first_name . ' ' . $user->last_name,
+            'username' => $user->username,
+            'email' => $user->email,
+            'phone' => $user->phone,
+            'address' => $user->address,
+            'bio' => $user->bio,
+            'date_of_birth' => $user->date_of_birth,
+            'status' => 'Alive', // Default status
+            'job_title' => $user->job_title,
+            'education' => $user->education,
+            'profile_image_url' => $user->profile_image_url,
+            'created_at' => $user->created_at,
+        ];
+
+        $pendingRequestCount = $this->connectionRepository->getPendingRequestCount($userId);
+        $sentRequestCount = $this->connectionRepository->getSentRequestCount($userId);
+
         return Inertia::render('GuestPages/AuthAccessPages/Connections/MyConnections', [
+            'user' => $userProfile,
             'connections' => $connectionsData['connections'],
             'total_count' => $connectionCount,
             'relationship_filter' => $relationshipFilter,
+            'connectionCount' => $connectionCount,
+            'pendingRequestCount' => $pendingRequestCount,
+            'sentRequestCount' => $sentRequestCount,
+            'unreadNotificationCount' => 0, // TODO: Implement notification count
         ]);
     }
 
@@ -39,13 +65,40 @@ class ConnectionRequestController extends Controller
      */
     public function pending(Request $request)
     {
-        $userId = $request->user()->id;
+        $user = $request->user();
+        $userId = $user->id;
 
         $requestsData = $this->connectionService->getPendingRequests($userId);
 
+        // Get user profile data for sidebar
+        $userProfile = [
+            'id' => $user->id,
+            'name' => $user->first_name . ' ' . $user->last_name,
+            'username' => $user->username,
+            'email' => $user->email,
+            'phone' => $user->phone,
+            'address' => $user->address,
+            'bio' => $user->bio,
+            'date_of_birth' => $user->date_of_birth,
+            'status' => 'Alive', // Default status
+            'job_title' => $user->job_title,
+            'education' => $user->education,
+            'profile_image_url' => $user->profile_image_url,
+            'created_at' => $user->created_at,
+        ];
+
+        $connectionCount = $this->connectionRepository->getConnectionCount($userId);
+        $pendingRequestCount = $this->connectionRepository->getPendingRequestCount($userId);
+        $sentRequestCount = $this->connectionRepository->getSentRequestCount($userId);
+
         return Inertia::render('GuestPages/AuthAccessPages/Connections/PendingRequests', [
+            'user' => $userProfile,
             'requests' => $requestsData['requests'],
             'count' => $requestsData['count'],
+            'connectionCount' => $connectionCount,
+            'pendingRequestCount' => $pendingRequestCount,
+            'sentRequestCount' => $sentRequestCount,
+            'unreadNotificationCount' => 0, // TODO: Implement notification count
         ]);
     }
 
@@ -54,13 +107,40 @@ class ConnectionRequestController extends Controller
      */
     public function sent(Request $request)
     {
-        $userId = $request->user()->id;
+        $user = $request->user();
+        $userId = $user->id;
 
         $requestsData = $this->connectionService->getSentRequests($userId);
 
+        // Get user profile data for sidebar
+        $userProfile = [
+            'id' => $user->id,
+            'name' => $user->first_name . ' ' . $user->last_name,
+            'username' => $user->username,
+            'email' => $user->email,
+            'phone' => $user->phone,
+            'address' => $user->address,
+            'bio' => $user->bio,
+            'date_of_birth' => $user->date_of_birth,
+            'status' => 'Alive', // Default status
+            'job_title' => $user->job_title,
+            'education' => $user->education,
+            'profile_image_url' => $user->profile_image_url,
+            'created_at' => $user->created_at,
+        ];
+
+        $connectionCount = $this->connectionRepository->getConnectionCount($userId);
+        $pendingRequestCount = $this->connectionRepository->getPendingRequestCount($userId);
+        $sentRequestCount = $this->connectionRepository->getSentRequestCount($userId);
+
         return Inertia::render('GuestPages/AuthAccessPages/Connections/RequestSent', [
+            'user' => $userProfile,
             'requests' => $requestsData['requests'],
             'count' => $requestsData['count'],
+            'connectionCount' => $connectionCount,
+            'pendingRequestCount' => $pendingRequestCount,
+            'sentRequestCount' => $sentRequestCount,
+            'unreadNotificationCount' => 0, // TODO: Implement notification count
         ]);
     }
 
@@ -69,10 +149,37 @@ class ConnectionRequestController extends Controller
      */
     public function create(Request $request)
     {
-        $userId = $request->user()->id;
+        $user = $request->user();
+        $userId = $user->id;
+
+        // Get user profile data for sidebar
+        $userProfile = [
+            'id' => $user->id,
+            'name' => $user->first_name . ' ' . $user->last_name,
+            'username' => $user->username,
+            'email' => $user->email,
+            'phone' => $user->phone,
+            'address' => $user->address,
+            'bio' => $user->bio,
+            'date_of_birth' => $user->date_of_birth,
+            'status' => 'Alive', // Default status
+            'job_title' => $user->job_title,
+            'education' => $user->education,
+            'profile_image_url' => $user->profile_image_url,
+            'created_at' => $user->created_at,
+        ];
+
+        $connectionCount = $this->connectionRepository->getConnectionCount($userId);
+        $pendingRequestCount = $this->connectionRepository->getPendingRequestCount($userId);
+        $sentRequestCount = $this->connectionRepository->getSentRequestCount($userId);
 
         return Inertia::render('GuestPages/AuthAccessPages/Connections/SendRequest', [
+            'user' => $userProfile,
             'current_user_id' => $userId,
+            'connectionCount' => $connectionCount,
+            'pendingRequestCount' => $pendingRequestCount,
+            'sentRequestCount' => $sentRequestCount,
+            'unreadNotificationCount' => 0, // TODO: Implement notification count
         ]);
     }
 

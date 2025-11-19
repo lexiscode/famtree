@@ -1292,8 +1292,76 @@
 }
 
 /* ============================================================================
+   3-COLUMN GRID LAYOUT WITH SIDEBARS
+   ============================================================================ */
+
+.connections-grid-layout {
+  display: block;
+  position: relative;
+  margin-left: 360px;
+  margin-right: 0;
+  padding: 0 2.5rem;
+}
+
+.connections-left-sidebar {
+  position: fixed;
+  left: 2rem;
+  top: 2rem;
+  width: 320px;
+  height: calc(100vh - 4rem);
+  overflow-y: auto;
+  z-index: 10;
+}
+
+/* Custom scrollbar for connections left sidebar */
+.connections-left-sidebar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.connections-left-sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.connections-left-sidebar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #0052E8 0%, #00D4FF 100%);
+  border-radius: 4px;
+}
+
+.connections-left-sidebar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #0052E8 0%, #00D4FF 100%);
+  opacity: 0.8;
+}
+
+.connections-center-content {
+  width: 100%;
+}
+
+.connections-container {
+  max-width: 100%;
+  padding: 0;
+}
+
+/* ============================================================================
    RESPONSIVE DESIGN
    ============================================================================ */
+
+@media (max-width: 1280px) {
+  .connections-grid-layout {
+    margin-left: 0;
+    padding: 0 1.5rem;
+  }
+
+  .connections-left-sidebar {
+    position: static;
+    width: 100%;
+    height: auto;
+    margin-bottom: 2rem;
+  }
+
+  .connections-left-sidebar::-webkit-scrollbar {
+    display: none;
+  }
+}
 
 @media (max-width: 768px) {
   .connections-header-title {
@@ -1323,6 +1391,18 @@
 
   .connections-empty-state {
     padding: 2rem 1.5rem;
+  }
+
+  .connections-grid-layout {
+    margin-left: 0;
+    padding: 0 1rem;
+  }
+
+  .connections-left-sidebar {
+    position: static;
+    width: 100%;
+    height: auto;
+    margin-bottom: 2rem;
   }
 }
 

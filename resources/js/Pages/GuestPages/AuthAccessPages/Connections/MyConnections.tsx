@@ -2,30 +2,19 @@ import { useState, useEffect } from 'react';
 import { usePage, router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
 import { Users, UserPlus, Search, Filter, ExternalLink, Undo2, ArrowLeft } from 'lucide-react';
+import { Connection, MyConnectionsProps } from '@/types';
+import ProfileSidebar from '../Stories/ProfileSidebar';
 
-interface Connection {
-    id: number;
-    user: {
-        id: number;
-        name: string;
-        username: string;
-        profile_image_url: string;
-    };
-    relationship_type: string;
-    relationship_label: string;
-    status: string;
-    accepted_at: string;
-    can_undo: boolean;
-    undo_expires_at: string;
-}
-
-interface Props {
-    connections: Connection[];
-    total_count: number;
-    relationship_filter: string | null;
-}
-
-export default function MyConnections({ connections: initialConnections, total_count, relationship_filter }: Props) {
+export default function MyConnections({
+    user,
+    connections: initialConnections,
+    total_count,
+    relationship_filter,
+    connectionCount,
+    pendingRequestCount,
+    sentRequestCount,
+    unreadNotificationCount,
+}: MyConnectionsProps) {
     const [connections, setConnections] = useState(initialConnections);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterType, setFilterType] = useState(relationship_filter || '');
@@ -71,6 +60,22 @@ export default function MyConnections({ connections: initialConnections, total_c
     return (
         <AuthAccessLayout>
             <div className="connections-page">
+                <div className="connections-grid-layout">
+                    {/* Left Sidebar - Profile */}
+                    {user && (
+                        <div className="connections-left-sidebar">
+                            <ProfileSidebar
+                                user={user}
+                                connectionCount={connectionCount}
+                                pendingRequestCount={pendingRequestCount}
+                                sentRequestCount={sentRequestCount}
+                                unreadNotificationCount={unreadNotificationCount}
+                            />
+                        </div>
+                    )}
+
+                    {/* Center Content */}
+                    <div className="connections-center-content">
                 <div className="connections-container">
                     {/* Header Section */}
                     <div className="connections-header">
@@ -212,6 +217,8 @@ export default function MyConnections({ connections: initialConnections, total_c
                         <ArrowLeft size={18} className="me-2" style={{ display: 'inline' }} />
                         Back to Profile
                     </button>
+                </div>
+                    </div>
                 </div>
             </div>
         </AuthAccessLayout>

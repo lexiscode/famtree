@@ -139,3 +139,69 @@ export interface VoicePostFormProps {
     onClose: () => void;
     onPostCreated: () => void;
 }
+
+/* ============================================
+   CONNECTION TYPES
+   ============================================ */
+
+export interface ConnectionUser {
+    id: number;
+    name: string;
+    username: string;
+    profile_image_url: string;
+}
+
+export interface Connection {
+    id: number;
+    user: ConnectionUser;
+    relationship_type: string;
+    relationship_label: string;
+    status: string;
+    accepted_at: string;
+    can_undo: boolean;
+    undo_expires_at: string;
+}
+
+export interface SentRequest {
+    id: number;
+    recipient: ConnectionUser;
+    relationship_type: string;
+    relationship_label: string;
+    requested_at: string;
+}
+
+export interface PendingRequest {
+    id: number;
+    requester: ConnectionUser;
+    relationship_type: string;
+    relationship_label: string;
+    requested_at: string;
+}
+
+export interface ConnectionPageBaseProps {
+    user: UserProfile;
+    connectionCount: number;
+    pendingRequestCount: number;
+    sentRequestCount: number;
+    unreadNotificationCount: number;
+}
+
+export interface MyConnectionsProps extends ConnectionPageBaseProps {
+    connections: Connection[];
+    total_count: number;
+    relationship_filter: string | null;
+}
+
+export interface PendingRequestsProps extends ConnectionPageBaseProps {
+    requests: PendingRequest[];
+    count: number;
+}
+
+export interface RequestSentProps extends ConnectionPageBaseProps {
+    requests: SentRequest[];
+    count: number;
+}
+
+export interface SendRequestProps extends ConnectionPageBaseProps {
+    current_user_id: number;
+}

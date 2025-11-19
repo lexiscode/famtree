@@ -2,26 +2,18 @@ import { useState } from 'react';
 import { usePage, router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
 import { Clock, Check, X, ArrowLeft } from 'lucide-react';
+import { PendingRequest, PendingRequestsProps } from '@/types';
+import ProfileSidebar from '../Stories/ProfileSidebar';
 
-interface Request {
-    id: number;
-    requester: {
-        id: number;
-        name: string;
-        username: string;
-        profile_image_url: string;
-    };
-    relationship_type: string;
-    relationship_label: string;
-    requested_at: string;
-}
-
-interface Props {
-    requests: Request[];
-    count: number;
-}
-
-export default function PendingRequests({ requests: initialRequests, count }: Props) {
+export default function PendingRequests({
+    user,
+    requests: initialRequests,
+    count,
+    connectionCount,
+    pendingRequestCount,
+    sentRequestCount,
+    unreadNotificationCount,
+}: PendingRequestsProps) {
     const [requests, setRequests] = useState(initialRequests);
     const [loading, setLoading] = useState<number | null>(null);
 
@@ -74,6 +66,22 @@ export default function PendingRequests({ requests: initialRequests, count }: Pr
     return (
         <AuthAccessLayout>
             <div className="connections-page">
+                <div className="connections-grid-layout">
+                    {/* Left Sidebar - Profile */}
+                    {user && (
+                        <div className="connections-left-sidebar">
+                            <ProfileSidebar
+                                user={user}
+                                connectionCount={connectionCount}
+                                pendingRequestCount={pendingRequestCount}
+                                sentRequestCount={sentRequestCount}
+                                unreadNotificationCount={unreadNotificationCount}
+                            />
+                        </div>
+                    )}
+
+                    {/* Center Content */}
+                    <div className="connections-center-content">
                 <div className="connections-container">
                     {/* Header */}
                     <div className="connections-header-simple">
@@ -179,6 +187,8 @@ export default function PendingRequests({ requests: initialRequests, count }: Pr
                         <ArrowLeft size={18} className="me-2" style={{ display: 'inline' }} />
                         Back to Profile
                     </button>
+                </div>
+                    </div>
                 </div>
             </div>
         </AuthAccessLayout>

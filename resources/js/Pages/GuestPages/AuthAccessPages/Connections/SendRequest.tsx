@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
 import { Search, Send, AlertCircle, CheckCircle, Loader, ArrowLeft } from 'lucide-react';
+import { SendRequestProps } from '@/types';
+import ProfileSidebar from '../Stories/ProfileSidebar';
 
 interface User {
     id: number;
@@ -17,11 +19,14 @@ interface RelationshipType {
     description: string;
 }
 
-interface Props {
-    current_user_id: number;
-}
-
-export default function SendRequest({ current_user_id }: Props) {
+export default function SendRequest({
+    user,
+    current_user_id,
+    connectionCount,
+    pendingRequestCount,
+    sentRequestCount,
+    unreadNotificationCount,
+}: SendRequestProps) {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [relationshipType, setRelationshipType] = useState('');
@@ -134,6 +139,22 @@ export default function SendRequest({ current_user_id }: Props) {
     return (
         <AuthAccessLayout>
             <div className="connections-page">
+                <div className="connections-grid-layout">
+                    {/* Left Sidebar - Profile */}
+                    {user && (
+                        <div className="connections-left-sidebar">
+                            <ProfileSidebar
+                                user={user}
+                                connectionCount={connectionCount}
+                                pendingRequestCount={pendingRequestCount}
+                                sentRequestCount={sentRequestCount}
+                                unreadNotificationCount={unreadNotificationCount}
+                            />
+                        </div>
+                    )}
+
+                    {/* Center Content */}
+                    <div className="connections-center-content">
                 <div className="connections-container" style={{ maxWidth: '650px' }}>
                     {/* Header */}
                     <div className="connections-header-simple">
@@ -276,6 +297,8 @@ export default function SendRequest({ current_user_id }: Props) {
                         <ArrowLeft size={18} className="me-2" style={{ display: 'inline' }} />
                         Back to Profile
                     </button>
+                </div>
+                    </div>
                 </div>
             </div>
         </AuthAccessLayout>
