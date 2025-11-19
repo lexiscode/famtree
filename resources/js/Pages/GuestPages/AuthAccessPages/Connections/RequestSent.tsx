@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { usePage, router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { Send, Trash2, ArrowLeft } from 'lucide-react';
+import { Send, Trash2, ArrowLeft, AlertCircle, X } from 'lucide-react';
 import { SentRequest, RequestSentProps } from '@/types';
 import ProfileSidebar from '../Stories/ProfileSidebar';
 
@@ -16,15 +16,27 @@ export default function RequestSent({
 }: RequestSentProps) {
     const [requests, setRequests] = useState(initialRequests);
     const [loading, setLoading] = useState<number | null>(null);
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [selectedRequestId, setSelectedRequestId] = useState<number | null>(null);
 
-    const handleUnsend = async (connectionId: number) => {
-        if (!confirm('Are you sure you want to unsend this connection request?')) {
-            return;
-        }
+    const openConfirmModal = (connectionId: number) => {
+        setSelectedRequestId(connectionId);
+        setShowConfirmModal(true);
+    };
 
-        setLoading(connectionId);
+    const closeConfirmModal = () => {
+        setShowConfirmModal(false);
+        setSelectedRequestId(null);
+    };
+
+    const handleUnsend = async () => {
+        if (selectedRequestId === null) return;
+
+        setLoading(selectedRequestId);
+        closeConfirmModal();
+
         try {
-            const response = await fetch(route('connections.undo-request', connectionId), {
+            const response = await fetch(route('connections.undo-request', selectedRequestId), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -33,7 +45,7 @@ export default function RequestSent({
             });
 
             if (response.ok) {
-                setRequests(requests.filter(r => r.id !== connectionId));
+                setRequests(requests.filter(r => r.id !== selectedRequestId));
             }
         } catch (error) {
             console.error('Error unsending request:', error);
@@ -131,7 +143,7 @@ export default function RequestSent({
                                         </button>
                                         <button
                                             className="connection-request-btn-unsend"
-                                            onClick={() => handleUnsend(request.id)}
+                                            onClick={() => openConfirmModal(request.id)}
                                             disabled={loading === request.id}
                                             title="Unsend this request"
                                         >
@@ -169,6 +181,60 @@ export default function RequestSent({
                 </div>
                     </div>
                 </div>
+
+                {/* Confirmation Modal */}
+                {showConfirmModal && (
+                    <div className="modal-backdrop-unsend" onClick={closeConfirmModal}>
+                        <div className="modal-content-unsend" onClick={(e) => e.stopPropagation()}>
+                            <div className="modal-header-unsend">
+                                <div className="modal-icon-unsend">
+                                    <AlertCircle size={24} />
+                                </div>
+                                <button
+                                    className="modal-close-btn-unsend"
+                                    onClick={closeConfirmModal}
+                                    title="Close modal"
+                                >
+                                    <X size={20} />
+                                </button>
+                            </div>
+
+                            <div className="modal-body-unsend">
+                                <h2 className="modal-title-unsend">Unsend Request?</h2>
+                                <p className="modal-message-unsend">
+                                    Are you sure you want to unsend this connection request? This action cannot be undone.
+                                </p>
+                            </div>
+
+                            <div className="modal-footer-unsend">
+                                <button
+                                    className="modal-btn-cancel-unsend"
+                                    onClick={closeConfirmModal}
+                                    disabled={loading !== null}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    className="modal-btn-confirm-unsend"
+                                    onClick={handleUnsend}
+                                    disabled={loading !== null}
+                                >
+                                    {loading !== null ? (
+                                        <>
+                                            <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
+                                            Unsending...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Trash2 size={18} style={{ display: 'inline' }} />
+                                            Unsend Request
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </AuthAccessLayout>
     );

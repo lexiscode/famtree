@@ -1469,5 +1469,206 @@
 }
 
 /* ============================================================================
+   UNSEND CONFIRMATION MODAL
+   ============================================================================ */
+
+.modal-backdrop-unsend {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050;
+  animation: fadeIn 0.2s ease-out;
+  backdrop-filter: blur(4px);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modal-content-unsend {
+  background: linear-gradient(135deg, rgba(20, 25, 35, 0.98) 0%, rgba(30, 40, 60, 0.98) 100%);
+  border: 1px solid rgba(0, 82, 232, 0.2);
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  max-width: 400px;
+  width: 90%;
+  animation: slideUp 0.3s ease-out;
+  overflow: hidden;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-header-unsend {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(0, 82, 232, 0.1);
+}
+
+.modal-icon-unsend {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, rgba(255, 107, 107, 0.2) 0%, rgba(255, 82, 82, 0.2) 100%);
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FF6B6B;
+  flex-shrink: 0;
+}
+
+.modal-close-btn-unsend {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.modal-close-btn-unsend:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
+}
+
+.modal-body-unsend {
+  padding: 1.5rem;
+}
+
+.modal-title-unsend {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin: 0 0 0.75rem 0;
+  letter-spacing: -0.5px;
+}
+
+.modal-message-unsend {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+  line-height: 1.6;
+}
+
+.modal-footer-unsend {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1.25rem 1.5rem;
+  border-top: 1px solid rgba(0, 82, 232, 0.1);
+}
+
+.modal-btn-cancel-unsend,
+.modal-btn-confirm-unsend {
+  flex: 1;
+  padding: 0.85rem 1.25rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.modal-btn-cancel-unsend {
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-btn-cancel-unsend:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.modal-btn-cancel-unsend:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.modal-btn-confirm-unsend {
+  background: linear-gradient(135deg, #FF6B6B 0%, #FF5252 100%);
+  color: #FFFFFF;
+  box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+}
+
+.modal-btn-confirm-unsend:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(255, 107, 107, 0.4);
+}
+
+.modal-btn-confirm-unsend:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 10px rgba(255, 107, 107, 0.3);
+}
+
+.modal-btn-confirm-unsend:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Mobile responsive modal */
+@media (max-width: 576px) {
+  .modal-content-unsend {
+    width: 95%;
+    max-width: none;
+  }
+
+  .modal-header-unsend,
+  .modal-body-unsend,
+  .modal-footer-unsend {
+    padding: 1rem;
+  }
+
+  .modal-title-unsend {
+    font-size: 1.1rem;
+  }
+
+  .modal-message-unsend {
+    font-size: 0.9rem;
+  }
+
+  .modal-btn-cancel-unsend,
+  .modal-btn-confirm-unsend {
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+  }
+}
+
+/* ============================================================================
    END OF CONNECTIONS STYLES
    ============================================================================ */
