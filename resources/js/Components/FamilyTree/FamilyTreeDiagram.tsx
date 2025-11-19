@@ -46,77 +46,27 @@ const getRelationshipColor = (relationship: string): string => {
 };
 
 const FamilyTreeDiagram: React.FC<Props> = ({ members, connections, rootUserId }) => {
-    console.log('FamilyTreeDiagram received:', { members, connections, rootUserId });
-
     const diagramData = useMemo(() => {
-        console.log('Calculating diagram data. Members:', members.length, 'Connections:', connections.length);
         if (members.length === 0 || !members.some(m => m.name)) {
-            console.log('No members or no names found');
             return null;
         }
 
         // Calculate positions for nodes using a simple layout algorithm
         const nodePositions: Record<number, { x: number; y: number; level: number }> = {};
-        const visited = new Set<number>();
 
-        // BFS to assign levels
-        const queue: Array<{ id: number; level: number }> = [{ id: rootUserId, level: 0 }];
-        const levelCounts: Record<number, number> = {};
+        // Simple grid layout - place all members in a horizontal line
+        const nodeWidth = 180;
 
-        while (queue.length > 0) {
-            const { id, level } = queue.shift()!;
-            if (visited.has(id)) continue;
-            visited.add(id);
+        members.forEach((member, index) => {
+            const x = index * nodeWidth + 100;
+            const y = 100;
+            nodePositions[member.id] = { x, y, level: 0 };
+        });
 
-            if (!levelCounts[level]) levelCounts[level] = 0;
-            levelCounts[level]++;
-
-            // Find connected members
-            connections.forEach((conn) => {
-                if (conn.from === id && !visited.has(conn.to)) {
-                    queue.push({ id: conn.to, level: level + 1 });
-                } else if (conn.to === id && !visited.has(conn.from)) {
-                    queue.push({ id: conn.from, level: level - 1 });
-                }
-            });
-        }
-
-        // Calculate X and Y positions
-        visited.clear();
-        const positionCounters: Record<number, number> = {};
-
-        const assignPosition = (id: number, level: number): void => {
-            if (visited.has(id)) return;
-            visited.add(id);
-
-            if (!positionCounters[level]) positionCounters[level] = 0;
-
-            const nodeWidth = 140;
-            const levelCount = levelCounts[level] || 1;
-            const totalWidth = Math.max(members.length * nodeWidth, 800);
-            const x = (positionCounters[level] * totalWidth) / Math.max(levelCount, 1) + 70;
-            const y = level * 200 + 50;
-
-            nodePositions[id] = { x, y, level };
-            positionCounters[level]++;
-
-            // Recursively position connected nodes
-            connections.forEach((conn) => {
-                if (conn.from === id && !visited.has(conn.to)) {
-                    assignPosition(conn.to, level + 1);
-                } else if (conn.to === id && !visited.has(conn.from)) {
-                    assignPosition(conn.from, level - 1);
-                }
-            });
-        };
-
-        assignPosition(rootUserId, 0);
-
-        return { nodePositions, levelCounts };
+        return { nodePositions };
     }, [members, connections, rootUserId]);
 
     if (!diagramData) {
-        console.log('No diagram data, showing empty message');
         return (
             <div style={{ textAlign: 'center', padding: '2rem', color: '#94A3B8' }}>
                 No family members to display
@@ -127,10 +77,7 @@ const FamilyTreeDiagram: React.FC<Props> = ({ members, connections, rootUserId }
     const { nodePositions } = diagramData;
     const positions = Object.values(nodePositions);
 
-    console.log('Positions calculated:', { positionsCount: positions.length, nodePositions });
-
     if (positions.length === 0) {
-        console.log('No positions calculated');
         return (
             <div style={{ textAlign: 'center', padding: '2rem', color: '#94A3B8' }}>
                 No family members to display
@@ -146,8 +93,6 @@ const FamilyTreeDiagram: React.FC<Props> = ({ members, connections, rootUserId }
     const padding = 60;
     const svgWidth = Math.max(maxX - minX + padding * 2, 600);
     const svgHeight = Math.max(maxY - minY + padding * 2, 400);
-
-    console.log('SVG dimensions:', { svgWidth, svgHeight, minX, maxX, minY, maxY });
 
     return (
         <div style={{ width: '100%', overflowX: 'auto', overflowY: 'visible' }}>
