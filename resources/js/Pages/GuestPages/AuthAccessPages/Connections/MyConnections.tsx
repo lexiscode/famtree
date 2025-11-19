@@ -200,6 +200,7 @@ export default function MyConnections({
                                             <div className={`connection-card-actions pb-2 ${connection.can_undo && !isUndoWindowExpired(connection.undo_expires_at) ? '' : 'single-button'}`}>
                                                 <button
                                                     className="connection-action-btn connection-action-view"
+                                                    onClick={() => router.visit(route('profile.view', connection.user.id))}
                                                     title="View profile"
                                                 >
                                                     <ExternalLink size={16} className="me-1" style={{ display: 'inline' }} />
