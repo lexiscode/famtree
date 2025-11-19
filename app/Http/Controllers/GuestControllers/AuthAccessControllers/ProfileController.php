@@ -34,15 +34,14 @@ class ProfileController extends Controller
         // Get relationship context
         $relationshipContext = $this->privacyService->getRelationshipContext($viewer->id, $owner->id);
 
-        // Check if they are connected and get relationship type
+        // Check if they are connected and get relationship type from viewer's perspective
         $connectionStatus = null;
         $relationshipType = null;
 
         if ($relationshipContext === 'connected' || $relationshipContext === 'nuclear_family') {
-            $types = $this->connectionRepository->getConnectionType($viewer->id, $owner->id);
-            if ($types) {
+            $relationshipType = $this->connectionRepository->getRelationshipFromViewerPerspective($viewer->id, $owner->id);
+            if ($relationshipType) {
                 $connectionStatus = 'connected';
-                $relationshipType = $types[0] ?? null;
             }
         }
 

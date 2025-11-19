@@ -292,4 +292,101 @@ class UserConnectionRepository
             ->where('recipient_user_id', $userId2)
             ->first();
     }
+
+    /**
+     * Get the relationship type from the viewer's perspective
+     * Handles inverse relationships (e.g., if requester is "brother", recipient sees "sister")
+     *
+     * @param int $viewerId The person viewing the profile
+     * @param int $ownerId The person whose profile is being viewed
+     * @return string|null The relationship label from viewer's perspective
+     */
+    public function getRelationshipFromViewerPerspective(int $viewerId, int $ownerId): ?string
+    {
+        $connection = UserConnection::where('status', 'accepted')
+            ->where(function ($q) use ($viewerId, $ownerId) {
+                $q->where(function ($q) use ($viewerId, $ownerId) {
+                    $q->where('requester_user_id', $viewerId)
+                      ->where('recipient_user_id', $ownerId);
+                })
+                ->orWhere(function ($q) use ($viewerId, $ownerId) {
+                    $q->where('requester_user_id', $ownerId)
+                      ->where('recipient_user_id', $viewerId);
+                });
+            })
+            ->first();
+
+        if (!$connection) {
+            return null;
+        }
+
+        // If the viewer is the requester, return the relationship type as-is
+        if ($connection->requester_user_id === $viewerId) {
+            return $connection->relationship_type;
+        }
+
+        // If the viewer is the recipient, return the inverse relationship
+        return $this->getInverseRelationship($connection->relationship_type);
+    }
+
+    /**
+     * Get the inverse relationship type
+     * Maps relationships to their inverses (e.g., mother -> child, brother -> sister)
+     *
+     * @param string $relationshipType
+     * @return string The inverse relationship
+     */
+    private function getInverseRelationship(string $relationshipType): string
+    {
+        $inverseMap = [
+            // Spousal relationships (bidirectional)
+            'wife' => 'husband',
+            'husband' => 'wife',
+            'partner' => 'partner',
+
+            // Parent-child (non-bidirectional)
+            'mother' => 'child',
+            'father' => 'child',
+            'child' => 'mother', // Assuming we don't distinguish between mother/father in reverse
+            'son' => 'father', // or mother
+            'daughter' => 'mother', // or father
+
+            // Sibling (bidirectional)
+            'sibling' => 'sibling',
+            'brother' => 'sister',
+            'sister' => 'brother',
+
+            // Grandparent-grandchild (non-bidirectional)
+            'grandmother' => 'grandchild',
+            'grandfather' => 'grandchild',
+            'grandchild' => 'grandmother', // or grandfather
+            'grandson' => 'grandmother', // or grandfather
+            'granddaughter' => 'grandmother', // or grandfather
+
+            // Extended family (non-bidirectional)
+            'aunt' => 'niece', // or nephew
+            'uncle' => 'niece', // or nephew
+            'niece' => 'aunt',
+            'nephew' => 'uncle',
+            'cousin' => 'cousin',
+
+            // Step relationships (non-bidirectional)
+            'step_mother' => 'step_child',
+            'step_father' => 'step_child',
+            'step_sibling' => 'step_sibling',
+            'step_child' => 'step_mother', // or step_father
+
+            // In-law relationships (non-bidirectional)
+            'mother_in_law' => 'child', // This would need more context
+            'father_in_law' => 'child', // This would need more context
+            'sister_in_law' => 'sister_in_law',
+            'brother_in_law' => 'brother_in_law',
+
+            // Other relationships (non-bidirectional)
+            'godparent' => 'godchild',
+            'godchild' => 'godparent',
+        ];
+
+        return $inverseMap[$relationshipType] ?? $relationshipType;
+    }
 }
