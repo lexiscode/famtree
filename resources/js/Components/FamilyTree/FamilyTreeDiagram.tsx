@@ -46,8 +46,14 @@ const getRelationshipColor = (relationship: string): string => {
 };
 
 const FamilyTreeDiagram: React.FC<Props> = ({ members, connections, rootUserId }) => {
+    console.log('FamilyTreeDiagram received:', { members, connections, rootUserId });
+
     const diagramData = useMemo(() => {
-        if (members.length === 0 || !members.some(m => m.name)) return null;
+        console.log('Calculating diagram data. Members:', members.length, 'Connections:', connections.length);
+        if (members.length === 0 || !members.some(m => m.name)) {
+            console.log('No members or no names found');
+            return null;
+        }
 
         // Calculate positions for nodes using a simple layout algorithm
         const nodePositions: Record<number, { x: number; y: number; level: number }> = {};
@@ -110,6 +116,7 @@ const FamilyTreeDiagram: React.FC<Props> = ({ members, connections, rootUserId }
     }, [members, connections, rootUserId]);
 
     if (!diagramData) {
+        console.log('No diagram data, showing empty message');
         return (
             <div style={{ textAlign: 'center', padding: '2rem', color: '#94A3B8' }}>
                 No family members to display
@@ -120,7 +127,10 @@ const FamilyTreeDiagram: React.FC<Props> = ({ members, connections, rootUserId }
     const { nodePositions } = diagramData;
     const positions = Object.values(nodePositions);
 
+    console.log('Positions calculated:', { positionsCount: positions.length, nodePositions });
+
     if (positions.length === 0) {
+        console.log('No positions calculated');
         return (
             <div style={{ textAlign: 'center', padding: '2rem', color: '#94A3B8' }}>
                 No family members to display
@@ -136,6 +146,8 @@ const FamilyTreeDiagram: React.FC<Props> = ({ members, connections, rootUserId }
     const padding = 60;
     const svgWidth = Math.max(maxX - minX + padding * 2, 600);
     const svgHeight = Math.max(maxY - minY + padding * 2, 400);
+
+    console.log('SVG dimensions:', { svgWidth, svgHeight, minX, maxX, minY, maxY });
 
     return (
         <div style={{ width: '100%', overflowX: 'auto', overflowY: 'visible' }}>
