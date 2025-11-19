@@ -80,14 +80,14 @@
    ============================================ */
 
 .tree-header {
-    background: var(--tree-white);
+    background: linear-gradient(135deg, var(--tree-white) 0%, var(--tree-primary-lighter) 100%);
     border-radius: 16px;
     padding: 2.5rem;
     margin-bottom: 2.5rem;
     box-shadow: var(--tree-shadow-lg);
     position: relative;
     overflow: hidden;
-    border: 1px solid rgba(0, 82, 232, 0.08);
+    border: 2px solid var(--tree-primary);
 }
 
 .tree-header::before {
@@ -271,30 +271,29 @@
 
 .tree-stat {
     text-align: center;
-    padding: 1rem;
+    padding: 1.5rem;
     border-radius: 12px;
-    background: linear-gradient(135deg, var(--tree-primary-lighter) 0%, rgba(0, 212, 255, 0.05) 100%);
+    background: linear-gradient(135deg, var(--tree-primary) 0%, var(--tree-secondary) 100%);
     transition: all 0.3s ease;
+    box-shadow: 0 4px 16px rgba(0, 82, 232, 0.2);
 }
 
 .tree-stat:hover {
-    background: linear-gradient(135deg, var(--tree-primary-light) 0%, rgba(0, 212, 255, 0.1) 100%);
-    transform: translateY(-2px);
+    background: linear-gradient(135deg, #0052E8 0%, #00D4FF 100%);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0, 82, 232, 0.3);
 }
 
 .tree-stat-value {
     font-size: 2rem;
     font-weight: 800;
-    background: var(--tree-gradient-primary);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: var(--tree-white);
     margin: 0;
 }
 
 .tree-stat-label {
     font-size: 0.8rem;
-    color: var(--tree-gray-500);
+    color: rgba(255, 255, 255, 0.9);
     margin-top: 0.5rem;
     text-transform: uppercase;
     letter-spacing: 0.6px;
@@ -306,12 +305,12 @@
    ============================================ */
 
 .tree-visualization-wrapper {
-    background: var(--tree-white);
+    background: linear-gradient(135deg, var(--tree-white) 0%, var(--tree-primary-lighter) 100%);
     border-radius: 16px;
     padding: 2.5rem;
     box-shadow: var(--tree-shadow-lg);
     margin-bottom: 2.5rem;
-    border: 1px solid var(--tree-gray-300);
+    border: 2px solid var(--tree-primary);
     position: relative;
     overflow: hidden;
 }
@@ -354,8 +353,8 @@
 }
 
 .tree-member-card {
-    background: var(--tree-white);
-    border: 2px solid var(--tree-gray-300);
+    background: linear-gradient(135deg, var(--tree-white) 0%, var(--tree-primary-lighter) 100%);
+    border: 2px solid var(--tree-primary);
     border-radius: 14px;
     padding: 1.75rem;
     text-align: center;
@@ -437,17 +436,17 @@
 
 .tree-member-relation {
     display: inline-block;
-    padding: 0.45rem 0.95rem;
-    background: var(--tree-primary-light);
-    color: var(--tree-primary);
+    padding: 0.5rem 1.2rem;
+    background: linear-gradient(135deg, var(--tree-primary) 0%, var(--tree-secondary) 100%);
+    color: var(--tree-white);
     border-radius: 50px;
     font-size: 0.75rem;
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.4px;
     margin-bottom: 0.85rem;
-    border: 1px solid rgba(0, 82, 232, 0.2);
-    box-shadow: 0 2px 8px rgba(0, 82, 232, 0.1);
+    border: 2px solid var(--tree-primary);
+    box-shadow: 0 4px 12px rgba(0, 82, 232, 0.2);
 }
 
 .tree-member-status {
@@ -487,10 +486,10 @@
 
 .tree-member-action-btn {
     flex: 1;
-    padding: 0.65rem 0.75rem;
-    background: var(--tree-primary-light);
-    color: var(--tree-primary);
-    border: 1px solid var(--tree-primary);
+    padding: 0.75rem 1rem;
+    background: var(--tree-primary);
+    color: var(--tree-white);
+    border: 2px solid var(--tree-primary);
     border-radius: 8px;
     font-size: 0.8rem;
     font-weight: 700;
@@ -498,25 +497,27 @@
     transition: all 0.3s ease;
     text-decoration: none;
     display: inline-block;
+    box-shadow: 0 4px 12px rgba(0, 82, 232, 0.15);
 }
 
 .tree-member-action-btn:hover {
-    background: var(--tree-primary);
+    background: #003ab8;
     color: var(--tree-white);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 82, 232, 0.2);
+    box-shadow: 0 6px 20px rgba(0, 82, 232, 0.25);
 }
 
 .tree-member-action-btn.danger {
-    background: rgba(255, 71, 87, 0.1);
-    color: var(--tree-danger);
+    background: var(--tree-danger);
+    color: var(--tree-white);
     border-color: var(--tree-danger);
+    box-shadow: 0 4px 12px rgba(255, 71, 87, 0.15);
 }
 
 .tree-member-action-btn.danger:hover {
-    background: var(--tree-danger);
+    background: #e63946;
     color: var(--tree-white);
-    box-shadow: 0 4px 12px rgba(255, 71, 87, 0.2);
+    box-shadow: 0 6px 20px rgba(255, 71, 87, 0.25);
 }
 
 /* ============================================
