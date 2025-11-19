@@ -126,6 +126,16 @@ export default function NotificationsIndex({ notifications, unreadCount }: Props
         <AuthAccessLayout>
             <div className="notifications-page">
                 <div className="notifications-container">
+                    {/* Back Button */}
+                    <button
+                        className="back-button"
+                        onClick={() => router.visit(route('home'))}
+                        title="Back to profile"
+                    >
+                        <ArrowLeft size={20} />
+                        Back to Profile
+                    </button>
+
                     {/* Header */}
                     <div className="notifications-header">
                         <div className="notifications-title-section">
@@ -248,10 +258,10 @@ export default function NotificationsIndex({ notifications, unreadCount }: Props
                                 <div className="empty-icon">
                                     <Bell size={48} />
                                 </div>
-                                <h3 className="empty-title">
+                                <h3 className="empty-title" style={{ color: '#9c9595ff' }}>
                                     {filter === 'unread' ? 'No unread notifications' : 'No notifications'}
                                 </h3>
-                                <p className="empty-message">
+                                <p className="empty-message" style={{ color: '#9c9595ff' }}>
                                     {filter === 'unread'
                                         ? 'You\'re all caught up! Check back later for updates.'
                                         : searchQuery

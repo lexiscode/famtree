@@ -1,9 +1,11 @@
 import { useState, useCallback, useMemo } from 'react';
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { Plus, Search, Filter, MessageCircle, Heart, Share2, Trash2, Mic, Type, Clock } from 'lucide-react';
+import { Plus, Search, Filter, MessageCircle, Heart, Share2, Trash2, Mic, Type, Clock, ArrowLeft } from 'lucide-react';
 import CreatePostModal from './CreatePostModal';
 import PostCard from './PostCard';
+import ProfileSidebar from './ProfileSidebar';
+import EngagedPostsSidebar from './EngagedPostsSidebar';
 
 interface Image {
     id: number;
@@ -34,12 +36,55 @@ interface Post {
     created_at_human: string;
 }
 
-interface Props {
-    posts: Post[];
-    postCount: number;
+interface Stats {
+    total_posts: number;
+    total_reactions: number;
+    total_comments: number;
+    total_views: number;
+    text_posts: number;
+    voice_posts: number;
 }
 
-export default function MyStories({ posts: initialPosts, postCount }: Props) {
+interface User {
+    id: number;
+    name: string;
+    username: string;
+    email: string;
+    phone: string | null;
+    address: string | null;
+    bio: string | null;
+    date_of_birth: string | null;
+    profile_image_url: string | null;
+    status: string;
+    job_title: string | null;
+    education: string | null;
+    created_at: string;
+}
+
+interface Props {
+    user: User;
+    posts: Post[];
+    postCount: number;
+    stats: Stats;
+    topPosts: Post[];
+    connectionCount: number;
+    pendingRequestCount: number;
+    sentRequestCount: number;
+    unreadNotificationCount: number;
+}
+
+export default function MyStories({
+    user: currentUser,
+    posts: initialPosts,
+    postCount,
+    stats,
+    topPosts,
+    connectionCount,
+    pendingRequestCount,
+    sentRequestCount,
+    unreadNotificationCount,
+}: Props) {
+
     const [posts, setPosts] = useState<Post[]>(initialPosts);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [filter, setFilter] = useState<'all' | 'text' | 'voice'>('all');
@@ -119,104 +164,138 @@ export default function MyStories({ posts: initialPosts, postCount }: Props) {
     return (
         <AuthAccessLayout>
             <div className="stories-page">
-                <div className="stories-container">
-                    {/* Header */}
-                    <div className="stories-header">
-                        <div className="stories-title-section">
-                            <Type size={32} className="stories-title-icon" />
-                            <div>
-                                <h1 className="stories-title">My Stories</h1>
-                                <p className="stories-subtitle">Share your thoughts and moments with your family</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Controls */}
-                    <div className="stories-controls">
-                        {/* Search */}
-                        <div className="stories-search">
-                            <Search size={18} className="search-icon" />
-                            <input
-                                type="text"
-                                placeholder="Search your posts..."
-                                value={searchQuery}
-                                onChange={(e) => handleSearch(e.target.value)}
-                                className="search-input"
+                <div className="stories-grid-layout">
+                    {/* Left Sidebar - Profile */}
+                    {currentUser && (
+                        <div className="stories-left-sidebar">
+                            <ProfileSidebar
+                                user={currentUser}
+                                connectionCount={connectionCount}
+                                pendingRequestCount={pendingRequestCount}
+                                sentRequestCount={sentRequestCount}
+                                unreadNotificationCount={unreadNotificationCount}
                             />
                         </div>
+                    )}
 
-                        {/* Filters */}
-                        <div className="stories-filters">
-                            <button
-                                className={`filter-btn ${filter === 'all' ? 'active' : ''}`}
-                                onClick={() => handleFilterChange('all')}
-                            >
-                                <Filter size={16} />
-                                All ({posts.length})
-                            </button>
-                            <button
-                                className={`filter-btn ${filter === 'text' ? 'active' : ''}`}
-                                onClick={() => handleFilterChange('text')}
-                            >
-                                <Type size={16} />
-                                Text Posts
-                            </button>
-                            <button
-                                className={`filter-btn ${filter === 'voice' ? 'active' : ''}`}
-                                onClick={() => handleFilterChange('voice')}
-                            >
-                                <Mic size={16} />
-                                Voice Posts
-                            </button>
+                    {/* Center Content - Stories */}
+                    <div className="stories-center-content">
+                        {/* Back Button */}
+                        <button
+                            className="back-button"
+                            onClick={() => router.visit(route('home'))}
+                            title="Back to profile"
+                        >
+                            <ArrowLeft size={20} />
+                            Back to Profile
+                        </button>
+
+                        {/* Header */}
+                        <div className="stories-header">
+                            <div className="stories-title-section">
+                                
+                                <div>
+                                    <h1 className="stories-title">My Stories</h1>
+                                    <p className="stories-subtitle">Share your thoughts and moments with your family</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Controls */}
+                        <div className="stories-controls">
+                            {/* Search */}
+                            <div className="stories-search">
+                                <Search size={18} className="search-icon" />
+                                <input
+                                    type="text"
+                                    placeholder="Search your posts..."
+                                    value={searchQuery}
+                                    onChange={(e) => handleSearch(e.target.value)}
+                                    className="search-input"
+                                />
+                            </div>
+
+                            {/* Filters */}
+                            <div className="stories-filters">
+                                <button
+                                    className={`filter-btn ${filter === 'all' ? 'active' : ''}`}
+                                    onClick={() => handleFilterChange('all')}
+                                >
+                                    <Filter size={16} />
+                                    All ({posts.length})
+                                </button>
+                                <button
+                                    className={`filter-btn ${filter === 'text' ? 'active' : ''}`}
+                                    onClick={() => handleFilterChange('text')}
+                                >
+                                    <Type size={16} />
+                                    Text Posts
+                                </button>
+                                <button
+                                    className={`filter-btn ${filter === 'voice' ? 'active' : ''}`}
+                                    onClick={() => handleFilterChange('voice')}
+                                >
+                                    <Mic size={16} />
+                                    Voice Posts
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Posts List */}
+                        <div className="stories-list">
+                            {filteredPosts.length > 0 ? (
+                                filteredPosts.map((post) => (
+                                    <PostCard
+                                        key={post.id}
+                                        post={post}
+                                        onPostDeleted={handlePostDeleted}
+                                    />
+                                ))
+                            ) : (
+                                <div className="stories-empty">
+                                    <div className="empty-icon">
+                                        {filter === 'voice' ? <Mic size={48} /> : <Type size={48} />}
+                                    </div>
+                                    <h3 className="empty-title" style={{ color: '#9c9595ff' }}>
+                                        {searchQuery.trim()
+                                            ? 'No posts found'
+                                            : filter === 'voice'
+                                                ? 'No voice posts yet'
+                                                : filter === 'text'
+                                                    ? 'No text posts yet'
+                                                    : 'Start sharing your stories'}
+                                    </h3>
+                                    <p className="empty-message" style={{ color: '#9c9595ff', textAlign: 'center', width: '100%', margin: '0 auto 1rem auto', display: 'block' }}>
+                                        {searchQuery.trim()
+                                            ? 'Try adjusting your search query'
+                                            : filter === 'voice'
+                                                ? 'Create your first voice post to get started'
+                                                : filter === 'text'
+                                                    ? 'Create your first text post to get started'
+                                                    : 'Click the + button below to create your first story'}
+                                    </p>
+                                    {searchQuery && (
+                                        <button
+                                            className="clear-search-btn"
+                                            onClick={() => {
+                                                setSearchQuery('');
+                                                setPosts(initialPosts);
+                                            }}
+                                        >
+                                            Clear search
+                                        </button>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </div>
 
-                    {/* Posts List */}
-                    <div className="stories-list">
-                        {filteredPosts.length > 0 ? (
-                            filteredPosts.map((post) => (
-                                <PostCard
-                                    key={post.id}
-                                    post={post}
-                                    onPostDeleted={handlePostDeleted}
-                                />
-                            ))
-                        ) : (
-                            <div className="stories-empty">
-                                <div className="empty-icon">
-                                    {filter === 'voice' ? <Mic size={48} /> : <Type size={48} />}
-                                </div>
-                                <h3 className="empty-title">
-                                    {searchQuery.trim()
-                                        ? 'No posts found'
-                                        : filter === 'voice'
-                                            ? 'No voice posts yet'
-                                            : filter === 'text'
-                                                ? 'No text posts yet'
-                                                : 'Start sharing your stories'}
-                                </h3>
-                                <p className="empty-message">
-                                    {searchQuery.trim()
-                                        ? 'Try adjusting your search query'
-                                        : filter === 'voice'
-                                            ? 'Create your first voice post to get started'
-                                            : filter === 'text'
-                                                ? 'Create your first text post to get started'
-                                                : 'Click the + button below to create your first story'}
-                                </p>
-                                {searchQuery && (
-                                    <button
-                                        className="clear-search-btn"
-                                        onClick={() => {
-                                            setSearchQuery('');
-                                            setPosts(initialPosts);
-                                        }}
-                                    >
-                                        Clear search
-                                    </button>
-                                )}
-                            </div>
-                        )}
+                    {/* Right Sidebar - Engagement Metrics */}
+                    <div className="stories-right-sidebar">
+                        <EngagedPostsSidebar
+                            stats={stats}
+                            topPosts={topPosts}
+                        />
                     </div>
                 </div>
 

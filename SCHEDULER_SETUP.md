@@ -1,31 +1,4 @@
-# Laravel Task Scheduler Setup
-
-This application uses Laravel's built-in task scheduler to automatically delete expired user accounts.
-
-## Scheduled Tasks
-
-### Delete Expired Accounts
-- **Command**: `accounts:delete-expired --force`
-- **Frequency**: Daily at 2:00 AM
-- **Purpose**: Permanently deletes user accounts that were soft-deleted 30+ days ago
-- **Configuration**: `app/Console/Kernel.php`
-
 ## Setup Instructions
-
-### Development Environment
-
-In development, you can manually run the scheduler to test:
-
-```bash
-# Run the delete expired accounts command manually
-php artisan accounts:delete-expired
-
-# Or with force flag to skip confirmation
-php artisan accounts:delete-expired --force
-
-# Check scheduled tasks
-php artisan schedule:list
-```
 
 ### Production Environment (Docker/Sail)
 
@@ -81,23 +54,6 @@ sudo supervisorctl reread
 sudo supervisorctl update
 sudo supervisorctl start laravel-scheduler
 ```
-
-## How It Works
-
-1. **User Deletes Account**
-   - Account is soft deleted (marked with `deleted_at` timestamp)
-   - `scheduled_deletion_at` is set to 30 days from now
-   - User is logged out
-
-2. **Daily Check (2:00 AM)**
-   - Scheduler runs the `accounts:delete-expired` command
-   - Command finds all soft-deleted accounts where `scheduled_deletion_at <= now()`
-   - Those accounts are permanently deleted using `forceDelete()`
-
-3. **Account Recovery**
-   - If user logs back in within 30 days, account is automatically restored
-   - `scheduled_deletion_at` timestamp is cleared
-   - User can continue using the account as normal
 
 ## Monitoring
 

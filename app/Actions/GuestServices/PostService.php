@@ -297,4 +297,45 @@ class PostService
             'created_at' => $reaction->created_at->format('Y-m-d H:i:s'),
         ];
     }
+
+    /**
+     * Get engagement statistics for user's posts
+     */
+    public function getEngagementStats(int $userId)
+    {
+        $posts = $this->postRepository->getUserPosts($userId, 1000);
+
+        $totalReactions = $posts->sum('reactions_count');
+        $totalComments = $posts->sum('comments_count');
+        $totalViews = $posts->sum('views_count');
+        $totalPosts = $posts->count();
+
+        $textPostCount = $posts->where('type', 'text')->count();
+        $voicePostCount = $posts->where('type', 'voice')->count();
+
+        return [
+            'total_posts' => $totalPosts,
+            'total_reactions' => $totalReactions,
+            'total_comments' => $totalComments,
+            'total_views' => $totalViews,
+            'text_posts' => $textPostCount,
+            'voice_posts' => $voicePostCount,
+        ];
+    }
+
+    /**
+     * Get top engaged posts
+     */
+    public function getTopEngagedPosts(int $userId, int $limit = 5)
+    {
+        $posts = $this->postRepository->getUserPosts($userId, 1000);
+
+        $topPosts = $posts
+            ->sortByDesc(function ($post) {
+                return ($post->reactions_count * 2) + ($post->comments_count * 1.5) + ($post->views_count * 0.1);
+            })
+            ->take($limit);
+
+        return $this->formatPosts($topPosts);
+    }
 }

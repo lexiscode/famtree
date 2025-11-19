@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { Heart, MessageCircle, Share2, Trash2, Play, Pause, Volume2 } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Trash2, Play, Pause, Volume2, X, AlertTriangle } from 'lucide-react';
+import { router } from '@inertiajs/react';
 
 interface Image {
     id: number;
@@ -41,6 +42,7 @@ export default function PostCard({ post, onPostDeleted }: Props) {
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const audioRef = useRef<HTMLAudioElement>(null);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deleteLoading, setDeleteLoading] = useState(false);
 
     // Format duration in minutes:seconds
@@ -78,25 +80,29 @@ export default function PostCard({ post, onPostDeleted }: Props) {
         }
     };
 
-    // Handle delete
-    const handleDelete = async () => {
-        if (!confirm('Are you sure you want to delete this post?')) return;
+    // Handle delete confirmation
+    const handleDeleteClick = () => {
+        setShowDeleteModal(true);
+    };
 
+    // Confirm delete
+    const confirmDelete = () => {
         setDeleteLoading(true);
-        try {
-            const response = await fetch(route('stories.destroy', post.id), {
-                method: 'DELETE',
-                headers: { 'X-Requested-With': 'XMLHttpRequest' },
-            });
-
-            if (response.ok) {
+        router.delete(route('stories.destroy', post.id), {
+            onSuccess: () => {
                 onPostDeleted(post.id);
-            }
-        } catch (error) {
-            console.error('Error deleting post:', error);
-        } finally {
-            setDeleteLoading(false);
-        }
+                setShowDeleteModal(false);
+            },
+            onError: (error) => {
+                console.error('Error deleting post:', error);
+                setDeleteLoading(false);
+            },
+        });
+    };
+
+    // Cancel delete
+    const cancelDelete = () => {
+        setShowDeleteModal(false);
     };
 
     // Handle voice play/pause
@@ -129,7 +135,7 @@ export default function PostCard({ post, onPostDeleted }: Props) {
                 <div className="post-actions-menu">
                     <button
                         className="post-action-btn delete-btn"
-                        onClick={handleDelete}
+                        onClick={handleDeleteClick}
                         disabled={deleteLoading}
                         title="Delete post"
                     >
@@ -274,6 +280,61 @@ export default function PostCard({ post, onPostDeleted }: Props) {
                     Share
                 </button>
             </div>
+
+            {/* Delete Confirmation Modal */}
+            {showDeleteModal && (
+                <div className="delete-modal-overlay">
+                    <div className="delete-modal-container">
+                        <div className="delete-modal-header">
+                            <div className="delete-modal-icon">
+                                <AlertTriangle size={28} />
+                            </div>
+                            <h2 className="delete-modal-title">Delete Post</h2>
+                            <button
+                                className="delete-modal-close"
+                                onClick={cancelDelete}
+                                disabled={deleteLoading}
+                            >
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <div className="delete-modal-content">
+                            <p className="delete-modal-message">
+                                Are you sure you want to delete this post? This action cannot be undone.
+                            </p>
+                            <div className="delete-modal-post-preview">
+                                <p className="preview-title">
+                                    <strong>{post.title}</strong>
+                                </p>
+                                {post.content && (
+                                    <p className="preview-content">
+                                        {post.content.substring(0, 100)}
+                                        {post.content.length > 100 ? '...' : ''}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="delete-modal-actions">
+                            <button
+                                className="delete-modal-btn cancel-btn"
+                                onClick={cancelDelete}
+                                disabled={deleteLoading}
+                            >
+                                Keep Post
+                            </button>
+                            <button
+                                className="delete-modal-btn delete-btn"
+                                onClick={confirmDelete}
+                                disabled={deleteLoading}
+                            >
+                                {deleteLoading ? 'Deleting...' : 'Delete Post'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
