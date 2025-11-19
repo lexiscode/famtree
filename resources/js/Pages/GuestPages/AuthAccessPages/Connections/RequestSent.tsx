@@ -104,18 +104,18 @@ export default function RequestSent({
                                             <h4 className="connection-request-name">{request.recipient.name}</h4>
                                             <p className="connection-request-username">@{request.recipient.username}</p>
                                         </div>
-                                        <span className="connection-request-badge connection-request-badge-sent">
+                                        <span className="connection-request-badge connection-request-badge-sent" style={{ color: '#9c9595ff' }}>
                                             ⏳ Pending
                                         </span>
                                     </div>
 
                                     {/* Request Details */}
                                     <div className="connection-request-details">
-                                        <p className="connection-detail-row">
-                                            <span className="connection-detail-label">Proposed Relationship:</span>
+                                        <p className="connection-detail-row" style={{ color: '#9c9595ff' }}>
+                                            <span className="connection-detail-label">Proposed Relationship: </span>
                                             <strong>{request.relationship_label}</strong>
                                         </p>
-                                        <p className="connection-detail-row connection-detail-date">
+                                        <p className="connection-detail-row connection-detail-date" style={{ color: '#9c9595ff' }}>
                                             Sent {new Date(request.requested_at).toLocaleDateString()}
                                         </p>
                                     </div>
