@@ -153,14 +153,14 @@ class FamilyTreeService
         foreach ($members as $member) {
             $treeData['members'][] = [
                 'id' => $member->user_id,
-                'name' => $member->user->name,
+                'name' => $member->user->first_name . ' ' . $member->user->last_name,
                 'username' => $member->user->username,
                 'profile_image_url' => $member->user->profile_image_url,
                 'status' => $member->user->status,
                 'added_at' => $member->added_at,
                 'added_by' => [
                     'id' => $member->addedBy->id,
-                    'name' => $member->addedBy->name,
+                    'name' => $member->addedBy->first_name . ' ' . $member->addedBy->last_name,
                 ],
             ];
         }
