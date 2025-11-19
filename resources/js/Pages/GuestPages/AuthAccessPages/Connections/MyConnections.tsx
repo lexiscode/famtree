@@ -193,7 +193,7 @@ export default function MyConnections({
                                             </div>
 
                                             <div className="connection-relationship pb-2" style={{ color: '#9c9595ff' }}>
-                                                <span className="relationship-label">My Relationship: </span>
+                                                <span className="relationship-label">Relationship: </span>
                                                 <strong>{connection.relationship_label}</strong>
                                             </div>
 

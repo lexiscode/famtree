@@ -180,7 +180,7 @@ export default function MyFamilyTree({ tree, members, connections, stats, isOwne
                                 <div className="tree-stat-label">Created</div>
                             </div>
                             <div className="tree-stat">
-                                <div className="tree-stat-value">{stats.created_by.name.split(' ')[0]}</div>
+                                <div className="tree-stat-value">{stats.created_by?.name?.split(' ')[0] || 'Unknown'}</div>
                                 <div className="tree-stat-label">Creator</div>
                             </div>
                         </div>

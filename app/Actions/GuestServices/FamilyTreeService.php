@@ -269,9 +269,12 @@ class FamilyTreeService
             'tree_name' => $tree->tree_name,
             'is_public' => $tree->is_public,
             'created_at' => $tree->created_at,
-            'created_by' => [
+            'created_by' => $tree->createdBy ? [
                 'id' => $tree->createdBy->id,
                 'name' => $tree->createdBy->name,
+            ] : [
+                'id' => null,
+                'name' => 'Unknown User',
             ],
         ];
     }
