@@ -340,11 +340,9 @@ class ConnectionRequestController extends Controller
             ];
         });
 
-        return back()->with([
-            'search_results' => [
-                'users' => $users,
-                'count' => $users->count(),
-            ],
+        return response()->json([
+            'users' => $users,
+            'count' => $users->count(),
         ]);
     }
 
@@ -361,8 +359,8 @@ class ConnectionRequestController extends Controller
             ];
         });
 
-        return back()->with([
-            'relationship_types' => $types,
+        return response()->json([
+            'types' => $types,
         ]);
     }
 }
