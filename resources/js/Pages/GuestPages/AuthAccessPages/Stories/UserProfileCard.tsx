@@ -40,8 +40,8 @@ export default function UserProfileCard({
     };
 
     return (
-        <div className="profile-card profile-sidebar-card">
-            <div className="profile-card-content">
+        <div className="profile-card profile-sidebar-card" style={{ textAlign: 'center' }}>
+            <div className="profile-card-content" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 {/* Profile Image */}
                 <img
                     src={user.profile_image_url || 'https://via.placeholder.com/200'}
@@ -135,7 +135,7 @@ export default function UserProfileCard({
                 )}
 
                 {/* Gallery and Full Profile Buttons */}
-                <div className="profile-actions" style={{ marginTop: '2rem', gap: '0.75rem' }}>
+                <div className="profile-actions" style={{ marginTop: '2rem', gap: '0.75rem', display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
                     <button
                         className="profile-btn profile-btn-primary"
                         onClick={() => router.visit(route('galleries.view-user', userId))}
