@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Lock, Mail, Shield, Trash2, Eye, EyeOff, Check, AlertTriangle, Users, Plus, User } from 'lucide-react';
+import { Lock, Mail, Shield, Trash2, Eye, EyeOff, Check, AlertTriangle, Users, Plus, User, Copy, Download } from 'lucide-react';
 import { usePage, router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
 import SettingsSidebar from '@/Components/Settings/SettingsSidebar';
@@ -90,6 +90,13 @@ export default function AccountSettings() {
     // 2FA state
     const [twoFAEnabled, setTwoFAEnabled] = useState(false);
     const [twoFALoading, setTwoFALoading] = useState(false);
+    const [twoFAStep, setTwoFAStep] = useState<'setup' | 'verify' | 'complete'>('setup'); // 'setup' -> show QR, 'verify' -> verify code, 'complete' -> show backup codes
+    const [qrCodeUrl, setQrCodeUrl] = useState('');
+    const [twoFASecret, setTwoFASecret] = useState('');
+    const [verificationCode, setVerificationCode] = useState('');
+    const [backupCodes, setBackupCodes] = useState<string[]>([]);
+    const [twoFAMessage, setTwoFAMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+    const [backupCodesCount, setBackupCodesCount] = useState(0);
 
     // Delete account state
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -114,6 +121,23 @@ export default function AccountSettings() {
     useEffect(() => {
         initializeProfileForm();
     }, [user?.id]);
+
+    // Fetch 2FA status on mount
+    useEffect(() => {
+        const fetch2FAStatus = async () => {
+            try {
+                const response = await fetch(route('settings.2fa.status'));
+                const data = await response.json();
+                if (data.success) {
+                    setTwoFAEnabled(data.enabled);
+                    setBackupCodesCount(data.backup_codes_count);
+                }
+            } catch (error) {
+                console.error('Error fetching 2FA status:', error);
+            }
+        };
+        fetch2FAStatus();
+    }, []);
 
     const handlePasswordChange = (e: React.FormEvent) => {
         e.preventDefault();
@@ -161,16 +185,121 @@ export default function AccountSettings() {
         });
     };
 
-    const handleToggle2FA = async () => {
+    const handleGenerateQRCode = async () => {
         setTwoFALoading(true);
+        setTwoFAMessage(null);
         try {
-            setTimeout(() => {
-                setTwoFAEnabled(!twoFAEnabled);
-                setTwoFALoading(false);
-            }, 800);
+            const response = await fetch(route('settings.2fa.generate'), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+            });
+            const data = await response.json();
+            if (data.success) {
+                setQrCodeUrl(data.qr_code_url);
+                setTwoFASecret(data.secret);
+                setTwoFAStep('verify');
+            } else {
+                setTwoFAMessage({ type: 'error', text: data.error || 'Failed to generate QR code' });
+            }
         } catch (error) {
+            setTwoFAMessage({ type: 'error', text: 'An error occurred. Please try again.' });
+        } finally {
             setTwoFALoading(false);
         }
+    };
+
+    const handleVerifyCode = async () => {
+        if (!verificationCode || verificationCode.length !== 6) {
+            setTwoFAMessage({ type: 'error', text: 'Please enter a valid 6-digit code.' });
+            return;
+        }
+
+        setTwoFALoading(true);
+        setTwoFAMessage(null);
+        try {
+            const response = await fetch(route('settings.2fa.enable'), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+                body: JSON.stringify({
+                    secret: twoFASecret,
+                    code: verificationCode,
+                }),
+            });
+            const data = await response.json();
+            console.log('2FA Enable Response:', data);
+            if (data.success) {
+                console.log('Backup codes received:', data.backup_codes);
+                setBackupCodes(data.backup_codes || []);
+                setTwoFAMessage({ type: 'success', text: data.message });
+                setTwoFAStep('complete');
+                // Set enabled after moving to complete step so the UI displays correctly
+                setTimeout(() => setTwoFAEnabled(true), 0);
+            } else {
+                console.log('Verification failed:', data.error);
+                setTwoFAMessage({ type: 'error', text: data.error || 'Invalid verification code.' });
+            }
+        } catch (error) {
+            console.error('2FA Enable Error:', error);
+            setTwoFAMessage({ type: 'error', text: 'An error occurred. Please try again.' });
+        } finally {
+            setTwoFALoading(false);
+        }
+    };
+
+    const handleDisable2FA = async () => {
+        if (!window.confirm('Are you sure you want to disable 2FA? Your account will be less secure.')) {
+            return;
+        }
+
+        setTwoFALoading(true);
+        setTwoFAMessage(null);
+        try {
+            const response = await fetch(route('settings.2fa.disable'), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+            });
+            const data = await response.json();
+            if (data.success) {
+                setTwoFAEnabled(false);
+                setTwoFAStep('setup');
+                setQrCodeUrl('');
+                setTwoFASecret('');
+                setVerificationCode('');
+                setBackupCodes([]);
+                setBackupCodesCount(0);
+                setTwoFAMessage({ type: 'success', text: data.message });
+            } else {
+                setTwoFAMessage({ type: 'error', text: data.error || 'Failed to disable 2FA.' });
+            }
+        } catch (error) {
+            setTwoFAMessage({ type: 'error', text: 'An error occurred. Please try again.' });
+        } finally {
+            setTwoFALoading(false);
+        }
+    };
+
+    const handleCopyBackupCode = (code: string) => {
+        navigator.clipboard.writeText(code);
+    };
+
+    const handleDownloadBackupCodes = () => {
+        const content = `Two-Factor Authentication Backup Codes\n\nPlease save these codes in a safe place. Each code can only be used once.\n\n${backupCodes.join('\n')}\n\nGenerated on: ${new Date().toLocaleString()}`;
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = '2fa-backup-codes.txt';
+        a.click();
+        window.URL.revokeObjectURL(url);
     };
 
     const handleDeleteAccount = () => {
@@ -723,32 +852,189 @@ export default function AccountSettings() {
                         </div>
 
                         <div className="settings-section-body">
-                            <div className="settings-toggle-group">
-                                <div className="settings-toggle-info">
-                                    <h3 className="settings-toggle-title">Enable Two-Factor Authentication</h3>
-                                    <p className="settings-toggle-description">
-                                        Require a code from your phone when signing in. We'll use an authenticator app like Google Authenticator.
-                                    </p>
-                                </div>
-                                <label className="settings-switch">
-                                    <input
-                                        type="checkbox"
-                                        checked={twoFAEnabled}
-                                        onChange={handleToggle2FA}
-                                        disabled={twoFALoading}
-                                    />
-                                    <span className="settings-switch-slider"></span>
-                                </label>
-                            </div>
-
-                            {twoFAEnabled && (
-                                <div className="settings-alert settings-alert-info">
+                            {twoFAMessage && (
+                                <div className={`settings-alert settings-alert-${twoFAMessage.type}`}>
                                     <div className="settings-alert-icon">
-                                        <Shield size={20} />
+                                        {twoFAMessage.type === 'success' ? <Check size={20} /> : <AlertTriangle size={20} />}
                                     </div>
                                     <div className="settings-alert-content">
-                                        <p className="settings-alert-title">2FA is enabled</p>
-                                        <p className="settings-alert-message">Your account is protected with two-factor authentication</p>
+                                        <p className="settings-alert-message">{twoFAMessage.text}</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {!twoFAEnabled && twoFAStep === 'setup' && (
+                                <div>
+                                    <div className="settings-toggle-group">
+                                        <div className="settings-toggle-info">
+                                            <h3 className="settings-toggle-title">Enable Two-Factor Authentication</h3>
+                                            <p className="settings-toggle-description">
+                                                Require a code from your phone when signing in. We'll use an authenticator app like Google Authenticator, Microsoft Authenticator, or Authy.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="settings-button-group pt-4">
+                                        <button
+                                            onClick={handleGenerateQRCode}
+                                            disabled={twoFALoading}
+                                            className="settings-btn settings-btn-primary"
+                                        >
+                                            {twoFALoading ? 'Generating...' : 'Set Up 2FA'}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {!twoFAEnabled && twoFAStep === 'verify' && (
+                                <div>
+                                    <div style={{ display: 'flex', gap: '3rem', marginBottom: '2rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                                        {/* Step 1: QR Code */}
+                                        <div style={{ flex: 1, minWidth: '300px' }}>
+                                            <h3 style={{ color: '#FFFFFF', fontSize: '1.1rem', fontWeight: 700, marginBottom: '1rem' }}>Step 1: Scan QR Code</h3>
+                                            <p style={{ color: '#B0B0B0', marginBottom: '1rem' }}>Scan this QR code with your authenticator app:</p>
+                                            {qrCodeUrl && (
+                                                <img src={qrCodeUrl} alt="2FA QR Code" style={{ maxWidth: '200px', border: '1px solid #0052E8', borderRadius: '8px', padding: '0.5rem', background: '#FFFFFF' }} />
+                                            )}
+                                            <p style={{ color: '#B0B0B0', fontSize: '0.9rem', marginTop: '1rem' }}>Or enter this key manually: <code style={{ color: '#87CEEB', fontFamily: 'monospace' }}>{twoFASecret}</code></p>
+                                        </div>
+
+                                        {/* Step 2: Verify Code */}
+                                        <div style={{ flex: 1, minWidth: '300px' }}>
+                                            <h3 style={{ color: '#FFFFFF', fontSize: '1.1rem', fontWeight: 700, marginBottom: '1rem' }}>Step 2: Verify Code</h3>
+                                            <p style={{ color: '#B0B0B0', marginBottom: '1rem' }}>Enter the 6-digit code from your authenticator app:</p>
+                                            <input
+                                                type="text"
+                                                maxLength={6}
+                                                placeholder="000000"
+                                                value={verificationCode}
+                                                onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
+                                                className="settings-input"
+                                                style={{ maxWidth: '150px', textAlign: 'center', fontSize: '1.5rem', letterSpacing: '0.25rem' }}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="settings-button-group">
+                                        <button
+                                            onClick={handleVerifyCode}
+                                            disabled={twoFALoading || verificationCode.length !== 6}
+                                            className="settings-btn settings-btn-primary"
+                                        >
+                                            {twoFALoading ? 'Verifying...' : 'Verify & Enable'}
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setTwoFAStep('setup');
+                                                setQrCodeUrl('');
+                                                setTwoFASecret('');
+                                                setVerificationCode('');
+                                                setTwoFAMessage(null);
+                                            }}
+                                            className="settings-btn settings-btn-secondary"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {twoFAStep === 'complete' && (
+                                <div>
+                                    <div className="settings-alert settings-alert-success" style={{ marginBottom: '2rem' }}>
+                                        <div className="settings-alert-icon">
+                                            <Check size={20} />
+                                        </div>
+                                        <div className="settings-alert-content">
+                                            <p className="settings-alert-title">2FA Enabled Successfully!</p>
+                                            <p className="settings-alert-message">Your account is now protected with two-factor authentication.</p>
+                                        </div>
+                                    </div>
+
+                                    <div style={{ marginBottom: '2rem' }}>
+                                        <h3 style={{ color: '#FFFFFF', fontSize: '1.1rem', fontWeight: 700, marginBottom: '1rem' }}>Backup Codes</h3>
+                                        <p style={{ color: '#B0B0B0', marginBottom: '1rem' }}>Save these backup codes in a safe place. You can use them to access your account if you lose access to your authenticator app.</p>
+                                        <div style={{
+                                            background: 'rgba(240, 249, 255, 0.05)',
+                                            border: '1px solid rgba(0, 82, 232, 0.2)',
+                                            borderRadius: '10px',
+                                            padding: '1rem',
+                                            marginBottom: '1rem',
+                                            fontFamily: 'monospace',
+                                            color: '#87CEEB',
+                                        }}>
+                                            {backupCodes.map((code, index) => (
+                                                <div key={index} style={{
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center',
+                                                    padding: '0.5rem 0',
+                                                    borderBottom: index < backupCodes.length - 1 ? '1px solid rgba(0, 82, 232, 0.1)' : 'none',
+                                                }}>
+                                                    <span>{code}</span>
+                                                    <button
+                                                        onClick={() => handleCopyBackupCode(code)}
+                                                        style={{
+                                                            background: 'rgba(0, 82, 232, 0.2)',
+                                                            border: 'none',
+                                                            borderRadius: '4px',
+                                                            padding: '0.4rem 0.8rem',
+                                                            color: '#87CEEB',
+                                                            cursor: 'pointer',
+                                                            fontSize: '0.8rem',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '0.25rem',
+                                                        }}
+                                                        title="Copy code"
+                                                    >
+                                                        <Copy size={14} />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="settings-button-group">
+                                        <button
+                                            onClick={handleDownloadBackupCodes}
+                                            className="settings-btn settings-btn-secondary"
+                                        >
+                                            <Download size={18} className="me-2" style={{ display: 'inline' }} />
+                                            Download Codes
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setTwoFAStep('setup');
+                                                setTwoFAMessage(null);
+                                            }}
+                                            className="settings-btn settings-btn-primary"
+                                        >
+                                            Done
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {twoFAEnabled && (
+                                <div>
+                                    <div className="settings-alert settings-alert-success" style={{ marginBottom: '2rem' }}>
+                                        <div className="settings-alert-icon">
+                                            <Check size={20} />
+                                        </div>
+                                        <div className="settings-alert-content">
+                                            <p className="settings-alert-title">2FA is Enabled</p>
+                                            <p className="settings-alert-message">Your account is protected with two-factor authentication. You have {backupCodesCount} backup codes remaining.</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="settings-button-group">
+                                        <button
+                                            onClick={handleDisable2FA}
+                                            disabled={twoFALoading}
+                                            className="settings-btn settings-btn-danger"
+                                        >
+                                            {twoFALoading ? 'Disabling...' : 'Disable 2FA'}
+                                        </button>
                                     </div>
                                 </div>
                             )}

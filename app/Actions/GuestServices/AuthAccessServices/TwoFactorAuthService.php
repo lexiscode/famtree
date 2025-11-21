@@ -22,13 +22,21 @@ class TwoFactorAuthService
     {
         $secret = $this->ga->generateSecret();
 
-        // Generate QR code URL
-        $qrCodeUrl = $this->ga->getQRCodeGoogleUrl(
-            config('app.name'),
-            $user->email,
+        // Build the correct otpauth URI format
+        $appName = config('app.name');
+        $email = $user->email;
+
+        // Format: otpauth://totp/AppName:email@domain.com?secret=SECRET&issuer=AppName
+        $otpauthUri = sprintf(
+            'otpauth://totp/%s:%s?secret=%s&issuer=%s',
+            urlencode($appName),
+            urlencode($email),
             $secret,
-            200
+            urlencode($appName)
         );
+
+        // Generate QR code from the URI using QR server API
+        $qrCodeUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' . urlencode($otpauthUri) . '&ecc=M';
 
         return [
             'secret' => $secret,

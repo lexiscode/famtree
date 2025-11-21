@@ -38,6 +38,9 @@ class User extends Authenticatable
         'is_child_account',
         'created_by_user_id',
         'onboarding_completed',
+        'two_fa_enabled',
+        'two_fa_secret',
+        'two_fa_backup_codes',
     ];
 
     /**
@@ -48,6 +51,8 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'two_fa_secret',
+        'two_fa_backup_codes',
     ];
 
     /**
@@ -62,6 +67,7 @@ class User extends Authenticatable
         'death_date' => 'date',
         'is_child_account' => 'boolean',
         'onboarding_completed' => 'boolean',
+        'two_fa_enabled' => 'boolean',
     ];
 
     /**

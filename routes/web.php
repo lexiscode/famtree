@@ -60,6 +60,12 @@ Route::middleware(['web', 'guest'])->group(function () {
     Route::post('/login', [AuthController::class, 'login'])->name('auth.login');
 });
 
+// 2FA verification routes (accessible without full authentication)
+Route::middleware(['web'])->group(function () {
+    Route::get('/auth/2fa-verify', [AuthController::class, 'show2FAVerify'])->name('auth.2fa-verify');
+    Route::post('/auth/verify-2fa', [AuthController::class, 'verify2FA'])->name('auth.verify-2fa');
+});
+
 
 /*
 |--------------------------------------------------------------------------
