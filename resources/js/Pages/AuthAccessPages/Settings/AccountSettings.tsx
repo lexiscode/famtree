@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Lock, Mail, Shield, Trash2, Eye, EyeOff, Check, AlertTriangle, Users, Plus, User } from 'lucide-react';
 import { usePage, router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
@@ -15,6 +15,8 @@ interface User {
     address?: string | null;
     bio?: string | null;
     profile_image_url?: string | null;
+    job_title?: string | null;
+    education_level?: string | null;
 }
 
 interface SharedProps {
@@ -42,6 +44,21 @@ export default function AccountSettings() {
 
     const userAge = getAge(user?.date_of_birth);
     const canManageChildAccounts = userAge !== null && userAge >= 18;
+
+    // Initialize profile form state
+    const initializeProfileForm = () => {
+        if (user) {
+            setProfileForm({
+                phone: user.phone || '',
+                address: user.address || '',
+                bio: user.bio || '',
+                date_of_birth: user.date_of_birth || '',
+                job_title: user.job_title || '',
+                education_level: user.education_level || '',
+            });
+            setProfileImagePreview(user.profile_image_url || '');
+        }
+    };
 
     // Password state
     const [passwords, setPasswords] = useState({
@@ -72,19 +89,24 @@ export default function AccountSettings() {
     const [deletePassword, setDeletePassword] = useState('');
     const [deleteLoading, setDeleteLoading] = useState(false);
 
-    // Profile information state
+    // Profile information state - initialize with empty values, populate in useEffect
     const [profileForm, setProfileForm] = useState({
-        phone: user?.phone || '',
-        address: user?.address || '',
-        bio: user?.bio || '',
-        date_of_birth: user?.date_of_birth || '',
-        job_title: user?.job_title || '',
-        education_level: user?.education_level || '',
+        phone: '',
+        address: '',
+        bio: '',
+        date_of_birth: '',
+        job_title: '',
+        education_level: '',
     });
     const [profileImage, setProfileImage] = useState<File | null>(null);
-    const [profileImagePreview, setProfileImagePreview] = useState<string>(user?.profile_image_url || '');
+    const [profileImagePreview, setProfileImagePreview] = useState<string>('');
     const [profileLoading, setProfileLoading] = useState(false);
     const [profileMessage, setProfileMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+    // Initialize profile form with user data on component mount
+    useEffect(() => {
+        initializeProfileForm();
+    }, [user?.id]);
 
     const handlePasswordChange = (e: React.FormEvent) => {
         e.preventDefault();

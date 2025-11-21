@@ -48,18 +48,29 @@ class HandleInertiaRequests extends Middleware
             }
         }
 
+        $userData = null;
+        if ($user) {
+            $userData = [
+                'id' => $user->id,
+                'first_name' => $user->first_name,
+                'last_name' => $user->last_name,
+                'username' => $user->username,
+                'email' => $user->email,
+                'date_of_birth' => $user->date_of_birth,
+                'phone' => $user->phone,
+                'address' => $user->address,
+                'bio' => $user->bio,
+                'profile_image_url' => $user->profile_image_url,
+                'job_title' => $user->familyInfo?->current_occupation,
+                'education_level' => $user->familyInfo?->education_level,
+            ];
+        }
+
         return [
             ...parent::share($request),
             'auth' => [
                 'admin' => auth()->guard('admin')->user(),
-                'user' => $user ? [
-                    'id' => $user->id,
-                    'first_name' => $user->first_name,
-                    'last_name' => $user->last_name,
-                    'username' => $user->username,
-                    'email' => $user->email,
-                    'date_of_birth' => $user->date_of_birth,
-                ] : null,
+                'user' => $userData,
             ],
             'progress' => $progress,
             'flash' => [
