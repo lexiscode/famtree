@@ -47,12 +47,13 @@ class ChildAccountService
         // Create child account
         $childAccount = $this->childAccountRepository->createChildAccount($accountData);
 
-        // Auto-create connection: parent → child (can be updated later in profile settings)
-        // The relationship type can be set based on parent and child genders
+        // Auto-create connection: parent → child based on parent and child genders
+        $relationshipType = $this->determineRelationshipType($parent->gender, $childAccount->gender);
+
         $this->connectionRepository->createConnection([
             'requester_user_id' => $parentId,
             'recipient_user_id' => $childAccount->id,
-            'relationship_type' => 'son', // Default, can be changed in profile settings
+            'relationship_type' => $relationshipType,
             'status' => 'accepted',
             'requested_at' => now(),
             'accepted_at' => now(),
@@ -245,5 +246,31 @@ class ChildAccountService
                 'username' => $parent->username,
             ] : null,
         ];
+    }
+
+    /**
+     * Determine the relationship type based on parent and child genders
+     * Parent perspective:
+     *   - Male parent → "father"
+     *   - Female parent → "mother"
+     * Child perspective:
+     *   - Male child → "son"
+     *   - Female child → "daughter"
+     */
+    private function determineRelationshipType(?string $parentGender, ?string $childGender): string
+    {
+        // Default to "son" if either gender is missing
+        if (!$parentGender || !$childGender) {
+            return 'son';
+        }
+
+        // Determine based on child's gender (what the child is called from parent's perspective)
+        if ($childGender === 'male') {
+            return 'son';
+        } elseif ($childGender === 'female') {
+            return 'daughter';
+        }
+
+        return 'son'; // Default fallback
     }
 }

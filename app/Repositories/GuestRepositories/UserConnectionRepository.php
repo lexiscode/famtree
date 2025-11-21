@@ -334,7 +334,9 @@ class UserConnectionRepository
         }
 
         // If the viewer is the recipient, return the inverse relationship
-        return $this->getInverseRelationship($connection->relationship_type);
+        // Pass the requester's gender for context-aware inverse mapping
+        $requester = User::find($connection->requester_user_id);
+        return $this->getInverseRelationship($connection->relationship_type, $requester?->gender);
     }
 
     /**
@@ -342,10 +344,16 @@ class UserConnectionRepository
      * Maps relationships to their inverses (e.g., mother -> child, brother -> sister)
      *
      * @param string $relationshipType
+     * @param string|null $requesterGender The gender of the person who initiated the relationship
      * @return string The inverse relationship
      */
-    private function getInverseRelationship(string $relationshipType): string
+    private function getInverseRelationship(string $relationshipType, ?string $requesterGender = null): string
     {
+        // For son/daughter relationships, determine parent gender
+        if (($relationshipType === 'son' || $relationshipType === 'daughter') && $requesterGender) {
+            return $requesterGender === 'male' ? 'father' : 'mother';
+        }
+
         $inverseMap = [
             // Spousal relationships (bidirectional)
             'wife' => 'husband',
@@ -355,9 +363,9 @@ class UserConnectionRepository
             // Parent-child (non-bidirectional)
             'mother' => 'child',
             'father' => 'child',
-            'child' => 'mother', // Assuming we don't distinguish between mother/father in reverse
-            'son' => 'father', // or mother
-            'daughter' => 'mother', // or father
+            'child' => 'mother', // Default to mother if not specified
+            'son' => 'father', // Default to father if gender not available
+            'daughter' => 'mother', // Default to mother if gender not available
 
             // Sibling (bidirectional)
             'sibling' => 'sibling',
