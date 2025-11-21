@@ -105,10 +105,14 @@ class AccountService
         }
 
         if (!empty($familyData)) {
-            $familyInfo = $user->familyInfo() ?? new \App\Models\GuestModels\UserFamilyInfo();
-            if (!$familyInfo->user_id) {
-                $familyInfo->user_id = $user->id;
+            // Get the existing familyInfo or create a new instance
+            $familyInfo = $user->familyInfo;
+
+            if (!$familyInfo) {
+                // If no familyInfo exists, create a new one
+                $familyInfo = new \App\Models\GuestModels\UserFamilyInfo(['user_id' => $user->id]);
             }
+
             $familyInfo->update($familyData);
         }
     }
