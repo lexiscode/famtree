@@ -4,6 +4,7 @@ namespace App\Http\Controllers\GuestControllers\AuthAccessControllers;
 
 use App\Http\Controllers\Controller;
 use App\Actions\GuestServices\ProfilePrivacyService;
+use App\Actions\GuestServices\AuthAccessServices\UserBlockService;
 use App\Repositories\GuestRepositories\UserConnectionRepository;
 use App\Models\GuestModels\User;
 use Inertia\Inertia;
@@ -13,6 +14,7 @@ class ProfileController extends Controller
     public function __construct(
         private ProfilePrivacyService $privacyService,
         private UserConnectionRepository $connectionRepository,
+        private UserBlockService $blockService,
     ) {}
 
     /**
@@ -27,6 +29,16 @@ class ProfileController extends Controller
         }
 
         $owner = User::with('familyInfo')->findOrFail($userId);
+
+        // Check if viewer has blocked the owner
+        if ($this->blockService->hasBlocked($viewer, $owner->id)) {
+            return abort(403, 'You have blocked this user and cannot view their profile.');
+        }
+
+        // Check if owner has blocked the viewer
+        if ($this->blockService->isBlockedBy($viewer, $owner->id)) {
+            return abort(403, 'This user has blocked you and you cannot view their profile.');
+        }
 
         // Get visible profile data based on privacy settings
         $visibleData = $this->privacyService->getFormattedProfileData($viewer->id, $owner->id);

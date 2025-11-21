@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Eye, EyeOff, UserX, Flag, Lock, Check, AlertTriangle } from 'lucide-react';
 import { usePage, router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
@@ -60,26 +60,70 @@ export default function PrivacySettings() {
         }
 
         try {
-            setTimeout(() => {
-                setBlockedUsers([...blockedUsers, {
-                    id: Math.random(),
-                    name: blockUsername,
-                    username: blockUsername,
-                }]);
+            const response = await fetch(route('blocks.store'), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+                body: JSON.stringify({ username: blockUsername }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                setSaveMessage({ type: 'error', text: data.error || 'Failed to block user.' });
+            } else {
+                setSaveMessage({ type: 'success', text: data.message });
                 setBlockUsername('');
-                setSaveMessage({ type: 'success', text: `@${blockUsername} has been blocked` });
-                setBlockLoading(false);
-            }, 800);
+                // Refresh the blocked users list
+                await fetchBlockedUsers();
+            }
         } catch (error) {
-            setSaveMessage({ type: 'error', text: 'Failed to block user' });
+            setSaveMessage({ type: 'error', text: 'An error occurred while blocking the user.' });
+        } finally {
             setBlockLoading(false);
         }
     };
 
-    const handleUnblockUser = (userId: number) => {
-        setBlockedUsers(blockedUsers.filter(u => u.id !== userId));
-        setSaveMessage({ type: 'success', text: 'User has been unblocked' });
+    const handleUnblockUser = async (userId: number) => {
+        try {
+            const response = await fetch(route('blocks.destroy', { blockedUserId: userId }), {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                setSaveMessage({ type: 'error', text: data.error || 'Failed to unblock user.' });
+            } else {
+                setSaveMessage({ type: 'success', text: data.message });
+                setBlockedUsers(blockedUsers.filter(u => u.id !== userId));
+            }
+        } catch (error) {
+            setSaveMessage({ type: 'error', text: 'An error occurred while unblocking the user.' });
+        }
     };
+
+    const fetchBlockedUsers = async () => {
+        try {
+            const response = await fetch(route('blocks.index'));
+            const data = await response.json();
+            if (data.success) {
+                setBlockedUsers(data.blocked_users);
+            }
+        } catch (error) {
+            console.error('Error fetching blocked users:', error);
+        }
+    };
+
+    useEffect(() => {
+        fetchBlockedUsers();
+    }, []);
 
     const handleSavePrivacySettings = async () => {
         setSaveLoading(true);
@@ -280,7 +324,7 @@ export default function PrivacySettings() {
                                     <input
                                         type="text"
                                         className="settings-input"
-                                        placeholder="Enter username or email"
+                                        placeholder="Enter username"
                                         value={blockUsername}
                                         onChange={(e) => setBlockUsername(e.target.value)}
                                         style={{ flex: 1 }}
@@ -324,9 +368,23 @@ export default function PrivacySettings() {
                                                     borderRadius: '10px',
                                                 }}
                                             >
-                                                <div>
-                                                    <p style={{ margin: 0, fontWeight: 700, color: '#1a1a1a' }}>{user.name}</p>
-                                                    <p style={{ margin: '0.25rem 0 0', fontSize: '0.85rem', color: '#6C757D' }}>@{user.username}</p>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                                    {user.profile_image_url && (
+                                                        <img
+                                                            src={user.profile_image_url}
+                                                            alt={user.full_name}
+                                                            style={{
+                                                                width: '40px',
+                                                                height: '40px',
+                                                                borderRadius: '50%',
+                                                                objectFit: 'cover',
+                                                            }}
+                                                        />
+                                                    )}
+                                                    <div>
+                                                        <p style={{ margin: 0, fontWeight: 700, color: '#1a1a1a' }}>{user.full_name}</p>
+                                                        <p style={{ margin: '0.25rem 0 0', fontSize: '0.85rem', color: '#6C757D' }}>@{user.username}</p>
+                                                    </div>
                                                 </div>
                                                 <button
                                                     onClick={() => handleUnblockUser(user.id)}

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\GuestControllers\AuthAccessControllers;
 
 use App\Http\Controllers\Controller;
 use App\Actions\GuestServices\UserConnectionService;
+use App\Actions\GuestServices\AuthAccessServices\UserBlockService;
 use App\Repositories\GuestRepositories\UserConnectionRepository;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -12,7 +13,8 @@ class ConnectionRequestController extends Controller
 {
     public function __construct(
         private UserConnectionService $connectionService,
-        private UserConnectionRepository $connectionRepository
+        private UserConnectionRepository $connectionRepository,
+        private UserBlockService $blockService
     ) {
     }
 
@@ -189,6 +191,7 @@ class ConnectionRequestController extends Controller
     public function store(Request $request)
     {
         $userId = $request->user()->id;
+        $user = $request->user();
 
         $validated = $request->validate([
             'recipient_id' => 'required|integer|exists:users,id',
@@ -196,9 +199,27 @@ class ConnectionRequestController extends Controller
         ]);
 
         try {
+            $recipientId = $validated['recipient_id'];
+
+            // Check if requester has blocked the recipient
+            if ($this->blockService->hasBlocked($user, $recipientId)) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'You have blocked this user and cannot send them a connection request.',
+                ], 403);
+            }
+
+            // Check if recipient has blocked the requester
+            if ($this->blockService->isBlockedBy($user, $recipientId)) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'This user has blocked you. You cannot send them a connection request.',
+                ], 403);
+            }
+
             $result = $this->connectionService->sendConnectionRequest(
                 $userId,
-                $validated['recipient_id'],
+                $recipientId,
                 $validated['relationship_type']
             );
 

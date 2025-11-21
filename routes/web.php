@@ -20,6 +20,7 @@ use App\Http\Controllers\GuestControllers\AuthAccessControllers\GalleryControlle
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\AccountSettingsController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\PostController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\UserReportController;
+use App\Http\Controllers\GuestControllers\AuthAccessControllers\UserBlockController;
 use App\Http\Controllers\GuestControllers\OnboardingController;
 use App\Http\Controllers\GuestControllers\StatusController;
 use App\Http\Controllers\GuestControllers\NotificationController;
@@ -206,5 +207,12 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::prefix('reports')->group(function () {
         Route::post('/users', [UserReportController::class, 'store'])->name('reports.store');
         Route::get('/my-reports', [UserReportController::class, 'myReports'])->name('reports.my-reports');
+    });
+
+    // User Block routes
+    Route::prefix('blocks')->group(function () {
+        Route::get('/', [UserBlockController::class, 'index'])->name('blocks.index');
+        Route::post('/users', [UserBlockController::class, 'store'])->name('blocks.store');
+        Route::delete('/users/{blockedUserId}', [UserBlockController::class, 'destroy'])->name('blocks.destroy');
     });
 });
