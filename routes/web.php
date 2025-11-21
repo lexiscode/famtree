@@ -157,6 +157,7 @@ Route::middleware(['web', 'auth'])->group(function () {
     // Gallery routes
     Route::prefix('galleries')->group(function () {
         Route::get('/', [GalleryController::class, 'index'])->name('galleries.index');
+        Route::get('/user/{userId}', [GalleryController::class, 'viewUser'])->name('galleries.view-user');
         Route::post('/', [GalleryController::class, 'store'])->name('galleries.store');
         Route::delete('/{galleryId}', [GalleryController::class, 'destroy'])->name('galleries.destroy');
     });

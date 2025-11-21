@@ -196,7 +196,7 @@ export default function ViewProfile({
                                 <div className="profile-actions" style={{ marginTop: '2rem', gap: '0.75rem' }}>
                                     <button
                                         className="profile-btn profile-btn-primary"
-                                        onClick={() => router.visit(`/galleries?user=${profile.id}`)}
+                                        onClick={() => router.visit(route('galleries.view-user', profile.id))}
                                         style={{ width: '100%' }}
                                     >
                                         <Image size={18} />
@@ -212,11 +212,11 @@ export default function ViewProfile({
                                     </button>
                                     <button
                                         className="profile-btn profile-btn-secondary"
-                                        onClick={() => router.visit(route('profile.index'))}
+                                        onClick={() => router.visit(`/connections`)}
                                         style={{ width: '100%' }}
                                     >
                                         <ArrowLeft size={18} />
-                                        Return to My Profile
+                                        Return to Back
                                     </button>
                                 </div>
                             </div>

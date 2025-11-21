@@ -4,6 +4,7 @@ namespace App\Http\Controllers\GuestControllers\AuthAccessControllers;
 
 use App\Http\Controllers\Controller;
 use App\Actions\GuestServices\AuthAccessServices\GalleryService;
+use App\Models\GuestModels\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -28,6 +29,28 @@ class GalleryController extends Controller
             'current_page' => $galleries['current_page'],
             'last_page' => $galleries['last_page'],
             'count' => $galleries['count'],
+        ]);
+    }
+
+    /**
+     * View another user's galleries
+     */
+    public function viewUser(Request $request, int $userId)
+    {
+        $viewer = $request->user();
+
+        // Check if users are connected
+        $targetUser = User::findOrFail($userId);
+
+        $galleries = $this->galleryService->getFormattedGalleries($userId);
+        $userName = trim(($targetUser->first_name ?? '') . ' ' . ($targetUser->last_name ?? ''));
+
+        return Inertia::render('GuestPages/AuthAccessPages/Galleries/ViewUser', [
+            'galleries' => $galleries['items'],
+            'total' => $galleries['total'],
+            'count' => $galleries['count'],
+            'userName' => $userName,
+            'userId' => $userId,
         ]);
     }
 
