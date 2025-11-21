@@ -50,6 +50,9 @@ class HandleInertiaRequests extends Middleware
 
         $userData = null;
         if ($user) {
+            // Eagerly load familyInfo relationship to access education_level and current_occupation
+            $user->load('familyInfo');
+
             $userData = [
                 'id' => $user->id,
                 'first_name' => $user->first_name,
