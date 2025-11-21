@@ -363,8 +363,7 @@ export default function ViewProfile({
 
                             {/* Privacy Notice Info Box */}
                             <div className="profile-info-box">
-                                <strong>🔒 Privacy Notice:</strong> Fields marked with <strong>🔒</strong> are hidden based on {profile.name}'s privacy settings.
-                                Your access level is <strong>{getAccessLevelLabel()}</strong>.
+                                <strong>🔒 Privacy Notice:</strong> Fields marked with <strong>🔒</strong> are hidden based on {profile.name}'s privacy settings. Your access level is <strong>{getAccessLevelLabel()}</strong>.
                             </div>
                         </div>
                     </div>
