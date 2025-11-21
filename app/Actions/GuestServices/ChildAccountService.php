@@ -47,8 +47,8 @@ class ChildAccountService
         // Create child account
         $childAccount = $this->childAccountRepository->createChildAccount($accountData);
 
-        // Auto-create connection: parent → child (default as "father" - can be updated later)
-        // Note: In future, ask parent to specify relationship type during creation
+        // Auto-create connection: parent → child (can be updated later in profile settings)
+        // The relationship type can be set based on parent and child genders
         $this->connectionRepository->createConnection([
             'requester_user_id' => $parentId,
             'recipient_user_id' => $childAccount->id,
