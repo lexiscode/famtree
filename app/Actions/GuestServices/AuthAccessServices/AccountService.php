@@ -54,4 +54,48 @@ class AccountService
 
         $user->restore();
     }
+
+    /**
+     * Update user profile information
+     */
+    public function updateProfile(User $user, array $data): void
+    {
+        // Fields that belong to the users table
+        $userFields = [
+            'phone',
+            'address',
+            'bio',
+            'date_of_birth',
+            'profile_image_url',
+        ];
+
+        $userData = [];
+        foreach ($userFields as $field) {
+            if (array_key_exists($field, $data)) {
+                $userData[$field] = $data[$field];
+            }
+        }
+
+        if (!empty($userData)) {
+            $user->update($userData);
+        }
+
+        // Fields that belong to the user_family_info table
+        $familyInfoFields = ['job_title' => 'current_occupation', 'education_level' => 'education_level'];
+        $familyData = [];
+
+        foreach ($familyInfoFields as $inputField => $dbField) {
+            if (array_key_exists($inputField, $data)) {
+                $familyData[$dbField] = $data[$inputField];
+            }
+        }
+
+        if (!empty($familyData)) {
+            $familyInfo = $user->familyInfo() ?? new \App\Models\GuestModels\UserFamilyInfo();
+            if (!$familyInfo->user_id) {
+                $familyInfo->user_id = $user->id;
+            }
+            $familyInfo->update($familyData);
+        }
+    }
 }

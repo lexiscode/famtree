@@ -192,6 +192,7 @@ Route::middleware(['web', 'auth'])->group(function () {
 
         Route::post('/account/change-password', [AccountSettingsController::class, 'changePassword'])->name('settings.change-password');
         Route::post('/account/change-email', [AccountSettingsController::class, 'changeEmail'])->name('settings.change-email');
+        Route::post('/account/update-profile', [AccountSettingsController::class, 'updateProfile'])->name('settings.update-profile');
         Route::post('/account/delete', [AccountSettingsController::class, 'deleteAccount'])->name('settings.delete-account');
 
         Route::get('/privacy', function () {

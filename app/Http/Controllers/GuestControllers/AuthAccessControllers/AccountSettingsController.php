@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\GuestRequests\AuthAccessRequests\ChangePasswordRequest;
 use App\Http\Requests\GuestRequests\AuthAccessRequests\ChangeEmailRequest;
 use App\Http\Requests\GuestRequests\AuthAccessRequests\DeleteAccountRequest;
+use App\Http\Requests\GuestRequests\AuthAccessRequests\UpdateProfileRequest;
 use App\Actions\GuestServices\AuthAccessServices\AccountService;
 use Illuminate\Support\Facades\Auth;
 
@@ -54,5 +55,18 @@ class AccountSettingsController extends Controller
         Auth::logout();
 
         return redirect()->route('home')->with('success', 'Your account has been scheduled for deletion. You have 30 days to log back in to restore it.');
+    }
+
+    /**
+     * Update the authenticated user's profile information
+     */
+    public function updateProfile(UpdateProfileRequest $request)
+    {
+        $user = auth()->user();
+        $validated = $request->validated();
+
+        $this->accountService->updateProfile($user, $validated);
+
+        return back()->with('success', 'Profile information updated successfully.');
     }
 }

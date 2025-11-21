@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Lock, Mail, Shield, Trash2, Eye, EyeOff, Check, AlertTriangle, Users, Plus } from 'lucide-react';
+import { Lock, Mail, Shield, Trash2, Eye, EyeOff, Check, AlertTriangle, Users, Plus, User } from 'lucide-react';
 import { usePage, router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
 import SettingsSidebar from '@/Components/Settings/SettingsSidebar';
@@ -11,6 +11,10 @@ interface User {
     last_name: string;
     username: string;
     date_of_birth?: string | null;
+    phone?: string | null;
+    address?: string | null;
+    bio?: string | null;
+    profile_image_url?: string | null;
 }
 
 interface SharedProps {
@@ -67,6 +71,19 @@ export default function AccountSettings() {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deletePassword, setDeletePassword] = useState('');
     const [deleteLoading, setDeleteLoading] = useState(false);
+
+    // Profile information state
+    const [profileForm, setProfileForm] = useState({
+        phone: user?.phone || '',
+        address: user?.address || '',
+        bio: user?.bio || '',
+        date_of_birth: user?.date_of_birth || '',
+        job_title: user?.job_title || '',
+        education_level: user?.education_level || '',
+        profile_image_url: user?.profile_image_url || '',
+    });
+    const [profileLoading, setProfileLoading] = useState(false);
+    const [profileMessage, setProfileMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
     const handlePasswordChange = (e: React.FormEvent) => {
         e.preventDefault();
@@ -147,6 +164,32 @@ export default function AccountSettings() {
         });
     };
 
+    const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        setProfileForm({
+            ...profileForm,
+            [name]: value,
+        });
+    };
+
+    const handleUpdateProfile = (e: React.FormEvent) => {
+        e.preventDefault();
+        setProfileLoading(true);
+        setProfileMessage(null);
+
+        router.post(route('settings.update-profile'), profileForm, {
+            onSuccess: () => {
+                setProfileLoading(false);
+                setProfileMessage({ type: 'success', text: 'Profile information updated successfully.' });
+            },
+            onError: (errors: Record<string, string>) => {
+                setProfileLoading(false);
+                const errorMessage = Object.values(errors)[0] || 'Failed to update profile';
+                setProfileMessage({ type: 'error', text: errorMessage });
+            },
+        });
+    };
+
     return (
         <AuthAccessLayout>
             <div className="settings-wrapper">
@@ -160,6 +203,162 @@ export default function AccountSettings() {
                             Account Settings
                         </h1>
                         <p className="settings-page-subtitle">Manage your account security and preferences</p>
+                    </div>
+
+                    {/* Change Profile Information Section */}
+                    <div className="settings-section">
+                        <div className="settings-section-header">
+                            <div className="settings-section-icon">
+                                <User size={24} />
+                            </div>
+                            <div className="settings-section-title-wrapper">
+                                <h2 className="settings-section-title">Profile Information</h2>
+                                <p className="settings-section-subtitle">Update your personal details and profile picture</p>
+                            </div>
+                        </div>
+
+                        <div className="settings-section-body">
+                            {profileMessage && (
+                                <div className={`settings-alert settings-alert-${profileMessage.type}`}>
+                                    <div className="settings-alert-icon">
+                                        {profileMessage.type === 'success' ? <Check size={20} /> : <AlertTriangle size={20} />}
+                                    </div>
+                                    <div className="settings-alert-content">
+                                        <p className="settings-alert-message">{profileMessage.text}</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Profile Picture */}
+                            <div className="settings-form-group" style={{ marginBottom: '2rem' }}>
+                                <label className="settings-label">Profile Picture</label>
+                                <div style={{ display: 'flex', gap: '2rem', alignItems: 'flex-start' }}>
+                                    <div style={{
+                                        flex: 1,
+                                    }}>
+                                        {profileForm.profile_image_url && (
+                                            <img
+                                                src={profileForm.profile_image_url}
+                                                alt="Profile"
+                                                style={{
+                                                    width: '120px',
+                                                    height: '120px',
+                                                    borderRadius: '50%',
+                                                    objectFit: 'cover',
+                                                    border: '3px solid #0052E8',
+                                                    marginBottom: '1rem',
+                                                }}
+                                            />
+                                        )}
+                                        <input
+                                            type="url"
+                                            name="profile_image_url"
+                                            className="settings-input"
+                                            placeholder="Enter profile image URL"
+                                            value={profileForm.profile_image_url}
+                                            onChange={handleProfileChange}
+                                        />
+                                        <p className="settings-form-hint">Paste the URL of your profile image</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <form onSubmit={handleUpdateProfile} className="settings-form-group-row">
+                                {/* Phone */}
+                                <div className="settings-form-group">
+                                    <label className="settings-label">Phone Number</label>
+                                    <input
+                                        type="tel"
+                                        name="phone"
+                                        className="settings-input"
+                                        placeholder="Enter your phone number"
+                                        value={profileForm.phone}
+                                        onChange={handleProfileChange}
+                                    />
+                                </div>
+
+                                {/* Address */}
+                                <div className="settings-form-group">
+                                    <label className="settings-label">Address</label>
+                                    <input
+                                        type="text"
+                                        name="address"
+                                        className="settings-input"
+                                        placeholder="Enter your address"
+                                        value={profileForm.address}
+                                        onChange={handleProfileChange}
+                                    />
+                                </div>
+
+                                {/* Date of Birth */}
+                                <div className="settings-form-group">
+                                    <label className="settings-label">Date of Birth</label>
+                                    <input
+                                        type="date"
+                                        name="date_of_birth"
+                                        className="settings-input"
+                                        value={profileForm.date_of_birth}
+                                        onChange={handleProfileChange}
+                                    />
+                                </div>
+
+                                {/* Job Title */}
+                                <div className="settings-form-group">
+                                    <label className="settings-label">Job Title</label>
+                                    <input
+                                        type="text"
+                                        name="job_title"
+                                        className="settings-input"
+                                        placeholder="Enter your job title"
+                                        value={profileForm.job_title}
+                                        onChange={handleProfileChange}
+                                    />
+                                </div>
+
+                                {/* Education Level */}
+                                <div className="settings-form-group">
+                                    <label className="settings-label">Education Level</label>
+                                    <select
+                                        name="education_level"
+                                        className="settings-select"
+                                        value={profileForm.education_level}
+                                        onChange={handleProfileChange}
+                                    >
+                                        <option value="">Select education level...</option>
+                                        <option value="High School">High School</option>
+                                        <option value="Associate">Associate Degree</option>
+                                        <option value="Bachelor">Bachelor's Degree</option>
+                                        <option value="Master">Master's Degree</option>
+                                        <option value="Doctorate">Doctorate</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+
+                                {/* Bio */}
+                                <div className="settings-form-group" style={{ gridColumn: '1 / -1' }}>
+                                    <label className="settings-label">Bio</label>
+                                    <textarea
+                                        name="bio"
+                                        className="settings-textarea"
+                                        placeholder="Tell us about yourself"
+                                        value={profileForm.bio}
+                                        onChange={handleProfileChange}
+                                        rows={4}
+                                    />
+                                    <p className="settings-form-hint">Maximum 500 characters</p>
+                                </div>
+                            </form>
+
+                            <div className="settings-button-group">
+                                <button
+                                    onClick={handleUpdateProfile}
+                                    disabled={profileLoading}
+                                    className="settings-btn settings-btn-primary"
+                                >
+                                    {profileLoading ? 'Updating...' : 'Save Profile Information'}
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Change Password Section */}
