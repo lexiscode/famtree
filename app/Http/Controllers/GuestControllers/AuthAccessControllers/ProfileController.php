@@ -70,7 +70,7 @@ class ProfileController extends Controller
         // Always show full name to connected users
         $visibleName = null;
         if ($visibleData['full_name']['visible'] || $relationshipContext === 'connected' || $relationshipContext === 'nuclear_family') {
-            $visibleName = $owner->name;
+            $visibleName = trim(($owner->first_name ?? '') . ' ' . ($owner->last_name ?? ''));
         }
 
         $profileData = [
@@ -116,14 +116,14 @@ class ProfileController extends Controller
             'mutualConnectionsCount' => count($mutualConnections),
             'mutualConnections' => $mutualConnections->take(5)->map(fn ($user) => [
                 'id' => $user->id,
-                'name' => $user->name,
+                'name' => trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')),
                 'username' => $user->username,
                 'profile_image_url' => $user->profile_image_url,
             ]),
             'nonMutualConnectionsCount' => $allOwnerConnections->count() - count($mutualConnections),
             'nonMutualConnections' => $nonMutualConnections->map(fn ($user) => [
                 'id' => $user->id,
-                'name' => $user->name,
+                'name' => trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')),
                 'username' => $user->username,
                 'profile_image_url' => $user->profile_image_url,
             ]),
