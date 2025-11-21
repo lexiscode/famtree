@@ -125,8 +125,15 @@ export default function SendRequest({
                     router.visit(route('connections.sent'));
                 }, 2000);
             } else {
-                const error = await response.json();
-                setError(error.errors?.connection?.[0] || error.errors?.parent?.[0] || 'Failed to send request');
+                const errorData = await response.json();
+                // Check for error message from server (for blocked users, validation errors, etc)
+                setError(
+                    errorData.error ||
+                    errorData.errors?.connection?.[0] ||
+                    errorData.errors?.parent?.[0] ||
+                    errorData.errors?.relationship_type?.[0] ||
+                    'Failed to send connection request'
+                );
             }
         } catch (err) {
             console.error('Error sending request:', err);

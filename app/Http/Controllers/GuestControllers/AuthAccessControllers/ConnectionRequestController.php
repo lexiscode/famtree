@@ -229,6 +229,11 @@ class ConnectionRequestController extends Controller
                 'success' => false,
                 'errors' => $e->errors(),
             ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+            ], 422);
         }
     }
 
