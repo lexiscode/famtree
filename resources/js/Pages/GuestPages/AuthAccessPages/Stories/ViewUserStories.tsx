@@ -4,7 +4,7 @@ import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
 import { Search, Filter, ArrowLeft, Type, Mic } from 'lucide-react';
 import { Post, UserProfile } from '@/types';
 import PostCard from './PostCard';
-import ProfileSidebar from './ProfileSidebar';
+import UserProfileCard from './UserProfileCard';
 import EngagedPostsSidebar from './EngagedPostsSidebar';
 
 interface Props {
@@ -18,6 +18,12 @@ interface Props {
     pendingRequestCount: number;
     sentRequestCount: number;
     unreadNotificationCount: number;
+    mutualConnectionsCount?: number;
+    connectionStatus?: string | null;
+    relationshipType?: string | null;
+    pendingRequest?: { id: number; status: string } | null;
+    sentRequest?: { id: number; status: string } | null;
+    relationshipContext?: string;
 }
 
 export default function ViewUserStories({
@@ -31,6 +37,12 @@ export default function ViewUserStories({
     pendingRequestCount,
     sentRequestCount,
     unreadNotificationCount,
+    mutualConnectionsCount = 0,
+    connectionStatus = null,
+    relationshipType = null,
+    pendingRequest = null,
+    sentRequest = null,
+    relationshipContext = 'public',
 }: Props) {
     const [posts, setPosts] = useState<Post[]>(initialPosts);
     const [filter, setFilter] = useState<'all' | 'text' | 'voice'>('all');
@@ -75,15 +87,18 @@ export default function ViewUserStories({
         <AuthAccessLayout>
             <div className="stories-page">
                 <div className="stories-grid-layout">
-                    {/* Left Sidebar - Profile */}
+                    {/* Left Sidebar - User Profile Card */}
                     {user && (
                         <div className="stories-left-sidebar">
-                            <ProfileSidebar
+                            <UserProfileCard
                                 user={user}
-                                connectionCount={connectionCount}
-                                pendingRequestCount={pendingRequestCount}
-                                sentRequestCount={sentRequestCount}
-                                unreadNotificationCount={unreadNotificationCount}
+                                userId={userId}
+                                mutualConnectionsCount={mutualConnectionsCount}
+                                connectionStatus={connectionStatus}
+                                relationshipType={relationshipType}
+                                pendingRequest={pendingRequest}
+                                sentRequest={sentRequest}
+                                relationshipContext={relationshipContext}
                             />
                         </div>
                     )}

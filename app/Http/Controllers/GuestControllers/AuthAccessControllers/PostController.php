@@ -74,6 +74,7 @@ class PostController extends Controller
      */
     public function viewUser(int $userId)
     {
+        $viewer = auth()->user();
         $targetUser = \App\Models\GuestModels\User::findOrFail($userId)->load('familyInfo');
 
         // Format user data for display
@@ -105,6 +106,37 @@ class PostController extends Controller
         $pendingRequests = $this->connectionRepository->getPendingRequests($userId);
         $sentRequests = $this->connectionRepository->getSentRequests($userId);
 
+        // Get relationship context from the profile privacy service
+        $privacyService = new \App\Actions\GuestServices\ProfilePrivacyService(
+            new \App\Repositories\GuestRepositories\ProfilePrivacyRepository(),
+            $this->connectionRepository
+        );
+        $relationshipContext = $privacyService->getRelationshipContext($viewer->id, $userId);
+
+        // Check if connected and get relationship type
+        $connectionStatus = null;
+        $relationshipType = null;
+        if ($relationshipContext === 'connected' || $relationshipContext === 'nuclear_family') {
+            $relationshipType = $this->connectionRepository->getRelationshipFromViewerPerspective($viewer->id, $userId);
+            if ($relationshipType) {
+                $connectionStatus = 'connected';
+            }
+        }
+
+        // Check for pending/sent requests
+        $pendingRequest = null;
+        $sentRequest = null;
+        if ($connectionStatus !== 'connected') {
+            $pendingRequest = $this->connectionRepository->getPendingRequestBetween($viewer->id, $userId);
+            $sentRequest = $this->connectionRepository->getSentRequestBetween($viewer->id, $userId);
+        }
+
+        // Get mutual connections
+        $mutualConnections = [];
+        if ($relationshipContext === 'connected' || $relationshipContext === 'nuclear_family') {
+            $mutualConnections = $this->connectionRepository->getMutualConnections($viewer->id, $userId);
+        }
+
         return Inertia::render('GuestPages/AuthAccessPages/Stories/ViewUserStories', [
             'user' => $userData,
             'userId' => $userId,
@@ -116,6 +148,18 @@ class PostController extends Controller
             'pendingRequestCount' => count($pendingRequests),
             'sentRequestCount' => count($sentRequests),
             'unreadNotificationCount' => 0,
+            'mutualConnectionsCount' => count($mutualConnections),
+            'connectionStatus' => $connectionStatus,
+            'relationshipType' => $relationshipType,
+            'pendingRequest' => $pendingRequest ? [
+                'id' => $pendingRequest->id,
+                'status' => $pendingRequest->status,
+            ] : null,
+            'sentRequest' => $sentRequest ? [
+                'id' => $sentRequest->id,
+                'status' => $sentRequest->status,
+            ] : null,
+            'relationshipContext' => $relationshipContext,
         ]);
     }
 
