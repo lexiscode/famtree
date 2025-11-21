@@ -48,7 +48,7 @@ export default function ViewUserGalleries({ galleries, count, userName, userId }
                     {/* Back Button */}
                     <button
                         className="back-button"
-                        onClick={() => router.back()}
+                        onClick={() => router.visit(route('profile.view', userId))}
                         title="Back to profile"
                     >
                         <ArrowLeft size={20} />
