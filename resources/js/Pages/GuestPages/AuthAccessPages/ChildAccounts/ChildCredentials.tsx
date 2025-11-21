@@ -177,7 +177,7 @@ export default function ChildCredentials({ child, temporaryPassword }: Props) {
                                     <div className="child-credentials-warning-title">Important:</div>
                                     <ul className="child-credentials-warning-list">
                                         <li>This temporary password can only be viewed once</li>
-                                        <li>If you lose it, you'll need to create a new account</li>
+                                        <li>If you lose it, you'll need to contact our support team</li>
                                         <li>Keep this information secure and private</li>
                                     </ul>
                                 </div>

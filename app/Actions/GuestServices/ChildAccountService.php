@@ -36,6 +36,7 @@ class ChildAccountService
             'last_name' => $childData['last_name'],
             'username' => $childData['username'],
             'gender' => $childData['gender'],
+            'date_of_birth' => $childData['date_of_birth'],
             'email' => null, // Will be set when child comes of age
             'password' => bcrypt($temporaryPassword),
             'parent_user_id' => $parentId,
