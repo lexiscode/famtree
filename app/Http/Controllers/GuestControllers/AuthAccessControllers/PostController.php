@@ -74,16 +74,48 @@ class PostController extends Controller
      */
     public function viewUser(int $userId)
     {
-        $targetUser = \App\Models\GuestModels\User::findOrFail($userId);
+        $targetUser = \App\Models\GuestModels\User::findOrFail($userId)->load('familyInfo');
+
+        // Format user data for display
+        $userData = [
+            'id' => $targetUser->id,
+            'first_name' => $targetUser->first_name,
+            'last_name' => $targetUser->last_name,
+            'name' => trim(($targetUser->first_name ?? '') . ' ' . ($targetUser->last_name ?? '')),
+            'username' => $targetUser->username,
+            'email' => $targetUser->email,
+            'phone' => $targetUser->phone,
+            'address' => $targetUser->address,
+            'bio' => $targetUser->bio,
+            'date_of_birth' => $targetUser->date_of_birth,
+            'profile_image_url' => $targetUser->profile_image_url,
+            'status' => $targetUser->status,
+            'job_title' => $targetUser->familyInfo?->current_occupation ?? null,
+            'education' => $targetUser->familyInfo?->education_level ?? null,
+            'created_at' => $targetUser->created_at,
+        ];
 
         $posts = $this->postService->getUserPosts($userId, 20);
-        $userName = trim(($targetUser->first_name ?? '') . ' ' . ($targetUser->last_name ?? ''));
+        $stats = $this->postService->getEngagementStats($userId);
+        $topPosts = $this->postService->getTopEngagedPosts($userId, 5);
+
+        // Get user connections
+        $connections = $this->connectionRepository->getConnections($userId);
+        $connectionCount = count($connections);
+        $pendingRequests = $this->connectionRepository->getPendingRequests($userId);
+        $sentRequests = $this->connectionRepository->getSentRequests($userId);
 
         return Inertia::render('GuestPages/AuthAccessPages/Stories/ViewUserStories', [
-            'userName' => $userName,
+            'user' => $userData,
             'userId' => $userId,
             'posts' => $posts,
             'postCount' => count($posts),
+            'stats' => $stats,
+            'topPosts' => $topPosts,
+            'connectionCount' => $connectionCount,
+            'pendingRequestCount' => count($pendingRequests),
+            'sentRequestCount' => count($sentRequests),
+            'unreadNotificationCount' => 0,
         ]);
     }
 

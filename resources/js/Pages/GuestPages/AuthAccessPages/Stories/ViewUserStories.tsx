@@ -2,17 +2,36 @@ import { useState, useMemo } from 'react';
 import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
 import { Search, Filter, ArrowLeft, Type, Mic } from 'lucide-react';
-import { Post } from '@/types';
+import { Post, UserProfile } from '@/types';
 import PostCard from './PostCard';
+import ProfileSidebar from './ProfileSidebar';
+import EngagedPostsSidebar from './EngagedPostsSidebar';
 
 interface Props {
-    userName: string;
+    user: UserProfile;
     userId: number;
     posts: Post[];
     postCount: number;
+    stats: any;
+    topPosts: Post[];
+    connectionCount: number;
+    pendingRequestCount: number;
+    sentRequestCount: number;
+    unreadNotificationCount: number;
 }
 
-export default function ViewUserStories({ userName, userId, posts: initialPosts, postCount }: Props) {
+export default function ViewUserStories({
+    user,
+    userId,
+    posts: initialPosts,
+    postCount,
+    stats,
+    topPosts,
+    connectionCount,
+    pendingRequestCount,
+    sentRequestCount,
+    unreadNotificationCount,
+}: Props) {
     const [posts, setPosts] = useState<Post[]>(initialPosts);
     const [filter, setFilter] = useState<'all' | 'text' | 'voice'>('all');
     const [searchQuery, setSearchQuery] = useState('');
@@ -56,8 +75,21 @@ export default function ViewUserStories({ userName, userId, posts: initialPosts,
         <AuthAccessLayout>
             <div className="stories-page">
                 <div className="stories-grid-layout">
+                    {/* Left Sidebar - Profile */}
+                    {user && (
+                        <div className="stories-left-sidebar">
+                            <ProfileSidebar
+                                user={user}
+                                connectionCount={connectionCount}
+                                pendingRequestCount={pendingRequestCount}
+                                sentRequestCount={sentRequestCount}
+                                unreadNotificationCount={unreadNotificationCount}
+                            />
+                        </div>
+                    )}
+
                     {/* Center Content - Stories */}
-                    <div className="stories-center-content" style={{ gridColumn: '1 / -1' }}>
+                    <div className="stories-center-content">
                         {/* Back Button */}
                         <button
                             className="back-button"
@@ -72,8 +104,8 @@ export default function ViewUserStories({ userName, userId, posts: initialPosts,
                         <div className="stories-header">
                             <div className="stories-title-section">
                                 <div>
-                                    <h1 className="stories-title">{userName}'s Stories</h1>
-                                    <p className="stories-subtitle">View posts shared by {userName}</p>
+                                    <h1 className="stories-title">{user.name}'s Stories</h1>
+                                    <p className="stories-subtitle">View posts shared by {user.name}</p>
                                 </div>
                             </div>
                         </div>
@@ -85,7 +117,7 @@ export default function ViewUserStories({ userName, userId, posts: initialPosts,
                                 <Search size={18} className="search-icon" />
                                 <input
                                     type="text"
-                                    placeholder={`Search ${userName}'s posts...`}
+                                    placeholder={`Search ${user.name}'s posts...`}
                                     value={searchQuery}
                                     onChange={(e) => handleSearch(e.target.value)}
                                     className="search-input"
@@ -137,10 +169,10 @@ export default function ViewUserStories({ userName, userId, posts: initialPosts,
                                         {searchQuery.trim()
                                             ? 'No posts found'
                                             : filter === 'voice'
-                                                ? `No voice posts from ${userName}`
+                                                ? `No voice posts from ${user.name}`
                                                 : filter === 'text'
-                                                    ? `No text posts from ${userName}`
-                                                    : `${userName} hasn't shared any stories yet`}
+                                                    ? `No text posts from ${user.name}`
+                                                    : `${user.name} hasn't shared any stories yet`}
                                     </h3>
                                     <p className="empty-message" style={{ color: '#9c9595ff', textAlign: 'center', width: '100%', margin: '0 auto 1rem auto', display: 'block' }}>
                                         {searchQuery.trim()
@@ -161,6 +193,14 @@ export default function ViewUserStories({ userName, userId, posts: initialPosts,
                                 </div>
                             )}
                         </div>
+                    </div>
+
+                    {/* Right Sidebar - Engagement Metrics */}
+                    <div className="stories-right-sidebar">
+                        <EngagedPostsSidebar
+                            stats={stats}
+                            topPosts={topPosts}
+                        />
                     </div>
                 </div>
             </div>
