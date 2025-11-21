@@ -419,12 +419,12 @@ export default function AccountSettings() {
                                         onChange={handleProfileChange}
                                     >
                                         <option value="">Select education level...</option>
-                                        <option value="High School">High School</option>
-                                        <option value="Associate">Associate Degree</option>
-                                        <option value="Bachelor">Bachelor's Degree</option>
-                                        <option value="Master">Master's Degree</option>
-                                        <option value="Doctorate">Doctorate</option>
-                                        <option value="Other">Other</option>
+                                        <option value="highschool">High School</option>
+                                        <option value="associate">Associate Degree</option>
+                                        <option value="bachelors">Bachelor's Degree</option>
+                                        <option value="masters">Master's Degree</option>
+                                        <option value="doctorate">Doctorate</option>
+                                        <option value="other">Other</option>
                                     </select>
                                 </div>
 
