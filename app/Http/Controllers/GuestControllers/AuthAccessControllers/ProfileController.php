@@ -57,13 +57,23 @@ class ProfileController extends Controller
         // Get mutual connections
         $mutualConnections = [];
         $nonMutualConnections = [];
+        $allOwnerConnections = collect([]);
+        $allOwnerConnectionUsers = collect([]);
+
         if ($relationshipContext === 'connected' || $relationshipContext === 'nuclear_family') {
             $mutualConnections = $this->connectionRepository->getMutualConnections($viewer->id, $owner->id);
             // Get all connections of the owner
             $allOwnerConnections = $this->connectionRepository->getConnections($owner->id);
+
+            // Extract actual user objects from connections
+            $allOwnerConnectionUsers = $allOwnerConnections->map(function ($connection) use ($owner) {
+                // Return the other user in the connection (not the owner)
+                return $connection->requester_user_id === $owner->id ? $connection->recipient : $connection->requester;
+            })->filter(); // Remove null values
+
             // Filter out mutual connections to get non-mutual ones
             $mutualIds = $mutualConnections->pluck('id')->toArray();
-            $nonMutualConnections = $allOwnerConnections->filter(fn ($conn) => !in_array($conn->id, $mutualIds))->take(5);
+            $nonMutualConnections = $allOwnerConnectionUsers->filter(fn ($user) => !in_array($user->id, $mutualIds))->take(5);
         }
 
         // Format profile data for frontend
@@ -120,7 +130,7 @@ class ProfileController extends Controller
                 'username' => $user->username,
                 'profile_image_url' => $user->profile_image_url,
             ]),
-            'nonMutualConnectionsCount' => $allOwnerConnections->count() - count($mutualConnections),
+            'nonMutualConnectionsCount' => $allOwnerConnectionUsers->count() - count($mutualConnections),
             'nonMutualConnections' => $nonMutualConnections->map(fn ($user) => [
                 'id' => $user->id,
                 'name' => trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')),
