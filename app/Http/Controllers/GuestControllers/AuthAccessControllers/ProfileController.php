@@ -56,8 +56,14 @@ class ProfileController extends Controller
 
         // Get mutual connections
         $mutualConnections = [];
+        $nonMutualConnections = [];
         if ($relationshipContext === 'connected' || $relationshipContext === 'nuclear_family') {
             $mutualConnections = $this->connectionRepository->getMutualConnections($viewer->id, $owner->id);
+            // Get all connections of the owner
+            $allOwnerConnections = $this->connectionRepository->getConnections($owner->id);
+            // Filter out mutual connections to get non-mutual ones
+            $mutualIds = $mutualConnections->pluck('id')->toArray();
+            $nonMutualConnections = $allOwnerConnections->filter(fn ($conn) => !in_array($conn->id, $mutualIds))->take(5);
         }
 
         // Format profile data for frontend
@@ -92,6 +98,7 @@ class ProfileController extends Controller
             'relationshipContext' => $relationshipContext,
             'connectionStatus' => $connectionStatus,
             'relationshipType' => $relationshipType,
+            'relationshipLabel' => $relationshipType ? ucfirst(str_replace('_', ' ', $relationshipType)) : null,
             'pendingRequest' => $pendingRequest ? [
                 'id' => $pendingRequest->id,
                 'status' => $pendingRequest->status,
@@ -102,6 +109,13 @@ class ProfileController extends Controller
             ] : null,
             'mutualConnectionsCount' => count($mutualConnections),
             'mutualConnections' => $mutualConnections->take(5)->map(fn ($user) => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'username' => $user->username,
+                'profile_image_url' => $user->profile_image_url,
+            ]),
+            'nonMutualConnectionsCount' => $allOwnerConnections->count() - count($mutualConnections),
+            'nonMutualConnections' => $nonMutualConnections->map(fn ($user) => [
                 'id' => $user->id,
                 'name' => $user->name,
                 'username' => $user->username,

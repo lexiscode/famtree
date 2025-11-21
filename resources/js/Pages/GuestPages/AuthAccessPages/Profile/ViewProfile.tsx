@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { Mail, Phone, MapPin, Cake, FileText, Users, Send, Clock, CheckCircle, Lock, Briefcase, BookOpen, ArrowRight } from 'lucide-react';
+import { Mail, Phone, MapPin, Cake, FileText, Users, Send, Clock, CheckCircle, Lock, Briefcase, BookOpen, ArrowRight, Image, Newspaper, Plus } from 'lucide-react';
 
 interface Profile {
     id: number;
@@ -30,10 +30,13 @@ interface Props {
     relationshipContext: string;
     connectionStatus: string | null;
     relationshipType: string | null;
+    relationshipLabel: string | null;
     pendingRequest: { id: number; status: string } | null;
     sentRequest: { id: number; status: string } | null;
     mutualConnectionsCount: number;
     mutualConnections: Array<{ id: number; name: string; username: string; profile_image_url: string }>;
+    nonMutualConnectionsCount: number;
+    nonMutualConnections: Array<{ id: number; name: string; username: string; profile_image_url: string }>;
 }
 
 export default function ViewProfile({
@@ -42,37 +45,56 @@ export default function ViewProfile({
     relationshipContext,
     connectionStatus,
     relationshipType,
+    relationshipLabel,
     pendingRequest,
     sentRequest,
     mutualConnectionsCount,
     mutualConnections,
+    nonMutualConnectionsCount,
+    nonMutualConnections,
 }: Props) {
+    const formatDateOfBirth = (dateString: string | null) => {
+        if (!dateString) return null;
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    };
+
     const fields = useMemo(() => [
         { key: 'email', label: 'Email', icon: Mail, value: profile.email },
         { key: 'phone', label: 'Phone', icon: Phone, value: profile.phone },
         { key: 'address', label: 'Address', icon: MapPin, value: profile.address },
-        { key: 'date_of_birth', label: 'Date of Birth', icon: Cake, value: profile.date_of_birth ? new Date(profile.date_of_birth).toLocaleDateString() : null },
+        { key: 'date_of_birth', label: 'Date of Birth', icon: Cake, value: formatDateOfBirth(profile.date_of_birth) },
         { key: 'bio', label: 'Bio', icon: FileText, value: profile.bio },
         { key: 'job_title', label: 'Job Title', icon: Briefcase, value: profile.job_title },
         { key: 'education', label: 'Education', icon: BookOpen, value: profile.education },
     ], [profile]);
 
-    const getRelationshipContextLabel = () => {
+    const getAccessLevelLabel = () => {
         return {
-            self: 'Your Profile',
-            nuclear_family: '👨‍👩‍👧 Nuclear Family',
-            connected: '🤝 Connected',
-            public: '👁️ Public Profile',
+            nuclear_family: 'Nuclear Family',
+            connected: 'Connected',
+            public: 'Public Profile',
         }[relationshipContext] || 'Profile';
     };
 
-    const getRelationshipIcon = () => {
+    const getAccessLevelColor = () => {
         return {
-            self: null,
-            nuclear_family: '👨‍👩‍👧',
-            connected: '🤝',
-            public: '👁️',
-        }[relationshipContext];
+            nuclear_family: { bg: '#1e40af', text: '#dbeafe' },
+            connected: { bg: '#059669', text: '#d1fae5' },
+            public: { bg: '#7c3aed', text: '#ede9fe' },
+        }[relationshipContext] || { bg: '#6b7280', text: '#f3f4f6' };
+    };
+
+    const formatRelationshipLabel = (type: string | null) => {
+        if (!type) return null;
+        return type
+            .split('_')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
     };
 
     return (
@@ -100,13 +122,13 @@ export default function ViewProfile({
                                 {/* Visibility Context Badge */}
                                 <div className="profile-connection-status">
                                     <div className="profile-connection-label">🔍 Access Level</div>
-                                    <div className="profile-connection-type">{getRelationshipContextLabel()}</div>
+                                    <div className="profile-connection-type">{getAccessLevelLabel()}</div>
                                 </div>
 
                                 {/* Connection Status Badge */}
                                 {connectionStatus === 'connected' && relationshipType && (
                                     <span className="profile-relationship-badge">
-                                        ✓ {relationshipType.charAt(0).toUpperCase() + relationshipType.slice(1)}
+                                        ✓ {formatRelationshipLabel(relationshipType)}
                                     </span>
                                 )}
 
@@ -169,6 +191,26 @@ export default function ViewProfile({
                                         </small>
                                     </div>
                                 )}
+
+                                {/* Gallery and Stories Buttons */}
+                                <div className="profile-actions" style={{ marginTop: '2rem', gap: '0.75rem' }}>
+                                    <button
+                                        className="profile-btn profile-btn-primary"
+                                        onClick={() => router.visit(`/galleries?user=${profile.id}`)}
+                                        style={{ width: '100%' }}
+                                    >
+                                        <Image size={18} />
+                                        View Gallery
+                                    </button>
+                                    <button
+                                        className="profile-btn profile-btn-secondary"
+                                        onClick={() => router.visit(`/stories?user=${profile.id}`)}
+                                        style={{ width: '100%' }}
+                                    >
+                                        <Newspaper size={18} />
+                                        View Stories
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -264,10 +306,65 @@ export default function ViewProfile({
                                 </div>
                             )}
 
+                            {/* Non-Mutual Connections Card */}
+                            {nonMutualConnections.length > 0 && (
+                                <div className="profile-card">
+                                    <div className="profile-card-header">
+                                        <h2 className="profile-card-title">
+                                            <Users size={24} />
+                                            Their Other Connections
+                                        </h2>
+                                        <span style={{
+                                            background: 'linear-gradient(135deg, #9333EA 0%, #D946EF 100%)',
+                                            color: 'white',
+                                            padding: '0.35rem 0.75rem',
+                                            borderRadius: '8px',
+                                            fontSize: '0.85rem',
+                                            fontWeight: '700'
+                                        }}>
+                                            {nonMutualConnectionsCount}
+                                        </span>
+                                    </div>
+
+                                    <div className="profile-mutual-list">
+                                        {nonMutualConnections.map((connection) => (
+                                            <div
+                                                key={connection.id}
+                                                className="profile-mutual-item"
+                                                onClick={() => router.visit(route('profile.view', connection.id))}
+                                                style={{ cursor: 'pointer' }}
+                                                title={`View ${connection.name}'s profile`}
+                                            >
+                                                <img
+                                                    src={connection.profile_image_url || 'https://via.placeholder.com/70'}
+                                                    alt={connection.name}
+                                                    className="profile-mutual-avatar"
+                                                />
+                                                <div className="profile-mutual-name">{connection.name}</div>
+                                                <div className="profile-mutual-username">@{connection.username}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {nonMutualConnectionsCount > 5 && (
+                                        <div className="text-center mt-4">
+                                            <button
+                                                className="btn btn-outline-primary"
+                                                onClick={() => router.visit(route('connections.index'))}
+                                                style={{ fontSize: '0.95rem', fontWeight: '600' }}
+                                            >
+                                                View All {nonMutualConnectionsCount} Connections
+                                                <ArrowRight size={16} style={{ marginLeft: '0.5rem' }} />
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
                             {/* Privacy Notice Info Box */}
                             <div className="profile-info-box">
                                 <strong>🔒 Privacy Notice:</strong> Fields marked with <strong>🔒</strong> are hidden based on {profile.name}'s privacy settings.
-                                Your access level is <strong>{getRelationshipContextLabel()}</strong>.
+                                Your access level is <strong>{getAccessLevelLabel()}</strong>.
                             </div>
                         </div>
                     </div>
