@@ -67,9 +67,15 @@ class ProfileController extends Controller
         }
 
         // Format profile data for frontend
+        // Always show full name to connected users
+        $visibleName = null;
+        if ($visibleData['full_name']['visible'] || $relationshipContext === 'connected' || $relationshipContext === 'nuclear_family') {
+            $visibleName = $owner->name;
+        }
+
         $profileData = [
             'id' => $owner->id,
-            'name' => $visibleData['full_name']['value'] ?? null,
+            'name' => $visibleName,
             'username' => $owner->username,
             'email' => $relationshipContext === 'nuclear_family' ? $owner->email : null,
             'phone' => $visibleData['phone']['value'],

@@ -1,9 +1,17 @@
-I will like us to add "My Stories" page in this application. For instance, the UI workflow will be like this. From within the profile pahe (http://localhost/), the user clicks a "My stories" link where it takes them to "My Stories" page. In that page, they can see all their post feeds listed there and can filter their posts. In that same page, there will be a floating button "+" icon, that when clicked, shows a modal popup with post form fields. To create a post there will be two type of posts that can be made, a voice post or a text post. For text post, there will be in the form fields a title, content, upload images(optional). For voice post, they will record voice note and set title and upload images (optional). There will be a tab to toggle between either making a text post or a voice post, in the modal post popup. Once a post has been made, it redirects the user back to the same my stories page. Each post can have reactions and comments should be permitted too, only by those (families) linked with the user.
+Now lets say we have two users, User A (male) and User B (female). And both are connected as brother and sister. Now, since both of them has a connection now, I will like a situation whereby either User can access the profile of each other, which we already currently have though in the profile view page in, http://localhost/profile/{id}
 
-Using the same UI/UX design idea present in profile page, http://localhost/profile/me. I also want the galleries page(s) to have a stunning dark theme that's both professional and easy on the eyes, with those beautiful floating animated orbs adding life and visual interest throughout the page. Use the same dark theme Ui design in the settings pages below.
+I will like a full UI redesign of that profile view page but ensure to maintain the dark themed and stylings and gradients and the colors, and the likes.  Pls the full refactored UI needs to be very very sleek as usual,  in a much attractive and professional look, that can increase conversation rate. Below are the detail features I expect to want to see in that page:
 
-Pls the UI needs to be very sleek as usual,  in a much attractive and professional look, that can increase conversation rate
 
-NB: Work on both the frontend and backend, everything should be working fine. Install any needed packages, like for the voice note aspect.
-# Enter the application container
-docker-compose exec -it famtree bash
+- The connected user's profile image/photo
+- The connected user's full name (first and last name together)
+- The connecteduser's username
+- The status of the connected user (alive or deceased)
+- A nice ui label of who the connected user is to me (dynamic depending on the connection request made and the reverse relationship display, if need be), brother, sister, etc
+- The access level (nuclear family, extended family, etc)
+- The connected user's profile information like phone number, home address, date of birth, bio (description text), job title, education, etc.
+- I also must see all mutual connections the connected user has with me
+- I also must see all non-mutual connections that that connected user has with other users, i must see the lists of their other connections that ain't mutual with mine
+- I also must see a button which can take me to the connected user's galleries page when clicked, so i can see all uploaded images/videos made by that connected user 
+- I also must see a button which can take me to the connected user's stories when clicked, so i can all the user's posts and then can decide to react/comment on them
+

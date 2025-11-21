@@ -145,7 +145,7 @@ class ProfilePrivacyService
     private function getFieldValue(User $user, string $fieldName): mixed
     {
         return match ($fieldName) {
-            'full_name' => $user->name,
+            'full_name' => trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')),
             'phone' => $user->phone,
             'address' => $user->address,
             'date_of_birth' => $user->date_of_birth,
