@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Eye, EyeOff, UserX, Flag, Lock, Check, AlertTriangle } from 'lucide-react';
+import { Eye, EyeOff, UserX, Flag, Lock, Check, AlertTriangle, Search, Loader } from 'lucide-react';
 import { usePage, router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
 import SettingsSidebar from '@/Components/Settings/SettingsSidebar';
@@ -24,9 +24,11 @@ export default function PrivacySettings() {
     const [profileVisibility, setProfileVisibility] = useState<'public' | 'connected' | 'private'>('connected');
 
     // Blocked Users
-    const [blockedUsers, setBlockedUsers] = useState<Array<{ id: number; name: string; username: string }>>([]);
+    const [blockedUsers, setBlockedUsers] = useState<Array<{ id: number; first_name: string; last_name: string; full_name: string; username: string; profile_image_url?: string }>>([]);
     const [blockUsername, setBlockUsername] = useState('');
     const [blockLoading, setBlockLoading] = useState(false);
+    const [blockSearchResults, setBlockSearchResults] = useState<Array<{ id: number; name: string; username: string; profile_image_url: string }>>([]);
+    const [blockSearching, setBlockSearching] = useState(false);
 
     // Privacy Field Controls
     const [fieldVisibility, setFieldVisibility] = useState({
@@ -49,6 +51,8 @@ export default function PrivacySettings() {
     });
     const [reportErrors, setReportErrors] = useState<Record<string, string>>({});
     const [reportSubmitting, setReportSubmitting] = useState(false);
+    const [reportSearchResults, setReportSearchResults] = useState<Array<{ id: number; name: string; username: string; profile_image_url: string }>>([]);
+    const [reportSearching, setReportSearching] = useState(false);
 
     const handleBlockUser = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -124,6 +128,70 @@ export default function PrivacySettings() {
     useEffect(() => {
         fetchBlockedUsers();
     }, []);
+
+    // Block User Search
+    const searchBlockUsers = async (query: string) => {
+        if (query.length < 2) {
+            setBlockSearchResults([]);
+            return;
+        }
+
+        setBlockSearching(true);
+        try {
+            const response = await fetch(`${route('connections.search-users')}?query=${encodeURIComponent(query)}`);
+            const data = await response.json();
+            setBlockSearchResults(data.users);
+        } catch (err) {
+            console.error('Error searching users:', err);
+        } finally {
+            setBlockSearching(false);
+        }
+    };
+
+    // Block User Search Debounce
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (blockUsername.length >= 2) {
+                searchBlockUsers(blockUsername);
+            } else {
+                setBlockSearchResults([]);
+            }
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [blockUsername]);
+
+    // Report User Search
+    const searchReportUsers = async (query: string) => {
+        if (query.length < 2) {
+            setReportSearchResults([]);
+            return;
+        }
+
+        setReportSearching(true);
+        try {
+            const response = await fetch(`${route('connections.search-users')}?query=${encodeURIComponent(query)}`);
+            const data = await response.json();
+            setReportSearchResults(data.users);
+        } catch (err) {
+            console.error('Error searching users:', err);
+        } finally {
+            setReportSearching(false);
+        }
+    };
+
+    // Report User Search Debounce
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (reportForm.username.length >= 2) {
+                searchReportUsers(reportForm.username);
+            } else {
+                setReportSearchResults([]);
+            }
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [reportForm.username]);
 
     const handleSavePrivacySettings = async () => {
         setSaveLoading(true);
@@ -320,22 +388,106 @@ export default function PrivacySettings() {
                         <div className="settings-section-body">
                             <form onSubmit={handleBlockUser} className="settings-form-group" style={{ marginBottom: '2rem' }}>
                                 <label className="settings-label">Block a User</label>
-                                <div style={{ display: 'flex', gap: '1rem' }}>
-                                    <input
-                                        type="text"
-                                        className="settings-input"
-                                        placeholder="Enter username"
-                                        value={blockUsername}
-                                        onChange={(e) => setBlockUsername(e.target.value)}
-                                        style={{ flex: 1 }}
-                                    />
-                                    <button
-                                        type="submit"
-                                        disabled={blockLoading || !blockUsername.trim()}
-                                        className="settings-btn settings-btn-danger"
-                                    >
-                                        {blockLoading ? 'Blocking...' : 'Block'}
-                                    </button>
+                                <div style={{ position: 'relative' }}>
+                                    <div style={{ display: 'flex', gap: '1rem' }}>
+                                        <div style={{ flex: 1, position: 'relative' }}>
+                                            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                                <Search size={18} style={{ position: 'absolute', left: '12px', color: '#999', pointerEvents: 'none' }} />
+                                                <input
+                                                    type="text"
+                                                    className="settings-input"
+                                                    placeholder="Search username..."
+                                                    value={blockUsername}
+                                                    onChange={(e) => setBlockUsername(e.target.value)}
+                                                    style={{ paddingLeft: '40px', width: '100%' }}
+                                                />
+                                            </div>
+
+                                            {/* Search Results Dropdown */}
+                                            {blockSearchResults.length > 0 && (
+                                                <div style={{
+                                                    position: 'absolute',
+                                                    top: '100%',
+                                                    left: 0,
+                                                    right: 0,
+                                                    background: 'white',
+                                                    border: '1px solid #E0E0E0',
+                                                    borderTop: 'none',
+                                                    borderRadius: '0 0 8px 8px',
+                                                    maxHeight: '300px',
+                                                    overflowY: 'auto',
+                                                    zIndex: 10,
+                                                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                                                }}>
+                                                    {blockSearchResults.map((user) => (
+                                                        <div
+                                                            key={user.id}
+                                                            onClick={() => {
+                                                                setBlockUsername(user.username);
+                                                                setBlockSearchResults([]);
+                                                            }}
+                                                            style={{
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: '12px',
+                                                                padding: '12px 16px',
+                                                                cursor: 'pointer',
+                                                                borderBottom: '1px solid #F0F0F0',
+                                                                transition: 'background-color 0.2s',
+                                                            }}
+                                                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
+                                                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
+                                                        >
+                                                            {user.profile_image_url && (
+                                                                <img
+                                                                    src={user.profile_image_url}
+                                                                    alt={user.name}
+                                                                    style={{
+                                                                        width: '36px',
+                                                                        height: '36px',
+                                                                        borderRadius: '50%',
+                                                                        objectFit: 'cover',
+                                                                    }}
+                                                                />
+                                                            )}
+                                                            <div style={{ flex: 1 }}>
+                                                                <p style={{ margin: 0, fontWeight: 600, fontSize: '0.9rem' }}>{user.name}</p>
+                                                                <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: '#999' }}>@{user.username}</p>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+
+                                            {blockSearching && (
+                                                <div style={{
+                                                    position: 'absolute',
+                                                    top: '100%',
+                                                    left: 0,
+                                                    right: 0,
+                                                    background: 'white',
+                                                    border: '1px solid #E0E0E0',
+                                                    borderTop: 'none',
+                                                    borderRadius: '0 0 8px 8px',
+                                                    padding: '12px 16px',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '8px',
+                                                    zIndex: 10,
+                                                }}>
+                                                    <Loader size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                                                    <span style={{ fontSize: '0.9rem', color: '#666' }}>Searching...</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <button
+                                            type="submit"
+                                            disabled={blockLoading || !blockUsername.trim()}
+                                            className="settings-btn settings-btn-danger"
+                                        >
+                                            {blockLoading ? 'Blocking...' : 'Block'}
+                                        </button>
+                                    </div>
                                 </div>
                                 <p className="settings-form-hint">Users you block will not be able to send you connection requests or see your profile.</p>
                             </form>
@@ -431,15 +583,98 @@ export default function PrivacySettings() {
                                         Username to Report
                                         <span className="settings-label-required">*</span>
                                     </label>
-                                    <input
-                                        type="text"
-                                        name="username"
-                                        className={`settings-input ${reportErrors.username ? 'error' : ''}`}
-                                        placeholder="Enter username"
-                                        value={reportForm.username}
-                                        onChange={handleReportInputChange}
-                                        required
-                                    />
+                                    <div style={{ position: 'relative' }}>
+                                        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                            <Search size={18} style={{ position: 'absolute', left: '12px', color: '#999', pointerEvents: 'none' }} />
+                                            <input
+                                                type="text"
+                                                name="username"
+                                                className={`settings-input ${reportErrors.username ? 'error' : ''}`}
+                                                placeholder="Search username..."
+                                                value={reportForm.username}
+                                                onChange={handleReportInputChange}
+                                                style={{ paddingLeft: '40px', width: '100%' }}
+                                                required
+                                            />
+                                        </div>
+
+                                        {/* Search Results Dropdown */}
+                                        {reportSearchResults.length > 0 && (
+                                            <div style={{
+                                                position: 'absolute',
+                                                top: '100%',
+                                                left: 0,
+                                                right: 0,
+                                                background: 'white',
+                                                border: '1px solid #E0E0E0',
+                                                borderTop: 'none',
+                                                borderRadius: '0 0 8px 8px',
+                                                maxHeight: '300px',
+                                                overflowY: 'auto',
+                                                zIndex: 10,
+                                                boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                                            }}>
+                                                {reportSearchResults.map((user) => (
+                                                    <div
+                                                        key={user.id}
+                                                        onClick={() => {
+                                                            setReportForm({ ...reportForm, username: user.username });
+                                                            setReportSearchResults([]);
+                                                        }}
+                                                        style={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '12px',
+                                                            padding: '12px 16px',
+                                                            cursor: 'pointer',
+                                                            borderBottom: '1px solid #F0F0F0',
+                                                            transition: 'background-color 0.2s',
+                                                        }}
+                                                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
+                                                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
+                                                    >
+                                                        {user.profile_image_url && (
+                                                            <img
+                                                                src={user.profile_image_url}
+                                                                alt={user.name}
+                                                                style={{
+                                                                    width: '36px',
+                                                                    height: '36px',
+                                                                    borderRadius: '50%',
+                                                                    objectFit: 'cover',
+                                                                }}
+                                                            />
+                                                        )}
+                                                        <div style={{ flex: 1 }}>
+                                                            <p style={{ margin: 0, fontWeight: 600, fontSize: '0.9rem' }}>{user.name}</p>
+                                                            <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: '#999' }}>@{user.username}</p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        {reportSearching && (
+                                            <div style={{
+                                                position: 'absolute',
+                                                top: '100%',
+                                                left: 0,
+                                                right: 0,
+                                                background: 'white',
+                                                border: '1px solid #E0E0E0',
+                                                borderTop: 'none',
+                                                borderRadius: '0 0 8px 8px',
+                                                padding: '12px 16px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '8px',
+                                                zIndex: 10,
+                                            }}>
+                                                <Loader size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                                                <span style={{ fontSize: '0.9rem', color: '#666' }}>Searching...</span>
+                                            </div>
+                                        )}
+                                    </div>
                                     {reportErrors.username && (
                                         <p style={{ color: '#FF4757', fontSize: '0.875rem', marginTop: '0.5rem' }}>
                                             {reportErrors.username}
