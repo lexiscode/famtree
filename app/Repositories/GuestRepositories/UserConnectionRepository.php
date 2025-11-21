@@ -23,6 +23,14 @@ class UserConnectionRepository
     }
 
     /**
+     * Create a direct connection (used for child accounts)
+     */
+    public function createConnection(array $data): UserConnection
+    {
+        return UserConnection::create($data);
+    }
+
+    /**
      * Accept a connection request
      */
     public function acceptRequest(int $connectionId): UserConnection
