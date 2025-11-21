@@ -104,7 +104,7 @@ class ChildAccountService
     }
 
     /**
-     * Remove a child account
+     * Remove a child account and its associated connection
      */
     public function removeChildAccount(int $parentId, int $childId): bool
     {
@@ -115,6 +115,10 @@ class ChildAccountService
             throw new \Exception('Unauthorized: Child account does not belong to this parent.');
         }
 
+        // Delete the connection between parent and child
+        $this->connectionRepository->deleteConnectionBetween($parentId, $childId);
+
+        // Delete the child account
         return $this->childAccountRepository->removeChildAccount($childId);
     }
 
