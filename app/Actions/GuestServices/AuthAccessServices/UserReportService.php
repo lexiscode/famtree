@@ -2,7 +2,7 @@
 
 namespace App\Actions\GuestServices\AuthAccessServices;
 
-use App\Models\User;
+use App\Models\GuestModels\User;
 use App\Repositories\GuestRepositories\UserReportRepository;
 
 class UserReportService
