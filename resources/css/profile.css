@@ -787,10 +787,9 @@
 }
 
 .profile-info-box strong {
-    display: block;
-    margin-bottom: 0.5rem;
+    display: inline;
     font-weight: 700;
-    font-size: 1rem;
+    font-size: 0.95rem;
 }
 
 /* ============================================
