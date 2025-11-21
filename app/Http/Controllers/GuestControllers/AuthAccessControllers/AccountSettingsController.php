@@ -7,13 +7,16 @@ use App\Http\Requests\GuestRequests\AuthAccessRequests\ChangePasswordRequest;
 use App\Http\Requests\GuestRequests\AuthAccessRequests\ChangeEmailRequest;
 use App\Http\Requests\GuestRequests\AuthAccessRequests\DeleteAccountRequest;
 use App\Http\Requests\GuestRequests\AuthAccessRequests\UpdateProfileRequest;
+use App\Http\Requests\GuestRequests\AuthAccessRequests\EnableTwoFARequest;
 use App\Actions\GuestServices\AuthAccessServices\AccountService;
+use App\Actions\GuestServices\AuthAccessServices\TwoFactorAuthService;
 use Illuminate\Support\Facades\Auth;
 
 class AccountSettingsController extends Controller
 {
     public function __construct(
         private AccountService $accountService,
+        private TwoFactorAuthService $twoFactorService,
     ) {}
 
     /**
@@ -74,5 +77,74 @@ class AccountSettingsController extends Controller
         $this->accountService->updateProfile($user, $validated, $profileImage);
 
         return back()->with('success', 'Profile information updated successfully.');
+    }
+
+    /**
+     * Generate 2FA secret and QR code
+     */
+    public function generateTwoFA()
+    {
+        $user = auth()->user();
+        $twoFAData = $this->twoFactorService->generateSecret($user);
+
+        return response()->json([
+            'success' => true,
+            'secret' => $twoFAData['secret'],
+            'qr_code_url' => $twoFAData['qr_code_url'],
+        ]);
+    }
+
+    /**
+     * Enable 2FA for the user
+     */
+    public function enableTwoFA(EnableTwoFARequest $request)
+    {
+        $user = auth()->user();
+        $validated = $request->validated();
+
+        if (!$this->twoFactorService->enable($user, $validated['secret'], $validated['code'])) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Invalid verification code. Please try again.',
+            ], 422);
+        }
+
+        $backupCodes = $this->twoFactorService->getBackupCodes($user);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Two-factor authentication enabled successfully.',
+            'backup_codes' => $backupCodes,
+        ]);
+    }
+
+    /**
+     * Disable 2FA for the user
+     */
+    public function disableTwoFA()
+    {
+        $user = auth()->user();
+        $this->twoFactorService->disable($user);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Two-factor authentication disabled successfully.',
+        ]);
+    }
+
+    /**
+     * Get 2FA status
+     */
+    public function getTwoFAStatus()
+    {
+        $user = auth()->user();
+        $isEnabled = $this->twoFactorService->isEnabled($user);
+        $backupCodesCount = count($this->twoFactorService->getBackupCodes($user));
+
+        return response()->json([
+            'success' => true,
+            'enabled' => $isEnabled,
+            'backup_codes_count' => $backupCodesCount,
+        ]);
     }
 }

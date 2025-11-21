@@ -11,6 +11,7 @@
         "laravel/framework": "^10.10",
         "laravel/sanctum": "^3.3",
         "laravel/tinker": "^2.8",
+        "sonata-project/google-authenticator": "^2.3",
         "tightenco/ziggy": "^2.5"
     },
     "require-dev": {

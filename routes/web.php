@@ -195,6 +195,12 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::post('/account/update-profile', [AccountSettingsController::class, 'updateProfile'])->name('settings.update-profile');
         Route::post('/account/delete', [AccountSettingsController::class, 'deleteAccount'])->name('settings.delete-account');
 
+        // 2FA routes
+        Route::post('/account/2fa/generate', [AccountSettingsController::class, 'generateTwoFA'])->name('settings.2fa.generate');
+        Route::post('/account/2fa/enable', [AccountSettingsController::class, 'enableTwoFA'])->name('settings.2fa.enable');
+        Route::post('/account/2fa/disable', [AccountSettingsController::class, 'disableTwoFA'])->name('settings.2fa.disable');
+        Route::get('/account/2fa/status', [AccountSettingsController::class, 'getTwoFAStatus'])->name('settings.2fa.status');
+
         Route::get('/privacy', function () {
             return Inertia::render('AuthAccessPages/Settings/PrivacySettings');
         })->name('settings.privacy');
