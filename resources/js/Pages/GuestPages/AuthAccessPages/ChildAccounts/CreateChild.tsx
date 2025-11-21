@@ -46,12 +46,13 @@ export default function CreateChild({ parentName }: Props) {
         last_name: '',
         username: '',
         date_of_birth: '',
+        gender: '',
     });
 
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [loading, setLoading] = useState(false);
 
-    const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
 
         setFormData((prev) => ({
@@ -91,7 +92,7 @@ export default function CreateChild({ parentName }: Props) {
         router.get(route('child-accounts.index'));
     }, []);
 
-    const isFormValid = formData.first_name.trim() && formData.last_name.trim() && formData.username.trim() && formData.date_of_birth;
+    const isFormValid = formData.first_name.trim() && formData.last_name.trim() && formData.username.trim() && formData.date_of_birth && formData.gender;
 
     return (
         <ModalProvider>
@@ -173,6 +174,25 @@ export default function CreateChild({ parentName }: Props) {
                                         <div className="child-create-error">{errors.username}</div>
                                     )}
                                     <div className="child-create-help">Must be unique and at least 3 characters long</div>
+                                </div>
+
+                                {/* Gender */}
+                                <div className="child-create-form-group">
+                                    <label className="child-create-label">Gender *</label>
+                                    <select
+                                        name="gender"
+                                        className="child-create-input"
+                                        value={formData.gender}
+                                        onChange={handleInputChange}
+                                        required
+                                    >
+                                        <option value="">Select Gender</option>
+                                        <option value="male">Male</option>
+                                        <option value="female">Female</option>
+                                    </select>
+                                    {errors.gender && (
+                                        <div className="child-create-error">{errors.gender}</div>
+                                    )}
                                 </div>
 
                                 {/* Date of Birth */}

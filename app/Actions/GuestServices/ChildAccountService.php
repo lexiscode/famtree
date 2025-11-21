@@ -35,6 +35,7 @@ class ChildAccountService
             'first_name' => $childData['first_name'],
             'last_name' => $childData['last_name'],
             'username' => $childData['username'],
+            'gender' => $childData['gender'],
             'email' => null, // Will be set when child comes of age
             'password' => bcrypt($temporaryPassword),
             'parent_user_id' => $parentId,
@@ -91,6 +92,7 @@ class ChildAccountService
             'last_name' => $child->last_name,
             'full_name' => $child->first_name . ' ' . $child->last_name,
             'username' => $child->username,
+            'gender' => $child->gender,
             'email' => $child->email,
             'date_of_birth' => $child->date_of_birth,
             'profile_image_url' => $child->profile_image_url,
@@ -229,6 +231,7 @@ class ChildAccountService
             'last_name' => $child->last_name,
             'full_name' => $child->first_name . ' ' . $child->last_name,
             'username' => $child->username,
+            'gender' => $child->gender,
             'email' => $child->email,
             'date_of_birth' => $child->date_of_birth,
             'age' => $child->date_of_birth ? now()->diffInYears($child->date_of_birth) : null,
