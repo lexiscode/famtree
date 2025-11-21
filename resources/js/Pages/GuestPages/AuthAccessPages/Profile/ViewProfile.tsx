@@ -204,7 +204,7 @@ export default function ViewProfile({
                                     </button>
                                     <button
                                         className="profile-btn profile-btn-secondary"
-                                        onClick={() => router.visit(`/stories?user=${profile.id}`)}
+                                        onClick={() => router.visit(route('stories.view-user', profile.id))}
                                         style={{ width: '100%' }}
                                     >
                                         <Newspaper size={18} />

@@ -168,6 +168,7 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::post('/', [PostController::class, 'store'])->name('stories.store');
         Route::get('/search', [PostController::class, 'search'])->name('stories.search');
         Route::get('/filter', [PostController::class, 'filterByType'])->name('stories.filter');
+        Route::get('/user/{userId}', [PostController::class, 'viewUser'])->name('stories.view-user');
         Route::get('/{postId}', [PostController::class, 'show'])->name('stories.show');
         Route::put('/{postId}', [PostController::class, 'update'])->name('stories.update');
         Route::delete('/{postId}', [PostController::class, 'destroy'])->name('stories.destroy');

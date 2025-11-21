@@ -70,6 +70,24 @@ class PostController extends Controller
     }
 
     /**
+     * Display another user's stories
+     */
+    public function viewUser(int $userId)
+    {
+        $targetUser = \App\Models\GuestModels\User::findOrFail($userId);
+
+        $posts = $this->postService->getUserPosts($userId, 20);
+        $userName = trim(($targetUser->first_name ?? '') . ' ' . ($targetUser->last_name ?? ''));
+
+        return Inertia::render('GuestPages/AuthAccessPages/Stories/ViewUserStories', [
+            'userName' => $userName,
+            'userId' => $userId,
+            'posts' => $posts,
+            'postCount' => count($posts),
+        ]);
+    }
+
+    /**
      * Store a new post
      */
     public function store(CreatePostRequest $request)
