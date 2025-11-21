@@ -48,11 +48,18 @@ export default function AccountSettings() {
     // Initialize profile form state
     const initializeProfileForm = () => {
         if (user) {
+            // Format date_of_birth for date input (YYYY-MM-DD format)
+            let formattedDate = '';
+            if (user.date_of_birth) {
+                const date = new Date(user.date_of_birth);
+                formattedDate = date.toISOString().split('T')[0];
+            }
+
             setProfileForm({
                 phone: user.phone || '',
                 address: user.address || '',
                 bio: user.bio || '',
-                date_of_birth: user.date_of_birth || '',
+                date_of_birth: formattedDate,
                 job_title: user.job_title || '',
                 education_level: user.education_level || '',
             });
