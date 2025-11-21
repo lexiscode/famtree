@@ -49,6 +49,7 @@ class OnboardingController extends Controller
                 'phone' => 'nullable|string|max:20',
                 'bio' => 'nullable|string|max:500',
                 'date_of_birth' => 'nullable|date',
+                'gender' => 'nullable|in:male,female',
             ]);
 
             $progress = $this->onboardingService->saveBasicInfoStep($userId, $validated);

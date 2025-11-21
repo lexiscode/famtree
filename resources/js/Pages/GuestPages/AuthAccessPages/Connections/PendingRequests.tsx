@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { usePage, router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { Clock, Check, X, ArrowLeft, AlertCircle } from 'lucide-react';
+import { Clock, Check, X, ArrowLeft, AlertCircle, Mail, Phone, MapPin, Cake, FileText, Users } from 'lucide-react';
 import { PendingRequest, PendingRequestsProps } from '@/types';
 import ProfileSidebar from '../Stories/ProfileSidebar';
 
@@ -143,7 +143,7 @@ export default function PendingRequests({
                                         />
                                         <div className="connection-request-info">
                                             <h4 className="connection-request-name">{request.requester.name}</h4>
-                                            <p className="connection-request-username">@{request.requester.username}</p>
+                                            <p className="connection-request-username text-center">@{request.requester.username}</p>
                                         </div>
                                         <span className="connection-request-badge connection-request-badge-sent">
                                             ⏳ Pending
@@ -152,13 +152,265 @@ export default function PendingRequests({
 
                                     {/* Request Details */}
                                     <div className="connection-request-details pb-3">
-                                        <p className="connection-detail-row" style={{ color: '#9c9595ff' }} >
-                                            <span className="connection-detail-label">Claimed Relationship: </span>
-                                            <strong>{request.relationship_label}</strong>
-                                        </p>
-                                        <p className="connection-detail-row connection-detail-date" style={{ color: '#9c9595ff' }}>
-                                            Requested {new Date(request.requested_at).toLocaleDateString()}
-                                        </p>
+                                        {/* Relationship Badge */}
+                                        <div style={{ marginBottom: '16px' }}>
+                                            <div style={{
+                                                display: 'inline-block',
+                                                backgroundColor: '#f0f4ff',
+                                                color: '#4f46e5',
+                                                padding: '6px 12px',
+                                                borderRadius: '20px',
+                                                fontSize: '0.875rem',
+                                                fontWeight: '600',
+                                                letterSpacing: '0.3px'
+                                            }}>
+                                                {request.relationship_label}
+                                            </div>
+                                        </div>
+
+                                        {/* Info Grid Layout */}
+                                        <div style={{
+                                            display: 'grid',
+                                            gridTemplateColumns: '1fr 1fr',
+                                            gap: '14px',
+                                            marginBottom: '14px'
+                                        }}>
+                                            {/* Email */}
+                                            {request.requester.email && (
+                                                <div style={{
+                                                    padding: '10px 12px',
+                                                    backgroundColor: '#f9fafb',
+                                                    borderRadius: '8px',
+                                                    border: '1px solid #e5e7eb'
+                                                }}>
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '8px',
+                                                        marginBottom: '4px'
+                                                    }}>
+                                                        <Mail size={14} style={{ color: '#6b7280', flexShrink: 0 }} />
+                                                        <span style={{
+                                                            fontSize: '0.75rem',
+                                                            color: '#9ca3af',
+                                                            fontWeight: '600',
+                                                            textTransform: 'uppercase',
+                                                            letterSpacing: '0.5px'
+                                                        }}>Email</span>
+                                                    </div>
+                                                    <p style={{
+                                                        margin: '0',
+                                                        fontSize: '0.875rem',
+                                                        color: '#1f2937',
+                                                        wordBreak: 'break-word'
+                                                    }}>
+                                                        {request.requester.email}
+                                                    </p>
+                                                </div>
+                                            )}
+
+                                            {/* Phone */}
+                                            {request.requester.phone && (
+                                                <div style={{
+                                                    padding: '10px 12px',
+                                                    backgroundColor: '#f9fafb',
+                                                    borderRadius: '8px',
+                                                    border: '1px solid #e5e7eb'
+                                                }}>
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '8px',
+                                                        marginBottom: '4px'
+                                                    }}>
+                                                        <Phone size={14} style={{ color: '#6b7280', flexShrink: 0 }} />
+                                                        <span style={{
+                                                            fontSize: '0.75rem',
+                                                            color: '#9ca3af',
+                                                            fontWeight: '600',
+                                                            textTransform: 'uppercase',
+                                                            letterSpacing: '0.5px'
+                                                        }}>Phone</span>
+                                                    </div>
+                                                    <p style={{
+                                                        margin: '0',
+                                                        fontSize: '0.875rem',
+                                                        color: '#1f2937'
+                                                    }}>
+                                                        {request.requester.phone}
+                                                    </p>
+                                                </div>
+                                            )}
+
+                                            {/* Gender */}
+                                            {request.requester.gender && (
+                                                <div style={{
+                                                    padding: '10px 12px',
+                                                    backgroundColor: '#f9fafb',
+                                                    borderRadius: '8px',
+                                                    border: '1px solid #e5e7eb'
+                                                }}>
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '8px',
+                                                        marginBottom: '4px'
+                                                    }}>
+                                                        <Users size={14} style={{ color: '#6b7280', flexShrink: 0 }} />
+                                                        <span style={{
+                                                            fontSize: '0.75rem',
+                                                            color: '#9ca3af',
+                                                            fontWeight: '600',
+                                                            textTransform: 'uppercase',
+                                                            letterSpacing: '0.5px'
+                                                        }}>Gender</span>
+                                                    </div>
+                                                    <p style={{
+                                                        margin: '0',
+                                                        fontSize: '0.875rem',
+                                                        color: '#1f2937'
+                                                    }}>
+                                                        {request.requester.gender.charAt(0).toUpperCase() + request.requester.gender.slice(1)}
+                                                    </p>
+                                                </div>
+                                            )}
+
+                                            {/* Date of Birth */}
+                                            {request.requester.date_of_birth && (
+                                                <div style={{
+                                                    padding: '10px 12px',
+                                                    backgroundColor: '#f9fafb',
+                                                    borderRadius: '8px',
+                                                    border: '1px solid #e5e7eb'
+                                                }}>
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '8px',
+                                                        marginBottom: '4px'
+                                                    }}>
+                                                        <Cake size={14} style={{ color: '#6b7280', flexShrink: 0 }} />
+                                                        <span style={{
+                                                            fontSize: '0.75rem',
+                                                            color: '#9ca3af',
+                                                            fontWeight: '600',
+                                                            textTransform: 'uppercase',
+                                                            letterSpacing: '0.5px'
+                                                        }}>DOB</span>
+                                                    </div>
+                                                    <p style={{
+                                                        margin: '0',
+                                                        fontSize: '0.875rem',
+                                                        color: '#1f2937'
+                                                    }}>
+                                                        {new Date(request.requester.date_of_birth).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                                                    </p>
+                                                </div>
+                                            )}
+
+                                            {/* Address */}
+                                            {request.requester.address && (
+                                                <div style={{
+                                                    gridColumn: 'span 2',
+                                                    padding: '10px 12px',
+                                                    backgroundColor: '#f9fafb',
+                                                    borderRadius: '8px',
+                                                    border: '1px solid #e5e7eb'
+                                                }}>
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '8px',
+                                                        marginBottom: '4px'
+                                                    }}>
+                                                        <MapPin size={14} style={{ color: '#6b7280', flexShrink: 0 }} />
+                                                        <span style={{
+                                                            fontSize: '0.75rem',
+                                                            color: '#9ca3af',
+                                                            fontWeight: '600',
+                                                            textTransform: 'uppercase',
+                                                            letterSpacing: '0.5px'
+                                                        }}>Address</span>
+                                                    </div>
+                                                    <p style={{
+                                                        margin: '0',
+                                                        fontSize: '0.875rem',
+                                                        color: '#1f2937'
+                                                    }}>
+                                                        {request.requester.address}
+                                                    </p>
+                                                </div>
+                                            )}
+
+                                            {/* Bio */}
+                                            {request.requester.bio && (
+                                                <div style={{
+                                                    gridColumn: 'span 2',
+                                                    padding: '10px 12px',
+                                                    backgroundColor: '#f9fafb',
+                                                    borderRadius: '8px',
+                                                    border: '1px solid #e5e7eb'
+                                                }}>
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '8px',
+                                                        marginBottom: '4px'
+                                                    }}>
+                                                        <FileText size={14} style={{ color: '#6b7280', flexShrink: 0 }} />
+                                                        <span style={{
+                                                            fontSize: '0.75rem',
+                                                            color: '#9ca3af',
+                                                            fontWeight: '600',
+                                                            textTransform: 'uppercase',
+                                                            letterSpacing: '0.5px'
+                                                        }}>Bio</span>
+                                                    </div>
+                                                    <p style={{
+                                                        margin: '0',
+                                                        fontSize: '0.875rem',
+                                                        color: '#1f2937',
+                                                        lineHeight: '1.4',
+                                                        fontStyle: 'italic'
+                                                    }}>
+                                                        {request.requester.bio}
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Status & Date Footer */}
+                                        <div style={{
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center',
+                                            paddingTop: '12px',
+                                            borderTop: '1px solid #e5e7eb',
+                                            fontSize: '0.875rem'
+                                        }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                {request.requester.status && (
+                                                    <>
+                                                        <div style={{
+                                                            width: '8px',
+                                                            height: '8px',
+                                                            borderRadius: '50%',
+                                                            backgroundColor: request.requester.status === 'alive' ? '#10b981' : '#d1d5db'
+                                                        }}></div>
+                                                        <span style={{
+                                                            color: '#6b7280',
+                                                            fontSize: '0.8rem',
+                                                            textTransform: 'capitalize'
+                                                        }}>
+                                                            {request.requester.status}
+                                                        </span>
+                                                    </>
+                                                )}
+                                            </div>
+                                            <span style={{ color: '#9ca3af', fontSize: '0.8rem' }}>
+                                                Requested {new Date(request.requested_at).toLocaleDateString()}
+                                            </span>
+                                        </div>
                                     </div>
 
                                     {/* Actions */}

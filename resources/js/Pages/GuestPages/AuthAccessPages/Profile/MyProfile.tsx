@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { Mail, Phone, MapPin, Cake, FileText, Users, Edit, Settings, Briefcase, BookOpen, ArrowRight, LogOut, X, Bell, BookMarked } from 'lucide-react';
+import { Mail, Phone, MapPin, Cake, FileText, Users, Edit, Settings, Briefcase, BookOpen, ArrowRight, LogOut, X, Bell, BookMarked, User as UserIcon } from 'lucide-react';
 
 interface User {
     id: number;
@@ -14,6 +14,7 @@ interface User {
     address: string | null;
     bio: string | null;
     date_of_birth: string | null;
+    gender: string | null;
     profile_image_url: string | null;
     status: string;
     job_title: string | null;
@@ -33,11 +34,22 @@ interface Props {
 export default function MyProfile({ user, connections, connectionCount, pendingRequestCount, sentRequestCount, unreadNotificationCount }: Props) {
     const [showImagePopup, setShowImagePopup] = useState(false);
 
+    const formatDate = (dateString: string | null) => {
+        if (!dateString) return null;
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    };
+
     const fields = useMemo(() => [
         { key: 'email', label: 'Email', icon: Mail, value: user.email },
         { key: 'phone', label: 'Phone', icon: Phone, value: user.phone },
         { key: 'address', label: 'Address', icon: MapPin, value: user.address },
-        { key: 'date_of_birth', label: 'Date of Birth', icon: Cake, value: user.date_of_birth ? new Date(user.date_of_birth).toLocaleDateString() : null },
+        { key: 'date_of_birth', label: 'Date of Birth', icon: Cake, value: formatDate(user.date_of_birth) },
+        { key: 'gender', label: 'Gender', icon: UserIcon, value: user.gender ? (user.gender.charAt(0).toUpperCase() + user.gender.slice(1)) : null },
         { key: 'bio', label: 'Bio', icon: FileText, value: user.bio },
         { key: 'job_title', label: 'Job Title', icon: Briefcase, value: user.job_title },
         { key: 'education', label: 'Education', icon: BookOpen, value: user.education },

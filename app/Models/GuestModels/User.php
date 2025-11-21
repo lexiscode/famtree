@@ -29,6 +29,7 @@ class User extends Authenticatable
         'address',
         'bio',
         'date_of_birth',
+        'gender',
         'profile_image',
         'profile_image_url',
         'status',

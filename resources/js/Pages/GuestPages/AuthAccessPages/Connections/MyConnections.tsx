@@ -222,11 +222,7 @@ export default function MyConnections({
                                                 )}
                                             </div>
 
-                                            {connection.can_undo && !isUndoWindowExpired(connection.undo_expires_at) && (
-                                                <p className="connection-undo-expiry text-center" style={{ color: '#9c9595ff' }}>
-                                                    ⏰ Can undo until {new Date(connection.undo_expires_at).toLocaleDateString()}
-                                                </p>
-                                            )}
+                                        
                                         </div>
                                     ))}
                                 </div>

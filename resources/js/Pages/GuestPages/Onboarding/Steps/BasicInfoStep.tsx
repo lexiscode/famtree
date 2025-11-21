@@ -1,6 +1,6 @@
 import { useState, FormEvent } from 'react';
 import { router } from '@inertiajs/react';
-import { AlertCircle, User, Calendar, Phone } from 'lucide-react';
+import { AlertCircle, User, Calendar, Phone, Users } from 'lucide-react';
 
 interface BasicInfoStepProps {
     onComplete: (progress: any) => void;
@@ -13,6 +13,7 @@ interface BasicInfoStepProps {
         date_of_birth: string | null;
         address: string | null;
         phone: string | null;
+        gender: string | null;
     };
 }
 
@@ -23,12 +24,13 @@ export default function BasicInfoStep({ onComplete, data, user }: BasicInfoStepP
         phone: data?.phone || user?.phone || '',
         bio: data?.bio || user?.bio || '',
         date_of_birth: data?.date_of_birth || user?.date_of_birth || '',
+        gender: data?.gender || user?.gender || '',
     });
 
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({
             ...prev,
@@ -227,6 +229,49 @@ export default function BasicInfoStep({ onComplete, data, user }: BasicInfoStepP
                         </div>
                     </div>
 
+                </div>
+
+                {/* Gender Row */}
+                <div className="row">
+                    <div className="col-md-6">
+                        {/* Gender */}
+                        <div className="form-group">
+                            <label htmlFor="gender" className="form-label">
+                                Gender
+                            </label>
+                            <div style={{ position: 'relative' }}>
+                                <Users
+                                    size={18}
+                                    style={{
+                                        position: 'absolute',
+                                        left: '12px',
+                                        top: '15px',
+                                        color: '#9CA3AF',
+                                        pointerEvents: 'none'
+                                    }}
+                                />
+                                <select
+                                    className={`form-control ${errors.gender ? 'is-invalid' : ''}`}
+                                    id="gender"
+                                    name="gender"
+                                    value={formData.gender}
+                                    onChange={handleChange}
+                                    disabled={isSubmitting}
+                                    style={{ paddingLeft: '40px' }}
+                                >
+                                    <option value="">Select your Gender</option>
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                </select>
+                            </div>
+                            {errors.gender && (
+                                <div className="error-message">
+                                    <AlertCircle size={16} />
+                                    {errors.gender}
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
 
                 {/* Bio */}

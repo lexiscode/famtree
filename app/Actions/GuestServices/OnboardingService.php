@@ -99,6 +99,7 @@ class OnboardingService
             'phone' => $data['phone'] ?? null,
             'bio' => $data['bio'] ?? null,
             'date_of_birth' => $data['date_of_birth'] ?? null,
+            'gender' => $data['gender'] ?? null,
         ]);
 
         // Complete the step
@@ -287,6 +288,7 @@ class OnboardingService
                 'phone' => $user->phone,
                 'bio' => $user->bio,
                 'date_of_birth' => $user->date_of_birth?->format('Y-m-d'),
+                'gender' => $user->gender,
                 'address' => $user->address,
             ],
             'steps' => $steps->map(function ($step) {

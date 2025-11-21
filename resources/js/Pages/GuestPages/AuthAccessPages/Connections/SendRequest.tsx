@@ -241,7 +241,7 @@ export default function SendRequest({
 
                         {/* Relationship Type */}
                         <div className="connections-form-group">
-                            <label className="connections-form-label">Relationship Type</label>
+                            <label className="connections-form-label">Who is this person to you?</label>
                             <select
                                 className="connections-form-select"
                                 value={relationshipType}

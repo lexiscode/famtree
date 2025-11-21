@@ -55,6 +55,7 @@ class LandingPageController extends Controller
             'address' => $user->address,
             'bio' => $user->bio,
             'date_of_birth' => $user->date_of_birth,
+            'gender' => $user->gender ?? null,
             'profile_image_url' => $user->profile_image_url,
             'status' => $user->status ?? 'Alive',
             'job_title' => $user->familyInfo?->current_occupation ?? null,
