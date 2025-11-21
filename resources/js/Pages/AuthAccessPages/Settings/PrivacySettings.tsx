@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Eye, EyeOff, UserX, Flag, Lock, Check, AlertTriangle, Search, Loader } from 'lucide-react';
+import { Eye, EyeOff, UserX, Flag, Lock, Check, AlertTriangle, Search, Loader, Unlock } from 'lucide-react';
 import { usePage, router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
 import SettingsSidebar from '@/Components/Settings/SettingsSidebar';
@@ -515,12 +515,21 @@ export default function PrivacySettings() {
                                                     alignItems: 'center',
                                                     justifyContent: 'space-between',
                                                     padding: '1rem 1.25rem',
-                                                    background: '#FFE9EB',
-                                                    border: '1px solid #FF4757',
+                                                    background: '#FFF5F7',
+                                                    border: '2px solid #FF4757',
                                                     borderRadius: '10px',
+                                                    transition: 'all 0.2s ease',
+                                                }}
+                                                onMouseEnter={(e) => {
+                                                    e.currentTarget.style.background = '#FFE9EB';
+                                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 71, 87, 0.15)';
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    e.currentTarget.style.background = '#FFF5F7';
+                                                    e.currentTarget.style.boxShadow = 'none';
                                                 }}
                                             >
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
                                                     {user.profile_image_url && (
                                                         <img
                                                             src={user.profile_image_url}
@@ -530,6 +539,7 @@ export default function PrivacySettings() {
                                                                 height: '40px',
                                                                 borderRadius: '50%',
                                                                 objectFit: 'cover',
+                                                                border: '2px solid #FF4757',
                                                             }}
                                                         />
                                                     )}
@@ -540,9 +550,34 @@ export default function PrivacySettings() {
                                                 </div>
                                                 <button
                                                     onClick={() => handleUnblockUser(user.id)}
-                                                    className="settings-btn settings-btn-secondary"
-                                                    style={{ fontSize: '0.85rem', padding: '0.6rem 1rem' }}
+                                                    style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '0.5rem',
+                                                        padding: '0.65rem 1.2rem',
+                                                        background: '#FF4757',
+                                                        color: 'white',
+                                                        border: 'none',
+                                                        borderRadius: '8px',
+                                                        fontSize: '0.9rem',
+                                                        fontWeight: 600,
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s ease',
+                                                        whiteSpace: 'nowrap',
+                                                        marginLeft: '1rem',
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        e.currentTarget.style.background = '#FF3740';
+                                                        e.currentTarget.style.transform = 'translateY(-2px)';
+                                                        e.currentTarget.style.boxShadow = '0 6px 16px rgba(255, 71, 87, 0.3)';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.currentTarget.style.background = '#FF4757';
+                                                        e.currentTarget.style.transform = 'translateY(0)';
+                                                        e.currentTarget.style.boxShadow = 'none';
+                                                    }}
                                                 >
+                                                    <Unlock size={18} />
                                                     Unblock
                                                 </button>
                                             </div>
