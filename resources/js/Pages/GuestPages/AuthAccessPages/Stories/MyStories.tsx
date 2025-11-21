@@ -184,6 +184,7 @@ export default function MyStories({
                                         key={post.id}
                                         post={post}
                                         onPostDeleted={handlePostDeleted}
+                                        isOwnPost={true}
                                     />
                                 ))
                             ) : (

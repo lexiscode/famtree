@@ -3,7 +3,7 @@ import { Heart, MessageCircle, Share2, Trash2, Play, Pause, Volume2, X, AlertTri
 import { router } from '@inertiajs/react';
 import { Post, PostCardProps } from '@/types';
 
-export default function PostCard({ post, onPostDeleted }: PostCardProps) {
+export default function PostCard({ post, onPostDeleted, isOwnPost = false }: PostCardProps) {
     const [isLiked, setIsLiked] = useState(false);
     const [likeCount, setLikeCount] = useState(post.reactions_count);
     const [isPlaying, setIsPlaying] = useState(false);
@@ -100,14 +100,16 @@ export default function PostCard({ post, onPostDeleted }: PostCardProps) {
                     </div>
                 </div>
                 <div className="post-actions-menu">
-                    <button
-                        className="post-action-btn delete-btn"
-                        onClick={handleDeleteClick}
-                        disabled={deleteLoading}
-                        title="Delete post"
-                    >
-                        <Trash2 size={18} />
-                    </button>
+                    {isOwnPost && (
+                        <button
+                            className="post-action-btn delete-btn"
+                            onClick={handleDeleteClick}
+                            disabled={deleteLoading}
+                            title="Delete post"
+                        >
+                            <Trash2 size={18} />
+                        </button>
+                    )}
                 </div>
             </div>
 

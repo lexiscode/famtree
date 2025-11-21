@@ -93,6 +93,7 @@ export interface Notification {
 export interface PostCardProps {
     post: Post;
     onPostDeleted: (postId: number) => void;
+    isOwnPost?: boolean;
 }
 
 export interface ProfileSidebarProps {

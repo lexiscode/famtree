@@ -173,6 +173,7 @@ export default function ViewUserStories({
                                         key={post.id}
                                         post={post}
                                         onPostDeleted={handlePostDeleted}
+                                        isOwnPost={false}
                                     />
                                 ))
                             ) : (
