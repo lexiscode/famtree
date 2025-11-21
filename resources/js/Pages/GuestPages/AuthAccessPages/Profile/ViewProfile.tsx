@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { Mail, Phone, MapPin, Cake, FileText, Users, Send, Clock, CheckCircle, Lock, Briefcase, BookOpen, ArrowRight, Image, Newspaper, Plus } from 'lucide-react';
+import { Mail, Phone, MapPin, Cake, FileText, Users, Send, Clock, CheckCircle, Lock, Briefcase, BookOpen, ArrowRight, Image, Newspaper, Plus, ArrowLeft } from 'lucide-react';
 
 interface Profile {
     id: number;
@@ -209,6 +209,14 @@ export default function ViewProfile({
                                     >
                                         <Newspaper size={18} />
                                         View Stories
+                                    </button>
+                                    <button
+                                        className="profile-btn profile-btn-secondary"
+                                        onClick={() => router.visit(route('profile.index'))}
+                                        style={{ width: '100%' }}
+                                    >
+                                        <ArrowLeft size={18} />
+                                        Return to My Profile
                                     </button>
                                 </div>
                             </div>
