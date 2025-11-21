@@ -217,7 +217,7 @@ export default function ViewChild({ child }: Props) {
                                         <div className="child-view-field-label">Status</div>
                                         <div className="child-view-field-value">
                                             <span className="child-view-status-indicator">
-                                                {child.status === 'active' ? 'Active' : 'Inactive'}
+                                                {child.status === 'alive' ? '✓ Alive' : '🕊️ Deceased'}
                                             </span>
                                         </div>
                                     </div>

@@ -42,7 +42,7 @@ class ChildAccountService
             'parent_user_id' => $parentId,
             'is_child_account' => true,
             'created_by_user_id' => $parentId,
-            'status' => 'alive',
+            'status' => 'alive', // Child is alive when account is created
         ];
 
         // Create child account
