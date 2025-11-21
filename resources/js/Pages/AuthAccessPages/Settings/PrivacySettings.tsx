@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Eye, EyeOff, UserX, Flag, Lock, Check, AlertTriangle } from 'lucide-react';
-import { usePage } from '@inertiajs/react';
+import { usePage, router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
 import SettingsSidebar from '@/Components/Settings/SettingsSidebar';
 
@@ -40,6 +40,15 @@ export default function PrivacySettings() {
 
     const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const [saveLoading, setSaveLoading] = useState(false);
+
+    // Report User Form
+    const [reportForm, setReportForm] = useState({
+        username: '',
+        reason: '',
+        description: '',
+    });
+    const [reportErrors, setReportErrors] = useState<Record<string, string>>({});
+    const [reportSubmitting, setReportSubmitting] = useState(false);
 
     const handleBlockUser = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -84,6 +93,56 @@ export default function PrivacySettings() {
         } catch (error) {
             setSaveMessage({ type: 'error', text: 'Failed to save privacy settings' });
             setSaveLoading(false);
+        }
+    };
+
+    const handleReportInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+        const { name, value } = e.target;
+        setReportForm({
+            ...reportForm,
+            [name]: value,
+        });
+        // Clear error for this field
+        if (reportErrors[name]) {
+            setReportErrors({
+                ...reportErrors,
+                [name]: '',
+            });
+        }
+    };
+
+    const handleSubmitReport = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setReportSubmitting(true);
+        setReportErrors({});
+
+        try {
+            const response = await fetch(route('reports.store'), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+                body: JSON.stringify(reportForm),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                if (data.errors) {
+                    setReportErrors(data.errors);
+                    setSaveMessage({ type: 'error', text: 'Please fix the errors below.' });
+                } else {
+                    setSaveMessage({ type: 'error', text: data.error || 'Failed to submit report.' });
+                }
+            } else {
+                setSaveMessage({ type: 'success', text: data.message || 'Report submitted successfully!' });
+                setReportForm({ username: '', reason: '', description: '' });
+            }
+        } catch (error) {
+            setSaveMessage({ type: 'error', text: 'An error occurred while submitting the report.' });
+        } finally {
+            setReportSubmitting(false);
         }
     };
 
@@ -297,7 +356,18 @@ export default function PrivacySettings() {
                         </div>
 
                         <div className="settings-section-body">
-                            <form className="settings-form-group-row">
+                            {saveMessage && (
+                                <div className={`settings-alert settings-alert-${saveMessage.type}`}>
+                                    <div className="settings-alert-icon">
+                                        {saveMessage.type === 'success' ? <Check size={20} /> : <AlertTriangle size={20} />}
+                                    </div>
+                                    <div className="settings-alert-content">
+                                        <p className="settings-alert-message">{saveMessage.text}</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            <form onSubmit={handleSubmitReport} className="settings-form-group-row">
                                 <div className="settings-form-group">
                                     <label className="settings-label">
                                         Username to Report
@@ -305,10 +375,18 @@ export default function PrivacySettings() {
                                     </label>
                                     <input
                                         type="text"
-                                        className="settings-input"
+                                        name="username"
+                                        className={`settings-input ${reportErrors.username ? 'error' : ''}`}
                                         placeholder="Enter username"
+                                        value={reportForm.username}
+                                        onChange={handleReportInputChange}
                                         required
                                     />
+                                    {reportErrors.username && (
+                                        <p style={{ color: '#FF4757', fontSize: '0.875rem', marginTop: '0.5rem' }}>
+                                            {reportErrors.username}
+                                        </p>
+                                    )}
                                 </div>
 
                                 <div className="settings-form-group">
@@ -316,7 +394,13 @@ export default function PrivacySettings() {
                                         Reason
                                         <span className="settings-label-required">*</span>
                                     </label>
-                                    <select className="settings-select" required>
+                                    <select
+                                        name="reason"
+                                        className={`settings-select ${reportErrors.reason ? 'error' : ''}`}
+                                        value={reportForm.reason}
+                                        onChange={handleReportInputChange}
+                                        required
+                                    >
                                         <option value="">Select a reason...</option>
                                         <option value="harassment">Harassment or bullying</option>
                                         <option value="spam">Spam</option>
@@ -324,22 +408,39 @@ export default function PrivacySettings() {
                                         <option value="impersonation">Impersonation</option>
                                         <option value="other">Other</option>
                                     </select>
+                                    {reportErrors.reason && (
+                                        <p style={{ color: '#FF4757', fontSize: '0.875rem', marginTop: '0.5rem' }}>
+                                            {reportErrors.reason}
+                                        </p>
+                                    )}
                                 </div>
                             </form>
 
                             <div className="settings-form-group">
                                 <label className="settings-label">Additional Details</label>
                                 <textarea
-                                    className="settings-textarea"
+                                    name="description"
+                                    className={`settings-textarea ${reportErrors.description ? 'error' : ''}`}
                                     placeholder="Provide additional context about your report..."
+                                    value={reportForm.description}
+                                    onChange={handleReportInputChange}
                                 />
+                                {reportErrors.description && (
+                                    <p style={{ color: '#FF4757', fontSize: '0.875rem', marginTop: '0.5rem' }}>
+                                        {reportErrors.description}
+                                    </p>
+                                )}
                                 <p className="settings-form-hint">Please provide as much detail as possible to help us review your report.</p>
                             </div>
 
                             <div className="settings-button-group">
-                                <button className="settings-btn settings-btn-danger">
+                                <button
+                                    onClick={handleSubmitReport}
+                                    disabled={reportSubmitting || !reportForm.username || !reportForm.reason}
+                                    className="settings-btn settings-btn-danger"
+                                >
                                     <Flag size={18} />
-                                    Submit Report
+                                    {reportSubmitting ? 'Submitting...' : 'Submit Report'}
                                 </button>
                             </div>
                         </div>

@@ -19,6 +19,7 @@ use App\Http\Controllers\GuestControllers\AuthAccessControllers\ChildAccountCont
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\GalleryController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\AccountSettingsController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\PostController;
+use App\Http\Controllers\GuestControllers\AuthAccessControllers\UserReportController;
 use App\Http\Controllers\GuestControllers\OnboardingController;
 use App\Http\Controllers\GuestControllers\StatusController;
 use App\Http\Controllers\GuestControllers\NotificationController;
@@ -199,5 +200,11 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::get('/notifications', function () {
             return Inertia::render('AuthAccessPages/Settings/NotificationSettings');
         })->name('settings.notifications');
+    });
+
+    // User Report routes
+    Route::prefix('reports')->group(function () {
+        Route::post('/users', [UserReportController::class, 'store'])->name('reports.store');
+        Route::get('/my-reports', [UserReportController::class, 'myReports'])->name('reports.my-reports');
     });
 });
