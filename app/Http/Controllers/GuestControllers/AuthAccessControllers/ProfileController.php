@@ -23,7 +23,7 @@ class ProfileController extends Controller
         $viewer = auth()->user();
 
         if (!$viewer) {
-            return redirect()->route('login');
+            return redirect()->route('home');
         }
 
         $owner = User::with('familyInfo')->findOrFail($userId);

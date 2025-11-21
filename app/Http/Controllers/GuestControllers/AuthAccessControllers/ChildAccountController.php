@@ -23,7 +23,7 @@ class ChildAccountController extends Controller
         $user = auth()->user();
 
         if (!$user) {
-            return redirect()->route('login');
+            return redirect()->route('home');
         }
 
         // Check if user is eligible to manage child accounts
@@ -50,7 +50,7 @@ class ChildAccountController extends Controller
         $user = auth()->user();
 
         if (!$user) {
-            return redirect()->route('login');
+            return redirect()->route('home');
         }
 
         // Check if user is eligible to manage child accounts
@@ -74,7 +74,7 @@ class ChildAccountController extends Controller
         $user = auth()->user();
 
         if (!$user) {
-            return redirect()->route('login');
+            return redirect()->route('home');
         }
 
         // Check if user is eligible
@@ -115,7 +115,7 @@ class ChildAccountController extends Controller
         $user = auth()->user();
 
         if (!$user) {
-            return redirect()->route('login');
+            return redirect()->route('home');
         }
 
         $child = $this->childAccountRepository->getChildAccount($childId);
@@ -171,7 +171,7 @@ class ChildAccountController extends Controller
         $user = auth()->user();
 
         if (!$user) {
-            return redirect()->route('login');
+            return redirect()->route('home');
         }
 
         try {
@@ -221,7 +221,7 @@ class ChildAccountController extends Controller
         $user = auth()->user();
 
         if (!$user) {
-            return redirect()->route('login');
+            return redirect()->route('home');
         }
 
         $child = $this->childAccountRepository->getChildAccount($childId);

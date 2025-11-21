@@ -23,7 +23,7 @@ class FamilyTreeController extends Controller
         $user = auth()->user();
 
         if (!$user) {
-            return redirect()->route('login');
+            return redirect()->route('home');
         }
 
         // Get trees created by user
@@ -64,7 +64,7 @@ class FamilyTreeController extends Controller
         $user = auth()->user();
 
         if (!$user) {
-            return redirect()->route('login');
+            return redirect()->route('home');
         }
 
         return Inertia::render('GuestPages/AuthAccessPages/FamilyTree/CreateTree', [
@@ -86,7 +86,7 @@ class FamilyTreeController extends Controller
         $user = auth()->user();
 
         if (!$user) {
-            return redirect()->route('login');
+            return redirect()->route('home');
         }
 
         $validated = $request->validate([
@@ -121,7 +121,7 @@ class FamilyTreeController extends Controller
         $user = auth()->user();
 
         if (!$user) {
-            return redirect()->route('login');
+            return redirect()->route('home');
         }
 
         $tree = $this->treeRepository->getTree($treeId);
@@ -156,7 +156,7 @@ class FamilyTreeController extends Controller
         $user = auth()->user();
 
         if (!$user) {
-            return redirect()->route('login');
+            return redirect()->route('home');
         }
 
         if (!$this->treeService->isOwner($treeId, $user->id)) {
@@ -183,7 +183,7 @@ class FamilyTreeController extends Controller
         $user = auth()->user();
 
         if (!$user) {
-            return redirect()->route('login');
+            return redirect()->route('home');
         }
 
         if (!$this->treeService->isOwner($treeId, $user->id)) {
@@ -214,7 +214,7 @@ class FamilyTreeController extends Controller
         $user = auth()->user();
 
         if (!$user) {
-            return redirect()->route('login');
+            return redirect()->route('home');
         }
 
         if (!$this->treeService->isOwner($treeId, $user->id)) {
@@ -245,7 +245,7 @@ class FamilyTreeController extends Controller
         $user = auth()->user();
 
         if (!$user) {
-            return redirect()->route('login');
+            return redirect()->route('home');
         }
 
         if (!$this->treeService->isOwner($treeId, $user->id)) {
@@ -265,7 +265,7 @@ class FamilyTreeController extends Controller
         $user = auth()->user();
 
         if (!$user) {
-            return redirect()->route('login');
+            return redirect()->route('home');
         }
 
         if (!$this->treeService->isOwner($treeId, $user->id)) {
