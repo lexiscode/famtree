@@ -308,7 +308,7 @@ export default function ViewProfile({
 
                             {/* Non-Mutual Connections Card */}
                             {nonMutualConnections.length > 0 && (
-                                <div className="profile-card">
+                                <div className="profile-card profile-card-nonmutual">
                                     <div className="profile-card-header">
                                         <h2 className="profile-card-title">
                                             <Users size={24} />
@@ -326,11 +326,11 @@ export default function ViewProfile({
                                         </span>
                                     </div>
 
-                                    <div className="profile-mutual-list">
+                                    <div className="profile-mutual-list profile-nonmutual-list">
                                         {nonMutualConnections.map((connection) => (
                                             <div
                                                 key={connection.id}
-                                                className="profile-mutual-item"
+                                                className="profile-mutual-item profile-nonmutual-item"
                                                 onClick={() => router.visit(route('profile.view', connection.id))}
                                                 style={{ cursor: 'pointer' }}
                                                 title={`View ${connection.name}'s profile`}

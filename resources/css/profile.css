@@ -699,6 +699,35 @@
     font-weight: 500;
 }
 
+/* Non-Mutual Connections Item Styling */
+.profile-nonmutual-item {
+    background: rgba(30, 40, 55, 0.8) !important;
+    border: 1px solid rgba(147, 51, 234, 0.2) !important;
+}
+
+.profile-nonmutual-item:hover {
+    background: rgba(30, 40, 55, 0.95) !important;
+    border-color: rgba(147, 51, 234, 0.4) !important;
+    box-shadow: 0 10px 24px rgba(147, 51, 234, 0.15) !important;
+}
+
+.profile-nonmutual-item .profile-mutual-name {
+    color: #FFFFFF !important;
+}
+
+.profile-nonmutual-item .profile-mutual-username {
+    color: #B0B0B0 !important;
+}
+
+.profile-nonmutual-item .profile-mutual-avatar {
+    border-color: #9333EA !important;
+}
+
+.profile-nonmutual-item:hover .profile-mutual-avatar {
+    border-color: #D946EF !important;
+    box-shadow: 0 6px 16px rgba(147, 51, 234, 0.25) !important;
+}
+
 /* ============================================
    EMPTY STATES
    ============================================ */
