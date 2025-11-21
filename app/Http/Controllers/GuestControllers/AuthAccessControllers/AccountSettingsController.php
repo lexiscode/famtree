@@ -65,7 +65,13 @@ class AccountSettingsController extends Controller
         $user = auth()->user();
         $validated = $request->validated();
 
-        $this->accountService->updateProfile($user, $validated);
+        // Extract the file from the validated data
+        $profileImage = $request->file('profile_image');
+
+        // Remove the file from validated data before passing to service
+        unset($validated['profile_image']);
+
+        $this->accountService->updateProfile($user, $validated, $profileImage);
 
         return back()->with('success', 'Profile information updated successfully.');
     }

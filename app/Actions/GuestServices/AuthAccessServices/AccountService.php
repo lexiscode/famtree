@@ -4,7 +4,9 @@ namespace App\Actions\GuestServices\AuthAccessServices;
 
 use App\Models\GuestModels\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
+use Illuminate\Http\UploadedFile;
 
 class AccountService
 {
@@ -58,7 +60,7 @@ class AccountService
     /**
      * Update user profile information
      */
-    public function updateProfile(User $user, array $data): void
+    public function updateProfile(User $user, array $data, ?UploadedFile $profileImage = null): void
     {
         // Fields that belong to the users table
         $userFields = [
@@ -66,7 +68,6 @@ class AccountService
             'address',
             'bio',
             'date_of_birth',
-            'profile_image_url',
         ];
 
         $userData = [];
@@ -74,6 +75,19 @@ class AccountService
             if (array_key_exists($field, $data)) {
                 $userData[$field] = $data[$field];
             }
+        }
+
+        // Handle profile image upload
+        if ($profileImage) {
+            // Delete old image if it exists
+            if ($user->profile_image && Storage::disk('public')->exists($user->profile_image)) {
+                Storage::disk('public')->delete($user->profile_image);
+            }
+
+            // Store new image
+            $path = $profileImage->store('profile-images', 'public');
+            $userData['profile_image'] = $path;
+            $userData['profile_image_url'] = Storage::disk('public')->url($path);
         }
 
         if (!empty($userData)) {

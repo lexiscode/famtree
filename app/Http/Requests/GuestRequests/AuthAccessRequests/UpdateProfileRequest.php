@@ -28,7 +28,7 @@ class UpdateProfileRequest extends FormRequest
             'date_of_birth' => 'nullable|date',
             'job_title' => 'nullable|string|max:100',
             'education_level' => 'nullable|string|max:100',
-            'profile_image_url' => 'nullable|url',
+            'profile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
         ];
     }
 
@@ -43,7 +43,9 @@ class UpdateProfileRequest extends FormRequest
             'bio.max' => 'Bio must not exceed 500 characters.',
             'job_title.max' => 'Job title must not exceed 100 characters.',
             'education_level.max' => 'Education level must not exceed 100 characters.',
-            'profile_image_url.url' => 'Please provide a valid image URL.',
+            'profile_image.image' => 'Please upload a valid image file.',
+            'profile_image.mimes' => 'Image must be a JPEG, PNG, GIF, or WebP file.',
+            'profile_image.max' => 'Image size must not exceed 5MB.',
         ];
     }
 }

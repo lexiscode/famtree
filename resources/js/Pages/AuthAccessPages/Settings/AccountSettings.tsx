@@ -80,8 +80,9 @@ export default function AccountSettings() {
         date_of_birth: user?.date_of_birth || '',
         job_title: user?.job_title || '',
         education_level: user?.education_level || '',
-        profile_image_url: user?.profile_image_url || '',
     });
+    const [profileImage, setProfileImage] = useState<File | null>(null);
+    const [profileImagePreview, setProfileImagePreview] = useState<string>(user?.profile_image_url || '');
     const [profileLoading, setProfileLoading] = useState(false);
     const [profileMessage, setProfileMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -172,14 +173,41 @@ export default function AccountSettings() {
         });
     };
 
+    const handleProfileImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setProfileImage(file);
+            // Create a preview URL
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setProfileImagePreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
     const handleUpdateProfile = (e: React.FormEvent) => {
         e.preventDefault();
         setProfileLoading(true);
         setProfileMessage(null);
 
-        router.post(route('settings.update-profile'), profileForm, {
+        // Create FormData to handle file upload
+        const formData = new FormData();
+        formData.append('phone', profileForm.phone);
+        formData.append('address', profileForm.address);
+        formData.append('bio', profileForm.bio);
+        formData.append('date_of_birth', profileForm.date_of_birth);
+        formData.append('job_title', profileForm.job_title);
+        formData.append('education_level', profileForm.education_level);
+
+        if (profileImage) {
+            formData.append('profile_image', profileImage);
+        }
+
+        router.post(route('settings.update-profile'), formData, {
             onSuccess: () => {
                 setProfileLoading(false);
+                setProfileImage(null);
                 setProfileMessage({ type: 'success', text: 'Profile information updated successfully.' });
             },
             onError: (errors: Record<string, string>) => {
@@ -233,13 +261,11 @@ export default function AccountSettings() {
                             <div className="settings-form-group" style={{ marginBottom: '2rem' }}>
                                 <label className="settings-label">Profile Picture</label>
                                 <div style={{ display: 'flex', gap: '2rem', alignItems: 'flex-start' }}>
-                                    <div style={{
-                                        flex: 1,
-                                    }}>
-                                        {profileForm.profile_image_url && (
+                                    <div>
+                                        {profileImagePreview && (
                                             <img
-                                                src={profileForm.profile_image_url}
-                                                alt="Profile"
+                                                src={profileImagePreview}
+                                                alt="Profile Preview"
                                                 style={{
                                                     width: '120px',
                                                     height: '120px',
@@ -247,18 +273,57 @@ export default function AccountSettings() {
                                                     objectFit: 'cover',
                                                     border: '3px solid #0052E8',
                                                     marginBottom: '1rem',
+                                                    display: 'block',
                                                 }}
                                             />
                                         )}
-                                        <input
-                                            type="url"
-                                            name="profile_image_url"
-                                            className="settings-input"
-                                            placeholder="Enter profile image URL"
-                                            value={profileForm.profile_image_url}
-                                            onChange={handleProfileChange}
-                                        />
-                                        <p className="settings-form-hint">Paste the URL of your profile image</p>
+                                        <div style={{
+                                            position: 'relative',
+                                            display: 'inline-block',
+                                        }}>
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={handleProfileImageChange}
+                                                style={{
+                                                    position: 'absolute',
+                                                    opacity: 0,
+                                                    width: '100%',
+                                                    height: '100%',
+                                                    cursor: 'pointer',
+                                                }}
+                                            />
+                                            <button
+                                                type="button"
+                                                style={{
+                                                    padding: '0.625rem 1.25rem',
+                                                    borderRadius: '6px',
+                                                    border: '1px solid #DEE2E6',
+                                                    background: '#0052E8',
+                                                    color: 'white',
+                                                    fontSize: '0.9rem',
+                                                    fontWeight: 500,
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.2s ease',
+                                                }}
+                                                onMouseEnter={(e) => {
+                                                    e.currentTarget.style.background = '#0042C2';
+                                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 82, 232, 0.3)';
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    e.currentTarget.style.background = '#0052E8';
+                                                    e.currentTarget.style.boxShadow = 'none';
+                                                }}
+                                                onClick={(e) => {
+                                                    e.currentTarget.previousElementSibling?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+                                                }}
+                                            >
+                                                Choose Image
+                                            </button>
+                                        </div>
+                                        <p className="settings-form-hint" style={{ marginTop: '0.75rem' }}>
+                                            {profileImage ? `Selected: ${profileImage.name}` : 'Click to upload a new profile picture (JPG, PNG, GIF)'}
+                                        </p>
                                     </div>
                                 </div>
                             </div>
