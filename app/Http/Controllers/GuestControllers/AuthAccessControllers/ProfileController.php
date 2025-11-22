@@ -163,7 +163,7 @@ class ProfileController extends Controller
                 'profile_image_url' => $user->profile_image_url,
             ]),
             'nonMutualConnectionsCount' => $allOwnerConnectionUsers->count() - count($mutualConnections),
-            'nonMutualConnections' => $nonMutualConnections->map(fn ($user) => [
+            'nonMutualConnections' => collect($nonMutualConnections)->map(fn ($user) => [
                 'id' => $user->id,
                 'name' => trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')),
                 'username' => $user->username,
