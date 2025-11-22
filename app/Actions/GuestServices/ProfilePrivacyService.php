@@ -55,7 +55,20 @@ class ProfilePrivacyService
      */
     private function isConnected(int $userId1, int $userId2): bool
     {
-        return $this->connectionRepository->connectionExists($userId1, $userId2);
+        // Check if they have any direct connection
+        $connections = $this->connectionRepository->getConnections($userId1);
+
+        foreach ($connections as $connection) {
+            $connectedUserId = $connection->requester_user_id === $userId1
+                ? $connection->recipient_user_id
+                : $connection->requester_user_id;
+
+            if ($connectedUserId === $userId2) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
