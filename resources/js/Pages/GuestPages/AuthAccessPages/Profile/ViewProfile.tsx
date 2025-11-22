@@ -64,12 +64,18 @@ export default function ViewProfile({
     useEffect(() => {
         if (accessDenied && accessDeniedReason) {
             setShowAccessDeniedModal(true);
+            // Go back to previous page if access is denied
+            // Use a small delay to ensure the modal renders
+            setTimeout(() => {
+                window.history.back();
+            }, 100);
         }
     }, [accessDenied, accessDeniedReason]);
 
     const handleProfileNavigation = (userId: number, userName: string) => {
         // Store the user name before navigation
         setDeniedUserName(userName);
+        // Navigate to the profile
         router.visit(route('profile.view', userId));
     };
 
