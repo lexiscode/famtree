@@ -13,6 +13,7 @@ use App\Http\Controllers\GuestControllers\FamilyPreviewController;
 use App\Http\Controllers\GuestControllers\FamilyExplorerController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\LandingPageController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\ConnectionRequestController;
+use App\Http\Controllers\GuestControllers\AuthAccessControllers\ConnectionViewController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\ProfileController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\FamilyTreeController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\ChildAccountController;
@@ -96,6 +97,7 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::get('/pending', [ConnectionRequestController::class, 'pending'])->name('connections.pending');
         Route::get('/sent', [ConnectionRequestController::class, 'sent'])->name('connections.sent');
         Route::get('/create', [ConnectionRequestController::class, 'create'])->name('connections.create');
+        Route::get('/user/{userId}', [ConnectionViewController::class, 'viewUserConnections'])->name('connections.view-user');
         Route::post('/request', [ConnectionRequestController::class, 'store'])->name('connections.store');
         Route::post('/{connection}/accept', [ConnectionRequestController::class, 'accept'])->name('connections.accept');
         Route::post('/{connection}/decline', [ConnectionRequestController::class, 'decline'])->name('connections.decline');

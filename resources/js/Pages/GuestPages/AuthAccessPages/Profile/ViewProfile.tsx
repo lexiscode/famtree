@@ -211,7 +211,7 @@ export default function ViewProfile({
                                     </div>
                                 )}
 
-                                {/* Gallery and Stories Buttons */}
+                                {/* Gallery, Stories, and Connections Buttons */}
                                 <div className="profile-actions" style={{ marginTop: '2rem', gap: '0.75rem' }}>
                                     <button
                                         className="profile-btn profile-btn-primary"
@@ -228,6 +228,14 @@ export default function ViewProfile({
                                     >
                                         <Newspaper size={18} />
                                         View Stories
+                                    </button>
+                                    <button
+                                        className="profile-btn profile-btn-secondary"
+                                        onClick={() => router.visit(route('connections.view-user', profile.id))}
+                                        style={{ width: '100%' }}
+                                    >
+                                        <Users size={18} />
+                                        View Connections
                                     </button>
                                     <button
                                         className="profile-btn profile-btn-secondary"
