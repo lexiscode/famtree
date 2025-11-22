@@ -30,14 +30,25 @@ class ProfileController extends Controller
 
         $owner = User::with('familyInfo')->findOrFail($userId);
 
-        // Check if viewer has blocked the owner
-        if ($this->blockService->hasBlocked($viewer, $owner->id)) {
-            return abort(403, 'You have blocked this user and cannot view their profile.');
-        }
+        // Users can always view their own profile
+        if ($viewer->id === $owner->id) {
+            // Continue to full profile display below
+        } else {
+            // Check if viewer has blocked the owner
+            if ($this->blockService->hasBlocked($viewer, $owner->id)) {
+                return abort(403, 'You have blocked this user and cannot view their profile.');
+            }
 
-        // Check if owner has blocked the viewer
-        if ($this->blockService->isBlockedBy($viewer, $owner->id)) {
-            return abort(403, 'This user has blocked you and you cannot view their profile.');
+            // Check if owner has blocked the viewer
+            if ($this->blockService->isBlockedBy($viewer, $owner->id)) {
+                return abort(403, 'This user has blocked you and you cannot view their profile.');
+            }
+
+            // Check profile visibility settings
+            $canViewProfile = $this->canViewProfile($viewer, $owner);
+            if (!$canViewProfile) {
+                return abort(403, 'You do not have permission to view this profile.');
+            }
         }
 
         // Get visible profile data based on privacy settings
@@ -150,5 +161,53 @@ class ProfileController extends Controller
                 'profile_image_url' => $user->profile_image_url,
             ]),
         ]);
+    }
+
+    /**
+     * Check if a viewer can view the owner's profile based on visibility setting
+     */
+    private function canViewProfile(User $viewer, User $owner): bool
+    {
+        $visibility = $owner->profile_visibility ?? 'connected';
+
+        return match ($visibility) {
+            'public' => $this->isConnectedDirect($viewer, $owner) || $this->isConnectedIndirect($viewer, $owner),
+            'connected' => $this->isConnectedDirect($viewer, $owner),
+            'private' => false,
+            default => false,
+        };
+    }
+
+    /**
+     * Check if two users are directly connected
+     * Direct connection = both users have a connection record between them
+     */
+    private function isConnectedDirect(User $viewer, User $owner): bool
+    {
+        return $this->connectionRepository->connectionExists($viewer->id, $owner->id);
+    }
+
+    /**
+     * Check if two users are indirectly connected
+     * Indirect connection = viewer is connected to someone who is connected to owner
+     * This allows viewing through mutual connections (public profiles)
+     */
+    private function isConnectedIndirect(User $viewer, User $owner): bool
+    {
+        // Get all direct connections of the viewer
+        $viewerConnections = $this->connectionRepository->getConnections($viewer->id)->pluck('id')->toArray();
+
+        if (empty($viewerConnections)) {
+            return false;
+        }
+
+        // Check if any of the viewer's connections are connected to the owner
+        foreach ($viewerConnections as $connectionId) {
+            if ($this->connectionRepository->connectionExists($connectionId, $owner->id)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

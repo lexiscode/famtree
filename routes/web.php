@@ -18,6 +18,7 @@ use App\Http\Controllers\GuestControllers\AuthAccessControllers\FamilyTreeContro
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\ChildAccountController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\GalleryController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\AccountSettingsController;
+use App\Http\Controllers\GuestControllers\AuthAccessControllers\PrivacyController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\PostController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\UserReportController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\UserBlockController;
@@ -210,6 +211,8 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::get('/privacy', function () {
             return Inertia::render('AuthAccessPages/Settings/PrivacySettings');
         })->name('settings.privacy');
+
+        Route::post('/privacy/profile-visibility', [PrivacyController::class, 'updateProfileVisibility'])->name('settings.update-profile-visibility');
 
         Route::get('/notifications', function () {
             return Inertia::render('AuthAccessPages/Settings/NotificationSettings');

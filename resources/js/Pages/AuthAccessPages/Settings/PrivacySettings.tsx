@@ -193,17 +193,67 @@ export default function PrivacySettings() {
         return () => clearTimeout(timer);
     }, [reportForm.username]);
 
+    const handleProfileVisibilityChange = async (newVisibility: 'public' | 'connected' | 'private') => {
+        setProfileVisibility(newVisibility);
+        setSaveLoading(true);
+        setSaveMessage(null);
+
+        try {
+            const response = await fetch(route('settings.update-profile-visibility'), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+                body: JSON.stringify({
+                    profile_visibility: newVisibility,
+                }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                setSaveMessage({ type: 'error', text: data.error || 'Failed to save privacy settings.' });
+                // Revert the visibility change on error
+                setProfileVisibility(profileVisibility);
+            } else {
+                setSaveMessage({ type: 'success', text: data.message || 'Profile visibility updated successfully.' });
+            }
+        } catch (error) {
+            setSaveMessage({ type: 'error', text: 'An error occurred while saving privacy settings.' });
+            // Revert the visibility change on error
+            setProfileVisibility(profileVisibility);
+        } finally {
+            setSaveLoading(false);
+        }
+    };
+
     const handleSavePrivacySettings = async () => {
         setSaveLoading(true);
         setSaveMessage(null);
 
         try {
-            setTimeout(() => {
-                setSaveMessage({ type: 'success', text: 'Privacy settings saved successfully' });
-                setSaveLoading(false);
-            }, 1000);
+            const response = await fetch(route('settings.update-profile-visibility'), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+                body: JSON.stringify({
+                    profile_visibility: profileVisibility,
+                }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                setSaveMessage({ type: 'error', text: data.error || 'Failed to save privacy settings.' });
+            } else {
+                setSaveMessage({ type: 'success', text: data.message || 'Privacy settings saved successfully.' });
+            }
         } catch (error) {
-            setSaveMessage({ type: 'error', text: 'Failed to save privacy settings' });
+            setSaveMessage({ type: 'error', text: 'An error occurred while saving privacy settings.' });
+        } finally {
             setSaveLoading(false);
         }
     };
@@ -315,11 +365,12 @@ export default function PrivacySettings() {
                                             name="profile-visibility"
                                             value={option.value}
                                             checked={profileVisibility === option.value}
-                                            onChange={(e) => setProfileVisibility(e.target.value as any)}
+                                            onChange={(e) => handleProfileVisibilityChange(e.target.value as 'public' | 'connected' | 'private')}
+                                            disabled={saveLoading}
                                             style={{
                                                 width: '20px',
                                                 height: '20px',
-                                                cursor: 'pointer',
+                                                cursor: saveLoading ? 'not-allowed' : 'pointer',
                                                 accentColor: '#0052E8',
                                             }}
                                         />

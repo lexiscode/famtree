@@ -41,6 +41,7 @@ class User extends Authenticatable
         'two_fa_enabled',
         'two_fa_secret',
         'two_fa_backup_codes',
+        'profile_visibility',
     ];
 
     /**
