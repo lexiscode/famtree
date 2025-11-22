@@ -104,7 +104,7 @@ class ProfileController extends Controller
             })->filter(); // Remove null values
 
             // Filter out mutual connections to get non-mutual ones
-            $mutualIds = $mutualConnections->pluck('id')->toArray();
+            $mutualIds = collect($mutualConnections)->pluck('id')->toArray();
             $nonMutualConnections = $allOwnerConnectionUsers->filter(fn ($user) => !in_array($user->id, $mutualIds))->take(5);
         }
 
@@ -156,7 +156,7 @@ class ProfileController extends Controller
                 'status' => $sentRequest->status,
             ] : null,
             'mutualConnectionsCount' => count($mutualConnections),
-            'mutualConnections' => $mutualConnections->take(5)->map(fn ($user) => [
+            'mutualConnections' => collect($mutualConnections)->take(5)->map(fn ($user) => [
                 'id' => $user->id,
                 'name' => trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')),
                 'username' => $user->username,
