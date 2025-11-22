@@ -59,20 +59,33 @@ export default function ViewProfile({
 }: Props) {
     const [showAccessDeniedModal, setShowAccessDeniedModal] = useState(accessDenied);
     const [deniedUserName, setDeniedUserName] = useState<string>(profile.name || '');
+    const [previousProfileId, setPreviousProfileId] = useState<number | null>(null);
 
-    // Show modal immediately if access is denied
+    // Store the current profile ID before navigating away
+    useEffect(() => {
+        const urlParts = window.location.pathname.split('/');
+        const currentId = parseInt(urlParts[urlParts.length - 1], 10);
+        if (!isNaN(currentId)) {
+            setPreviousProfileId(currentId);
+        }
+    }, []);
+
+    // Show modal immediately if access is denied and return to previous profile
     useEffect(() => {
         if (accessDenied && accessDeniedReason) {
             setShowAccessDeniedModal(true);
-            // Go back to previous page if access is denied
-            // Use a small delay to ensure the modal renders
+            // Navigate back to the previous profile after a delay
+            // This gives the modal time to render and be visible to the user
             setTimeout(() => {
+                // Navigate back using window.history which preserves the modal state
                 window.history.back();
-            }, 100);
+            }, 2000); // Give user 2 seconds to read the modal
         }
     }, [accessDenied, accessDeniedReason]);
 
     const handleProfileNavigation = (userId: number, userName: string) => {
+        // Store the current profile ID before navigation
+        setPreviousProfileId(profile.id);
         // Store the user name before navigation
         setDeniedUserName(userName);
         // Navigate to the profile
