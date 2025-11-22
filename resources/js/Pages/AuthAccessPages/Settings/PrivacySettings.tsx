@@ -9,6 +9,7 @@ interface User {
     email: string;
     first_name: string;
     last_name: string;
+    profile_visibility?: 'public' | 'connected' | 'private';
 }
 
 interface PageProps {
@@ -127,6 +128,10 @@ export default function PrivacySettings() {
 
     useEffect(() => {
         fetchBlockedUsers();
+        // Load current profile visibility from authenticated user
+        if (props.auth?.user?.profile_visibility) {
+            setProfileVisibility(props.auth.user.profile_visibility as 'public' | 'connected' | 'private');
+        }
     }, []);
 
     // Block User Search

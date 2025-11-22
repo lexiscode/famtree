@@ -66,6 +66,7 @@ class HandleInertiaRequests extends Middleware
                 'profile_image_url' => $user->profile_image_url,
                 'job_title' => $user->familyInfo?->current_occupation,
                 'education_level' => $user->familyInfo?->education_level,
+                'profile_visibility' => $user->profile_visibility ?? 'connected',
             ];
         }
 
