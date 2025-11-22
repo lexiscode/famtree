@@ -76,19 +76,28 @@ class ConnectionViewController extends Controller
         // Get all connections of the owner
         $allConnections = $this->connectionRepository->getConnections($owner->id);
 
-        // Extract actual user objects from connections
-        $connectionUsers = $allConnections->map(function ($connection) use ($owner) {
-            return $connection->requester_user_id === $owner->id ? $connection->recipient : $connection->requester;
+        // Format connections with relationship type information
+        $formattedConnections = $allConnections->map(function ($connection) use ($owner) {
+            // Get the other user in the connection
+            $user = $connection->requester_user_id === $owner->id ? $connection->recipient : $connection->requester;
+
+            // Format relationship label
+            $relationshipLabel = $connection->relationship_type
+                ? ucfirst(str_replace('_', ' ', $connection->relationship_type))
+                : 'Connection';
+
+            return [
+                'id' => $user->id,
+                'name' => trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')),
+                'username' => $user->username,
+                'profile_image_url' => $user->profile_image_url,
+                'status' => $user->status,
+                'relationship_type' => $connection->relationship_type,
+                'relationship_label' => $relationshipLabel,
+            ];
         })->filter();
 
-        // Format user data for response
-        $formattedConnections = $connectionUsers->map(fn ($user) => [
-            'id' => $user->id,
-            'name' => trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')),
-            'username' => $user->username,
-            'profile_image_url' => $user->profile_image_url,
-            'status' => $user->status,
-        ]);
+        $connectionUsers = $formattedConnections;
 
         // Get mutual connections for the left sidebar display
         $mutualConnections = $this->connectionRepository->getMutualConnections($viewer->id, $owner->id);

@@ -103,6 +103,9 @@ export default function AccountSettings() {
     const [deletePassword, setDeletePassword] = useState('');
     const [deleteLoading, setDeleteLoading] = useState(false);
 
+    // Disable 2FA modal state
+    const [showDisable2FAModal, setShowDisable2FAModal] = useState(false);
+
     // Profile information state - initialize with empty values, populate in useEffect
     const [profileForm, setProfileForm] = useState({
         phone: '',
@@ -253,10 +256,6 @@ export default function AccountSettings() {
     };
 
     const handleDisable2FA = async () => {
-        if (!window.confirm('Are you sure you want to disable 2FA? Your account will be less secure.')) {
-            return;
-        }
-
         setTwoFALoading(true);
         setTwoFAMessage(null);
         try {
@@ -277,6 +276,7 @@ export default function AccountSettings() {
                 setBackupCodes([]);
                 setBackupCodesCount(0);
                 setTwoFAMessage({ type: 'success', text: data.message });
+                setShowDisable2FAModal(false);
             } else {
                 setTwoFAMessage({ type: 'error', text: data.error || 'Failed to disable 2FA.' });
             }
@@ -1029,7 +1029,7 @@ export default function AccountSettings() {
 
                                     <div className="settings-button-group">
                                         <button
-                                            onClick={handleDisable2FA}
+                                            onClick={() => setShowDisable2FAModal(true)}
                                             disabled={twoFALoading}
                                             className="settings-btn settings-btn-danger"
                                         >
@@ -1103,6 +1103,109 @@ export default function AccountSettings() {
                         </div>
                     </div>
                 </div>
+
+                {/* Disable 2FA Modal */}
+                {showDisable2FAModal && (
+                    <div style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'rgba(0, 0, 0, 0.5)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 1000,
+                        animation: 'fadeIn 0.3s ease-out',
+                    }}>
+                        <div style={{
+                            background: 'white',
+                            borderRadius: '16px',
+                            padding: '2rem',
+                            maxWidth: '450px',
+                            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+                            animation: 'slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                        }}>
+                            <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#FF9800', margin: '0 0 1rem' }}>
+                                Disable Two-Factor Authentication?
+                            </h3>
+                            <p style={{ color: '#495057', marginBottom: '1rem', lineHeight: 1.6 }}>
+                                Are you sure you want to disable 2FA? Your account will be <strong>less secure</strong> without two-factor authentication.
+                            </p>
+                            <div style={{
+                                background: '#FFF5F5',
+                                border: '1px solid #FFE0E0',
+                                borderRadius: '6px',
+                                padding: '0.75rem',
+                                marginBottom: '1.5rem',
+                                fontSize: '0.85rem',
+                                color: '#FF4757',
+                                fontWeight: 500
+                            }}>
+                                ⚠️ Warning: Disabling 2FA makes your account less secure.
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                                <button
+                                    onClick={() => setShowDisable2FAModal(false)}
+                                    style={{
+                                        padding: '0.625rem 1.25rem',
+                                        borderRadius: '6px',
+                                        border: '1px solid #DEE2E6',
+                                        background: '#F8F9FA',
+                                        color: '#495057',
+                                        fontSize: '0.9rem',
+                                        fontWeight: 500,
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
+                                    }}
+                                    disabled={twoFALoading}
+                                    onMouseEnter={(e) => {
+                                        if (!twoFALoading) {
+                                            e.currentTarget.style.background = '#E9ECEF';
+                                            e.currentTarget.style.borderColor = '#ADB5BD';
+                                        }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.background = '#F8F9FA';
+                                        e.currentTarget.style.borderColor = '#DEE2E6';
+                                    }}
+                                >
+                                    Keep 2FA Enabled
+                                </button>
+                                <button
+                                    onClick={handleDisable2FA}
+                                    disabled={twoFALoading}
+                                    style={{
+                                        padding: '0.625rem 1.25rem',
+                                        borderRadius: '6px',
+                                        border: 'none',
+                                        background: twoFALoading ? '#FFB3B3' : '#FF9800',
+                                        color: 'white',
+                                        fontSize: '0.9rem',
+                                        fontWeight: 500,
+                                        cursor: twoFALoading ? 'not-allowed' : 'pointer',
+                                        transition: 'all 0.2s ease',
+                                        opacity: twoFALoading ? 0.7 : 1,
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        if (!twoFALoading) {
+                                            e.currentTarget.style.background = '#E68900';
+                                        }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        if (!twoFALoading) {
+                                            e.currentTarget.style.background = '#FF9800';
+                                        }
+                                    }}
+                                >
+                                    {twoFALoading ? 'Disabling...' : 'Disable 2FA'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Delete Account Modal */}
                 {showDeleteModal && (
