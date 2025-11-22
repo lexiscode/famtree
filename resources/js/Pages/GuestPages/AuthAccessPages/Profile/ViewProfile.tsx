@@ -37,6 +37,8 @@ interface Props {
     mutualConnections: Array<{ id: number; name: string; username: string; profile_image_url: string }>;
     nonMutualConnectionsCount: number;
     nonMutualConnections: Array<{ id: number; name: string; username: string; profile_image_url: string }>;
+    accessDenied: boolean;
+    accessDeniedReason: string | null;
 }
 
 export default function ViewProfile({
@@ -52,28 +54,24 @@ export default function ViewProfile({
     mutualConnections,
     nonMutualConnectionsCount,
     nonMutualConnections,
+    accessDenied,
+    accessDeniedReason,
 }: Props) {
-    const [showAccessDeniedModal, setShowAccessDeniedModal] = useState(false);
-    const [deniedUserName, setDeniedUserName] = useState<string>('');
+    const [showAccessDeniedModal, setShowAccessDeniedModal] = useState(accessDenied);
+    const [deniedUserName, setDeniedUserName] = useState<string>(profile.name || '');
+
+    // Show modal immediately if access is denied
+    useEffect(() => {
+        if (accessDenied && accessDeniedReason) {
+            setShowAccessDeniedModal(true);
+        }
+    }, [accessDenied, accessDeniedReason]);
 
     const handleProfileNavigation = (userId: number, userName: string) => {
-        // Store the user name before navigation - if 403 error occurs, modal will use it
+        // Store the user name before navigation
         setDeniedUserName(userName);
         router.visit(route('profile.view', userId));
     };
-
-    // Listen for global profile access denied events
-    useEffect(() => {
-        const handleAccessDenied = (event: any) => {
-            // Display the modal when 403 error is detected
-            setShowAccessDeniedModal(true);
-        };
-
-        window.addEventListener('profileAccessDenied', handleAccessDenied);
-        return () => {
-            window.removeEventListener('profileAccessDenied', handleAccessDenied);
-        };
-    }, []);
 
     const formatDateOfBirth = (dateString: string | null) => {
         if (!dateString) return null;
@@ -435,11 +433,8 @@ export default function ViewProfile({
                                     <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.25rem', color: '#1f2937' }}>
                                         Access Denied
                                     </h3>
-                                    <p style={{ margin: '0 0 1rem 0', color: '#6b7280', fontSize: '0.95rem' }}>
-                                        You cannot view <strong>{deniedUserName}</strong>'s profile due to their privacy settings.
-                                    </p>
-                                    <p style={{ margin: '0 0 1.5rem 0', color: '#6b7280', fontSize: '0.9rem' }}>
-                                        This user has restricted their profile visibility, and you don't have permission to access it.
+                                    <p style={{ margin: '0 0 1.5rem 0', color: '#6b7280', fontSize: '0.95rem' }}>
+                                        {accessDeniedReason || `You cannot view ${deniedUserName}'s profile due to their privacy settings.`}
                                     </p>
                                 </div>
                             </div>

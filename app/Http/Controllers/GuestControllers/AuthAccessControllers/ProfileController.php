@@ -30,24 +30,33 @@ class ProfileController extends Controller
 
         $owner = User::with('familyInfo')->findOrFail($userId);
 
+        // Track if access is denied (for modal display)
+        $accessDenied = false;
+        $accessDeniedReason = null;
+
         // Users can always view their own profile
         if ($viewer->id === $owner->id) {
             // Continue to full profile display below
         } else {
             // Check if viewer has blocked the owner
             if ($this->blockService->hasBlocked($viewer, $owner->id)) {
-                return abort(403, 'You have blocked this user and cannot view their profile.');
+                $accessDenied = true;
+                $accessDeniedReason = 'You have blocked this user and cannot view their profile.';
             }
 
             // Check if owner has blocked the viewer
             if ($this->blockService->isBlockedBy($viewer, $owner->id)) {
-                return abort(403, 'This user has blocked you and you cannot view their profile.');
+                $accessDenied = true;
+                $accessDeniedReason = 'This user has blocked you and you cannot view their profile.';
             }
 
             // Check profile visibility settings
-            $canViewProfile = $this->canViewProfile($viewer, $owner);
-            if (!$canViewProfile) {
-                return abort(403, 'You do not have permission to view this profile.');
+            if (!$accessDenied) {
+                $canViewProfile = $this->canViewProfile($viewer, $owner);
+                if (!$canViewProfile) {
+                    $accessDenied = true;
+                    $accessDeniedReason = 'You do not have permission to view this profile.';
+                }
             }
         }
 
@@ -160,6 +169,8 @@ class ProfileController extends Controller
                 'username' => $user->username,
                 'profile_image_url' => $user->profile_image_url,
             ]),
+            'accessDenied' => $accessDenied,
+            'accessDeniedReason' => $accessDeniedReason,
         ]);
     }
 
