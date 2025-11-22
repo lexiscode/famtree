@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
 import { Mail, Phone, MapPin, Cake, FileText, Users, Send, Clock, CheckCircle, Lock, Briefcase, BookOpen, ArrowRight, Image, Newspaper, Plus, ArrowLeft, AlertCircle, X } from 'lucide-react';
@@ -57,15 +57,23 @@ export default function ViewProfile({
     const [deniedUserName, setDeniedUserName] = useState<string>('');
 
     const handleProfileNavigation = (userId: number, userName: string) => {
-        router.visit(route('profile.view', userId), {
-            onError: (errors: any) => {
-                if (errors[403]) {
-                    setDeniedUserName(userName);
-                    setShowAccessDeniedModal(true);
-                }
-            },
-        });
+        // Store the user name before navigation - if 403 error occurs, modal will use it
+        setDeniedUserName(userName);
+        router.visit(route('profile.view', userId));
     };
+
+    // Listen for global profile access denied events
+    useEffect(() => {
+        const handleAccessDenied = (event: any) => {
+            // Display the modal when 403 error is detected
+            setShowAccessDeniedModal(true);
+        };
+
+        window.addEventListener('profileAccessDenied', handleAccessDenied);
+        return () => {
+            window.removeEventListener('profileAccessDenied', handleAccessDenied);
+        };
+    }, []);
 
     const formatDateOfBirth = (dateString: string | null) => {
         if (!dateString) return null;

@@ -3,6 +3,9 @@
 namespace App\Exceptions;
 
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Http\Exceptions\HttpResponseException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
+use Inertia\Inertia;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -25,6 +28,14 @@ class Handler extends ExceptionHandler
     {
         $this->reportable(function (Throwable $e) {
             //
+        });
+
+        // Handle 403 errors on profile viewing for Inertia requests
+        $this->renderable(function (HttpException $e, $request) {
+            if ($e->getStatusCode() === 403 && $request->is('profile/*') && $request->wantsJson()) {
+                // Return JSON error response that Inertia can catch
+                return response()->json(['message' => $e->getMessage()], 403);
+            }
         });
     }
 }

@@ -18,9 +18,16 @@ import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 
 import { createRoot } from 'react-dom/client';
 import { createInertiaApp } from '@inertiajs/react';
+import { router } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 
 const appName = import.meta.env.VITE_APP_NAME || 'FamTree';
+
+// Global state for access denied modal
+(window as any).profileAccessDeniedState = {
+    show: false,
+    userName: ''
+};
 
 createInertiaApp({
     title: (title) => `${title} - ${appName}`,
@@ -34,3 +41,17 @@ createInertiaApp({
         color: '#4B5563',
     },
 });
+
+// Global error handling for profile access denied (403)
+router.on('error', (error) => {
+    if (error.status === 403 && window.location.pathname.includes('/profile/')) {
+        // Trigger modal on the current page
+        window.dispatchEvent(new CustomEvent('profileAccessDenied', {
+            detail: {
+                status: 403,
+                message: error.message
+            }
+        }));
+    }
+});
+
