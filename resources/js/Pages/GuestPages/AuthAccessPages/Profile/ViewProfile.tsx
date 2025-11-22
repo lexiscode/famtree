@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { Mail, Phone, MapPin, Cake, FileText, Users, Send, Clock, CheckCircle, Lock, Briefcase, BookOpen, ArrowRight, Image, Newspaper, Plus, ArrowLeft } from 'lucide-react';
+import { Mail, Phone, MapPin, Cake, FileText, Users, Send, Clock, CheckCircle, Lock, Briefcase, BookOpen, ArrowRight, Image, Newspaper, Plus, ArrowLeft, AlertCircle, X } from 'lucide-react';
 
 interface Profile {
     id: number;
@@ -53,6 +53,20 @@ export default function ViewProfile({
     nonMutualConnectionsCount,
     nonMutualConnections,
 }: Props) {
+    const [showAccessDeniedModal, setShowAccessDeniedModal] = useState(false);
+    const [deniedUserName, setDeniedUserName] = useState<string>('');
+
+    const handleProfileNavigation = (userId: number, userName: string) => {
+        router.visit(route('profile.view', userId), {
+            onError: (errors: any) => {
+                if (errors[403]) {
+                    setDeniedUserName(userName);
+                    setShowAccessDeniedModal(true);
+                }
+            },
+        });
+    };
+
     const formatDateOfBirth = (dateString: string | null) => {
         if (!dateString) return null;
         const date = new Date(dateString);
@@ -284,7 +298,7 @@ export default function ViewProfile({
                                             <div
                                                 key={connection.id}
                                                 className="profile-mutual-item"
-                                                onClick={() => router.visit(route('profile.view', connection.id))}
+                                                onClick={() => handleProfileNavigation(connection.id, connection.name)}
                                                 style={{ cursor: 'pointer' }}
                                                 title={`View ${connection.name}'s profile`}
                                             >
@@ -339,7 +353,7 @@ export default function ViewProfile({
                                             <div
                                                 key={connection.id}
                                                 className="profile-mutual-item profile-nonmutual-item"
-                                                onClick={() => router.visit(route('profile.view', connection.id))}
+                                                onClick={() => handleProfileNavigation(connection.id, connection.name)}
                                                 style={{ cursor: 'pointer' }}
                                                 title={`View ${connection.name}'s profile`}
                                             >
@@ -377,6 +391,90 @@ export default function ViewProfile({
                     </div>
                 </div>
             </div>
+
+            {/* Access Denied Modal */}
+            {showAccessDeniedModal && (
+                <div
+                    style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 1000,
+                    }}
+                    onClick={() => setShowAccessDeniedModal(false)}
+                >
+                    <div
+                        style={{
+                            backgroundColor: 'white',
+                            borderRadius: '12px',
+                            padding: '2rem',
+                            maxWidth: '400px',
+                            width: '90%',
+                            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.2)',
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                            <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', flex: 1 }}>
+                                <AlertCircle size={24} style={{ color: '#dc2626', flexShrink: 0, marginTop: '0.25rem' }} />
+                                <div>
+                                    <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.25rem', color: '#1f2937' }}>
+                                        Access Denied
+                                    </h3>
+                                    <p style={{ margin: '0 0 1rem 0', color: '#6b7280', fontSize: '0.95rem' }}>
+                                        You cannot view <strong>{deniedUserName}</strong>'s profile due to their privacy settings.
+                                    </p>
+                                    <p style={{ margin: '0 0 1.5rem 0', color: '#6b7280', fontSize: '0.9rem' }}>
+                                        This user has restricted their profile visibility, and you don't have permission to access it.
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setShowAccessDeniedModal(false)}
+                                style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    padding: '0.25rem',
+                                    cursor: 'pointer',
+                                    color: '#9ca3af',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                }}
+                                title="Close"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <button
+                            onClick={() => setShowAccessDeniedModal(false)}
+                            style={{
+                                width: '100%',
+                                padding: '0.75rem 1rem',
+                                backgroundColor: '#3b82f6',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '8px',
+                                fontSize: '0.95rem',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                transition: 'background-color 0.2s',
+                            }}
+                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#2563eb')}
+                            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#3b82f6')}
+                        >
+                            Go Back
+                        </button>
+                    </div>
+                </div>
+            )}
         </AuthAccessLayout>
     );
 }
