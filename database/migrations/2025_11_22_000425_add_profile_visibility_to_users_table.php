@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->enum('profile_visibility', ['public', 'connected', 'private'])->default('connected')->after('status');
+            $table->enum('profile_visibility', ['public', 'connected', 'private'])->default('public')->after('status');
         });
     }
 

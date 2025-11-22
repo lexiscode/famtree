@@ -180,11 +180,24 @@ class ProfileController extends Controller
 
     /**
      * Check if two users are directly connected
-     * Direct connection = both users have a connection record between them
+     * Direct connection = both users have an accepted connection record between them
      */
     private function isConnectedDirect(User $viewer, User $owner): bool
     {
-        return $this->connectionRepository->connectionExists($viewer->id, $owner->id);
+        // Get connections of viewer and check if owner is among them
+        $viewerConnections = $this->connectionRepository->getConnections($viewer->id);
+
+        foreach ($viewerConnections as $connection) {
+            $connectedUserId = $connection->requester_user_id === $viewer->id
+                ? $connection->recipient_user_id
+                : $connection->requester_user_id;
+
+            if ($connectedUserId === $owner->id) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -195,15 +208,28 @@ class ProfileController extends Controller
     private function isConnectedIndirect(User $viewer, User $owner): bool
     {
         // Get all direct connections of the viewer
-        $viewerConnections = $this->connectionRepository->getConnections($viewer->id)->pluck('id')->toArray();
+        $viewerConnections = $this->connectionRepository->getConnections($viewer->id);
 
-        if (empty($viewerConnections)) {
+        if ($viewerConnections->isEmpty()) {
             return false;
         }
 
-        // Check if any of the viewer's connections are connected to the owner
-        foreach ($viewerConnections as $connectionId) {
-            if ($this->connectionRepository->connectionExists($connectionId, $owner->id)) {
+        // Extract the user IDs of the viewer's connections
+        $viewerConnectionIds = $viewerConnections->map(function ($connection) use ($viewer) {
+            return $connection->requester_user_id === $viewer->id
+                ? $connection->recipient_user_id
+                : $connection->requester_user_id;
+        })->toArray();
+
+        // Check if any of the viewer's connections are also connected to the owner
+        $ownerConnections = $this->connectionRepository->getConnections($owner->id);
+
+        foreach ($ownerConnections as $connection) {
+            $connectedUserId = $connection->requester_user_id === $owner->id
+                ? $connection->recipient_user_id
+                : $connection->requester_user_id;
+
+            if (in_array($connectedUserId, $viewerConnectionIds)) {
                 return true;
             }
         }
