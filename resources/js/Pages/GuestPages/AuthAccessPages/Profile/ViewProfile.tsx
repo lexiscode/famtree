@@ -309,24 +309,24 @@ export default function ViewProfile({
                                                     <div
                                                         style={{
                                                             position: 'absolute',
-                                                            top: '50%',
-                                                            left: '50%',
-                                                            transform: 'translate(-50%, -50%)',
-                                                            backgroundColor: 'rgba(255, 255, 255, 0.85)',
-                                                            padding: '0.5rem 1rem',
-                                                            borderRadius: '8px',
+                                                            top: '8px',
+                                                            right: '8px',
+                                                            backgroundColor: 'rgba(255, 107, 107, 0.9)',
+                                                            padding: '0.35rem 0.65rem',
+                                                            borderRadius: '6px',
                                                             display: 'flex',
                                                             alignItems: 'center',
-                                                            gap: '0.5rem',
-                                                            fontSize: '0.85rem',
-                                                            fontWeight: '600',
-                                                            color: '#666',
+                                                            justifyContent: 'center',
+                                                            gap: '0.3rem',
+                                                            fontSize: '0.75rem',
+                                                            fontWeight: '700',
+                                                            color: 'white',
                                                             pointerEvents: 'none',
-                                                            backdropFilter: 'blur(2px)',
                                                             whiteSpace: 'nowrap',
+                                                            boxShadow: '0 2px 8px rgba(255, 107, 107, 0.3)',
                                                         }}
                                                     >
-                                                        <Lock size={14} style={{ color: '#FF6B6B' }} />
+                                                        <Lock size={12} style={{ color: 'white' }} />
                                                         Private
                                                     </div>
                                                 )}
