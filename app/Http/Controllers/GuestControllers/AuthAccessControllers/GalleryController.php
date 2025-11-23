@@ -42,6 +42,12 @@ class GalleryController extends Controller
         // Check if users are connected
         $targetUser = User::findOrFail($userId);
 
+        // Check content visibility setting (galleries)
+        if (!$this->canViewContent($viewer, $targetUser, 'galleries')) {
+            return redirect()->route('profile.view', ['userId' => $userId])
+                ->with('error', 'You do not have permission to view this user\'s galleries.');
+        }
+
         $galleries = $this->galleryService->getFormattedGalleries($userId);
         $userName = trim(($targetUser->first_name ?? '') . ' ' . ($targetUser->last_name ?? ''));
 
@@ -105,5 +111,47 @@ class GalleryController extends Controller
                 'error' => $e->getMessage(),
             ]);
         }
+    }
+
+    /**
+     * Check if a viewer can access the target user's content based on visibility settings
+     */
+    private function canViewContent(User $viewer, User $targetUser, string $contentType): bool
+    {
+        // Users can always view their own content
+        if ($viewer->id === $targetUser->id) {
+            return true;
+        }
+
+        $visibilityField = $contentType === 'galleries' ? 'galleries_visibility' : 'stories_visibility';
+        $visibility = $targetUser->{$visibilityField} ?? 'connected';
+
+        return match ($visibility) {
+            'public' => true,
+            'connected' => $this->isConnectedDirect($viewer, $targetUser),
+            'private' => false,
+            default => false,
+        };
+    }
+
+    /**
+     * Check if two users are directly connected
+     */
+    private function isConnectedDirect(User $viewer, User $targetUser): bool
+    {
+        $connectionRepository = app(\App\Repositories\GuestRepositories\UserConnectionRepository::class);
+        $viewerConnections = $connectionRepository->getConnections($viewer->id);
+
+        foreach ($viewerConnections as $connection) {
+            $connectedUserId = $connection->requester_user_id === $viewer->id
+                ? $connection->recipient_user_id
+                : $connection->requester_user_id;
+
+            if ($connectedUserId === $targetUser->id) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

@@ -77,6 +77,12 @@ class PostController extends Controller
         $viewer = auth()->user();
         $targetUser = \App\Models\GuestModels\User::findOrFail($userId)->load('familyInfo');
 
+        // Check content visibility setting (stories)
+        if (!$this->canViewContent($viewer, $targetUser, 'stories')) {
+            return redirect()->route('profile.view', ['userId' => $userId])
+                ->with('error', 'You do not have permission to view this user\'s stories.');
+        }
+
         // Format user data for display
         $userData = [
             'id' => $targetUser->id,
@@ -344,5 +350,46 @@ class PostController extends Controller
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
+    }
+
+    /**
+     * Check if a viewer can access the target user's content based on visibility settings
+     */
+    private function canViewContent($viewer, $targetUser, string $contentType): bool
+    {
+        // Users can always view their own content
+        if ($viewer->id === $targetUser->id) {
+            return true;
+        }
+
+        $visibilityField = $contentType === 'stories' ? 'stories_visibility' : 'galleries_visibility';
+        $visibility = $targetUser->{$visibilityField} ?? 'connected';
+
+        return match ($visibility) {
+            'public' => true,
+            'connected' => $this->isConnectedDirect($viewer, $targetUser),
+            'private' => false,
+            default => false,
+        };
+    }
+
+    /**
+     * Check if two users are directly connected
+     */
+    private function isConnectedDirect($viewer, $targetUser): bool
+    {
+        $viewerConnections = $this->connectionRepository->getConnections($viewer->id);
+
+        foreach ($viewerConnections as $connection) {
+            $connectedUserId = $connection->requester_user_id === $viewer->id
+                ? $connection->recipient_user_id
+                : $connection->requester_user_id;
+
+            if ($connectedUserId === $targetUser->id) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
