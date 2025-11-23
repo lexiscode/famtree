@@ -570,8 +570,8 @@ export default function PrivacySettings() {
                                 </div>
                             ) : (
                                 <>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                                        <div style={{ paddingBottom: '1.5rem', borderBottom: '1px solid #F0F2F5' }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '2rem', marginBottom: '2rem' }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
                                             <label className="settings-label" style={{ marginBottom: '0.75rem' }}>
                                                 Stories
                                             </label>
@@ -586,7 +586,7 @@ export default function PrivacySettings() {
                                                 <option value="private">Private</option>
                                             </select>
                                         </div>
-                                        <div style={{ paddingBottom: '1.5rem', borderBottom: '1px solid #F0F2F5' }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
                                             <label className="settings-label" style={{ marginBottom: '0.75rem' }}>
                                                 Galleries
                                             </label>
