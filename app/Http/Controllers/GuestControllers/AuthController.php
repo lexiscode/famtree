@@ -95,7 +95,7 @@ class AuthController extends Controller
             }
 
             // Otherwise redirect to profile
-            return redirect()->route('profile.me')->with('success', 'Login successful!');
+            return redirect()->route('home')->with('success', 'Login successful!');
         } catch (\Exception $e) {
             return redirect()->back()->withInput()->with('error', $e->getMessage());
         }
