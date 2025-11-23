@@ -120,4 +120,52 @@ class PrivacyController extends Controller
             'field_privacy' => $fieldPrivacy,
         ]);
     }
+
+    /**
+     * Get current content privacy settings (stories and galleries)
+     */
+    public function getContentPrivacy(): JsonResponse
+    {
+        $user = auth()->user();
+
+        // Get or initialize content privacy settings
+        $storiesVisibility = $user->stories_visibility ?? 'connected';
+        $galleriesVisibility = $user->galleries_visibility ?? 'connected';
+
+        return response()->json([
+            'success' => true,
+            'content_privacy' => [
+                'stories' => $storiesVisibility,
+                'galleries' => $galleriesVisibility,
+            ],
+        ]);
+    }
+
+    /**
+     * Update content privacy settings (stories and galleries)
+     */
+    public function updateContentPrivacy(\Illuminate\Http\Request $request): JsonResponse
+    {
+        $user = auth()->user();
+        $validated = $request->validate([
+            'content_privacy' => 'required|array',
+            'content_privacy.stories' => 'required|in:public,connected,private',
+            'content_privacy.galleries' => 'required|in:public,connected,private',
+        ]);
+
+        // Update the content visibility settings
+        $user->update([
+            'stories_visibility' => $validated['content_privacy']['stories'],
+            'galleries_visibility' => $validated['content_privacy']['galleries'],
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Content privacy settings updated successfully.',
+            'content_privacy' => [
+                'stories' => $user->stories_visibility,
+                'galleries' => $user->galleries_visibility,
+            ],
+        ]);
+    }
 }

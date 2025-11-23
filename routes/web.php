@@ -217,6 +217,8 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::post('/privacy/profile-visibility', [PrivacyController::class, 'updateProfileVisibility'])->name('settings.update-profile-visibility');
         Route::post('/privacy/field-privacy', [PrivacyController::class, 'updateFieldPrivacy'])->name('settings.update-field-privacy');
         Route::get('/privacy/field-privacy', [PrivacyController::class, 'getFieldPrivacy'])->name('settings.get-field-privacy');
+        Route::post('/privacy/content-privacy', [PrivacyController::class, 'updateContentPrivacy'])->name('settings.update-content-privacy');
+        Route::get('/privacy/content-privacy', [PrivacyController::class, 'getContentPrivacy'])->name('settings.get-content-privacy');
 
         Route::get('/notifications', function () {
             return Inertia::render('AuthAccessPages/Settings/NotificationSettings');

@@ -44,6 +44,13 @@ export default function PrivacySettings() {
     });
     const [fieldLoadingState, setFieldLoadingState] = useState<{ [key: string]: boolean }>({});
 
+    // Content-Level Privacy Controls (Stories and Galleries)
+    const [contentVisibility, setContentVisibility] = useState({
+        stories: 'connected',
+        galleries: 'connected',
+    });
+    const [isLoadingContentPrivacy, setIsLoadingContentPrivacy] = useState(true);
+
     const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const [saveLoading, setSaveLoading] = useState(false);
     const [isLoadingFieldPrivacy, setIsLoadingFieldPrivacy] = useState(true);
@@ -150,9 +157,55 @@ export default function PrivacySettings() {
         }
     };
 
+    const fetchContentPrivacy = async () => {
+        setIsLoadingContentPrivacy(true);
+        try {
+            const response = await fetch(route('settings.get-content-privacy'));
+            const data = await response.json();
+            if (data.success && data.content_privacy) {
+                setContentVisibility(data.content_privacy);
+            }
+        } catch (error) {
+            console.error('Error fetching content privacy settings:', error);
+        } finally {
+            setIsLoadingContentPrivacy(false);
+        }
+    };
+
+    const handleSaveContentPrivacy = async () => {
+        setSaveLoading(true);
+        setSaveMessage(null);
+
+        try {
+            const response = await fetch(route('settings.update-content-privacy'), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+                body: JSON.stringify({
+                    content_privacy: contentVisibility,
+                }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                setSaveMessage({ type: 'error', text: data.error || 'Failed to save content privacy settings.' });
+            } else {
+                setSaveMessage({ type: 'success', text: data.message || 'Content privacy settings saved successfully.' });
+            }
+        } catch (error) {
+            setSaveMessage({ type: 'error', text: 'An error occurred while saving content privacy settings.' });
+        } finally {
+            setSaveLoading(false);
+        }
+    };
+
     useEffect(() => {
         fetchBlockedUsers();
         fetchFieldPrivacy();
+        fetchContentPrivacy();
         // Load current profile visibility from authenticated user
         if (props.auth?.user?.profile_visibility) {
             setProfileVisibility(props.auth.user.profile_visibility as 'public' | 'connected' | 'private');
@@ -479,6 +532,84 @@ export default function PrivacySettings() {
                                             className="settings-btn settings-btn-primary"
                                         >
                                             {saveLoading ? 'Saving...' : 'Save Field Privacy Settings'}
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Content-Level Privacy Section */}
+                    <div className="settings-section">
+                        <div className="settings-section-header">
+                            <div className="settings-section-icon">
+                                <Lock size={24} />
+                            </div>
+                            <div className="settings-section-title-wrapper">
+                                <h2 className="settings-section-title">Content Privacy</h2>
+                                <p className="settings-section-subtitle">Control who can view your stories and galleries</p>
+                            </div>
+                        </div>
+
+                        <div className="settings-section-body">
+                            {saveMessage && (
+                                <div className={`settings-alert settings-alert-${saveMessage.type}`}>
+                                    <div className="settings-alert-icon">
+                                        {saveMessage.type === 'success' ? <Check size={20} /> : <AlertTriangle size={20} />}
+                                    </div>
+                                    <div className="settings-alert-content">
+                                        <p className="settings-alert-message">{saveMessage.text}</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {isLoadingContentPrivacy ? (
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+                                    <Loader size={20} style={{ animation: 'spin 1s linear infinite', marginRight: '0.5rem' }} />
+                                    <span style={{ color: '#666' }}>Loading content privacy settings...</span>
+                                </div>
+                            ) : (
+                                <>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                                        <div style={{ paddingBottom: '1.5rem', borderBottom: '1px solid #F0F2F5' }}>
+                                            <label className="settings-label" style={{ marginBottom: '0.75rem' }}>
+                                                Stories
+                                            </label>
+                                            <select
+                                                value={contentVisibility.stories}
+                                                onChange={(e) => setContentVisibility({ ...contentVisibility, stories: e.target.value })}
+                                                className="settings-select"
+                                                disabled={saveLoading}
+                                            >
+                                                <option value="public">Public</option>
+                                                <option value="connected">Connected Only</option>
+                                                <option value="private">Private</option>
+                                            </select>
+                                        </div>
+                                        <div style={{ paddingBottom: '1.5rem', borderBottom: '1px solid #F0F2F5' }}>
+                                            <label className="settings-label" style={{ marginBottom: '0.75rem' }}>
+                                                Galleries
+                                            </label>
+                                            <select
+                                                value={contentVisibility.galleries}
+                                                onChange={(e) => setContentVisibility({ ...contentVisibility, galleries: e.target.value })}
+                                                className="settings-select"
+                                                disabled={saveLoading}
+                                            >
+                                                <option value="public">Public</option>
+                                                <option value="connected">Connected Only</option>
+                                                <option value="private">Private</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div className="settings-button-group">
+                                        <button
+                                            onClick={handleSaveContentPrivacy}
+                                            disabled={saveLoading}
+                                            className="settings-btn settings-btn-primary"
+                                        >
+                                            {saveLoading ? 'Saving...' : 'Save Content Privacy Settings'}
                                         </button>
                                     </div>
                                 </>
