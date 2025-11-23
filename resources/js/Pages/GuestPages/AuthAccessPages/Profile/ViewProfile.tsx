@@ -82,15 +82,19 @@ export default function ViewProfile({
         });
     };
 
-    const fields = useMemo(() => [
-        { key: 'email', label: 'Email', icon: Mail, value: profile.email },
-        { key: 'phone', label: 'Phone', icon: Phone, value: profile.phone },
-        { key: 'address', label: 'Address', icon: MapPin, value: profile.address },
-        { key: 'date_of_birth', label: 'Date of Birth', icon: Cake, value: formatDateOfBirth(profile.date_of_birth) },
-        { key: 'bio', label: 'Bio', icon: FileText, value: profile.bio },
-        { key: 'job_title', label: 'Job Title', icon: Briefcase, value: profile.job_title },
-        { key: 'education', label: 'Education', icon: BookOpen, value: profile.education },
-    ], [profile]);
+    const fields = useMemo(() => {
+        const fieldArray = [
+            { key: 'email', label: 'Email', icon: Mail, value: profile.email },
+            { key: 'phone', label: 'Phone', icon: Phone, value: profile.phone },
+            { key: 'address', label: 'Address', icon: MapPin, value: profile.address },
+            { key: 'date_of_birth', label: 'Date of Birth', icon: Cake, value: formatDateOfBirth(profile.date_of_birth) },
+            { key: 'gender', label: 'Gender', icon: FileText, value: profile.gender },
+            { key: 'bio', label: 'Bio', icon: FileText, value: profile.bio },
+            { key: 'job_title', label: 'Job Title', icon: Briefcase, value: profile.job_title },
+            { key: 'education', label: 'Education', icon: BookOpen, value: profile.education },
+        ];
+        return fieldArray;
+    }, [profile]);
 
     const getAccessLevelLabel = () => {
         return {
@@ -266,20 +270,66 @@ export default function ViewProfile({
                                         const fieldInfo = visibleFields[field.key];
                                         const isVisible = fieldInfo?.visible ?? false;
 
+                                        // Only render fields that have visibility info
+                                        if (!fieldInfo) {
+                                            return null;
+                                        }
+
                                         return (
-                                            <div key={field.key} className={`profile-field ${!isVisible ? 'hidden' : ''}`}>
+                                            <div
+                                                key={field.key}
+                                                className={`profile-field ${!isVisible ? 'hidden' : ''}`}
+                                                style={{
+                                                    position: 'relative',
+                                                }}
+                                            >
                                                 <label className="profile-field-label">
                                                     <IconComponent size={16} />
                                                     {field.label}
                                                 </label>
-                                                <div className={`profile-field-value ${!field.value || !isVisible ? 'empty' : ''}`}>
-                                                    {isVisible && field.value ? field.value : (
+                                                <div
+                                                    className={`profile-field-value ${!field.value ? 'empty' : ''}`}
+                                                    style={{
+                                                        filter: !isVisible && field.value ? 'blur(8px)' : 'none',
+                                                        transition: 'filter 0.3s ease',
+                                                        cursor: !isVisible ? 'not-allowed' : 'default',
+                                                        opacity: !isVisible && field.value ? 0.6 : 1,
+                                                    }}
+                                                >
+                                                    {field.value ? (
+                                                        field.value
+                                                    ) : (
                                                         <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                                                            <Lock size={14} />
-                                                            Hidden from you
+                                                            {!isVisible && <Lock size={14} />}
+                                                            {!isVisible ? 'Hidden from you' : 'No data'}
                                                         </span>
                                                     )}
                                                 </div>
+                                                {!isVisible && (
+                                                    <div
+                                                        style={{
+                                                            position: 'absolute',
+                                                            top: '50%',
+                                                            left: '50%',
+                                                            transform: 'translate(-50%, -50%)',
+                                                            backgroundColor: 'rgba(255, 255, 255, 0.85)',
+                                                            padding: '0.5rem 1rem',
+                                                            borderRadius: '8px',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '0.5rem',
+                                                            fontSize: '0.85rem',
+                                                            fontWeight: '600',
+                                                            color: '#666',
+                                                            pointerEvents: 'none',
+                                                            backdropFilter: 'blur(2px)',
+                                                            whiteSpace: 'nowrap',
+                                                        }}
+                                                    >
+                                                        <Lock size={14} style={{ color: '#FF6B6B' }} />
+                                                        Private
+                                                    </div>
+                                                )}
                                             </div>
                                         );
                                     })}

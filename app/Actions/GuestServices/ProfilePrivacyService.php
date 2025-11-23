@@ -158,15 +158,14 @@ class ProfilePrivacyService
     private function getFieldValue(User $user, string $fieldName): mixed
     {
         return match ($fieldName) {
-            'full_name' => trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')),
+            'email' => $user->email,
             'phone' => $user->phone,
             'address' => $user->address,
             'date_of_birth' => $user->date_of_birth,
+            'gender' => $user->gender,
             'bio' => $user->bio,
             'job_title' => $user->familyInfo?->current_occupation ?? null,
             'education' => $user->familyInfo?->education_level ?? null,
-            'profile_image_url' => $user->profile_image_url,
-            'status' => $user->status,
             default => null,
         };
     }

@@ -33,16 +33,20 @@ export default function PrivacySettings() {
 
     // Privacy Field Controls
     const [fieldVisibility, setFieldVisibility] = useState({
+        email: 'connected',
         phone: 'connected',
-        bio: 'public',
+        address: 'connected',
         date_of_birth: 'private',
-        location: 'connected',
-        education: 'connected',
+        gender: 'connected',
+        bio: 'public',
         job_title: 'connected',
+        education: 'connected',
     });
+    const [fieldLoadingState, setFieldLoadingState] = useState<{ [key: string]: boolean }>({});
 
     const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const [saveLoading, setSaveLoading] = useState(false);
+    const [isLoadingFieldPrivacy, setIsLoadingFieldPrivacy] = useState(true);
 
     // Report User Form
     const [reportForm, setReportForm] = useState({
@@ -126,8 +130,29 @@ export default function PrivacySettings() {
         }
     };
 
+    const fetchFieldPrivacy = async () => {
+        setIsLoadingFieldPrivacy(true);
+        try {
+            const response = await fetch(route('settings.get-field-privacy'));
+            const data = await response.json();
+            if (data.success && data.field_privacy) {
+                // Filter out fields that shouldn't be in field-level privacy
+                const fieldsToExclude = ['full_name', 'profile_image_url', 'status'];
+                const filteredPrivacy = Object.fromEntries(
+                    Object.entries(data.field_privacy).filter(([field]) => !fieldsToExclude.includes(field))
+                );
+                setFieldVisibility(filteredPrivacy);
+            }
+        } catch (error) {
+            console.error('Error fetching field privacy settings:', error);
+        } finally {
+            setIsLoadingFieldPrivacy(false);
+        }
+    };
+
     useEffect(() => {
         fetchBlockedUsers();
+        fetchFieldPrivacy();
         // Load current profile visibility from authenticated user
         if (props.auth?.user?.profile_visibility) {
             setProfileVisibility(props.auth.user.profile_visibility as 'public' | 'connected' | 'private');
@@ -238,14 +263,14 @@ export default function PrivacySettings() {
         setSaveMessage(null);
 
         try {
-            const response = await fetch(route('settings.update-profile-visibility'), {
+            const response = await fetch(route('settings.update-field-privacy'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
                 },
                 body: JSON.stringify({
-                    profile_visibility: profileVisibility,
+                    field_privacy: fieldVisibility,
                 }),
             });
 
@@ -254,7 +279,7 @@ export default function PrivacySettings() {
             if (!response.ok) {
                 setSaveMessage({ type: 'error', text: data.error || 'Failed to save privacy settings.' });
             } else {
-                setSaveMessage({ type: 'success', text: data.message || 'Privacy settings saved successfully.' });
+                setSaveMessage({ type: 'success', text: data.message || 'Field privacy settings saved successfully.' });
             }
         } catch (error) {
             setSaveMessage({ type: 'error', text: 'An error occurred while saving privacy settings.' });
@@ -318,6 +343,17 @@ export default function PrivacySettings() {
         { value: 'connected', label: 'Connected Only', description: 'Only your connections' },
         { value: 'private', label: 'Private', description: 'Only you' },
     ];
+
+    const fieldLabels: { [key: string]: string } = {
+        email: 'Email Address',
+        phone: 'Phone Number',
+        address: 'Address',
+        date_of_birth: 'Date of Birth',
+        gender: 'Gender',
+        bio: 'Bio',
+        job_title: 'Job Title',
+        education: 'Education',
+    };
 
     return (
         <AuthAccessLayout>
@@ -398,34 +434,55 @@ export default function PrivacySettings() {
                         </div>
 
                         <div className="settings-section-body">
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                                {Object.entries(fieldVisibility).map(([field, visibility]) => (
-                                    <div key={field} style={{ paddingBottom: '1.5rem', borderBottom: '1px solid #F0F2F5' }}>
-                                        <label className="settings-label" style={{ marginBottom: '0.75rem', textTransform: 'capitalize' }}>
-                                            {field.replace(/_/g, ' ')}
-                                        </label>
-                                        <select
-                                            value={visibility}
-                                            onChange={(e) => setFieldVisibility({ ...fieldVisibility, [field]: e.target.value })}
-                                            className="settings-select"
-                                        >
-                                            <option value="public">Public</option>
-                                            <option value="connected">Connected Only</option>
-                                            <option value="private">Private</option>
-                                        </select>
+                            {saveMessage && (
+                                <div className={`settings-alert settings-alert-${saveMessage.type}`}>
+                                    <div className="settings-alert-icon">
+                                        {saveMessage.type === 'success' ? <Check size={20} /> : <AlertTriangle size={20} />}
                                     </div>
-                                ))}
-                            </div>
+                                    <div className="settings-alert-content">
+                                        <p className="settings-alert-message">{saveMessage.text}</p>
+                                    </div>
+                                </div>
+                            )}
 
-                            <div className="settings-button-group">
-                                <button
-                                    onClick={handleSavePrivacySettings}
-                                    disabled={saveLoading}
-                                    className="settings-btn settings-btn-primary"
-                                >
-                                    {saveLoading ? 'Saving...' : 'Save Privacy Settings'}
-                                </button>
-                            </div>
+                            {isLoadingFieldPrivacy ? (
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+                                    <Loader size={20} style={{ animation: 'spin 1s linear infinite', marginRight: '0.5rem' }} />
+                                    <span style={{ color: '#666' }}>Loading field privacy settings...</span>
+                                </div>
+                            ) : (
+                                <>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                                        {Object.entries(fieldVisibility).map(([field, visibility]) => (
+                                            <div key={field} style={{ paddingBottom: '1.5rem', borderBottom: '1px solid #F0F2F5' }}>
+                                                <label className="settings-label" style={{ marginBottom: '0.75rem' }}>
+                                                    {fieldLabels[field] || field.replace(/_/g, ' ')}
+                                                </label>
+                                                <select
+                                                    value={visibility}
+                                                    onChange={(e) => setFieldVisibility({ ...fieldVisibility, [field]: e.target.value })}
+                                                    className="settings-select"
+                                                    disabled={saveLoading}
+                                                >
+                                                    <option value="public">Public</option>
+                                                    <option value="connected">Connected Only</option>
+                                                    <option value="private">Private</option>
+                                                </select>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <div className="settings-button-group">
+                                        <button
+                                            onClick={handleSavePrivacySettings}
+                                            disabled={saveLoading}
+                                            className="settings-btn settings-btn-primary"
+                                        >
+                                            {saveLoading ? 'Saving...' : 'Save Field Privacy Settings'}
+                                        </button>
+                                    </div>
+                                </>
+                            )}
                         </div>
                     </div>
 

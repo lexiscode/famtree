@@ -82,15 +82,13 @@ class ProfilePrivacyRepository
     public function getDefaultPrivacySettings(): array
     {
         return [
-            'full_name' => 'public',
+            'email' => 'connected_family',
             'phone' => 'nuclear_family',
             'address' => 'nuclear_family',
             'date_of_birth' => 'connected_family',
             'bio' => 'public',
             'job_title' => 'public',
             'education' => 'public',
-            'profile_image_url' => 'public',
-            'status' => 'public',
         ];
     }
 
@@ -158,15 +156,14 @@ class ProfilePrivacyRepository
     public function getAvailableFields(): array
     {
         return [
-            'full_name' => 'Full Name',
+            'email' => 'Email Address',
             'phone' => 'Phone Number',
             'address' => 'Address',
             'date_of_birth' => 'Date of Birth',
+            'gender' => 'Gender',
             'bio' => 'Bio',
             'job_title' => 'Job Title',
             'education' => 'Education',
-            'profile_image_url' => 'Profile Picture',
-            'status' => 'Alive/Deceased Status',
         ];
     }
 

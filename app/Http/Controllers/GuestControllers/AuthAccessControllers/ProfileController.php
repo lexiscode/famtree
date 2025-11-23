@@ -60,11 +60,18 @@ class ProfileController extends Controller
             }
         }
 
-        // Get visible profile data based on privacy settings
-        $visibleData = $this->privacyService->getFormattedProfileData($viewer->id, $owner->id);
+        // Get field visibility info (which fields can viewer see)
+        $fieldVisibility = $this->privacyService->getFieldVisibility($viewer->id, $owner->id);
 
         // Get relationship context
         $relationshipContext = $this->privacyService->getRelationshipContext($viewer->id, $owner->id);
+
+        // Format profile data for frontend
+        // Always show full name (displayed in header, not subject to field-level privacy)
+        $visibleName = null;
+        if ($relationshipContext !== null) {
+            $visibleName = trim(($owner->first_name ?? '') . ' ' . ($owner->last_name ?? ''));
+        }
 
         // Check if they are connected and get relationship type from viewer's perspective
         $connectionStatus = null;
@@ -108,32 +115,42 @@ class ProfileController extends Controller
             $nonMutualConnections = $allOwnerConnectionUsers->filter(fn ($user) => !in_array($user->id, $mutualIds))->take(5);
         }
 
-        // Format profile data for frontend
-        // Always show full name to connected users
-        $visibleName = null;
-        if ($visibleData['full_name']['visible'] || $relationshipContext === 'connected' || $relationshipContext === 'nuclear_family') {
-            $visibleName = trim(($owner->first_name ?? '') . ' ' . ($owner->last_name ?? ''));
-        }
+        // Get actual user data (for blur effect in frontend)
+        // Always send actual data - visibility is controlled by visibleFields
+        $actualUserData = [
+            'full_name' => trim(($owner->first_name ?? '') . ' ' . ($owner->last_name ?? '')),
+            'email' => $owner->email,
+            'phone' => $owner->phone,
+            'address' => $owner->address,
+            'date_of_birth' => $owner->date_of_birth,
+            'gender' => $owner->gender,
+            'bio' => $owner->bio,
+            'profile_image_url' => $owner->profile_image_url,
+            'status' => $owner->status,
+            'job_title' => $owner->familyInfo?->current_occupation ?? null,
+            'education' => $owner->familyInfo?->education_level ?? null,
+        ];
 
         $profileData = [
             'id' => $owner->id,
             'name' => $visibleName,
             'username' => $owner->username,
-            'email' => $relationshipContext === 'nuclear_family' ? $owner->email : null,
-            'phone' => $visibleData['phone']['value'],
-            'address' => $visibleData['address']['value'],
-            'bio' => $visibleData['bio']['value'],
-            'date_of_birth' => $visibleData['date_of_birth']['value'],
-            'profile_image_url' => $visibleData['profile_image_url']['value'],
-            'status' => $visibleData['status']['value'],
-            'job_title' => $visibleData['job_title']['value'] ?? null,
-            'education' => $visibleData['education']['value'] ?? null,
+            'email' => $actualUserData['email'],
+            'phone' => $actualUserData['phone'],
+            'address' => $actualUserData['address'],
+            'date_of_birth' => $actualUserData['date_of_birth'],
+            'gender' => $actualUserData['gender'],
+            'bio' => $actualUserData['bio'],
+            'profile_image_url' => $actualUserData['profile_image_url'],
+            'status' => $actualUserData['status'],
+            'job_title' => $actualUserData['job_title'],
+            'education' => $actualUserData['education'],
             'created_at' => $owner->created_at,
         ];
 
-        // Format visible fields info
+        // Format visible fields info - use fieldVisibility from service
         $visibleFields = [];
-        foreach ($visibleData as $fieldName => $fieldData) {
+        foreach ($fieldVisibility as $fieldName => $fieldData) {
             $visibleFields[$fieldName] = [
                 'visible' => $fieldData['visible'],
                 'label' => $fieldData['label'],
