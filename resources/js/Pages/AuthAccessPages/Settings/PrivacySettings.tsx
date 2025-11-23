@@ -505,9 +505,9 @@ export default function PrivacySettings() {
                                 </div>
                             ) : (
                                 <>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2rem', marginBottom: '2rem' }}>
                                         {Object.entries(fieldVisibility).map(([field, visibility]) => (
-                                            <div key={field} style={{ paddingBottom: '1.5rem', borderBottom: '1px solid #F0F2F5' }}>
+                                            <div key={field} style={{ display: 'flex', flexDirection: 'column' }}>
                                                 <label className="settings-label" style={{ marginBottom: '0.75rem' }}>
                                                     {fieldLabels[field] || field.replace(/_/g, ' ')}
                                                 </label>
