@@ -29,9 +29,10 @@ interface Props {
     pendingRequestCount: number;
     sentRequestCount: number;
     unreadNotificationCount: number;
+    suggestedConnectionsCount: number;
 }
 
-export default function MyProfile({ user, connections, connectionCount, pendingRequestCount, sentRequestCount, unreadNotificationCount }: Props) {
+export default function MyProfile({ user, connections, connectionCount, pendingRequestCount, sentRequestCount, unreadNotificationCount, suggestedConnectionsCount }: Props) {
     const [showImagePopup, setShowImagePopup] = useState(false);
 
     const formatDate = (dateString: string | null) => {
@@ -266,8 +267,7 @@ export default function MyProfile({ user, connections, connectionCount, pendingR
                                             title="Discover suggested family members based on your connections"
                                         >
                                             <span>
-                                                <Lightbulb size={16} style={{ marginRight: '0.5rem', display: 'inline' }} />
-                                                Suggestions
+                                                <strong>{suggestedConnectionsCount}</strong> Suggestions
                                             </span>
                                             <ArrowRight size={18} />
                                         </button>

@@ -7,6 +7,7 @@ use App\Models\GuestModels\User;
 use App\Http\Controllers\Controller;
 use App\Actions\GuestServices\ProfilePrivacyService;
 use App\Actions\GuestServices\NotificationService;
+use App\Actions\GuestServices\AuthAccessServices\SuggestedConnectionService;
 use App\Repositories\GuestRepositories\UserConnectionRepository;
 
 class LandingPageController extends Controller
@@ -14,6 +15,7 @@ class LandingPageController extends Controller
     public function __construct(
         private UserConnectionRepository $connectionRepository,
         private NotificationService $notificationService,
+        private SuggestedConnectionService $suggestedConnectionService,
     ) {}
 
     /**
@@ -66,6 +68,9 @@ class LandingPageController extends Controller
         // Get unread notification count
         $unreadNotificationCount = $this->notificationService->getUnreadCount($user->id);
 
+        // Get suggested connections count
+        $suggestedConnectionsCount = $this->suggestedConnectionService->getSuggestedMembersCount($user->id);
+
         return Inertia::render('GuestPages/AuthAccessPages/Profile/MyProfile', [
             'user' => $userData,
             'connections' => $connections,
@@ -73,6 +78,7 @@ class LandingPageController extends Controller
             'pendingRequestCount' => count($pendingRequests),
             'sentRequestCount' => count($sentRequests),
             'unreadNotificationCount' => $unreadNotificationCount,
+            'suggestedConnectionsCount' => $suggestedConnectionsCount,
         ]);
     }
 }
