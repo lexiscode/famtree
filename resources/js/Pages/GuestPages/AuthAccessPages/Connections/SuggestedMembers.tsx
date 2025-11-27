@@ -55,6 +55,9 @@ interface Props {
     available_relationship_types: RelationshipType[];
     initial_page: number;
     per_page: number;
+    connectionCount: number;
+    pendingRequestCount: number;
+    sentRequestCount: number;
 }
 
 export default function SuggestedMembers({
@@ -64,6 +67,9 @@ export default function SuggestedMembers({
     available_relationship_types,
     initial_page,
     per_page,
+    connectionCount,
+    pendingRequestCount,
+    sentRequestCount,
 }: Props) {
     const [suggestions, setSuggestions] = useState<SuggestedMember[]>(initial_suggestions);
     const [allSuggestions, setAllSuggestions] = useState<SuggestedMember[]>(initial_suggestions);
@@ -208,9 +214,9 @@ export default function SuggestedMembers({
                         <div className="suggested-members-left-sidebar">
                             <ProfileSidebar
                                 user={user}
-                                connectionCount={0}
-                                pendingRequestCount={0}
-                                sentRequestCount={0}
+                                connectionCount={connectionCount}
+                                pendingRequestCount={pendingRequestCount}
+                                sentRequestCount={sentRequestCount}
                                 unreadNotificationCount={0}
                             />
                         </div>

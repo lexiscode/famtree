@@ -5,13 +5,15 @@ namespace App\Http\Controllers\GuestControllers\AuthAccessControllers;
 use App\Http\Controllers\Controller;
 use App\Actions\GuestServices\AuthAccessServices\SuggestedConnectionService;
 use App\Http\Requests\GuestRequests\AuthAccessRequests\ListSuggestedConnectionsRequest;
+use App\Repositories\GuestRepositories\UserConnectionRepository;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class SuggestedConnectionController extends Controller
 {
     public function __construct(
-        private SuggestedConnectionService $suggestedConnectionService
+        private SuggestedConnectionService $suggestedConnectionService,
+        private UserConnectionRepository $connectionRepository
     ) {
     }
 
@@ -44,6 +46,11 @@ class SuggestedConnectionController extends Controller
         $suggestedCount = $this->suggestedConnectionService->getSuggestedMembersCount($userId);
         $availableRelationshipTypes = $this->suggestedConnectionService->getAvailableRelationshipTypes($userId);
 
+        // Get connection counts
+        $connectionCount = $this->connectionRepository->getConnectionCount($userId);
+        $pendingRequestCount = $this->connectionRepository->getPendingRequestCount($userId);
+        $sentRequestCount = $this->connectionRepository->getSentRequestCount($userId);
+
         // Fetch initial suggestions for the page (first 10)
         $initialSuggestions = $this->suggestedConnectionService->getSuggestedMembers($userId, null, 1, 10);
 
@@ -52,6 +59,9 @@ class SuggestedConnectionController extends Controller
             'initial_suggestions' => $initialSuggestions['suggestions'],
             'total_suggestions' => $suggestedCount,
             'available_relationship_types' => $availableRelationshipTypes,
+            'connectionCount' => $connectionCount,
+            'pendingRequestCount' => $pendingRequestCount,
+            'sentRequestCount' => $sentRequestCount,
             'initial_page' => 1,
             'per_page' => 10,
         ]);
