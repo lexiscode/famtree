@@ -63,7 +63,10 @@ class UserConnectionRepository
      */
     public function undoRequest(int $connectionId): void
     {
-        UserConnection::findOrFail($connectionId)->delete();
+        $connection = UserConnection::findOrFail($connectionId);
+        $connection->update([
+            'status' => 'undone',
+        ]);
     }
 
     /**
@@ -93,7 +96,7 @@ class UserConnectionRepository
                 $q->where('requester_user_id', $userId2)
                   ->where('recipient_user_id', $userId1);
             });
-        })->delete();
+        })->update(['status' => 'undone']);
 
         return $deleted > 0;
     }
