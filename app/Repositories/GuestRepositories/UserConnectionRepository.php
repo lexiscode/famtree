@@ -356,24 +356,34 @@ class UserConnectionRepository
         }
 
         // If the viewer is the recipient, return the inverse relationship
-        // Pass the requester's gender for context-aware inverse mapping
+        // Pass both users' genders for context-aware inverse mapping
         $requester = User::find($connection->requester_user_id);
-        return $this->getInverseRelationship($connection->relationship_type, $requester?->gender);
+        $recipient = User::find($connection->recipient_user_id);
+        return $this->getInverseRelationship($connection->relationship_type, $requester?->gender, $recipient?->gender);
     }
 
     /**
      * Get the inverse relationship type
-     * Maps relationships to their inverses (e.g., mother -> child, brother -> sister)
+     * Maps relationships to their inverses, considering gender context
      *
      * @param string $relationshipType
      * @param string|null $requesterGender The gender of the person who initiated the relationship
+     * @param string|null $recipientGender The gender of the recipient
      * @return string The inverse relationship
      */
-    private function getInverseRelationship(string $relationshipType, ?string $requesterGender = null): string
+    private function getInverseRelationship(string $relationshipType, ?string $requesterGender = null, ?string $recipientGender = null): string
     {
         // For son/daughter relationships, determine parent gender
         if (($relationshipType === 'son' || $relationshipType === 'daughter') && $requesterGender) {
             return $requesterGender === 'male' ? 'father' : 'mother';
+        }
+
+        // Handle gender-specific sibling relationships
+        if ($relationshipType === 'brother' && $recipientGender === 'male') {
+            return 'brother'; // Same gender -> same relationship
+        }
+        if ($relationshipType === 'sister' && $recipientGender === 'female') {
+            return 'sister'; // Same gender -> same relationship
         }
 
         $inverseMap = [
