@@ -2386,20 +2386,40 @@
 }
 
 .suggested-members-grid-layout {
-  display: grid;
-  grid-template-columns: 280px 1fr;
-  gap: 2rem;
-  max-width: 1600px;
-  margin: 0 auto;
-  padding: 0 2rem;
+  display: block;
   position: relative;
-  z-index: 1;
+  margin-left: 360px;
+  margin-right: 0;
+  padding: 0 2.5rem;
 }
 
 .suggested-members-left-sidebar {
-  position: sticky;
+  position: fixed;
+  left: 2rem;
   top: 2rem;
-  height: fit-content;
+  width: 320px;
+  height: calc(100vh - 4rem);
+  overflow-y: auto;
+  z-index: 10;
+}
+
+/* Custom scrollbar for suggested members left sidebar */
+.suggested-members-left-sidebar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.suggested-members-left-sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.suggested-members-left-sidebar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #0052E8 0%, #00D4FF 100%);
+  border-radius: 4px;
+}
+
+.suggested-members-left-sidebar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #0052E8 0%, #00D4FF 100%);
+  opacity: 0.8;
 }
 
 .suggested-members-center-content {
@@ -2963,15 +2983,18 @@
    RESPONSIVE DESIGN
    ============================================================================ */
 
-@media (max-width: 1024px) {
+@media (max-width: 1280px) {
   .suggested-members-grid-layout {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
+    margin-left: 0;
+    padding: 0 1.5rem;
   }
 
   .suggested-members-left-sidebar {
-    position: relative;
-    top: 0;
+    position: static;
+    width: 100%;
+    height: auto;
+    overflow-y: visible;
+    margin-bottom: 2rem;
   }
 
   .suggested-members-title {
