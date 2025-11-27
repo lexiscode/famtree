@@ -1,12 +1,13 @@
-In the http://localhost/settings/privacy page, particularly the Profile Visibility section where we have radio button auto-submit options like public, connected only and private. Lets implement both the frontend and backend functionalities. First let me explain the UI workflow of how it should work upon UI testing.
+FIXED: User ID 5 (Chima, male) and User ID 1 (Alex, male) brother connection
 
-If lets say User A selects "Public" here it what it means: 
-- it means all connected users of that User A can see can see or access the profile view page (http://localhost/profile/{id}) of User A. 
-- It also means, if User A is connected to User B, and User B is connected to User C, then User C can as well access User A profile view page (by entering User B profile first, and from there clicking on User A which will be on the Their Other Connections lists)
+Issue: When User 1 viewed their connections page, User 5 was incorrectly listed in the "sisters" section with "sister" label instead of "brothers" section with "brother" label.
 
-If lets say User A selects "Connected Only" here it what it means: 
-- it means all connected users of that User A can see can see or access the profile view page (http://localhost/profile/{id}) of User A. 
-- It also means, if User A is connected to User B, and User B is connected to User C, then User C cannot access User A profile view page (by entering User B profile first, and from there clicking on User A which will be on the Their Other Connections lists)
+Root Cause: The getInverseRelationship() method in UserConnectionRepository was not considering the recipient's gender when inverting sibling relationships. For same-gender sibling relationships, the label should not be inverted.
 
-If lets say User A selects "Private" here it what it meaans:
-- it means no connected users nor any user at all can access User A profile view page, http://localhost/profile/{id}
+Solution: Updated getInverseRelationship() to:
+1. Accept recipient gender as an additional parameter
+2. Check if relationship type is 'brother' with male recipient -> return 'brother'
+3. Check if relationship type is 'sister' with female recipient -> return 'sister'
+4. Otherwise apply the standard inverse mapping
+
+Result: Both users now correctly see same-gender sibling relationships with the matching gender-specific label.
