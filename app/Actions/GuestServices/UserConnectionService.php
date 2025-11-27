@@ -18,6 +18,10 @@ class UserConnectionService
 
     /**
      * Send a connection request with full validation
+     *
+     * IMPORTANT: All connection requests must be created as PENDING status.
+     * The recipient MUST explicitly accept the request before it becomes an accepted connection.
+     * NO automatic acceptance is allowed, even for symmetric/bidirectional relationships.
      */
     public function sendConnectionRequest(int $requesterId, int $recipientId, string $relationshipType): array
     {
@@ -64,7 +68,8 @@ class UserConnectionService
             }
         }
 
-        // Create the connection request
+        // Create the connection request - ALWAYS with 'pending' status
+        // The recipient must accept this request for it to become 'accepted'
         $connection = $this->connectionRepository->sendRequest($requesterId, $recipientId, $relationshipType);
 
         return [
@@ -501,6 +506,11 @@ class UserConnectionService
 
     /**
      * Check if relationship is bidirectional and doesn't have gender distinctions
+     *
+     * NOTE: This is only used for DISPLAY purposes (showing the relationship label correctly).
+     * This does NOT affect the pending/acceptance workflow.
+     * All connection requests require explicit acceptance by the recipient, regardless
+     * of whether the relationship is bidirectional or not.
      */
     private function isBidirectionalNonGenderSpecific(string $relationshipType): bool
     {

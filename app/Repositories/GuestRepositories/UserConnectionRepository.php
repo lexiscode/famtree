@@ -10,6 +10,10 @@ class UserConnectionRepository
 {
     /**
      * Send a connection request
+     *
+     * IMPORTANT: Connection requests are ALWAYS created with 'pending' status.
+     * This ensures the recipient must explicitly accept the request.
+     * NO automatic acceptance is allowed under any circumstances.
      */
     public function sendRequest(int $requesterId, int $recipientId, string $relationshipType): UserConnection
     {
@@ -17,7 +21,7 @@ class UserConnectionRepository
             'requester_user_id' => $requesterId,
             'recipient_user_id' => $recipientId,
             'relationship_type' => $relationshipType,
-            'status' => 'pending',
+            'status' => 'pending',  // Always pending - recipient must accept
             'requested_at' => now(),
         ]);
     }
