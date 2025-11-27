@@ -378,12 +378,12 @@ class UserConnectionRepository
             return $requesterGender === 'male' ? 'father' : 'mother';
         }
 
-        // Handle gender-specific sibling relationships
-        if ($relationshipType === 'brother' && $recipientGender === 'male') {
-            return 'brother'; // Same gender -> same relationship
+        // Handle gender-specific sibling relationships - only if both users are the same gender
+        if ($relationshipType === 'brother' && $requesterGender === 'male' && $recipientGender === 'male') {
+            return 'brother'; // Both male -> same relationship
         }
-        if ($relationshipType === 'sister' && $recipientGender === 'female') {
-            return 'sister'; // Same gender -> same relationship
+        if ($relationshipType === 'sister' && $requesterGender === 'female' && $recipientGender === 'female') {
+            return 'sister'; // Both female -> same relationship
         }
 
         $inverseMap = [
