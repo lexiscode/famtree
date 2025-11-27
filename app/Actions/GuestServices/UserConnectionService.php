@@ -298,7 +298,10 @@ class UserConnectionService
             $relationshipLabel = $connection->relationshipType?->label ?? $connection->relationship_type;
         } else {
             // User is the recipient: use inverse relationship
-            $relationshipLabel = $this->connectionRepository->getRelationshipFromViewerPerspective($userId, $otherUser->id);
+            $inverseType = $this->connectionRepository->getRelationshipFromViewerPerspective($userId, $otherUser->id);
+            // Look up the label for the inverse relationship type
+            $inverseRelationType = RelationshipType::where('type_key', $inverseType)->first();
+            $relationshipLabel = $inverseRelationType?->label ?? $inverseType;
         }
 
         return [
