@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { Mail, Phone, MapPin, Cake, FileText, Users, Edit, Settings, Briefcase, BookOpen, ArrowRight, LogOut, X, Bell, BookMarked, User as UserIcon } from 'lucide-react';
+import { Mail, Phone, MapPin, Cake, FileText, Users, Edit, Settings, Briefcase, BookOpen, ArrowRight, LogOut, X, Bell, BookMarked, User as UserIcon, Lightbulb } from 'lucide-react';
 
 interface User {
     id: number;
@@ -255,6 +255,20 @@ export default function MyProfile({ user, connections, connectionCount, pendingR
                                             style={{ padding: '0.85rem 1.25rem' }}
                                         >
                                             <span>Add Connection</span>
+                                            <ArrowRight size={18} />
+                                        </button>
+                                    </div>
+                                    <div className="col-md-6">
+                                        <button
+                                            className="btn btn-outline-secondary w-100 d-flex align-items-center justify-content-between"
+                                            onClick={() => router.visit(route('suggested-connections.index'))}
+                                            style={{ padding: '0.85rem 1.25rem' }}
+                                            title="Discover suggested family members based on your connections"
+                                        >
+                                            <span>
+                                                <Lightbulb size={16} style={{ marginRight: '0.5rem', display: 'inline' }} />
+                                                Suggestions
+                                            </span>
                                             <ArrowRight size={18} />
                                         </button>
                                     </div>
