@@ -173,7 +173,7 @@ export default function NotificationSettings() {
                                         borderBottom: '1px solid #F0F2F5',
                                     }}>
                                         <div>
-                                            <p style={{ margin: 0, fontWeight: 700, color: '#1a1a1a', fontSize: '0.95rem' }}>
+                                            <p style={{ margin: 0, fontWeight: 700, color: '#9c9595ff', fontSize: '0.95rem' }}>
                                                 {notification.label}
                                             </p>
                                             <p style={{ margin: '0.35rem 0 0', fontSize: '0.85rem', color: '#6C757D' }}>

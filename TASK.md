@@ -1,13 +1,13 @@
-FIXED: User ID 5 (Chima, male) and User ID 1 (Alex, male) brother connection
+I am currently logged in as User ID: 4 (Anthia).
 
-Issue: When User 1 viewed their connections page, User 5 was incorrectly listed in the "sisters" section with "sister" label instead of "brothers" section with "brother" label.
+When i visited the http://localhost/suggested-connections page, i found 3 suggested connections based on my connections. They are by usernames: "cousin" (user id:6), "lexis" (user id:2) and "sarahtest1763759125" (user id:3).
 
-Root Cause: The getInverseRelationship() method in UserConnectionRepository was not considering the recipient's gender when inverting sibling relationships. For same-gender sibling relationships, the label should not be inverted.
+For the username "cousin" (user id:6) suggested:
+The relationship inference text says "This person seems to be your cousin", which I believe it's correct, since the user is also a cousin to user id:1 (alex), who is a direct connection to me (user id:4) and a brother to me.
 
-Solution: Updated getInverseRelationship() to:
-1. Accept recipient gender as an additional parameter
-2. Check if relationship type is 'brother' with male recipient -> return 'brother'
-3. Check if relationship type is 'sister' with female recipient -> return 'sister'
-4. Otherwise apply the standard inverse mapping
+For the username "lexis" (user id:2, gender:male) suggested:
+The relationship inference text says "This person seems to be your son", which this is not true. User id:2 is only the son to user id:1, which means what user id:4 (i.e. me) should be seeing instead is, "This person seems to be your nephew". Because user id:1 is my brother and i am user id:1's sister.
 
-Result: Both users now correctly see same-gender sibling relationships with the matching gender-specific label.
+
+For the username "sarahtest1763759125" (user id:3, gender:female) suggested:
+The relationship inference text says "This person seems to be your daughter", which this is not true. User id:2 is only the daughter to user id:1, which means what user id:4 (i.e. me) should be seeing instead is, "This person seems to be your niece". Because user id:1 is my brother and i am user id:1's sister.
