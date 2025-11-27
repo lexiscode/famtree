@@ -4,6 +4,7 @@ namespace App\Repositories\GuestRepositories\AuthAccessRepositories;
 
 use App\Models\GuestModels\UserConnection;
 use App\Models\GuestModels\User;
+use App\Models\UserBlock;
 use Illuminate\Database\Eloquent\Collection;
 
 class SuggestedConnectionRepository
@@ -117,13 +118,13 @@ class SuggestedConnectionRepository
      */
     public function getBlockedUserIds(int $userId): array
     {
-        return \App\Models\GuestModels\UserBlock::where(function ($q) use ($userId) {
+        return UserBlock::where(function ($q) use ($userId) {
                 $q->where('blocker_user_id', $userId)
                   ->orWhere('blocked_user_id', $userId);
             })
             ->pluck('blocked_user_id')
             ->merge(
-                \App\Models\GuestModels\UserBlock::where(function ($q) use ($userId) {
+                UserBlock::where(function ($q) use ($userId) {
                     $q->where('blocker_user_id', $userId)
                       ->orWhere('blocked_user_id', $userId);
                 })
