@@ -645,16 +645,16 @@
     align-items: center;
     text-align: center;
     padding: 1.25rem 1rem;
-    background: linear-gradient(135deg, #F8F9FA 0%, #F3F4F6 100%);
-    border: 1px solid var(--profile-border);
+    background: rgba(30, 40, 55, 0.8);
+    border: 1px solid rgba(0, 82, 232, 0.2);
     border-radius: 14px;
     transition: all 0.3s ease;
     cursor: pointer;
 }
 
 .profile-mutual-item:hover {
-    background: linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%);
-    border-color: var(--profile-primary-border);
+    background: rgba(30, 40, 55, 0.95);
+    border-color: rgba(0, 82, 232, 0.4);
     transform: translateY(-6px);
     box-shadow: 0 10px 24px rgba(0, 82, 232, 0.15);
 }
@@ -677,13 +677,13 @@
 .profile-mutual-name {
     font-size: 0.95rem;
     font-weight: 700;
-    color: var(--profile-text);
+    color: #FFFFFF;
     margin-bottom: 0.25rem;
 }
 
 .profile-mutual-username {
     font-size: 0.8rem;
-    color: var(--profile-text-muted);
+    color: #B0B0B0;
     font-weight: 500;
 }
 
