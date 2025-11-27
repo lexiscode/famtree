@@ -162,6 +162,12 @@ class RelationshipInferenceService
             'father_son' => 'uncle',
             'father_daughter' => 'aunt',
 
+            // Sibling with child (nephew/niece relationships)
+            'brother_son' => 'nephew',
+            'brother_daughter' => 'niece',
+            'sister_son' => 'nephew',
+            'sister_daughter' => 'niece',
+
             // Sibling with nephew/niece
             'brother_nephew' => 'cousin',
             'brother_niece' => 'cousin',
