@@ -1,0 +1,153 @@
+<?php
+
+namespace App\Http\Controllers\GuestControllers\AuthAccessControllers;
+
+use App\Http\Controllers\Controller;
+use App\Actions\GuestServices\AuthAccessServices\SuggestedConnectionService;
+use App\Http\Requests\GuestRequests\AuthAccessRequests\ListSuggestedConnectionsRequest;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+
+class SuggestedConnectionController extends Controller
+{
+    public function __construct(
+        private SuggestedConnectionService $suggestedConnectionService
+    ) {
+    }
+
+    /**
+     * Show suggested connections page
+     */
+    public function index(Request $request)
+    {
+        $user = $request->user()->load('familyInfo');
+        $userId = $user->id;
+
+        // Get user profile data for sidebar
+        $userProfile = [
+            'id' => $user->id,
+            'name' => $user->first_name . ' ' . $user->last_name,
+            'username' => $user->username,
+            'email' => $user->email,
+            'phone' => $user->phone,
+            'address' => $user->address,
+            'bio' => $user->bio,
+            'date_of_birth' => $user->date_of_birth,
+            'status' => $user->status ?? 'Alive',
+            'job_title' => $user->familyInfo?->current_occupation ?? null,
+            'education' => $user->familyInfo?->education_level ?? null,
+            'profile_image_url' => $user->profile_image_url,
+            'created_at' => $user->created_at,
+        ];
+
+        // Get suggestion count
+        $suggestedCount = $this->suggestedConnectionService->getSuggestedMembersCount($userId);
+        $availableRelationshipTypes = $this->suggestedConnectionService->getAvailableRelationshipTypes($userId);
+
+        // Fetch initial suggestions for the page (first 10)
+        $initialSuggestions = $this->suggestedConnectionService->getSuggestedMembers($userId, null, 1, 10);
+
+        return Inertia::render('GuestPages/AuthAccessPages/Connections/SuggestedMembers', [
+            'user' => $userProfile,
+            'initial_suggestions' => $initialSuggestions['suggestions'],
+            'total_suggestions' => $suggestedCount,
+            'available_relationship_types' => $availableRelationshipTypes,
+            'initial_page' => 1,
+            'per_page' => 10,
+        ]);
+    }
+
+    /**
+     * Get paginated list of suggested connections (API endpoint)
+     */
+    public function list(ListSuggestedConnectionsRequest $request)
+    {
+        $userId = $request->user()->id;
+        $page = $request->input('page', 1);
+        $perPage = $request->input('per_page', 20);
+        $relationshipFilter = $request->input('relationship_type');
+        $searchQuery = $request->input('search');
+
+        try {
+            // Get suggestions
+            if ($searchQuery) {
+                $result = $this->suggestedConnectionService->searchSuggestedMembers(
+                    $userId,
+                    $searchQuery,
+                    $relationshipFilter,
+                    $page,
+                    $perPage
+                );
+            } else {
+                $result = $this->suggestedConnectionService->getSuggestedMembers(
+                    $userId,
+                    $relationshipFilter,
+                    $page,
+                    $perPage
+                );
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $result['suggestions'],
+                'pagination' => [
+                    'total' => $result['total'],
+                    'per_page' => $result['per_page'],
+                    'current_page' => $result['current_page'],
+                    'last_page' => $result['last_page'],
+                    'from' => $result['from'],
+                    'to' => $result['to'],
+                ],
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Get available relationship types for filtering
+     */
+    public function relationshipTypes(Request $request)
+    {
+        $userId = $request->user()->id;
+
+        try {
+            $types = $this->suggestedConnectionService->getAvailableRelationshipTypes($userId);
+
+            return response()->json([
+                'success' => true,
+                'types' => $types,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Get suggestions count
+     */
+    public function count(Request $request)
+    {
+        $userId = $request->user()->id;
+
+        try {
+            $count = $this->suggestedConnectionService->getSuggestedMembersCount($userId);
+
+            return response()->json([
+                'success' => true,
+                'count' => $count,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+}

@@ -14,6 +14,7 @@ use App\Http\Controllers\GuestControllers\FamilyExplorerController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\LandingPageController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\ConnectionRequestController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\ConnectionViewController;
+use App\Http\Controllers\GuestControllers\AuthAccessControllers\SuggestedConnectionController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\ProfileController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\FamilyTreeController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\ChildAccountController;
@@ -105,6 +106,14 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::post('/{connection}/undo-acceptance', [ConnectionRequestController::class, 'undoAcceptance'])->name('connections.undo-acceptance');
         Route::get('/search-users', [ConnectionRequestController::class, 'searchUsers'])->name('connections.search-users');
         Route::get('/relationship-types', [ConnectionRequestController::class, 'relationshipTypes'])->name('connections.relationship-types');
+    });
+
+    // Suggested family members routes
+    Route::prefix('suggested-connections')->group(function () {
+        Route::get('/', [SuggestedConnectionController::class, 'index'])->name('suggested-connections.index');
+        Route::post('/list', [SuggestedConnectionController::class, 'list'])->name('suggested-connections.list');
+        Route::get('/relationship-types', [SuggestedConnectionController::class, 'relationshipTypes'])->name('suggested-connections.relationship-types');
+        Route::get('/count', [SuggestedConnectionController::class, 'count'])->name('suggested-connections.count');
     });
 
     // Profile routes - only for viewing other users' profiles
