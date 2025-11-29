@@ -1,13 +1,11 @@
-I am currently logged in as User ID: 4 (Anthia).
+I am currently logged-in as User ID: 4 (Anthia).
 
-When i visited the http://localhost/suggested-connections page, i found 3 suggested connections based on my connections. They are by usernames: "cousin" (user id:6), "lexis" (user id:2) and "sarahtest1763759125" (user id:3).
+Inside the profile homepage, http://localhost/, particularly within the "Connection Overview" section, I will like you to add another new button link named "Connection Feeds". And upon then user clicking that button, it should take them to another page where they can see all recent posts that was made by their direct and indirect connections.
 
-For the username "cousin" (user id:6) suggested:
-The relationship inference text says "This person seems to be your cousin", which I believe it's correct, since the user is also a cousin to user id:1 (alex), who is a direct connection to me (user id:4) and a brother to me.
+As for the UI look of that page, it should have two sections:
+1. the fixed user profile ui section should be in the lefthand side, with its usual scrollbar. Check these pages, http://localhost/connections
+2. then on the right-hand side, all the connections stories should be listed there, the posts/stories that should be listed there should only be the recent stories made in the last 30 days. In terms of how the UI should look like, you can check http://localhost/stories (but this time excluding the Engagement Metrics section).
 
-For the username "lexis" (user id:2, gender:male) suggested:
-The relationship inference text says "This person seems to be your son", which this is not true. User id:2 is only the son to user id:1, which means what user id:4 (i.e. me) should be seeing instead is, "This person seems to be your nephew". Because user id:1 is my brother and i am user id:1's sister.
+NB: Also pay attention to indirect connections, depending on what they had set in their Content Privacy for "stories" (located in, http://localhost/settings/privacy). If public, then all users should be able to see it; if connected only, then only their direct connections can see their posts; if private only, then don't show their post at all in the connection feeds list page. Just as for indirect connections, the same concept also should apply to direct connections, depending on what they had set in their content privacy. 
 
-
-For the username "sarahtest1763759125" (user id:3, gender:female) suggested:
-The relationship inference text says "This person seems to be your daughter", which this is not true. User id:2 is only the daughter to user id:1, which means what user id:4 (i.e. me) should be seeing instead is, "This person seems to be your niece". Because user id:1 is my brother and i am user id:1's sister.
+Pls the UI needs to be very sleek as usual, in a much attractive and professional look, that can increase conversation rate.

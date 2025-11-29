@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { Mail, Phone, MapPin, Cake, FileText, Users, Edit, Settings, Briefcase, BookOpen, ArrowRight, LogOut, X, Bell, BookMarked, User as UserIcon, Lightbulb } from 'lucide-react';
+import { Mail, Phone, MapPin, Cake, FileText, Users, Edit, Settings, Briefcase, BookOpen, ArrowRight, LogOut, X, Bell, BookMarked, User as UserIcon, Lightbulb, Plus } from 'lucide-react';
+import CreatePostModal from '../Stories/CreatePostModal';
 
 interface User {
     id: number;
@@ -34,6 +35,7 @@ interface Props {
 
 export default function MyProfile({ user, connections, connectionCount, pendingRequestCount, sentRequestCount, unreadNotificationCount, suggestedConnectionsCount }: Props) {
     const [showImagePopup, setShowImagePopup] = useState(false);
+    const [showCreateModal, setShowCreateModal] = useState(false);
 
     const formatDate = (dateString: string | null) => {
         if (!dateString) return null;
@@ -44,6 +46,13 @@ export default function MyProfile({ user, connections, connectionCount, pendingR
             day: 'numeric'
         });
     };
+
+    // Handle post creation
+    const handlePostCreated = useCallback(() => {
+        setShowCreateModal(false);
+        // Redirect to stories page after post is created
+        router.visit(route('stories.index'));
+    }, []);
 
     const fields = useMemo(() => [
         { key: 'email', label: 'Email', icon: Mail, value: user.email },
@@ -161,6 +170,14 @@ export default function MyProfile({ user, connections, connectionCount, pendingR
                                     >
                                         <Users size={18} />
                                         View Connections
+                                    </button>
+                                    <button
+                                        className="profile-btn profile-btn-secondary"
+                                        onClick={() => router.visit(route('connection-feeds.index'))}
+                                        title="View posts from your connections"
+                                    >
+                                        <BookMarked size={18} />
+                                        Connection Feeds
                                     </button>
                                     <button
                                         className="profile-btn profile-btn-logout"
@@ -304,9 +321,26 @@ export default function MyProfile({ user, connections, connectionCount, pendingR
                                 className="profile-image-popup-img"
                                 onClick={(e) => e.stopPropagation()}
                             />
-                           
+
                         </div>
                     </div>
+                )}
+
+                {/* Floating Action Button */}
+                <button
+                    className="fab-btn"
+                    onClick={() => setShowCreateModal(true)}
+                    title="Create new post"
+                >
+                    <Plus size={24} />
+                </button>
+
+                {/* Create Post Modal */}
+                {showCreateModal && (
+                    <CreatePostModal
+                        onClose={() => setShowCreateModal(false)}
+                        onPostCreated={handlePostCreated}
+                    />
                 )}
             </div>
         </AuthAccessLayout>

@@ -22,6 +22,7 @@ use App\Http\Controllers\GuestControllers\AuthAccessControllers\GalleryControlle
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\AccountSettingsController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\PrivacyController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\PostController;
+use App\Http\Controllers\GuestControllers\AuthAccessControllers\ConnectionFeedsController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\UserReportController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\UserBlockController;
 use App\Http\Controllers\GuestControllers\OnboardingController;
@@ -181,6 +182,9 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::post('/', [GalleryController::class, 'store'])->name('galleries.store');
         Route::delete('/{galleryId}', [GalleryController::class, 'destroy'])->name('galleries.destroy');
     });
+
+    // Connection Feeds routes
+    Route::get('/connection-feeds', [ConnectionFeedsController::class, 'index'])->name('connection-feeds.index');
 
     // Stories / Posts routes
     Route::prefix('stories')->group(function () {
