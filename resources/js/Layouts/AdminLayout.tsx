@@ -12,6 +12,8 @@ import {
     ChevronDown,
     Bell,
     Search,
+    Zap,
+    Command,
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -76,158 +78,218 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         <div style={{
             display: 'flex',
             minHeight: '100vh',
-            background: '#F8F9FA',
+            background: 'linear-gradient(135deg, #FAFBFC 0%, #F0F2F7 100%)',
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", sans-serif',
         }}>
             {/* Sidebar */}
             <aside style={{
-                width: sidebarOpen ? '280px' : '80px',
-                background: '#FFFFFF',
-                borderRight: '1px solid #E8E8E8',
-                transition: 'width 0.3s ease',
+                width: sidebarOpen ? '260px' : '80px',
+                background: 'linear-gradient(180deg, #FFFFFF 0%, #F8FAFB 100%)',
+                borderRight: '1px solid rgba(0, 0, 0, 0.08)',
+                transition: 'width 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                 position: 'fixed',
                 height: '100vh',
                 overflowY: 'auto',
                 zIndex: 40,
                 display: 'flex',
                 flexDirection: 'column',
+                boxShadow: '0 4px 24px rgba(0, 0, 0, 0.06)',
             }}>
                 {/* Logo Section */}
                 <div style={{
-                    padding: '1.5rem 1rem',
-                    borderBottom: '1px solid #E8E8E8',
+                    padding: sidebarOpen ? '1.75rem 1.5rem' : '1.75rem 1rem',
+                    borderBottom: '1px solid rgba(0, 0, 0, 0.06)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
+                    gap: '0.75rem',
                 }}>
-                    {sidebarOpen && (
-                        <h1 style={{
-                            fontSize: '1.25rem',
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.75rem',
+                        minWidth: 0,
+                    }}>
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: '44px',
+                            height: '44px',
+                            borderRadius: '12px',
+                            background: 'linear-gradient(135deg, #0052E8 0%, #0040B8 100%)',
+                            color: 'white',
                             fontWeight: 700,
-                            margin: 0,
-                            color: '#1a1a1a',
+                            fontSize: '1.25rem',
+                            flexShrink: 0,
                         }}>
-                            FamTree
-                        </h1>
-                    )}
+                            <Zap size={22} />
+                        </div>
+                        {sidebarOpen && (
+                            <div style={{ minWidth: 0 }}>
+                                <h1 style={{
+                                    margin: 0,
+                                    fontSize: '1.1rem',
+                                    fontWeight: 700,
+                                    color: '#0a0e27',
+                                    letterSpacing: '-0.3px',
+                                }}>
+                                    FamTree
+                                </h1>
+                                <p style={{
+                                    margin: 0,
+                                    fontSize: '0.75rem',
+                                    color: '#999',
+                                    fontWeight: 500,
+                                }}>
+                                    Admin Panel
+                                </p>
+                            </div>
+                        )}
+                    </div>
                     <button
                         onClick={() => setSidebarOpen(!sidebarOpen)}
                         style={{
-                            background: 'none',
+                            background: 'rgba(0, 82, 232, 0.08)',
                             border: 'none',
                             cursor: 'pointer',
                             padding: '0.5rem',
                             display: 'flex',
                             alignItems: 'center',
-                            color: '#666',
-                            transition: 'color 0.2s ease',
+                            justifyContent: 'center',
+                            borderRadius: '8px',
+                            color: '#0052E8',
+                            transition: 'all 0.2s ease',
+                            flexShrink: 0,
                         }}
-                        onMouseEnter={(e) => e.currentTarget.style.color = '#1a1a1a'}
-                        onMouseLeave={(e) => e.currentTarget.style.color = '#666'}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'rgba(0, 82, 232, 0.12)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'rgba(0, 82, 232, 0.08)';
+                        }}
                     >
-                        {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+                        {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
                     </button>
                 </div>
 
                 {/* Navigation */}
                 <nav style={{
                     flex: 1,
-                    padding: '1rem 0.5rem',
+                    padding: '1.25rem 0.5rem',
                     overflowY: 'auto',
+                    overscrollBehavior: 'contain',
                 }}>
-                    {navigationItems.map((item, index) => {
-                        const Icon = item.icon;
-                        return (
-                            <a
-                                key={index}
-                                href={item.href}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.75rem',
-                                    padding: '0.875rem 0.75rem',
-                                    margin: '0.25rem 0',
-                                    borderRadius: '8px',
-                                    color: item.active ? '#0052E8' : '#666',
-                                    textDecoration: 'none',
-                                    fontSize: '0.95rem',
-                                    fontWeight: item.active ? 600 : 500,
-                                    background: item.active ? 'rgba(0, 82, 232, 0.08)' : 'transparent',
-                                    transition: 'all 0.2s ease',
-                                    borderLeft: item.active ? '3px solid #0052E8' : '3px solid transparent',
-                                    paddingLeft: item.active ? '0.625rem' : '0.75rem',
-                                    whiteSpace: sidebarOpen ? 'nowrap' : 'normal',
-                                    justifyContent: sidebarOpen ? 'flex-start' : 'center',
-                                    position: 'relative',
-                                }}
-                                onMouseEnter={(e) => {
-                                    if (!item.active) {
-                                        e.currentTarget.style.background = '#F5F5F5';
-                                        e.currentTarget.style.color = '#1a1a1a';
-                                    }
-                                }}
-                                onMouseLeave={(e) => {
-                                    if (!item.active) {
-                                        e.currentTarget.style.background = 'transparent';
-                                        e.currentTarget.style.color = '#666';
-                                    }
-                                }}
-                                title={!sidebarOpen ? item.label : ''}
-                            >
-                                <Icon size={18} style={{ minWidth: '18px' }} />
-                                {sidebarOpen && (
-                                    <>
-                                        <span>{item.label}</span>
-                                        {item.badge && (
-                                            <span style={{
-                                                marginLeft: 'auto',
-                                                background: '#FF4757',
-                                                color: 'white',
-                                                borderRadius: '12px',
-                                                padding: '0.25rem 0.5rem',
-                                                fontSize: '0.75rem',
-                                                fontWeight: 600,
-                                            }}>
-                                                {item.badge}
-                                            </span>
-                                        )}
-                                    </>
-                                )}
-                            </a>
-                        );
-                    })}
+                    <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.5rem',
+                    }}>
+                        {navigationItems.map((item, index) => {
+                            const Icon = item.icon;
+                            return (
+                                <a
+                                    key={index}
+                                    href={item.href}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.875rem',
+                                        padding: sidebarOpen ? '0.875rem 1rem' : '0.875rem 1rem',
+                                        margin: '0',
+                                        borderRadius: '10px',
+                                        color: item.active ? '#0052E8' : '#555',
+                                        textDecoration: 'none',
+                                        fontSize: '0.95rem',
+                                        fontWeight: item.active ? 600 : 500,
+                                        background: item.active ? 'linear-gradient(135deg, rgba(0, 82, 232, 0.1) 0%, rgba(0, 82, 232, 0.05) 100%)' : 'transparent',
+                                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                        borderLeft: '2px solid ' + (item.active ? '#0052E8' : 'transparent'),
+                                        paddingLeft: sidebarOpen ? (item.active ? '0.875rem' : '1rem') : '1rem',
+                                        whiteSpace: 'nowrap',
+                                        justifyContent: sidebarOpen ? 'flex-start' : 'center',
+                                        position: 'relative',
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        if (!item.active) {
+                                            e.currentTarget.style.background = 'rgba(0, 0, 0, 0.04)';
+                                            e.currentTarget.style.color = '#0a0e27';
+                                        }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        if (!item.active) {
+                                            e.currentTarget.style.background = 'transparent';
+                                            e.currentTarget.style.color = '#555';
+                                        }
+                                    }}
+                                    title={!sidebarOpen ? item.label : ''}
+                                >
+                                    <Icon size={18} style={{ flexShrink: 0 }} />
+                                    {sidebarOpen && (
+                                        <>
+                                            <span style={{ flex: 1 }}>{item.label}</span>
+                                            {item.badge && (
+                                                <span style={{
+                                                    background: 'linear-gradient(135deg, #FF6B6B 0%, #FF5252 100%)',
+                                                    color: 'white',
+                                                    borderRadius: '50%',
+                                                    padding: '0.25rem 0.5rem',
+                                                    fontSize: '0.7rem',
+                                                    fontWeight: 700,
+                                                    minWidth: '20px',
+                                                    textAlign: 'center',
+                                                    boxShadow: '0 2px 8px rgba(255, 107, 107, 0.3)',
+                                                }}>
+                                                    {item.badge}
+                                                </span>
+                                            )}
+                                        </>
+                                    )}
+                                </a>
+                            );
+                        })}
+                    </div>
                 </nav>
 
                 {/* Admin Profile Section */}
                 <div style={{
-                    borderTop: '1px solid #E8E8E8',
+                    borderTop: '1px solid rgba(0, 0, 0, 0.06)',
                     padding: '1rem 0.5rem',
+                    background: 'rgba(0, 82, 232, 0.03)',
                 }}>
                     <div
                         style={{
                             display: 'flex',
                             alignItems: 'center',
                             gap: '0.75rem',
-                            padding: '0.875rem',
-                            borderRadius: '8px',
+                            padding: '0.875rem 1rem',
+                            borderRadius: '10px',
                             cursor: 'pointer',
-                            background: '#F5F5F5',
-                            transition: 'background 0.2s ease',
+                            background: 'linear-gradient(135deg, rgba(0, 82, 232, 0.08) 0%, rgba(0, 82, 232, 0.04) 100%)',
+                            transition: 'all 0.2s ease',
+                            border: '1px solid rgba(0, 82, 232, 0.15)',
                         }}
-                        onMouseEnter={(e) => e.currentTarget.style.background = '#EEEEEE'}
-                        onMouseLeave={(e) => e.currentTarget.style.background = '#F5F5F5'}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(0, 82, 232, 0.12) 0%, rgba(0, 82, 232, 0.08) 100%)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(0, 82, 232, 0.08) 0%, rgba(0, 82, 232, 0.04) 100%)';
+                        }}
                         onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
                     >
                         <div style={{
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            width: '32px',
-                            height: '32px',
-                            borderRadius: '50%',
+                            width: '36px',
+                            height: '36px',
+                            borderRadius: '10px',
                             background: 'linear-gradient(135deg, #0052E8 0%, #0040B8 100%)',
                             color: 'white',
                             fontSize: '0.875rem',
                             fontWeight: 700,
+                            boxShadow: '0 4px 12px rgba(0, 82, 232, 0.3)',
+                            flexShrink: 0,
                         }}>
                             {auth?.admin?.username?.[0]?.toUpperCase() || 'A'}
                         </div>
@@ -238,7 +300,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                                         margin: 0,
                                         fontSize: '0.9rem',
                                         fontWeight: 600,
-                                        color: '#1a1a1a',
+                                        color: '#0a0e27',
                                         overflow: 'hidden',
                                         textOverflow: 'ellipsis',
                                         whiteSpace: 'nowrap',
@@ -253,13 +315,14 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                                         textOverflow: 'ellipsis',
                                         whiteSpace: 'nowrap',
                                     }}>
-                                        Admin
+                                        Administrator
                                     </p>
                                 </div>
                                 <ChevronDown size={16} style={{
-                                    color: '#999',
+                                    color: '#0052E8',
                                     transform: profileDropdownOpen ? 'rotate(180deg)' : 'rotate(0)',
                                     transition: 'transform 0.2s ease',
+                                    flexShrink: 0,
                                 }} />
                             </>
                         )}
@@ -268,32 +331,37 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     {/* Profile Dropdown */}
                     {profileDropdownOpen && sidebarOpen && (
                         <div style={{
-                            marginTop: '0.5rem',
-                            borderRadius: '8px',
-                            background: '#F9F9F9',
-                            border: '1px solid #E8E8E8',
+                            marginTop: '0.75rem',
+                            borderRadius: '10px',
+                            background: '#FFFFFF',
+                            border: '1px solid rgba(0, 0, 0, 0.08)',
                             overflow: 'hidden',
+                            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)',
                         }}>
                             <button
                                 onClick={handleLogout}
                                 style={{
                                     width: '100%',
-                                    padding: '0.75rem',
+                                    padding: '0.875rem 1rem',
                                     background: 'none',
                                     border: 'none',
-                                    color: '#FF4757',
-                                    fontSize: '0.9rem',
-                                    fontWeight: 500,
+                                    color: '#FF6B6B',
+                                    fontSize: '0.95rem',
+                                    fontWeight: 600,
                                     cursor: 'pointer',
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: '0.5rem',
-                                    transition: 'background 0.2s ease',
+                                    gap: '0.75rem',
+                                    transition: 'all 0.2s ease',
                                 }}
-                                onMouseEnter={(e) => e.currentTarget.style.background = '#F0F0F0'}
-                                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.background = 'rgba(255, 107, 107, 0.08)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.background = 'transparent';
+                                }}
                             >
-                                <LogOut size={16} />
+                                <LogOut size={18} />
                                 Logout
                             </button>
                         </div>
@@ -304,15 +372,15 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             {/* Main Content */}
             <main style={{
                 flex: 1,
-                marginLeft: sidebarOpen ? '280px' : '80px',
-                transition: 'margin-left 0.3s ease',
+                marginLeft: sidebarOpen ? '260px' : '80px',
+                transition: 'margin-left 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                 display: 'flex',
                 flexDirection: 'column',
             }}>
                 {/* Top Navigation */}
                 <header style={{
                     background: '#FFFFFF',
-                    borderBottom: '1px solid #E8E8E8',
+                    borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
                     padding: '1rem 2rem',
                     display: 'flex',
                     alignItems: 'center',
@@ -320,6 +388,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     position: 'sticky',
                     top: 0,
                     zIndex: 30,
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
                 }}>
                     <div style={{
                         display: 'flex',
@@ -330,17 +399,29 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                         <div style={{
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '0.5rem',
-                            background: '#F5F5F5',
-                            border: '1px solid #E0E0E0',
-                            borderRadius: '8px',
-                            padding: '0.5rem 1rem',
-                            flex: '0 1 300px',
-                        }}>
+                            gap: '0.75rem',
+                            background: '#F5F7FA',
+                            border: '1px solid rgba(0, 0, 0, 0.08)',
+                            borderRadius: '10px',
+                            padding: '0.75rem 1.25rem',
+                            flex: '0 1 320px',
+                            transition: 'all 0.3s ease',
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.background = '#FFFFFF';
+                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 82, 232, 0.15)';
+                            e.currentTarget.style.borderColor = 'rgba(0, 82, 232, 0.3)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.background = '#F5F7FA';
+                            e.currentTarget.style.boxShadow = 'none';
+                            e.currentTarget.style.borderColor = 'rgba(0, 0, 0, 0.08)';
+                        }}
+                        >
                             <Search size={18} style={{ color: '#999' }} />
                             <input
                                 type="text"
-                                placeholder="Search..."
+                                placeholder="Search users, reports..."
                                 style={{
                                     flex: 1,
                                     border: 'none',
@@ -348,15 +429,25 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                                     outline: 'none',
                                     fontSize: '0.95rem',
                                     color: '#333',
+                                    fontFamily: 'inherit',
                                 }}
                             />
+                            <kbd style={{
+                                fontSize: '0.75rem',
+                                padding: '0.25rem 0.5rem',
+                                background: 'rgba(0, 0, 0, 0.06)',
+                                borderRadius: '4px',
+                                color: '#999',
+                                border: '1px solid rgba(0, 0, 0, 0.12)',
+                                fontWeight: 500,
+                            }}>⌘K</kbd>
                         </div>
                     </div>
 
                     <div style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '1.5rem',
+                        gap: '1.75rem',
                     }}>
                         {/* Notifications */}
                         <button style={{
@@ -364,24 +455,26 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                             border: 'none',
                             cursor: 'pointer',
                             padding: '0.5rem',
-                            color: '#666',
+                            color: '#555',
                             display: 'flex',
                             alignItems: 'center',
                             position: 'relative',
-                            transition: 'color 0.2s ease',
+                            transition: 'all 0.2s ease',
                         }}
-                        onMouseEnter={(e) => e.currentTarget.style.color = '#1a1a1a'}
-                        onMouseLeave={(e) => e.currentTarget.style.color = '#666'}
+                        onMouseEnter={(e) => e.currentTarget.style.color = '#0052E8'}
+                        onMouseLeave={(e) => e.currentTarget.style.color = '#555'}
                         >
                             <Bell size={20} />
                             <span style={{
                                 position: 'absolute',
-                                top: '0',
-                                right: '0',
-                                width: '8px',
-                                height: '8px',
-                                background: '#FF4757',
+                                top: '2px',
+                                right: '2px',
+                                width: '10px',
+                                height: '10px',
+                                background: 'linear-gradient(135deg, #FF6B6B 0%, #FF5252 100%)',
                                 borderRadius: '50%',
+                                border: '2px solid #FFFFFF',
+                                boxShadow: '0 2px 6px rgba(255, 107, 107, 0.4)',
                             }} />
                         </button>
 
@@ -389,22 +482,34 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                         <div style={{
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '0.75rem',
-                            paddingLeft: '1.5rem',
-                            borderLeft: '1px solid #E8E8E8',
+                            gap: '1rem',
+                            paddingLeft: '1.75rem',
+                            borderLeft: '1px solid rgba(0, 0, 0, 0.08)',
                         }}>
                             <div style={{
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                width: '36px',
-                                height: '36px',
-                                borderRadius: '50%',
+                                width: '40px',
+                                height: '40px',
+                                borderRadius: '10px',
                                 background: 'linear-gradient(135deg, #0052E8 0%, #0040B8 100%)',
                                 color: 'white',
                                 fontSize: '0.875rem',
                                 fontWeight: 700,
-                            }}>
+                                boxShadow: '0 4px 12px rgba(0, 82, 232, 0.3)',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.boxShadow = '0 8px 20px rgba(0, 82, 232, 0.4)';
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 82, 232, 0.3)';
+                                e.currentTarget.style.transform = 'translateY(0)';
+                            }}
+                            >
                                 {auth?.admin?.username?.[0]?.toUpperCase() || 'A'}
                             </div>
                         </div>
@@ -414,8 +519,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 {/* Page Content */}
                 <div style={{
                     flex: 1,
-                    padding: '2rem',
+                    padding: '2rem 2.5rem',
                     overflowY: 'auto',
+                    overscrollBehavior: 'contain',
                 }}>
                     {children}
                 </div>
