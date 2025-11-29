@@ -25,10 +25,6 @@ class AdminAuthService
             throw new \Exception('Invalid email or password.');
         }
 
-        if (!$admin->is_active) {
-            throw new \Exception('This admin account is inactive.');
-        }
-
         return $admin;
     }
 
