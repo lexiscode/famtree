@@ -1,6 +1,6 @@
 # 🛡️ ADMIN PANEL FEATURES & TODOS
 
-**Last Updated:** November 14, 2025
+**Last Updated:** November 29, 2025
 **Status:** Planning Phase
 **Priority:** Critical for Platform Management
 
@@ -9,12 +9,13 @@
 ## 📋 Table of Contents
 
 1. [Overview](#overview)
-2. [Phase 11: Admin Dashboard](#phase-11-admin-dashboard)
-3. [Phase 12: User Management](#phase-12-user-management)
-4. [Phase 13: Content Moderation](#phase-13-content-moderation)
-5. [Phase 14: System & Analytics](#phase-14-system--analytics)
-6. [Database Schema](#database-schema)
-7. [Implementation Order](#implementation-order)
+2. [User Features Requiring Admin Equivalents](#user-features-requiring-admin-equivalents)
+3. [Phase 11: Admin Dashboard](#phase-11-admin-dashboard)
+4. [Phase 12: User Management](#phase-12-user-management)
+5. [Phase 13: Content Moderation](#phase-13-content-moderation)
+6. [Phase 14: System & Analytics](#phase-14-system--analytics)
+7. [Database Schema](#database-schema)
+8. [Implementation Order](#implementation-order)
 
 ---
 
@@ -29,6 +30,146 @@ The Admin Panel is a comprehensive management system for FamTree administrators 
 - Security and audit logging
 - Application settings management
 - Statistics and insights
+- Monitoring and management of all user-facing features
+
+---
+
+## User Features Requiring Admin Equivalents
+
+Based on authenticated user routes analysis (web.php), the following features need admin panel equivalents for management and monitoring:
+
+### 1. **Onboarding Management**
+- **User Routes**: Onboarding flow with basic info, family status, location, profile image, education/work, siblings search
+- **Admin Needs**:
+  - [ ] View onboarding completion status for users
+  - [ ] View pending onboarding users
+  - [ ] Skip/force complete onboarding for users
+  - [ ] Reset onboarding status
+  - [ ] Analytics: Onboarding completion rate
+
+### 2. **Connection Management**
+- **User Routes**: `/connections/*` - Connection requests, accept, decline, undo, search, relationship types
+- **Admin Needs**:
+  - [ ] View all connections between users
+  - [ ] View pending connection requests
+  - [ ] Override/force connections between users
+  - [ ] Delete connections
+  - [ ] Analyze connection patterns
+  - [ ] View relationship type distribution
+
+### 3. **Suggested Connections**
+- **User Routes**: `/suggested-connections/*` - Get suggestions, list with filters, relationship types, count
+- **Admin Needs**:
+  - [ ] View suggested connections algorithm results
+  - [ ] Manually add/remove suggestions
+  - [ ] Analytics: Suggestion acceptance rate
+  - [ ] Track suggestion effectiveness
+
+### 4. **User Profiles**
+- **User Routes**: `/profile/{userId}` - View other user profiles
+- **Admin Needs**:
+  - [ ] View all user profiles
+  - [ ] Edit user profiles
+  - [ ] View profile visibility settings
+  - [ ] Reset profile information
+  - [ ] View profile completion percentage
+
+### 5. **Family Tree Management**
+- **User Routes**: `/family-tree/*` - Create, edit, delete, add members, remove members, view tree data
+- **Admin Needs**:
+  - [ ] View all family trees
+  - [ ] View family tree members and relationships
+  - [ ] Edit family trees (admin override)
+  - [ ] Delete family trees
+  - [ ] Analytics: Total trees, average members per tree, most connected families
+
+### 6. **Child Account Management**
+- **User Routes**: `/child-accounts/*` - Create, list, view, delete, show credentials, set email
+- **Admin Needs**:
+  - [ ] View all child accounts
+  - [ ] View parent-child relationships
+  - [ ] Delete child accounts
+  - [ ] Reset child account credentials
+  - [ ] Verify child account emails
+  - [ ] Analytics: Child accounts per parent, usage statistics
+
+### 7. **Status Management**
+- **User Routes**: `/status/update` - Update user alive/deceased status
+- **Admin Needs**:
+  - [ ] View user statuses
+  - [ ] Manually change status (alive/deceased)
+  - [ ] Audit trail for status changes
+  - [ ] Flag suspicious status changes
+
+### 8. **Notifications System**
+- **User Routes**: `/notifications/*` - Get unread, get all, get count, mark read, mark all read, delete, view single
+- **Admin Needs**:
+  - [ ] View all system notifications
+  - [ ] View user-specific notifications
+  - [ ] Send system-wide notifications
+  - [ ] Delete notifications
+  - [ ] Analytics: Notification delivery rate, read rate
+
+### 9. **Search & Discovery**
+- **User Routes**: `/search/*` - Search users, get featured, get suggested
+- **Admin Needs**:
+  - [ ] View search analytics
+  - [ ] Manage featured users/connections
+  - [ ] View trending searches
+  - [ ] Manage search suggestions
+
+### 10. **Galleries Management**
+- **User Routes**: `/galleries/*` - List, view user galleries, create, delete
+- **Admin Needs**:
+  - [ ] View all galleries
+  - [ ] View gallery contents
+  - [ ] Delete inappropriate galleries
+  - [ ] Analytics: Total galleries, average images per gallery
+
+### 11. **Connection Feeds**
+- **User Routes**: `/connection-feeds` - View posts from connections with privacy filtering
+- **Admin Needs**:
+  - [ ] View connection feed statistics
+  - [ ] View privacy filtering effectiveness
+  - [ ] Monitor hidden posts (due to privacy settings)
+  - [ ] Analytics: Feed engagement rates
+
+### 12. **Stories/Posts Management**
+- **User Routes**: `/stories/*` - Create, list, filter, search, view, edit, delete, comments, reactions
+- **Admin Needs**:
+  - [ ] View all posts/stories
+  - [ ] View post content
+  - [ ] Delete inappropriate posts
+  - [ ] View post moderation queue
+  - [ ] Analytics: Total posts, avg engagement, type distribution (text/voice)
+  - [ ] View post comments and reactions
+
+### 13. **Account Settings & Security**
+- **User Routes**: `/settings/*` - Account settings, change password, change email, update profile, delete account, 2FA, privacy, notifications
+- **Admin Needs**:
+  - [ ] View user account settings
+  - [ ] Force password reset for users
+  - [ ] Change user email (admin)
+  - [ ] View/manage user 2FA status
+  - [ ] Disable 2FA for users if needed
+  - [ ] View privacy settings
+  - [ ] Manage notification preferences (admin)
+
+### 14. **User Reports System**
+- **User Routes**: `/reports/*` - Submit report, view my reports
+- **Admin Needs**:
+  - [ ] View all reports (already planned in Phase 13.1)
+  - [ ] Review and resolve reports
+  - [ ] View reported user history
+  - [ ] Ban/suspend users based on reports
+
+### 15. **User Blocking System**
+- **User Routes**: `/blocks/*` - View blocks, block user, unblock user
+- **Admin Needs**:
+  - [ ] View all blocks
+  - [ ] Override blocks
+  - [ ] Admin-level blocking functionality (already planned in Phase 13.3)
+  - [ ] Force unblock users
 
 ---
 
