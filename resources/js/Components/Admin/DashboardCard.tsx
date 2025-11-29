@@ -10,23 +10,25 @@ export default function DashboardCard({ title, children, action }: DashboardCard
     return (
         <div style={{
             background: '#FFFFFF',
-            border: '1px solid #E8E8E8',
-            borderRadius: '12px',
-            padding: '1.5rem',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+            border: '1px solid rgba(0, 0, 0, 0.08)',
+            borderRadius: '14px',
+            padding: '2rem',
+            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.06)',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         }}>
             <div style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                marginBottom: title ? '1.5rem' : 0,
+                marginBottom: title ? '1.75rem' : 0,
             }}>
                 {title && (
                     <h2 style={{
                         margin: 0,
-                        fontSize: '1.1rem',
+                        fontSize: '1.25rem',
                         fontWeight: 700,
-                        color: '#1a1a1a',
+                        color: '#0a0e27',
+                        letterSpacing: '-0.3px',
                     }}>
                         {title}
                     </h2>

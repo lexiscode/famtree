@@ -46,28 +46,32 @@ export default function Pagination({ currentPage, totalPages, onPageChange }: Pa
                 onClick={() => onPageChange(currentPage - 1)}
                 disabled={currentPage === 1}
                 style={{
-                    background: '#F5F5F5',
-                    border: '1px solid #E0E0E0',
-                    borderRadius: '6px',
-                    padding: '0.5rem',
+                    background: '#F5F7FA',
+                    border: '1px solid rgba(0, 0, 0, 0.08)',
+                    borderRadius: '8px',
+                    padding: '0.625rem 0.75rem',
                     cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
-                    color: '#666',
+                    color: currentPage === 1 ? '#CCC' : '#0052E8',
                     display: 'flex',
                     alignItems: 'center',
                     opacity: currentPage === 1 ? 0.5 : 1,
-                    transition: 'all 0.2s ease',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 }}
                 onMouseEnter={(e) => {
                     if (currentPage > 1) {
-                        e.currentTarget.style.background = '#0052E8';
+                        e.currentTarget.style.background = 'linear-gradient(135deg, #0052E8 0%, #0040B8 100%)';
                         e.currentTarget.style.color = '#FFFFFF';
                         e.currentTarget.style.borderColor = '#0052E8';
+                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 82, 232, 0.25)';
+                        e.currentTarget.style.transform = 'translateY(-2px)';
                     }
                 }}
                 onMouseLeave={(e) => {
-                    e.currentTarget.style.background = '#F5F5F5';
-                    e.currentTarget.style.color = '#666';
-                    e.currentTarget.style.borderColor = '#E0E0E0';
+                    e.currentTarget.style.background = '#F5F7FA';
+                    e.currentTarget.style.color = currentPage === 1 ? '#CCC' : '#0052E8';
+                    e.currentTarget.style.borderColor = 'rgba(0, 0, 0, 0.08)';
+                    e.currentTarget.style.boxShadow = 'none';
+                    e.currentTarget.style.transform = 'translateY(0)';
                 }}
             >
                 <ChevronLeft size={18} />
@@ -79,29 +83,34 @@ export default function Pagination({ currentPage, totalPages, onPageChange }: Pa
                     onClick={() => typeof page === 'number' && onPageChange(page)}
                     disabled={page === '...'}
                     style={{
-                        background: page === currentPage ? '#0052E8' : '#F5F5F5',
-                        color: page === currentPage ? '#FFFFFF' : '#666',
-                        border: page === currentPage ? '1px solid #0052E8' : '1px solid #E0E0E0',
-                        borderRadius: '6px',
-                        padding: '0.5rem 0.75rem',
+                        background: page === currentPage ? 'linear-gradient(135deg, #0052E8 0%, #0040B8 100%)' : '#F5F7FA',
+                        color: page === currentPage ? '#FFFFFF' : '#555',
+                        border: page === currentPage ? '1px solid rgba(0, 82, 232, 0.2)' : '1px solid rgba(0, 0, 0, 0.08)',
+                        borderRadius: '8px',
+                        padding: '0.625rem 0.75rem',
                         fontSize: '0.9rem',
-                        fontWeight: page === currentPage ? 600 : 500,
+                        fontWeight: page === currentPage ? 700 : 500,
                         cursor: page === '...' || page === currentPage ? 'default' : 'pointer',
                         minWidth: '36px',
-                        transition: 'all 0.2s ease',
+                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                        boxShadow: page === currentPage ? '0 4px 12px rgba(0, 82, 232, 0.25)' : 'none',
                     }}
                     onMouseEnter={(e) => {
                         if (page !== '...' && page !== currentPage) {
-                            e.currentTarget.style.background = '#0052E8';
+                            e.currentTarget.style.background = 'linear-gradient(135deg, #0052E8 0%, #0040B8 100%)';
                             e.currentTarget.style.color = '#FFFFFF';
                             e.currentTarget.style.borderColor = '#0052E8';
+                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 82, 232, 0.25)';
+                            e.currentTarget.style.transform = 'translateY(-2px)';
                         }
                     }}
                     onMouseLeave={(e) => {
                         if (page !== '...' && page !== currentPage) {
-                            e.currentTarget.style.background = '#F5F5F5';
-                            e.currentTarget.style.color = '#666';
-                            e.currentTarget.style.borderColor = '#E0E0E0';
+                            e.currentTarget.style.background = '#F5F7FA';
+                            e.currentTarget.style.color = '#555';
+                            e.currentTarget.style.borderColor = 'rgba(0, 0, 0, 0.08)';
+                            e.currentTarget.style.boxShadow = 'none';
+                            e.currentTarget.style.transform = 'translateY(0)';
                         }
                     }}
                 >
@@ -113,28 +122,32 @@ export default function Pagination({ currentPage, totalPages, onPageChange }: Pa
                 onClick={() => onPageChange(currentPage + 1)}
                 disabled={currentPage === totalPages}
                 style={{
-                    background: '#F5F5F5',
-                    border: '1px solid #E0E0E0',
-                    borderRadius: '6px',
-                    padding: '0.5rem',
+                    background: '#F5F7FA',
+                    border: '1px solid rgba(0, 0, 0, 0.08)',
+                    borderRadius: '8px',
+                    padding: '0.625rem 0.75rem',
                     cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
-                    color: '#666',
+                    color: currentPage === totalPages ? '#CCC' : '#0052E8',
                     display: 'flex',
                     alignItems: 'center',
                     opacity: currentPage === totalPages ? 0.5 : 1,
-                    transition: 'all 0.2s ease',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 }}
                 onMouseEnter={(e) => {
                     if (currentPage < totalPages) {
-                        e.currentTarget.style.background = '#0052E8';
+                        e.currentTarget.style.background = 'linear-gradient(135deg, #0052E8 0%, #0040B8 100%)';
                         e.currentTarget.style.color = '#FFFFFF';
                         e.currentTarget.style.borderColor = '#0052E8';
+                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 82, 232, 0.25)';
+                        e.currentTarget.style.transform = 'translateY(-2px)';
                     }
                 }}
                 onMouseLeave={(e) => {
-                    e.currentTarget.style.background = '#F5F5F5';
-                    e.currentTarget.style.color = '#666';
-                    e.currentTarget.style.borderColor = '#E0E0E0';
+                    e.currentTarget.style.background = '#F5F7FA';
+                    e.currentTarget.style.color = currentPage === totalPages ? '#CCC' : '#0052E8';
+                    e.currentTarget.style.borderColor = 'rgba(0, 0, 0, 0.08)';
+                    e.currentTarget.style.boxShadow = 'none';
+                    e.currentTarget.style.transform = 'translateY(0)';
                 }}
             >
                 <ChevronRight size={18} />

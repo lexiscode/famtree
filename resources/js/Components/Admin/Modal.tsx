@@ -16,58 +16,71 @@ export default function Modal({ isOpen, title, children, onClose, footer }: Moda
         <div style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0, 0, 0, 0.5)',
+            background: 'rgba(0, 0, 0, 0.55)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 1000,
+            backdropFilter: 'blur(4px)',
+            animation: 'fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         }}
         onClick={onClose}
         >
             <div
                 style={{
                     background: '#FFFFFF',
-                    borderRadius: '12px',
-                    boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+                    borderRadius: '16px',
+                    boxShadow: '0 25px 50px rgba(0, 0, 0, 0.25)',
                     width: '100%',
                     maxWidth: '500px',
                     maxHeight: '90vh',
                     overflow: 'hidden',
                     display: 'flex',
                     flexDirection: 'column',
+                    border: '1px solid rgba(0, 0, 0, 0.08)',
+                    animation: 'slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                 }}
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
                 <div style={{
-                    padding: '1.5rem',
-                    borderBottom: '1px solid #E8E8E8',
+                    padding: '2rem',
+                    borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
                 }}>
                     <h2 style={{
                         margin: 0,
-                        fontSize: '1.25rem',
+                        fontSize: '1.5rem',
                         fontWeight: 700,
-                        color: '#1a1a1a',
+                        color: '#0a0e27',
+                        letterSpacing: '-0.3px',
                     }}>
                         {title}
                     </h2>
                     <button
                         onClick={onClose}
                         style={{
-                            background: 'none',
+                            background: '#F0F2F7',
                             border: 'none',
                             cursor: 'pointer',
                             padding: '0.5rem',
-                            color: '#999',
+                            color: '#888',
                             display: 'flex',
                             alignItems: 'center',
-                            transition: 'color 0.2s ease',
+                            justifyContent: 'center',
+                            borderRadius: '8px',
+                            transition: 'all 0.2s ease',
                         }}
-                        onMouseEnter={(e) => e.currentTarget.style.color = '#1a1a1a'}
-                        onMouseLeave={(e) => e.currentTarget.style.color = '#999'}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.background = '#E8EAF0';
+                            e.currentTarget.style.color = '#0a0e27';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.background = '#F0F2F7';
+                            e.currentTarget.style.color = '#888';
+                        }}
                     >
                         <X size={24} />
                     </button>
@@ -76,7 +89,7 @@ export default function Modal({ isOpen, title, children, onClose, footer }: Moda
                 {/* Body */}
                 <div style={{
                     flex: 1,
-                    padding: '1.5rem',
+                    padding: '1.75rem 2rem',
                     overflowY: 'auto',
                 }}>
                     {children}
@@ -85,11 +98,12 @@ export default function Modal({ isOpen, title, children, onClose, footer }: Moda
                 {/* Footer */}
                 {footer && (
                     <div style={{
-                        padding: '1.5rem',
-                        borderTop: '1px solid #E8E8E8',
+                        padding: '1.75rem 2rem',
+                        borderTop: '1px solid rgba(0, 0, 0, 0.08)',
                         display: 'flex',
                         gap: '1rem',
                         justifyContent: 'flex-end',
+                        background: '#F9FAFC',
                     }}>
                         {footer}
                     </div>
