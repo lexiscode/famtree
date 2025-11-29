@@ -35,7 +35,7 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
-        $user = auth()->user();
+        $user = auth('web')->user();
         $progress = null;
 
         // Get onboarding progress if user is on onboarding page

@@ -1,14 +1,21 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\AdminControllers\AdminAuthController;
 use Inertia\Inertia;
 
 
 Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], function () {
 
-    // Guest Routes (Accessible without login)
-    Route::middleware('guest:admin')->group(function () {
+    // Guest Routes (Accessible without admin login)
+    // Allow access only if admin is NOT authenticated
+    Route::group(['middleware' => function ($request, $next) {
+        if (Auth::guard('admin')->check()) {
+            return redirect()->route('admin.dashboard');
+        }
+        return $next($request);
+    }], function () {
         Route::get('/login', [AdminAuthController::class, 'showLogin'])->name('login');
         Route::post('/login', [AdminAuthController::class, 'login']);
         Route::get('/forgot-password', [AdminAuthController::class, 'showForgotPassword'])->name('forgot-password');
