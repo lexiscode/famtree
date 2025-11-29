@@ -29,7 +29,6 @@ use App\Http\Controllers\GuestControllers\OnboardingController;
 use App\Http\Controllers\GuestControllers\StatusController;
 use App\Http\Controllers\GuestControllers\NotificationController;
 use App\Http\Controllers\GuestControllers\SearchController;
-use App\Http\Controllers\AdminControllers\AdminAuthController;
 use Inertia\Inertia;
 
 
@@ -69,28 +68,6 @@ Route::middleware(['web', 'guest'])->group(function () {
 Route::middleware(['web'])->group(function () {
     Route::get('/auth/2fa-verify', [AuthController::class, 'show2FAVerify'])->name('auth.2fa-verify');
     Route::post('/auth/verify-2fa', [AuthController::class, 'verify2FA'])->name('auth.verify-2fa');
-});
-
-/*
-|--------------------------------------------------------------------------
-| Admin Authentication Routes
-|--------------------------------------------------------------------------
-*/
-
-Route::middleware(['web'])->group(function () {
-    // Show login page
-    Route::get('/admin/login', [AdminAuthController::class, 'showLogin'])->name('admin.login');
-
-    // Login POST
-    Route::post('/admin/login', [AdminAuthController::class, 'login']);
-
-    // Forgot password
-    Route::get('/admin/forgot-password', [AdminAuthController::class, 'showForgotPassword'])->name('admin.forgot-password');
-    Route::post('/admin/forgot-password', [AdminAuthController::class, 'forgotPassword'])->name('admin.send-password-reset');
-
-    // Reset password
-    Route::get('/admin/reset-password', [AdminAuthController::class, 'showResetPassword'])->name('admin.show-reset-password');
-    Route::post('/admin/reset-password', [AdminAuthController::class, 'resetPassword'])->name('admin.reset-password');
 });
 
 /*
@@ -272,20 +249,4 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::post('/users', [UserBlockController::class, 'store'])->name('blocks.store');
         Route::delete('/users/{blockedUserId}', [UserBlockController::class, 'destroy'])->name('blocks.destroy');
     });
-});
-
-/*
-|--------------------------------------------------------------------------
-| Admin Protected Routes
-|--------------------------------------------------------------------------
-*/
-
-Route::middleware(['web', 'auth:admin'])->group(function () {
-    // Admin logout
-    Route::post('/admin/logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
-
-    // Admin dashboard (placeholder, will be implemented)
-    Route::get('/admin/dashboard', function () {
-        return Inertia::render('AdminPages/Dashboard/Index');
-    })->name('admin.dashboard');
 });
