@@ -1,0 +1,329 @@
+import { useState } from 'react';
+import { LogIn, AlertTriangle, Lock, Mail } from 'lucide-react';
+import { router, usePage } from '@inertiajs/react';
+
+interface SharedProps {
+    flash?: {
+        error?: string;
+        success?: string;
+    };
+}
+
+export default function AdminLogin() {
+    const { flash } = usePage<SharedProps>().props;
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [rememberMe, setRememberMe] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (!email || !password) {
+            setError('Email and password are required.');
+            return;
+        }
+
+        setLoading(true);
+        setError(null);
+
+        router.post(route('admin.login'), {
+            email,
+            password,
+            rememberMe,
+        }, {
+            onError: (errors: Record<string, string>) => {
+                setLoading(false);
+                const errorMessage = Object.values(errors)[0] || 'Login failed. Please try again.';
+                setError(errorMessage);
+            },
+        });
+    };
+
+    return (
+        <div style={{
+            minHeight: '100vh',
+            background: 'linear-gradient(135deg, #0F1F35 0%, #1a2f47 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1rem',
+        }}>
+            <div style={{
+                width: '100%',
+                maxWidth: '450px',
+            }}>
+                {/* Logo/Brand Section */}
+                <div style={{
+                    textAlign: 'center',
+                    marginBottom: '2.5rem',
+                }}>
+                    <div style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: '70px',
+                        height: '70px',
+                        background: 'linear-gradient(135deg, #0052E8 0%, #0040B8 100%)',
+                        borderRadius: '12px',
+                        marginBottom: '1.5rem',
+                        boxShadow: '0 8px 32px rgba(0, 82, 232, 0.3)',
+                    }}>
+                        <Lock size={36} color="white" />
+                    </div>
+                    <h1 style={{
+                        fontSize: '1.875rem',
+                        fontWeight: 700,
+                        color: '#FFFFFF',
+                        margin: '0 0 0.5rem 0',
+                    }}>
+                        Admin Portal
+                    </h1>
+                    <p style={{
+                        fontSize: '0.95rem',
+                        color: '#A0A0A0',
+                        margin: 0,
+                    }}>
+                        FamTree Administration Dashboard
+                    </p>
+                </div>
+
+                {/* Login Card */}
+                <div style={{
+                    background: '#0f172a',
+                    borderRadius: '12px',
+                    border: '1px solid rgba(0, 82, 232, 0.2)',
+                    padding: '2.5rem',
+                    boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+                }}>
+                    {/* Flash Messages */}
+                    {(flash?.error || flash?.success || error) && (
+                        <div style={{
+                            background: error || flash?.error
+                                ? 'rgba(255, 71, 87, 0.1)'
+                                : 'rgba(76, 175, 80, 0.1)',
+                            border: `1px solid ${error || flash?.error ? 'rgba(255, 71, 87, 0.3)' : 'rgba(76, 175, 80, 0.3)'}`,
+                            borderRadius: '8px',
+                            padding: '1rem',
+                            marginBottom: '1.5rem',
+                            display: 'flex',
+                            gap: '0.75rem',
+                        }}>
+                            {error || flash?.error ? (
+                                <AlertTriangle size={20} color="#FF4757" />
+                            ) : null}
+                            <p style={{
+                                fontSize: '0.9rem',
+                                color: error || flash?.error ? '#FF6B7A' : '#4CAF50',
+                                margin: 0,
+                            }}>
+                                {error || flash?.error || flash?.success}
+                            </p>
+                        </div>
+                    )}
+
+                    {/* Form */}
+                    <form onSubmit={handleSubmit}>
+                        {/* Email Field */}
+                        <div style={{ marginBottom: '1.5rem' }}>
+                            <label style={{
+                                display: 'block',
+                                fontSize: '0.9rem',
+                                fontWeight: 600,
+                                color: '#E0E0E0',
+                                marginBottom: '0.5rem',
+                            }}>
+                                Email Address
+                            </label>
+                            <div style={{
+                                position: 'relative',
+                                display: 'flex',
+                                alignItems: 'center',
+                            }}>
+                                <Mail size={18} style={{
+                                    position: 'absolute',
+                                    left: '12px',
+                                    color: '#0052E8',
+                                }} />
+                                <input
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="admin@example.com"
+                                    style={{
+                                        width: '100%',
+                                        paddingLeft: '40px',
+                                        paddingRight: '12px',
+                                        paddingTop: '10px',
+                                        paddingBottom: '10px',
+                                        border: '1px solid rgba(0, 82, 232, 0.3)',
+                                        borderRadius: '8px',
+                                        background: '#1a2849',
+                                        color: '#FFFFFF',
+                                        fontSize: '0.95rem',
+                                        transition: 'all 0.3s ease',
+                                        outline: 'none',
+                                    }}
+                                    onFocus={(e) => {
+                                        e.currentTarget.style.borderColor = '#0052E8';
+                                        e.currentTarget.style.boxShadow = '0 0 0 3px rgba(0, 82, 232, 0.1)';
+                                    }}
+                                    onBlur={(e) => {
+                                        e.currentTarget.style.borderColor = 'rgba(0, 82, 232, 0.3)';
+                                        e.currentTarget.style.boxShadow = 'none';
+                                    }}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Password Field */}
+                        <div style={{ marginBottom: '1rem' }}>
+                            <label style={{
+                                display: 'block',
+                                fontSize: '0.9rem',
+                                fontWeight: 600,
+                                color: '#E0E0E0',
+                                marginBottom: '0.5rem',
+                            }}>
+                                Password
+                            </label>
+                            <div style={{
+                                position: 'relative',
+                                display: 'flex',
+                                alignItems: 'center',
+                            }}>
+                                <Lock size={18} style={{
+                                    position: 'absolute',
+                                    left: '12px',
+                                    color: '#0052E8',
+                                }} />
+                                <input
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    placeholder="••••••••"
+                                    style={{
+                                        width: '100%',
+                                        paddingLeft: '40px',
+                                        paddingRight: '12px',
+                                        paddingTop: '10px',
+                                        paddingBottom: '10px',
+                                        border: '1px solid rgba(0, 82, 232, 0.3)',
+                                        borderRadius: '8px',
+                                        background: '#1a2849',
+                                        color: '#FFFFFF',
+                                        fontSize: '0.95rem',
+                                        transition: 'all 0.3s ease',
+                                        outline: 'none',
+                                    }}
+                                    onFocus={(e) => {
+                                        e.currentTarget.style.borderColor = '#0052E8';
+                                        e.currentTarget.style.boxShadow = '0 0 0 3px rgba(0, 82, 232, 0.1)';
+                                    }}
+                                    onBlur={(e) => {
+                                        e.currentTarget.style.borderColor = 'rgba(0, 82, 232, 0.3)';
+                                        e.currentTarget.style.boxShadow = 'none';
+                                    }}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Remember Me & Forgot Password */}
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            marginBottom: '1.5rem',
+                            fontSize: '0.85rem',
+                        }}>
+                            <label style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                color: '#A0A0A0',
+                                cursor: 'pointer',
+                                userSelect: 'none',
+                            }}>
+                                <input
+                                    type="checkbox"
+                                    checked={rememberMe}
+                                    onChange={(e) => setRememberMe(e.target.checked)}
+                                    style={{
+                                        width: '16px',
+                                        height: '16px',
+                                        cursor: 'pointer',
+                                        accentColor: '#0052E8',
+                                    }}
+                                />
+                                Remember me
+                            </label>
+                            <a
+                                href={route('admin.forgot-password')}
+                                style={{
+                                    color: '#0052E8',
+                                    textDecoration: 'none',
+                                    transition: 'color 0.3s ease',
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.color = '#0040B8'}
+                                onMouseLeave={(e) => e.currentTarget.style.color = '#0052E8'}
+                            >
+                                Forgot password?
+                            </a>
+                        </div>
+
+                        {/* Login Button */}
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            style={{
+                                width: '100%',
+                                padding: '12px 16px',
+                                background: loading
+                                    ? 'rgba(0, 82, 232, 0.5)'
+                                    : 'linear-gradient(135deg, #0052E8 0%, #0040B8 100%)',
+                                color: '#FFFFFF',
+                                border: 'none',
+                                borderRadius: '8px',
+                                fontSize: '1rem',
+                                fontWeight: 600,
+                                cursor: loading ? 'not-allowed' : 'pointer',
+                                transition: 'all 0.3s ease',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '0.5rem',
+                                boxShadow: loading ? 'none' : '0 4px 12px rgba(0, 82, 232, 0.3)',
+                            }}
+                            onMouseEnter={(e) => {
+                                if (!loading) {
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                    e.currentTarget.style.boxShadow = '0 8px 20px rgba(0, 82, 232, 0.4)';
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                if (!loading) {
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 82, 232, 0.3)';
+                                }
+                            }}
+                        >
+                            <LogIn size={20} />
+                            {loading ? 'Logging in...' : 'Login'}
+                        </button>
+                    </form>
+                </div>
+
+                {/* Footer */}
+                <p style={{
+                    textAlign: 'center',
+                    color: '#707070',
+                    fontSize: '0.85rem',
+                    marginTop: '2rem',
+                }}>
+                    Admin access only • Unauthorized access is prohibited
+                </p>
+            </div>
+        </div>
+    );
+}
