@@ -23,6 +23,11 @@ class Admin extends Authenticatable
         'username',
         'email',
         'password',
+        'phone',
+        'role',
+        'permissions',
+        'is_active',
+        'last_login_at',
     ];
 
     /**
@@ -42,7 +47,18 @@ class Admin extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'last_login_at' => 'datetime',
+        'permissions' => 'json',
         'password' => 'hashed',
+        'is_active' => 'boolean',
     ];
+
+    /**
+     * Relationship: Admin activity logs
+     */
+    public function activityLogs()
+    {
+        return $this->hasMany(\App\Models\AdminActivityLog::class);
+    }
 
 }

@@ -46,6 +46,8 @@ Based on authenticated user routes analysis (web.php), the following features ne
   - [ ] Skip/force complete onboarding for users
   - [ ] Reset onboarding status
   - [ ] Analytics: Onboarding completion rate
+  - [ ] View onboarding steps data for each user
+  - [ ] Bulk mark users as onboarded
 
 ### 2. **Connection Management**
 - **User Routes**: `/connections/*` - Connection requests, accept, decline, undo, search, relationship types
@@ -170,6 +172,58 @@ Based on authenticated user routes analysis (web.php), the following features ne
   - [ ] Override blocks
   - [ ] Admin-level blocking functionality (already planned in Phase 13.3)
   - [ ] Force unblock users
+
+### 16. **2FA (Two-Factor Authentication) Management**
+- **User Routes**: `/settings/account/2fa/*` - Generate, enable, disable, check status
+- **Admin Needs**:
+  - [ ] View 2FA status for users
+  - [ ] Disable 2FA for users (if compromised/locked out)
+  - [ ] View 2FA adoption metrics
+  - [ ] Analytics: 2FA enrollment rate
+  - [ ] Monitor failed 2FA verification attempts
+
+### 17. **Public Blog Management**
+- **User Routes**: `/blog` (GET list), `/blog/{slug}` (GET show) - Public blog posts
+- **Admin Needs**:
+  - [ ] Create blog posts (admin-only content creation)
+  - [ ] Edit published blog posts
+  - [ ] Delete blog posts
+  - [ ] View blog post analytics (views, engagement)
+  - [ ] Draft/publish workflow for blog posts
+  - [ ] Blog category management
+  - [ ] Featured/pinned blog posts
+
+### 18. **Contact Form Submissions Management**
+- **User Routes**: `/contact` (GET form), `/contact` (POST submit) - Contact submissions
+- **Admin Needs**:
+  - [ ] View all contact submissions
+  - [ ] Review contact form messages
+  - [ ] Mark submissions as read/unread
+  - [ ] Respond to contact submissions (admin email)
+  - [ ] Filter/search contact messages
+  - [ ] Delete contact submissions
+  - [ ] Export contact submissions
+  - [ ] Analytics: Total submissions, response rate
+
+### 19. **Public Pages Management (About, Features, How It Works)**
+- **User Routes**: `/about`, `/features`, `/how-it-works` - Static public pages
+- **Admin Needs**:
+  - [ ] Edit About page content
+  - [ ] Edit Features page content
+  - [ ] Edit How It Works page content
+  - [ ] Manage page visibility (show/hide pages)
+  - [ ] Page edit history and versions
+  - [ ] SEO metadata management
+  - [ ] View page traffic analytics
+
+### 20. **Family Explorer/Preview Management**
+- **User Routes**: `/families` (list), `/families/{slug}` (show) - Public family previews
+- **Admin Needs**:
+  - [ ] View all public families
+  - [ ] Manage featured families
+  - [ ] Flag/hide inappropriate families
+  - [ ] View family preview analytics
+  - [ ] Manage family visibility settings
 
 ---
 
@@ -593,6 +647,337 @@ Based on authenticated user routes analysis (web.php), the following features ne
 
 ---
 
+## 🎯 Phase 15: Blog & Content Management
+
+### 15.1 Blog Post Management
+- [ ] **Backend**: Create BlogRepository
+  - Method: `getAllPosts($filters = [])` - Get all blog posts with filters
+  - Method: `searchPosts($query)` - Search by title/content
+  - Method: `filterByStatus($status)` - Filter: draft, published, archived
+  - Method: `filterByCategory($categoryId)` - Filter by category
+  - Method: `getFeaturedPosts()` - Get featured/pinned posts
+  - Method: `getPostAnalytics($postId)` - Views, engagement metrics
+
+- [ ] **Backend**: Create BlogService
+  - Method: `createPost($data)` - Create new blog post
+  - Method: `publishPost($postId)` - Publish draft
+  - Method: `unPublishPost($postId)` - Unpublish post
+  - Method: `archivePost($postId)` - Archive post
+  - Method: `setFeaturedPost($postId, $isFeatured)` - Toggle featured status
+  - Method: `getPostAnalytics($postId)` - Return post stats
+
+- [ ] **Backend**: Create BlogController (Admin)
+  - `GET /admin/blog` - List all blog posts
+  - `POST /admin/blog` - Create new blog post
+  - `GET /admin/blog/{postId}` - View post details
+  - `PUT /admin/blog/{postId}` - Update blog post
+  - `DELETE /admin/blog/{postId}` - Delete blog post
+  - `POST /admin/blog/{postId}/publish` - Publish post
+  - `POST /admin/blog/{postId}/unpublish` - Unpublish post
+  - `POST /admin/blog/{postId}/feature` - Toggle featured status
+  - `GET /admin/blog/categories` - List all categories
+
+- [ ] **Frontend**: Create `AdminPages/Blog/List.tsx`
+  - Data table with columns: ID, Title, Author, Status, Category, Created Date, Views, Actions
+  - Search bar for blog posts
+  - Filter sidebar:
+    - Status filter: Draft, Published, Archived
+    - Category filter (dropdown)
+    - Date range picker
+  - Featured/pinned indicator badge
+  - Action buttons: View, Edit, Publish/Unpublish, Delete, Feature
+  - Create new post button
+
+- [ ] **Frontend**: Create `AdminPages/Blog/Editor.tsx`
+  - Rich text editor for blog content (HTML/Markdown)
+  - Title field
+  - Slug auto-generation
+  - Category dropdown
+  - Status selection: Draft, Published
+  - Featured toggle
+  - Featured image upload
+  - Meta description for SEO
+  - Keywords field
+  - Publish/Save buttons
+  - Preview functionality
+
+- [ ] **Frontend**: Create `AdminPages/Blog/ViewPost.tsx`
+  - Display published blog post content
+  - Author information
+  - Publication date and edit history
+  - View count and engagement metrics
+  - Comments section (if enabled)
+  - Edit button
+  - Delete button
+
+### 15.2 Blog Category Management
+- [ ] **Database**: Create/Verify `blog_categories` table
+  - Fields: `id`, `name`, `slug`, `description`, `icon`, `is_active`, `created_at`, `updated_at`
+
+- [ ] **Backend**: Create BlogCategoryService
+  - Method: `getAllCategories()` - Get all categories
+  - Method: `createCategory($data)` - Create new category
+  - Method: `updateCategory($categoryId, $data)` - Update category
+  - Method: `deleteCategory($categoryId)` - Delete category
+
+- [ ] **Frontend**: Create `AdminPages/Blog/Categories.tsx`
+  - List all blog categories
+  - Edit category name/description
+  - Toggle active status
+  - Delete category (with confirmation)
+  - Create new category button
+
+---
+
+## 🎯 Phase 16: Contact & Public Pages Management
+
+### 16.1 Contact Submissions Management
+- [ ] **Database**: Verify `contact_submissions` table exists
+  - Fields: `id`, `name`, `email`, `subject`, `message`, `status` (new, read, responded), `is_read`, `admin_response`, `responded_by_admin_id`, `responded_at`, `created_at`, `updated_at`
+
+- [ ] **Backend**: Create ContactSubmissionRepository
+  - Method: `getAllSubmissions($filters = [])` - Get submissions with filters
+  - Method: `getUnreadSubmissions()` - Get new/unread submissions
+  - Method: `searchSubmissions($query)` - Search by name/email/message
+  - Method: `filterByStatus($status)` - Filter by response status
+
+- [ ] **Backend**: Create ContactSubmissionService
+  - Method: `markAsRead($submissionId)` - Mark read
+  - Method: `respondToSubmission($submissionId, $response)` - Send response email
+  - Method: `deleteSubmission($submissionId)` - Delete submission
+  - Method: `exportSubmissions($format = 'csv')` - Export data
+
+- [ ] **Backend**: Create ContactController (Admin)
+  - `GET /admin/contact-submissions` - List submissions
+  - `GET /admin/contact-submissions/{submissionId}` - View details
+  - `POST /admin/contact-submissions/{submissionId}/respond` - Send response
+  - `POST /admin/contact-submissions/{submissionId}/mark-read` - Mark as read
+  - `DELETE /admin/contact-submissions/{submissionId}` - Delete submission
+  - `GET /admin/contact-submissions/export` - Export submissions
+
+- [ ] **Frontend**: Create `AdminPages/ContactSubmissions/List.tsx`
+  - Data table with columns: ID, Name, Email, Subject, Status, Date, Actions
+  - Search bar
+  - Filter sidebar:
+    - Status filter: New, Read, Responded
+    - Date range picker
+  - Badge for unread submissions
+  - Action buttons: View, Respond, Mark Read, Delete
+  - Export button for all submissions
+
+- [ ] **Frontend**: Create `AdminPages/ContactSubmissions/ViewSubmission.tsx`
+  - Submitter info: Name, Email
+  - Subject and message display
+  - Status indicator
+  - Admin response section (if already responded)
+  - Reply form: Text area for response, Send button
+  - Timestamp information
+
+### 16.2 Public Pages Management
+- [ ] **Database**: Create `public_pages` table
+  - Fields: `id`, `slug` (unique), `title`, `content` (JSON), `meta_description`, `meta_keywords`, `is_published`, `edited_by_admin_id`, `last_edited_at`, `created_at`, `updated_at`
+  - Include default pages: about, features, how-it-works
+
+- [ ] **Backend**: Create PublicPageRepository
+  - Method: `getPageBySlug($slug)` - Get page by slug
+  - Method: `getAllPages()` - Get all pages
+  - Method: `updatePage($pageId, $data)` - Update page content
+
+- [ ] **Backend**: Create PublicPageService
+  - Method: `getPageContent($slug)` - Get published page content
+  - Method: `editPage($slug, $content)` - Edit page
+  - Method: `publishPage($pageId)` - Publish page
+  - Method: `unpublishPage($pageId)` - Unpublish page
+  - Method: `getPageAnalytics($pageId)` - Page views
+
+- [ ] **Backend**: Create PublicPageController (Admin)
+  - `GET /admin/pages` - List all pages
+  - `GET /admin/pages/{pageId}` - View page
+  - `PUT /admin/pages/{pageId}` - Update page
+  - `POST /admin/pages/{pageId}/publish` - Publish
+  - `POST /admin/pages/{pageId}/unpublish` - Unpublish
+
+- [ ] **Frontend**: Create `AdminPages/Pages/List.tsx`
+  - List all public pages (About, Features, How It Works, etc.)
+  - Columns: Page Title, Slug, Status (Published/Draft), Last Edited, Edited By, Actions
+  - Edit button for each page
+  - Publish/unpublish toggle
+
+- [ ] **Frontend**: Create `AdminPages/Pages/Editor.tsx`
+  - Rich text editor for page content
+  - Page title
+  - Slug field (auto-generated, editable)
+  - Meta description field (for SEO)
+  - Meta keywords field
+  - Status toggle: Published/Draft
+  - Preview button
+  - Save/Publish buttons
+
+---
+
+## 🎯 Phase 17: Advanced User Management
+
+### 17.1 Two-Factor Authentication (2FA) Management
+- [ ] **Database**: Verify 2FA columns in users table
+  - Fields: `two_factor_secret`, `two_factor_recovery_codes`, `two_factor_confirmed_at`, `two_factor_enabled`
+
+- [ ] **Backend**: Create TwoFactorManagementService
+  - Method: `getTwoFAStatus($userId)` - Get 2FA status
+  - Method: `disableTwoFA($userId)` - Admin disable 2FA
+  - Method: `resetTwoFARecoveryCodes($userId)` - Generate new recovery codes
+  - Method: `getTwoFAAnalytics()` - 2FA adoption rate
+
+- [ ] **Backend**: Create TwoFactorController (Admin)
+  - `GET /admin/users/{userId}/2fa-status` - Get user's 2FA status
+  - `POST /admin/users/{userId}/2fa/disable` - Disable 2FA for user
+  - `GET /admin/2fa/analytics` - 2FA adoption metrics
+
+- [ ] **Frontend**: Add 2FA status indicator to user view page
+  - Show 2FA enabled/disabled status
+  - Button to disable 2FA (with confirmation)
+  - Last 2FA setup date
+  - Option to reset recovery codes
+
+### 17.2 Advanced Security Features
+- [ ] **Frontend**: Create `AdminPages/Users/SecurityAudit.tsx`
+  - Failed login attempts for user
+  - IP address history
+  - Session history
+  - Suspicious activity alerts
+  - Force password reset option
+  - Account lockout status
+
+### 17.3 User Profile Privacy Settings Management
+- [ ] **Database**: Verify `user_profile_privacy` table
+  - Fields: `id`, `user_id`, `profile_visibility`, `field_privacy` (JSON), `content_privacy` (JSON), `created_at`, `updated_at`
+
+- [ ] **Backend**: Create PrivacyManagementService
+  - Method: `getUserPrivacySettings($userId)` - Get all privacy settings
+  - Method: `updatePrivacySetting($userId, $setting, $value)` - Update setting
+
+- [ ] **Frontend**: Create privacy settings view in user management
+  - Show profile visibility setting
+  - List private fields
+  - Show content privacy settings
+  - Option to reset to defaults
+
+---
+
+## 🎯 Phase 18: Family Tree & Connections Analytics
+
+### 18.1 Enhanced Family Tree Analytics
+- [ ] **Backend**: Add to AnalyticsService
+  - Method: `getLargestFamilyTrees($limit = 10)` - Top families by member count
+  - Method: `getMostConnectedFamilies($limit = 10)` - Families with most connections
+  - Method: `getFamilyTreeGrowth($days = 30)` - Trees created per day
+  - Method: `getAverageTreeSize()` - Mean members per tree
+
+- [ ] **Frontend**: Update `AdminPages/Analytics/FamilyTrees.tsx`
+  - Add: Largest families ranking
+  - Add: Most connected families
+  - Add: Family tree growth trend
+  - Add: User engagement with family trees
+
+### 18.2 Connection Patterns Analysis
+- [ ] **Backend**: Create ConnectionAnalyticsService
+  - Method: `getConnectionPatterns()` - Common relationship types
+  - Method: `getConnectionRequestStats()` - Request acceptance rate
+  - Method: `detectAnomalies()` - Unusual connection patterns
+
+- [ ] **Frontend**: Create `AdminPages/Analytics/Connections.tsx`
+  - Enhanced connection analytics
+  - Relationship type distribution
+  - Connection request funnel (sent → accepted)
+  - Network analysis visualizations
+
+---
+
+## 🎯 Phase 19: Content & Engagement Analytics
+
+### 19.1 Stories/Posts Analytics
+- [ ] **Database**: Consider adding posts analytics columns
+  - `view_count`, `engagement_score`, `last_viewed_at`
+
+- [ ] **Backend**: Create PostAnalyticsService
+  - Method: `getPostStats($postId)` - Views, comments, reactions
+  - Method: `getPostEngagement()` - Top posts by engagement
+  - Method: `getContentTypeDistribution()` - Text vs voice posts
+  - Method: `getPostActivityTimeline($postId)` - View/engagement over time
+
+- [ ] **Backend**: Create ContentModerationAnalytics
+  - Method: `getFlaggedContentCount()` - Content needing review
+  - Method: `getReportedPostsAnalytics()` - Posts with reports
+  - Method: `getContentRemovalRate()` - % of reported content deleted
+
+- [ ] **Frontend**: Create `AdminPages/Analytics/Content.tsx`
+  - Total posts created (timeline)
+  - Posts by type: Stories, Updates, Milestones
+  - Top engaging posts
+  - Posts with reports/flags
+  - Comment and reaction statistics
+  - Content moderation queue status
+
+### 19.2 Gallery Analytics
+- [ ] **Backend**: Add gallery analytics to AnalyticsService
+  - Method: `getGalleryStats()` - Total galleries, images
+  - Method: `getGalleryGrowth($days = 30)` - New galleries per day
+  - Method: `getMostFlaggedImages()` - Potential inappropriate content
+
+- [ ] **Frontend**: Add gallery section to content analytics
+  - Total galleries created
+  - Total images uploaded
+  - Gallery growth trend
+  - Flagged images count
+
+---
+
+## 🎯 Phase 20: System Improvements & Compliance
+
+### 20.1 Data Export & Privacy Features
+- [ ] **Backend**: Create UserDataExportService
+  - Method: `exportUserData($userId)` - Export user's personal data (GDPR)
+  - Method: `scheduleUserDataExport($userId)` - Queue export
+  - Method: `getUserExportStatus($userId)` - Check export progress
+
+- [ ] **Backend**: Create DataRetentionService
+  - Method: `getRetentionPolicies()` - Current data retention rules
+  - Method: `archiveOldData()` - Archive inactive data
+  - Method: `deleteExpiredData()` - Purge old data per policy
+
+- [ ] **Frontend**: Create `AdminPages/Settings/DataPrivacy.tsx`
+  - GDPR compliance features
+  - User data export requests
+  - Data retention policy settings
+  - Right to be forgotten requests
+
+### 20.2 Audit Trail & Compliance Logging
+- [ ] **Database**: Verify `admin_activity_logs` table structure
+  - Fields: `id`, `admin_id`, `action_type`, `resource_type`, `resource_id`, `description`, `ip_address`, `user_agent`, `old_values` (JSON), `new_values` (JSON), `created_at`
+
+- [ ] **Backend**: Enhance ActivityLogService
+  - Method: `logAdminAction($admin, $actionType, $resourceType, $resourceId, $changes)` - Log with change details
+  - Method: `getAuditTrail($filters = [])` - Get audit logs
+  - Method: `getUserAuditTrail($userId)` - Changes affecting user
+
+- [ ] **Frontend**: Create `AdminPages/Settings/ComplianceLogs.tsx`
+  - Detailed audit trail of all admin actions
+  - Column: Admin, Action, Resource, Timestamp, Details
+  - Filter by: Admin, Action Type, Date Range
+  - Search functionality
+  - Export audit logs
+
+### 20.3 Notification Preferences Management
+- [ ] **Database**: Consider `notification_preferences` table
+  - Fields: `id`, `admin_id`, `notification_type`, `is_enabled`, `send_email`, `created_at`, `updated_at`
+
+- [ ] **Frontend**: Create `AdminPages/Settings/NotificationPreferences.tsx`
+  - Alert settings: Which events trigger notifications
+  - Email digest settings
+  - Notification channels (in-app, email, SMS)
+  - Daily/weekly digest options
+
+---
+
 ## 📊 Database Schema
 
 ### Admin Tables
@@ -729,6 +1114,14 @@ CREATE TABLE system_logs (
 11. **Phase 13.3** - User Blocking & Actions
 12. **Phase 14.3** - Email & Notifications Management
 
+### Priority 4 (Critical for User-Facing Features)
+13. **Phase 15** - Blog & Content Management
+14. **Phase 16** - Contact & Public Pages Management
+15. **Phase 17** - Advanced User Management (2FA, Privacy, Security)
+16. **Phase 18** - Family Tree & Connections Analytics
+17. **Phase 19** - Content & Engagement Analytics
+18. **Phase 20** - System Improvements & Compliance
+
 ---
 
 ## 🎨 Admin UI Design Guidelines
@@ -796,15 +1189,33 @@ Admin Dashboard (/)
 
 ## ✅ Completion Checklist
 
+### Core Admin Features
 - [ ] All databases tables created and migrated
 - [ ] Authentication system fully implemented
+- [ ] Admin guard configured properly
 - [ ] Dashboard displaying all key metrics
 - [ ] User management system functional
 - [ ] Report moderation system operational
 - [ ] Analytics generating accurate data
 - [ ] System monitoring and alerts working
+
+### User-Facing Features Admin Management
+- [ ] Blog management (CRUD, categories, analytics)
+- [ ] Contact submissions management
+- [ ] Public pages editor (About, Features, How It Works)
+- [ ] 2FA management for users
+- [ ] Privacy settings management
+- [ ] Family tree analytics
+- [ ] Connection patterns analytics
+- [ ] Content/posts analytics
+- [ ] Gallery analytics
+
+### System & Compliance
 - [ ] All components styled with premium UI
 - [ ] Admin documentation completed
 - [ ] Security audit passed
+- [ ] Data export/GDPR features implemented
+- [ ] Audit trail/compliance logging working
+- [ ] Rate limiting implemented
 - [ ] Performance testing completed
 - [ ] User acceptance testing (UAT) passed

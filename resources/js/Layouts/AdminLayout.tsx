@@ -49,8 +49,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         {
             label: 'Users',
             icon: Users,
-            href: '#',
-            active: false,
+            href: route('admin.users.index'),
+            active: route().current('admin.users.*'),
             badge: null,
         },
         {
@@ -400,46 +400,71 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                             display: 'flex',
                             alignItems: 'center',
                             gap: '0.75rem',
-                            background: '#F5F7FA',
-                            border: '1px solid rgba(0, 0, 0, 0.08)',
-                            borderRadius: '10px',
-                            padding: '0.75rem 1.25rem',
-                            flex: '0 1 320px',
-                            transition: 'all 0.3s ease',
+                            background: 'linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%)',
+                            border: '1px solid rgba(0, 82, 232, 0.15)',
+                            borderRadius: '12px',
+                            padding: '0.85rem 1.5rem',
+                            flex: '0 1 380px',
+                            transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
+                            position: 'relative',
+                            boxShadow: '0 2px 8px rgba(0, 82, 232, 0.08)',
                         }}
                         onMouseEnter={(e) => {
-                            e.currentTarget.style.background = '#FFFFFF';
-                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 82, 232, 0.15)';
-                            e.currentTarget.style.borderColor = 'rgba(0, 82, 232, 0.3)';
+                            e.currentTarget.style.background = 'linear-gradient(135deg, #FFFFFF 0%, #FFFFFF 100%)';
+                            e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 82, 232, 0.2)';
+                            e.currentTarget.style.borderColor = 'rgba(0, 82, 232, 0.25)';
+                            e.currentTarget.style.transform = 'translateY(-2px)';
                         }}
                         onMouseLeave={(e) => {
-                            e.currentTarget.style.background = '#F5F7FA';
-                            e.currentTarget.style.boxShadow = 'none';
-                            e.currentTarget.style.borderColor = 'rgba(0, 0, 0, 0.08)';
+                            e.currentTarget.style.background = 'linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%)';
+                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 82, 232, 0.08)';
+                            e.currentTarget.style.borderColor = 'rgba(0, 82, 232, 0.15)';
+                            e.currentTarget.style.transform = 'translateY(0)';
                         }}
                         >
-                            <Search size={18} style={{ color: '#999' }} />
+                            <Search size={19} style={{
+                                color: '#0052E8',
+                                flexShrink: 0,
+                                opacity: 0.8,
+                                transition: 'all 0.2s ease',
+                            }} />
                             <input
                                 type="text"
-                                placeholder="Search users, reports..."
+                                placeholder="Search users, reports, analytics..."
                                 style={{
                                     flex: 1,
                                     border: 'none',
                                     background: 'none',
                                     outline: 'none',
                                     fontSize: '0.95rem',
-                                    color: '#333',
+                                    color: '#0a0e27',
                                     fontFamily: 'inherit',
+                                    fontWeight: 500,
+                                    letterSpacing: '-0.2px',
+                                }}
+                                onFocus={(e) => {
+                                    e.currentTarget.parentElement!.style.background = 'linear-gradient(135deg, #FFFFFF 0%, #FFFFFF 100%)';
+                                    e.currentTarget.parentElement!.style.boxShadow = '0 12px 32px rgba(0, 82, 232, 0.25)';
+                                    e.currentTarget.parentElement!.style.borderColor = 'rgba(0, 82, 232, 0.4)';
+                                }}
+                                onBlur={(e) => {
+                                    if (!e.currentTarget.value) {
+                                        e.currentTarget.parentElement!.style.background = 'linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%)';
+                                        e.currentTarget.parentElement!.style.boxShadow = '0 2px 8px rgba(0, 82, 232, 0.08)';
+                                        e.currentTarget.parentElement!.style.borderColor = 'rgba(0, 82, 232, 0.15)';
+                                    }
                                 }}
                             />
                             <kbd style={{
-                                fontSize: '0.75rem',
-                                padding: '0.25rem 0.5rem',
-                                background: 'rgba(0, 0, 0, 0.06)',
-                                borderRadius: '4px',
-                                color: '#999',
-                                border: '1px solid rgba(0, 0, 0, 0.12)',
-                                fontWeight: 500,
+                                fontSize: '0.72rem',
+                                padding: '0.35rem 0.65rem',
+                                background: 'linear-gradient(135deg, rgba(0, 82, 232, 0.1) 0%, rgba(0, 82, 232, 0.05) 100%)',
+                                borderRadius: '6px',
+                                color: '#0052E8',
+                                border: '1px solid rgba(0, 82, 232, 0.25)',
+                                fontWeight: 600,
+                                flexShrink: 0,
+                                letterSpacing: '0.5px',
                             }}>⌘K</kbd>
                         </div>
                     </div>

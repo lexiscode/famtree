@@ -9,7 +9,51 @@ import {
     MessageSquare,
     FileText,
     Clock,
+    AlertTriangle,
+    CheckCircle,
 } from 'lucide-react';
+
+interface Metric {
+    totalUsers: number;
+    activeUsers: number;
+    totalConnections: number;
+    totalFamilyTrees: number;
+    pendingReports: number;
+}
+
+interface GrowthData {
+    date: string;
+    count: number;
+}
+
+interface Stats {
+    total: number;
+    accepted: number;
+    pending: number;
+    declined: number;
+}
+
+interface ReportStats {
+    total: number;
+    pending: number;
+    reviewing: number;
+    resolved: number;
+    dismissed: number;
+}
+
+interface ActivityLog {
+    id: number;
+    admin: string;
+    action: string;
+    description: string;
+    timestamp: string;
+}
+
+interface Alert {
+    type: 'warning' | 'alert';
+    message: string;
+    priority: 'high' | 'critical';
+}
 
 interface SharedProps {
     auth?: {
@@ -23,6 +67,12 @@ interface SharedProps {
         success?: string;
         error?: string;
     };
+    metrics?: Metric;
+    userGrowth?: GrowthData[];
+    connectionStats?: Stats;
+    reportStats?: ReportStats;
+    recentActivity?: ActivityLog[];
+    alerts?: Alert[];
 }
 
 interface StatCard {
@@ -61,7 +111,7 @@ const StatCard = ({ title, value, icon, trend, color }: StatCard) => (
             right: '-50%',
             width: '200px',
             height: '200px',
-            background: color.includes('82') ? 'rgba(0, 82, 232, 0.05)' : color.includes('46') ? 'rgba(46, 204, 113, 0.05)' : color.includes('255') ? 'rgba(255, 107, 107, 0.05)' : 'rgba(155, 89, 182, 0.05)',
+            background: color === '#0052E8' ? 'rgba(0, 82, 232, 0.1)' : color === '#16A34A' ? 'rgba(22, 163, 74, 0.1)' : color === '#DC2626' ? 'rgba(220, 38, 38, 0.1)' : 'rgba(155, 89, 182, 0.1)',
             borderRadius: '50%',
             pointerEvents: 'none',
         }} />
@@ -129,71 +179,33 @@ const StatCard = ({ title, value, icon, trend, color }: StatCard) => (
 );
 
 export default function AdminDashboard() {
-    const { auth, flash } = usePage<SharedProps>().props;
+    const { auth, flash, metrics, userGrowth, connectionStats, reportStats, recentActivity, alerts } = usePage<SharedProps>().props;
 
+    // Build stat cards from real data
     const statCards = [
         {
             title: 'Total Users',
-            value: '2,547',
+            value: (metrics?.totalUsers || 0).toLocaleString(),
             icon: <Users size={24} />,
-            trend: '+12.5%',
-            color: 'rgba(0, 82, 232, 0.2)',
+            color: '#0052E8',
         },
         {
             title: 'Active Users',
-            value: '1,842',
+            value: (metrics?.activeUsers || 0).toLocaleString(),
             icon: <Activity size={24} />,
-            trend: '+8.2%',
-            color: 'rgba(46, 204, 113, 0.2)',
+            color: '#16A34A',
         },
         {
-            title: 'Reports',
-            value: '24',
+            title: 'Pending Reports',
+            value: (metrics?.pendingReports || 0).toString(),
             icon: <AlertCircle size={24} />,
-            trend: '-3.1%',
-            color: 'rgba(255, 107, 107, 0.2)',
+            color: '#DC2626',
         },
         {
-            title: 'Messages',
-            value: '8,392',
-            icon: <MessageSquare size={24} />,
-            trend: '+5.6%',
-            color: 'rgba(155, 89, 182, 0.2)',
-        },
-    ];
-
-    const recentActivities = [
-        {
-            id: 1,
-            type: 'user_signup',
-            description: 'New user registered',
-            user: 'John Doe',
-            time: '2 hours ago',
-            icon: <Users size={16} />,
-        },
-        {
-            id: 2,
-            type: 'report_filed',
-            description: 'User report filed',
-            user: 'Jane Smith',
-            time: '4 hours ago',
-            icon: <FileText size={16} />,
-        },
-        {
-            id: 3,
-            type: 'content_deleted',
-            description: 'Inappropriate post removed',
-            user: 'System',
-            time: '6 hours ago',
-            icon: <AlertCircle size={16} />,
-        },
-        {
-            id: 4,
-            type: 'user_signup',
-            description: 'New user registered',
-            user: 'Michael Johnson',
-            time: '1 day ago',
-            icon: <Users size={16} />,
+            title: 'Family Trees',
+            value: (metrics?.totalFamilyTrees || 0).toLocaleString(),
+            icon: <BarChart3 size={24} />,
+            color: '#9B59B6',
         },
     ];
 
@@ -315,6 +327,7 @@ export default function AdminDashboard() {
                             cursor: 'pointer',
                             fontWeight: 500,
                             transition: 'all 0.2s ease',
+                            width: '150px',
                         }}
                         onMouseEnter={(e) => {
                             e.currentTarget.style.background = '#FFFFFF';
@@ -338,36 +351,54 @@ export default function AdminDashboard() {
                         gap: '0.75rem',
                         paddingTop: '1rem',
                     }}>
-                        {[65, 45, 80, 55, 90, 70, 85].map((height, i) => (
-                            <div
-                                key={i}
-                                style={{
-                                    flex: 1,
-                                    height: `${height}%`,
-                                    background: 'linear-gradient(180deg, #0052E8 0%, #0040B8 100%)',
-                                    borderRadius: '8px 8px 0 0',
-                                    opacity: 0.6 + (i * 0.06),
-                                    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                                    cursor: 'pointer',
-                                    boxShadow: '0 2px 8px rgba(0, 82, 232, 0.1)',
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.opacity = '1';
-                                    e.currentTarget.style.transform = 'translateY(-8px)';
-                                    e.currentTarget.style.boxShadow = '0 8px 20px rgba(0, 82, 232, 0.25)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.opacity = String(0.6 + (i * 0.06));
-                                    e.currentTarget.style.transform = 'translateY(0)';
-                                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 82, 232, 0.1)';
-                                }}
-                                title={`Day ${i + 1}: ${Math.floor(height * 12)} events`}
-                            />
-                        ))}
+                        {userGrowth && userGrowth.length > 0 ? (
+                            (() => {
+                                const maxCount = Math.max(...userGrowth.map(d => d.count)) || 1;
+                                return userGrowth.map((item, i) => {
+                                    const heightPercent = (item.count / maxCount) * 100;
+                                    return (
+                                        <div
+                                            key={i}
+                                            style={{
+                                                flex: 1,
+                                                height: `${heightPercent}%`,
+                                                minHeight: '20px',
+                                                background: 'linear-gradient(180deg, #0052E8 0%, #0040B8 100%)',
+                                                borderRadius: '8px 8px 0 0',
+                                                transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                cursor: 'pointer',
+                                                boxShadow: '0 2px 8px rgba(0, 82, 232, 0.1)',
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.style.transform = 'translateY(-8px)';
+                                                e.currentTarget.style.boxShadow = '0 8px 20px rgba(0, 82, 232, 0.25)';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.transform = 'translateY(0)';
+                                                e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 82, 232, 0.1)';
+                                            }}
+                                            title={`${item.date}: ${item.count} new users`}
+                                        />
+                                    );
+                                });
+                            })()
+                        ) : (
+                            <div style={{
+                                width: '100%',
+                                height: '100%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: '#999',
+                                fontSize: '0.9rem',
+                            }}>
+                                No data available
+                            </div>
+                        )}
                     </div>
                 </div>
 
-                {/* System Health */}
+                {/* Statistics */}
                 <div style={{
                     background: '#FFFFFF',
                     border: '1px solid rgba(0, 0, 0, 0.08)',
@@ -382,14 +413,14 @@ export default function AdminDashboard() {
                             fontWeight: 700,
                             color: '#0a0e27',
                         }}>
-                            System Health
+                            Platform Statistics
                         </h2>
                         <p style={{
                             margin: '0.5rem 0 0 0',
                             fontSize: '0.85rem',
                             color: '#888',
                         }}>
-                            Infrastructure monitoring
+                            User connections & reports overview
                         </p>
                     </div>
                     <div style={{
@@ -398,58 +429,167 @@ export default function AdminDashboard() {
                         gap: '1.75rem',
                         marginTop: '2rem',
                     }}>
-                        {[
-                            { label: 'Server Status', value: '99.8%', color: '#16A34A', percentage: 99.8 },
-                            { label: 'Database', value: '98.5%', color: '#16A34A', percentage: 98.5 },
-                            { label: 'API Response', value: '245ms', color: '#3B82F6', percentage: 90 },
-                            { label: 'Memory Usage', value: '62%', color: '#F59E0B', percentage: 62 },
-                        ].map((item, i) => (
-                            <div key={i}>
-                                <div style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    marginBottom: '0.75rem',
+                        {/* Connections Stats */}
+                        <div>
+                            <div style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                marginBottom: '0.75rem',
+                            }}>
+                                <span style={{
+                                    fontSize: '0.95rem',
+                                    fontWeight: 600,
+                                    color: '#555',
                                 }}>
-                                    <span style={{
+                                    Accepted Connections
+                                </span>
+                                <span style={{
+                                    fontSize: '0.95rem',
+                                    fontWeight: 700,
+                                    color: '#16A34A',
+                                    background: 'rgba(22, 163, 74, 0.15)',
+                                    padding: '0.35rem 0.75rem',
+                                    borderRadius: '8px',
+                                }}>
+                                    {connectionStats?.accepted || 0} / {connectionStats?.total || 0}
+                                </span>
+                            </div>
+                            <div style={{
+                                height: '8px',
+                                background: '#F0F2F7',
+                                borderRadius: '4px',
+                                overflow: 'hidden',
+                            }}>
+                                <div style={{
+                                    height: '100%',
+                                    background: 'linear-gradient(90deg, #16A34A 0%, #15803d 100%)',
+                                    width: `${connectionStats ? (connectionStats.accepted / connectionStats.total) * 100 : 0}%`,
+                                    borderRadius: '4px',
+                                    transition: 'width 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+                                }} />
+                            </div>
+                        </div>
+
+                        {/* Reports Stats */}
+                        <div>
+                            <div style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                marginBottom: '0.75rem',
+                            }}>
+                                <span style={{
+                                    fontSize: '0.95rem',
+                                    fontWeight: 600,
+                                    color: '#555',
+                                }}>
+                                    Resolved Reports
+                                </span>
+                                <span style={{
+                                    fontSize: '0.95rem',
+                                    fontWeight: 700,
+                                    color: '#0052E8',
+                                    background: 'rgba(0, 82, 232, 0.15)',
+                                    padding: '0.35rem 0.75rem',
+                                    borderRadius: '8px',
+                                }}>
+                                    {reportStats?.resolved || 0} / {reportStats?.total || 0}
+                                </span>
+                            </div>
+                            <div style={{
+                                height: '8px',
+                                background: '#F0F2F7',
+                                borderRadius: '4px',
+                                overflow: 'hidden',
+                            }}>
+                                <div style={{
+                                    height: '100%',
+                                    background: 'linear-gradient(90deg, #0052E8 0%, #0040B8 100%)',
+                                    width: `${reportStats ? (reportStats.resolved / reportStats.total) * 100 : 0}%`,
+                                    borderRadius: '4px',
+                                    transition: 'width 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+                                }} />
+                            </div>
+                        </div>
+
+                        {/* Pending Reports Alert */}
+                        {reportStats && reportStats.pending > 0 && (
+                            <div style={{
+                                padding: '1rem',
+                                background: 'rgba(255, 193, 7, 0.1)',
+                                border: '1px solid rgba(255, 193, 7, 0.3)',
+                                borderRadius: '8px',
+                                display: 'flex',
+                                gap: '0.75rem',
+                                alignItems: 'flex-start',
+                            }}>
+                                <AlertTriangle size={18} style={{ color: '#F59E0B', flexShrink: 0, marginTop: '2px' }} />
+                                <div>
+                                    <p style={{ margin: 0, fontWeight: 600, color: '#92400e', fontSize: '0.9rem' }}>
+                                        {reportStats.pending} Pending Reports
+                                    </p>
+                                    <p style={{ margin: '0.25rem 0 0 0', color: '#b45309', fontSize: '0.85rem' }}>
+                                        Requires review and action
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* Alerts Section */}
+            {alerts && alerts.length > 0 && (
+                <div style={{
+                    marginBottom: '2.5rem',
+                }}>
+                    <h3 style={{
+                        margin: '0 0 1rem 0',
+                        fontSize: '1rem',
+                        fontWeight: 700,
+                        color: '#0a0e27',
+                    }}>
+                        Active Alerts
+                    </h3>
+                    <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '1rem',
+                    }}>
+                        {alerts.map((alert, i) => (
+                            <div
+                                key={i}
+                                style={{
+                                    padding: '1.25rem',
+                                    borderRadius: '12px',
+                                    border: `1px solid ${alert.type === 'alert' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`,
+                                    background: alert.type === 'alert' ? 'rgba(239, 68, 68, 0.08)' : 'rgba(245, 158, 11, 0.08)',
+                                    display: 'flex',
+                                    gap: '1rem',
+                                    alignItems: 'flex-start',
+                                }}
+                            >
+                                {alert.type === 'alert' ? (
+                                    <AlertTriangle size={20} style={{ color: '#EF4444', flexShrink: 0, marginTop: '2px' }} />
+                                ) : (
+                                    <AlertTriangle size={20} style={{ color: '#F59E0B', flexShrink: 0, marginTop: '2px' }} />
+                                )}
+                                <div>
+                                    <p style={{
+                                        margin: 0,
                                         fontSize: '0.95rem',
                                         fontWeight: 600,
-                                        color: '#555',
+                                        color: alert.type === 'alert' ? '#DC2626' : '#92400e',
                                     }}>
-                                        {item.label}
-                                    </span>
-                                    <span style={{
-                                        fontSize: '0.95rem',
-                                        fontWeight: 700,
-                                        color: item.color,
-                                        background: `${item.color}15`,
-                                        padding: '0.35rem 0.75rem',
-                                        borderRadius: '8px',
-                                    }}>
-                                        {item.value}
-                                    </span>
-                                </div>
-                                <div style={{
-                                    height: '8px',
-                                    background: '#F0F2F7',
-                                    borderRadius: '4px',
-                                    overflow: 'hidden',
-                                    boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.05)',
-                                }}>
-                                    <div style={{
-                                        height: '100%',
-                                        background: `linear-gradient(90deg, ${item.color} 0%, ${item.color}dd 100%)`,
-                                        width: `${item.percentage}%`,
-                                        borderRadius: '4px',
-                                        transition: 'width 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
-                                        boxShadow: `0 0 12px ${item.color}40`,
-                                    }} />
+                                        {alert.priority === 'critical' ? '🚨' : '⚠️'} {alert.message}
+                                    </p>
                                 </div>
                             </div>
                         ))}
                     </div>
                 </div>
-            </div>
+            )}
 
             {/* Recent Activities */}
             <div style={{
@@ -468,14 +608,14 @@ export default function AdminDashboard() {
                         fontWeight: 700,
                         color: '#0a0e27',
                     }}>
-                        Recent Activities
+                        Recent Admin Activities
                     </h2>
                     <p style={{
                         margin: '0.5rem 0 0 0',
                         fontSize: '0.85rem',
                         color: '#888',
                     }}>
-                        Latest platform events and changes
+                        Latest admin actions and system events
                     </p>
                 </div>
                 <div style={{
@@ -483,79 +623,89 @@ export default function AdminDashboard() {
                     flexDirection: 'column',
                     gap: '0.75rem',
                 }}>
-                    {recentActivities.map((activity) => (
-                        <div
-                            key={activity.id}
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '1.25rem',
-                                padding: '1.25rem 1.5rem',
-                                background: '#F9FAFC',
-                                border: '1px solid rgba(0, 0, 0, 0.04)',
-                                borderRadius: '10px',
-                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                            }}
-                            onMouseEnter={(e) => {
-                                e.currentTarget.style.background = '#F0F4F9';
-                                e.currentTarget.style.borderColor = 'rgba(0, 82, 232, 0.15)';
-                                e.currentTarget.style.transform = 'translateX(6px)';
-                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 82, 232, 0.1)';
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.background = '#F9FAFC';
-                                e.currentTarget.style.borderColor = 'rgba(0, 0, 0, 0.04)';
-                                e.currentTarget.style.transform = 'translateX(0)';
-                                e.currentTarget.style.boxShadow = 'none';
-                            }}
-                        >
-                            <div style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                width: '44px',
-                                height: '44px',
-                                borderRadius: '10px',
-                                background: 'linear-gradient(135deg, rgba(0, 82, 232, 0.15) 0%, rgba(0, 82, 232, 0.08) 100%)',
-                                color: '#0052E8',
-                                flexShrink: 0,
-                            }}>
-                                {activity.icon}
-                            </div>
-                            <div style={{
-                                flex: 1,
-                                minWidth: 0,
-                            }}>
-                                <p style={{
-                                    margin: '0 0 0.35rem 0',
-                                    fontSize: '0.95rem',
-                                    fontWeight: 600,
-                                    color: '#0a0e27',
+                    {recentActivity && recentActivity.length > 0 ? (
+                        recentActivity.map((activity) => (
+                            <div
+                                key={activity.id}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '1.25rem',
+                                    padding: '1.25rem 1.5rem',
+                                    background: '#F9FAFC',
+                                    border: '1px solid rgba(0, 0, 0, 0.04)',
+                                    borderRadius: '10px',
+                                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.background = '#F0F4F9';
+                                    e.currentTarget.style.borderColor = 'rgba(0, 82, 232, 0.15)';
+                                    e.currentTarget.style.transform = 'translateX(6px)';
+                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 82, 232, 0.1)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.background = '#F9FAFC';
+                                    e.currentTarget.style.borderColor = 'rgba(0, 0, 0, 0.04)';
+                                    e.currentTarget.style.transform = 'translateX(0)';
+                                    e.currentTarget.style.boxShadow = 'none';
+                                }}
+                            >
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    width: '44px',
+                                    height: '44px',
+                                    borderRadius: '10px',
+                                    background: 'linear-gradient(135deg, rgba(0, 82, 232, 0.15) 0%, rgba(0, 82, 232, 0.08) 100%)',
+                                    color: '#0052E8',
+                                    flexShrink: 0,
                                 }}>
-                                    {activity.description}
-                                </p>
-                                <p style={{
-                                    margin: 0,
+                                    <CheckCircle size={20} />
+                                </div>
+                                <div style={{
+                                    flex: 1,
+                                    minWidth: 0,
+                                }}>
+                                    <p style={{
+                                        margin: '0 0 0.35rem 0',
+                                        fontSize: '0.95rem',
+                                        fontWeight: 600,
+                                        color: '#0a0e27',
+                                    }}>
+                                        {activity.description}
+                                    </p>
+                                    <p style={{
+                                        margin: 0,
+                                        fontSize: '0.85rem',
+                                        color: '#888',
+                                    }}>
+                                        By {activity.admin} • {activity.action}
+                                    </p>
+                                </div>
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    color: '#AAA',
                                     fontSize: '0.85rem',
-                                    color: '#888',
+                                    whiteSpace: 'nowrap',
+                                    flexShrink: 0,
                                 }}>
-                                    {activity.user}
-                                </p>
+                                    <Clock size={14} />
+                                    {activity.timestamp}
+                                </div>
                             </div>
-                            <div style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.5rem',
-                                color: '#AAA',
-                                fontSize: '0.85rem',
-                                whiteSpace: 'nowrap',
-                                flexShrink: 0,
-                            }}>
-                                <Clock size={14} />
-                                {activity.time}
-                            </div>
+                        ))
+                    ) : (
+                        <div style={{
+                            padding: '2rem',
+                            textAlign: 'center',
+                            color: '#999',
+                        }}>
+                            <p style={{ margin: 0, fontSize: '0.9rem' }}>No recent activities</p>
                         </div>
-                    ))}
+                    )}
                 </div>
             </div>
         </AdminLayout>

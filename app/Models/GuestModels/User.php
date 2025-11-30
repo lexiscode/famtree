@@ -33,6 +33,7 @@ class User extends Authenticatable
         'profile_image',
         'profile_image_url',
         'status',
+        'account_status',
         'death_date',
         'parent_user_id',
         'is_child_account',
@@ -44,6 +45,7 @@ class User extends Authenticatable
         'profile_visibility',
         'stories_visibility',
         'galleries_visibility',
+        'scheduled_deletion_at',
     ];
 
     /**
@@ -123,6 +125,23 @@ class User extends Authenticatable
     public function galleries()
     {
         return $this->hasMany(Gallery::class);
+    }
+
+    /**
+     * Get user connections (where user is requester)
+     */
+    public function userConnections()
+    {
+        return $this->hasMany(UserConnection::class, 'requester_user_id');
+    }
+
+    /**
+     * Get all connections (requester and recipient)
+     */
+    public function allConnections()
+    {
+        return UserConnection::where('requester_user_id', $this->id)
+            ->orWhere('recipient_user_id', $this->id);
     }
 
     /**
