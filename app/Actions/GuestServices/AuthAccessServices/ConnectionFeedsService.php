@@ -6,6 +6,7 @@ use App\Models\GuestModels\User;
 use App\Models\GuestModels\Post;
 use App\Repositories\GuestRepositories\AuthAccessRepositories\ConnectionFeedsRepository;
 use App\Repositories\GuestRepositories\UserConnectionRepository;
+use App\Repositories\GuestRepositories\PostReactionRepository;
 use Illuminate\Database\Eloquent\Collection;
 
 class ConnectionFeedsService
@@ -13,7 +14,8 @@ class ConnectionFeedsService
     public function __construct(
         private ConnectionFeedsRepository $feedRepository,
         private UserConnectionRepository $connectionRepository,
-        private PrivacyService $privacyService
+        private PrivacyService $privacyService,
+        private PostReactionRepository $reactionRepository
     ) {}
 
     /**
@@ -31,7 +33,7 @@ class ConnectionFeedsService
         $filteredPosts = $this->filterPostsByPrivacy($posts, $user);
 
         // Format posts for display
-        return $this->formatPosts($filteredPosts);
+        return $this->formatPosts($filteredPosts, $user->id);
     }
 
     /**
@@ -59,12 +61,13 @@ class ConnectionFeedsService
      * Similar to PostService formatting
      *
      * @param Collection|Eloquent\Collection $posts
+     * @param int|null $currentUserId
      * @return array
      */
-    private function formatPosts($posts): array
+    private function formatPosts($posts, $currentUserId = null): array
     {
-        return collect($posts)->map(function (Post $post) {
-            return $this->formatPost($post);
+        return collect($posts)->map(function (Post $post) use ($currentUserId) {
+            return $this->formatPost($post, $currentUserId);
         })->values()->toArray();
     }
 
@@ -72,10 +75,17 @@ class ConnectionFeedsService
      * Format a single post with all related data
      *
      * @param Post $post
+     * @param int|null $currentUserId
      * @return array
      */
-    private function formatPost(Post $post): array
+    private function formatPost(Post $post, $currentUserId = null): array
     {
+        $userReaction = null;
+        if ($currentUserId) {
+            $reaction = $this->reactionRepository->getUserReaction($post->id, $currentUserId);
+            $userReaction = $reaction ? $reaction->reaction_type : null;
+        }
+
         return [
             'id' => $post->id,
             'type' => $post->type,
@@ -86,12 +96,13 @@ class ConnectionFeedsService
             'views_count' => $post->views_count,
             'comments_count' => $post->comments_count,
             'reactions_count' => $post->reactions_count,
+            'user_reaction' => $userReaction,
             'created_at' => $post->created_at,
             'created_at_human' => $post->created_at->diffForHumans(),
             'updated_at' => $post->updated_at,
             'user' => [
                 'id' => $post->user->id,
-                'name' => $post->user->name,
+                'name' => trim($post->user->first_name . ' ' . $post->user->last_name),
                 'first_name' => $post->user->first_name,
                 'last_name' => $post->user->last_name,
                 'username' => $post->user->username,
@@ -102,6 +113,20 @@ class ConnectionFeedsService
                     'id' => $image->id,
                     'image_url' => $image->image_url,
                     'order' => $image->order,
+                ];
+            })->toArray(),
+            'comments' => $post->comments->map(function ($comment) {
+                return [
+                    'id' => $comment->id,
+                    'content' => $comment->content,
+                    'user' => [
+                        'id' => $comment->user->id,
+                        'name' => trim($comment->user->first_name . ' ' . $comment->user->last_name),
+                        'username' => $comment->user->username,
+                        'profile_image_url' => $comment->user->profile_image_url,
+                    ],
+                    'created_at' => $comment->created_at->format('Y-m-d H:i:s'),
+                    'created_at_human' => $comment->created_at->diffForHumans(),
                 ];
             })->toArray(),
             'reactions_count' => $post->reactions->count(),
@@ -154,6 +179,6 @@ class ConnectionFeedsService
         })->take($limit);
 
         // Format and return
-        return $this->formatPosts($sortedPosts);
+        return $this->formatPosts($sortedPosts, $user->id);
     }
 }

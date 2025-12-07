@@ -102,7 +102,8 @@ class PostService
     public function getUserPosts(int $userId, int $limit = 20, int $offset = 0)
     {
         $posts = $this->postRepository->getUserPosts($userId, $limit, $offset);
-        return $this->formatPosts($posts);
+        $currentUserId = auth()->id();
+        return $this->formatPosts($posts, $currentUserId);
     }
 
     /**
@@ -112,7 +113,8 @@ class PostService
     {
         $this->postRepository->incrementViews($postId);
         $post = $this->postRepository->find($postId);
-        return $this->formatPost($post);
+        $currentUserId = auth()->id();
+        return $this->formatPost($post, $currentUserId);
     }
 
     /**
@@ -121,7 +123,8 @@ class PostService
     public function searchPosts(int $userId, string $query)
     {
         $posts = $this->postRepository->searchUserPosts($userId, $query);
-        return $this->formatPosts($posts);
+        $currentUserId = auth()->id();
+        return $this->formatPosts($posts, $currentUserId);
     }
 
     /**
@@ -130,7 +133,8 @@ class PostService
     public function filterPostsByType(int $userId, string $type)
     {
         $posts = $this->postRepository->filterByType($userId, $type);
-        return $this->formatPosts($posts);
+        $currentUserId = auth()->id();
+        return $this->formatPosts($posts, $currentUserId);
     }
 
     /**
@@ -226,8 +230,14 @@ class PostService
     /**
      * Format a post for response
      */
-    private function formatPost($post)
+    private function formatPost($post, $currentUserId = null)
     {
+        $userReaction = null;
+        if ($currentUserId) {
+            $reaction = $this->reactionRepository->getUserReaction($post->id, $currentUserId);
+            $userReaction = $reaction ? $reaction->reaction_type : null;
+        }
+
         return [
             'id' => $post->id,
             'type' => $post->type,
@@ -238,14 +248,16 @@ class PostService
             'views_count' => $post->views_count,
             'comments_count' => $post->comments_count,
             'reactions_count' => $post->reactions_count,
+            'user_reaction' => $userReaction,
             'images' => $post->images->map(fn($img) => [
                 'id' => $img->id,
                 'url' => $img->image_url,
                 'order' => $img->order,
             ]),
+            'comments' => $post->comments->map(fn($comment) => $this->formatComment($comment)),
             'user' => [
                 'id' => $post->user->id,
-                'name' => $post->user->name,
+                'name' => trim($post->user->first_name . ' ' . $post->user->last_name),
                 'username' => $post->user->username,
                 'profile_image_url' => $post->user->profile_image_url,
             ],
@@ -257,9 +269,9 @@ class PostService
     /**
      * Format multiple posts
      */
-    private function formatPosts($posts)
+    private function formatPosts($posts, $currentUserId = null)
     {
-        return $posts->map(fn($post) => $this->formatPost($post));
+        return $posts->map(fn($post) => $this->formatPost($post, $currentUserId));
     }
 
     /**
@@ -272,7 +284,7 @@ class PostService
             'content' => $comment->content,
             'user' => [
                 'id' => $comment->user->id,
-                'name' => $comment->user->name,
+                'name' => trim($comment->user->first_name . ' ' . $comment->user->last_name),
                 'username' => $comment->user->username,
                 'profile_image_url' => $comment->user->profile_image_url,
             ],
@@ -336,6 +348,7 @@ class PostService
             })
             ->take($limit);
 
-        return $this->formatPosts($topPosts);
+        $currentUserId = auth()->id();
+        return $this->formatPosts($topPosts, $currentUserId);
     }
 }

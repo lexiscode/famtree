@@ -12,7 +12,7 @@ export default function CreatePostModal({ onClose, onPostCreated }: CreatePostMo
             <div className="create-post-modal" onClick={(e) => e.stopPropagation()}>
                 {/* Header */}
                 <div className="modal-header">
-                    <h2 className="modal-title">Create New Story</h2>
+                    <h2 className="modal-title px-3">Create New Story</h2>
                     <button
                         className="modal-close-btn"
                         onClick={onClose}

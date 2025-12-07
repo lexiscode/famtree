@@ -40,6 +40,14 @@ export interface UserProfile extends UserBase {
    POST TYPES
    ============================================ */
 
+export interface Comment {
+    id: number;
+    content: string;
+    user: UserBase;
+    created_at: string;
+    created_at_human: string;
+}
+
 export interface Post {
     id: number;
     type: 'text' | 'voice';
@@ -50,7 +58,9 @@ export interface Post {
     views_count: number;
     comments_count: number;
     reactions_count: number;
+    user_reaction: string | null;
     images: Image[];
+    comments: Comment[];
     user: UserBase;
     created_at: string;
     created_at_human: string;

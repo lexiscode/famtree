@@ -12,20 +12,6 @@ The application uses **Laravel Sail** (Docker-based) for local development, with
 
 ### Essential Commands
 
-**Using Laravel Sail (Recommended):**
-```bash
-./sail artisan serve                 # Start Laravel dev server (built-in with Sail)
-./sail artisan migrate               # Run database migrations
-./sail artisan db:seed               # Seed database
-./sail artisan make:model Model -mrc # Create model with migration, factory, controller
-./sail artisan test                  # Run PHPUnit tests
-./sail artisan test tests/Feature/ExampleTest.php  # Run single test file
-./sail pint                          # Format code with PHP linting (Laravel Pint)
-./sail npm run dev                   # Start Vite dev server (port 5173)
-./sail npm run build                 # Production build (outputs to public/build)
-./sail shell                         # Enter the app container bash
-```
-
 **Using docker-compose directly:**
 ```bash
 docker-compose exec -it famtree php artisan migrate           # Run migrations

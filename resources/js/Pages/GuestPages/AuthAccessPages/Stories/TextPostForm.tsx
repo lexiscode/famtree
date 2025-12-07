@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { Upload, Send, X } from 'lucide-react';
 import { router } from '@inertiajs/react';
 import { TextPostFormProps } from '@/types';
+import RichTextEditor from '@/Components/RichTextEditor';
 
 export default function TextPostForm({ onClose, onPostCreated }: TextPostFormProps) {
     const [title, setTitle] = useState('');
@@ -120,17 +121,13 @@ export default function TextPostForm({ onClose, onPostCreated }: TextPostFormPro
             {/* Content */}
             <div className="form-group">
                 <label htmlFor="text-content" className="form-label">Content</label>
-                <textarea
-                    id="text-content"
-                    placeholder="Share your story..."
+                <RichTextEditor
                     value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    className="form-textarea"
-                    rows={6}
+                    onChange={setContent}
+                    placeholder="Share your story... Use the toolbar to style your text!"
                     maxLength={5000}
                     disabled={isLoading}
                 />
-                <small className="char-count">{content.length}/5000</small>
             </div>
 
             {/* Image Upload */}
