@@ -17,6 +17,7 @@ use App\Http\Controllers\GuestControllers\AuthAccessControllers\ConnectionViewCo
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\SuggestedConnectionController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\ProfileController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\FamilyTreeController;
+use App\Http\Controllers\GuestControllers\AuthAccessControllers\ConnectionTreeController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\ChildAccountController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\GalleryController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\AccountSettingsController;
@@ -132,6 +133,9 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::delete('/{treeId}/members/{userId}', [FamilyTreeController::class, 'removeMember'])->name('family-tree.remove-member');
         Route::get('/{treeId}/data', [FamilyTreeController::class, 'getTreeData'])->name('family-tree.data');
     });
+
+    // Your Tree (Connection Tree Visualization) route
+    Route::get('/your-tree', [ConnectionTreeController::class, 'index'])->name('your-tree.index');
 
     // Child Account routes
     Route::prefix('child-accounts')->group(function () {

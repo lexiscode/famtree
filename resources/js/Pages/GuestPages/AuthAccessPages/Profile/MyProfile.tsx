@@ -1,7 +1,7 @@
 import { useMemo, useState, useCallback } from 'react';
 import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { Mail, Phone, MapPin, Cake, FileText, Users, Edit, Settings, Briefcase, BookOpen, ArrowRight, LogOut, X, Bell, BookMarked, User as UserIcon, Lightbulb, Plus } from 'lucide-react';
+import { Mail, Phone, MapPin, Cake, FileText, Users, Edit, Settings, Briefcase, BookOpen, ArrowRight, LogOut, X, Bell, BookMarked, User as UserIcon, Lightbulb, Plus, Network } from 'lucide-react';
 import CreatePostModal from '../Stories/CreatePostModal';
 
 interface User {
@@ -285,6 +285,26 @@ export default function MyProfile({ user, connections, connectionCount, pendingR
                                         >
                                             <span>
                                                 <strong>{suggestedConnectionsCount}</strong> Suggestions
+                                            </span>
+                                            <ArrowRight size={18} />
+                                        </button>
+                                    </div>
+                                    <div className="col-md-6">
+                                        <button
+                                            className="btn btn-outline-primary w-100 d-flex align-items-center justify-content-between"
+                                            onClick={() => router.visit(route('your-tree.index'))}
+                                            style={{
+                                                padding: '0.85rem 1.25rem',
+                                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                                border: 'none',
+                                                color: 'white',
+                                                fontWeight: '600'
+                                            }}
+                                            title="View your connection tree visualization"
+                                        >
+                                            <span className="d-flex align-items-center gap-2">
+                                                <Network size={18} />
+                                                Your Tree
                                             </span>
                                             <ArrowRight size={18} />
                                         </button>

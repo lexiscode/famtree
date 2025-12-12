@@ -390,6 +390,16 @@ class UserConnectionRepository
             return 'sister'; // Both female -> same relationship
         }
 
+        // Handle aunt/uncle based on requester's gender
+        if (($relationshipType === 'niece' || $relationshipType === 'nephew') && $requesterGender) {
+            return $requesterGender === 'male' ? 'uncle' : 'aunt';
+        }
+
+        // Handle niece/nephew based on recipient's gender
+        if (($relationshipType === 'aunt' || $relationshipType === 'uncle') && $recipientGender) {
+            return $recipientGender === 'male' ? 'nephew' : 'niece';
+        }
+
         $inverseMap = [
             // Spousal relationships (bidirectional)
             'wife' => 'husband',
