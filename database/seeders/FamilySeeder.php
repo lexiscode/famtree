@@ -172,7 +172,10 @@ class FamilySeeder extends Seeder
         ];
 
         foreach ($families as $family) {
-            Family::create($family);
+            Family::updateOrCreate(
+                ['slug' => $family['slug']], // Search by slug
+                $family // Update or create with this data
+            );
         }
     }
 }
