@@ -1,0 +1,140 @@
+.floating-nav-dock {
+    position: fixed;
+    right: 30px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1000;
+    animation: slideInRight 0.6s ease-out;
+}
+
+.nav-dock-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 20px 12px;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 30px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.nav-dock-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nav-dock-icon {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 16px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 24px;
+}
+
+.nav-dock-item:hover .nav-dock-icon {
+    background: linear-gradient(135deg, rgba(255, 107, 0, 0.2), rgba(255, 215, 0, 0.2));
+    border-color: rgba(255, 215, 0, 0.4);
+    transform: scale(1.1);
+    box-shadow: 0 8px 24px rgba(255, 215, 0, 0.3);
+}
+
+.nav-icon {
+    font-size: 22px;
+    color: #FFD700;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+    transition: all 0.3s ease;
+}
+
+.nav-dock-item:hover .nav-icon {
+    color: #FFA500;
+    transform: scale(1.1);
+}
+
+.nav-dock-tooltip {
+    position: absolute;
+    right: 70px;
+    white-space: nowrap;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, rgba(20, 20, 30, 0.95), rgba(30, 30, 45, 0.95));
+    backdrop-filter: blur(10px);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    animation: tooltipFadeIn 0.2s ease-out;
+    pointer-events: none;
+}
+
+.nav-dock-tooltip::after {
+    content: '';
+    position: absolute;
+    right: -6px;
+    top: 50%;
+    transform: translateY(-50%) rotate(45deg);
+    width: 12px;
+    height: 12px;
+    background: rgba(20, 20, 30, 0.95);
+    border-right: 1px solid rgba(255, 215, 0, 0.3);
+    border-top: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateY(-50%) translateX(50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(-50%) translateX(0);
+    }
+}
+
+@keyframes tooltipFadeIn {
+    from {
+        opacity: 0;
+        transform: translateX(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .floating-nav-dock {
+        right: 15px;
+    }
+
+    .nav-dock-container {
+        padding: 15px 8px;
+        gap: 12px;
+        border-radius: 25px;
+    }
+
+    .nav-dock-icon {
+        width: 45px;
+        height: 45px;
+        font-size: 20px;
+    }
+
+    .nav-dock-tooltip {
+        right: 60px;
+        padding: 8px 16px;
+        font-size: 13px;
+    }
+}

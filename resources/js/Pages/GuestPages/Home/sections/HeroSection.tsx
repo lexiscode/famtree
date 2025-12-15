@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { router } from '@inertiajs/react';
+import { useModal } from '@/Context/ModalContext';
 import './HeroSection.css';
 
 export default function HeroSection() {
     const [ctaHovered, setCtaHovered] = useState<'login' | 'register' | null>(null);
+    const { openCtaModal } = useModal();
 
     return (
         <section className="hero-section">
@@ -19,7 +21,7 @@ export default function HeroSection() {
             <div className="hero-content">
                 <div className="hero-container">
                     <div className="hero-text">
-                        <h1 className="hero-title">
+                        <h1 className="hero-title pt-5">
                             Connect Your Family Across <span className="text-gradient">Generations</span>
                         </h1>
 
@@ -33,6 +35,7 @@ export default function HeroSection() {
                                 className="btn btn-primary btn-lg hero-btn"
                                 onMouseEnter={() => setCtaHovered('register')}
                                 onMouseLeave={() => setCtaHovered(null)}
+                                onClick={() => openCtaModal('register')}
                             >
                                 Start Your Family Tree
                                 {ctaHovered === 'register' && <span className="btn-icon">→</span>}
@@ -95,15 +98,6 @@ export default function HeroSection() {
                             </svg>
                         </div>
                     </div>
-                </div>
-            </div>
-
-            <div className="hero-scroll-indicator">
-                <span className="scroll-text">Scroll to explore</span>
-                <div className="scroll-arrow">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
                 </div>
             </div>
         </section>

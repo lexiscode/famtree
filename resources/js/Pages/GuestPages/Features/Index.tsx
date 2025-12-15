@@ -1,6 +1,7 @@
 import { Head } from '@inertiajs/react';
 import GuestLayout from '@/Layouts/GuestLayout';
 import { useInView } from 'react-intersection-observer';
+import FeaturesGridSection from '../Home/sections/FeaturesGridSection';
 import './Features.css';
 
 export default function Features() {
@@ -142,6 +143,9 @@ export default function Features() {
                     <p>Everything you need to preserve, share, and celebrate your family's legacy.</p>
                 </div>
             </section>
+
+            {/* Features Overview */}
+            <FeaturesGridSection />
 
             {/* Family Creation Features */}
             <section className="features-section" data-section="build-tree" ref={creationRef}>

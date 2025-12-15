@@ -1,11 +1,12 @@
 import { Head } from '@inertiajs/react';
 import GuestLayout from '@/Layouts/GuestLayout';
 import { useInView } from 'react-intersection-observer';
+import MissionSection from '../Home/sections/MissionSection';
+import TestimonialsSection from '../Home/sections/TestimonialsSection';
 import './About.css';
 
 export default function About() {
     const { ref: headerRef, inView: headerInView } = useInView({ threshold: 0.3, triggerOnce: true });
-    const { ref: missionRef, inView: missionInView } = useInView({ threshold: 0.3, triggerOnce: true });
     const { ref: storyRef, inView: storyInView } = useInView({ threshold: 0.3, triggerOnce: true });
     const { ref: visionRef, inView: visionInView } = useInView({ threshold: 0.3, triggerOnce: true });
     const { ref: teamRef, inView: teamInView } = useInView({ threshold: 0.3, triggerOnce: true });
@@ -91,28 +92,7 @@ export default function About() {
             </section>
 
             {/* Mission Section */}
-            <section className="about-mission" ref={missionRef}>
-                <div className={`about-container ${missionInView ? 'in-view' : ''}`}>
-                    <div className="mission-grid">
-                        <div className="mission-text">
-                            <h2>Our Mission</h2>
-                            <p>
-                                At FamTree, we believe every family has a story worth preserving. We're on a mission to
-                                empower families across Africa to digitally document, connect, and celebrate their heritage
-                                in ways that were never possible before.
-                            </p>
-                            <p>
-                                We understand that family connections are the foundation of our identity. That's why we've
-                                built FamTree as a sanctuary where memories, stories, and relationships can be safely
-                                preserved and shared across generations.
-                            </p>
-                        </div>
-                        <div className="mission-icon">
-                            <div className="icon-circle">🌳</div>
-                        </div>
-                    </div>
-                </div>
-            </section>
+            <MissionSection />
 
             {/* Story Section */}
             <section className="about-story" ref={storyRef}>
@@ -207,6 +187,9 @@ export default function About() {
                     </div>
                 </div>
             </section>
+
+            {/* Testimonials Section */}
+            <TestimonialsSection />
 
             {/* Values Section */}
             <section className="about-values" ref={valuesRef}>

@@ -1,11 +1,9 @@
 import GuestLayout from '@/Layouts/GuestLayout';
 import { Head } from '@inertiajs/react';
 import HeroSection from './sections/HeroSection';
-import MissionSection from './sections/MissionSection';
-import HowItWorksSection from './sections/HowItWorksSection';
-import FeaturesGridSection from './sections/FeaturesGridSection';
-import TestimonialsSection from './sections/TestimonialsSection';
-import CTAFooterSection from './sections/CTAFooterSection';
+import HomeHeader from '@/Components/Navigation/HomeHeader';
+import FloatingNavDock from '@/Components/Navigation/FloatingNavDock';
+import FloatingSocialDock from '@/Components/Navigation/FloatingSocialDock';
 
 export default function Home() {
     const organizationSchema = {
@@ -23,7 +21,7 @@ export default function Home() {
     };
 
     return (
-        <GuestLayout>
+        <GuestLayout hideFooter hideNavigation>
             <Head
                 title="FamTree - Reconnecting Generations, Preserving Family Roots"
                 meta={[
@@ -81,12 +79,10 @@ export default function Home() {
                     {JSON.stringify(organizationSchema)}
                 </script>
             </Head>
+            <HomeHeader />
+            <FloatingNavDock />
+            <FloatingSocialDock />
             <HeroSection />
-            <MissionSection />
-            <HowItWorksSection />
-            <FeaturesGridSection />
-            <TestimonialsSection />
-            <CTAFooterSection />
         </GuestLayout>
     );
 }
