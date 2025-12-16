@@ -87,6 +87,25 @@ class UserConnectionRepository
     }
 
     /**
+     * Get connection between two users (regardless of direction)
+     */
+    public function getConnectionBetween(int $userId1, int $userId2): ?UserConnection
+    {
+        return UserConnection::where('status', 'accepted')
+            ->where(function ($q) use ($userId1, $userId2) {
+                $q->where(function ($q) use ($userId1, $userId2) {
+                    $q->where('requester_user_id', $userId1)
+                      ->where('recipient_user_id', $userId2);
+                })
+                ->orWhere(function ($q) use ($userId1, $userId2) {
+                    $q->where('requester_user_id', $userId2)
+                      ->where('recipient_user_id', $userId1);
+                });
+            })
+            ->first();
+    }
+
+    /**
      * Delete a connection between two users (regardless of direction)
      */
     public function deleteConnectionBetween(int $userId1, int $userId2): bool
