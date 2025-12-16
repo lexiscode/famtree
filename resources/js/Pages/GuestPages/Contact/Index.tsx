@@ -1,8 +1,15 @@
+import { useState } from 'react';
 import { Head, useForm } from '@inertiajs/react';
-import { FormEvent, useState } from 'react';
 import GuestLayout from '@/Layouts/GuestLayout';
+import HomeHeader from '@/Components/Navigation/HomeHeader';
+import FloatingNavDock from '@/Components/Navigation/FloatingNavDock';
+import FloatingSocialDock from '@/Components/Navigation/FloatingSocialDock';
+import ContactModal from './components/ContactModal';
+import './ContactNew.css';
 
 export default function Contact() {
+    const [openModal, setOpenModal] = useState<string | null>(null);
+
     const { data, setData, post, processing, errors, reset } = useForm({
         name: '',
         email: '',
@@ -12,15 +19,259 @@ export default function Contact() {
 
     const [submitted, setSubmitted] = useState(false);
 
-    const handleSubmit = (e: FormEvent) => {
-        e.preventDefault();
-        post('/contact', {
-            onSuccess: () => {
-                setSubmitted(true);
-                reset();
-                setTimeout(() => setSubmitted(false), 5000);
-            },
-        });
+    const contactCards = [
+        {
+            id: 'send-message',
+            icon: 'bi-send-fill',
+            title: 'Send Message',
+            subtitle: 'Reach out to us',
+            color: '#FFD700',
+        },
+        {
+            id: 'contact-info',
+            icon: 'bi-info-circle-fill',
+            title: 'Contact Info',
+            subtitle: 'Get in touch',
+            color: '#FF6B00',
+        },
+        {
+            id: 'faqs',
+            icon: 'bi-question-circle-fill',
+            title: 'FAQs',
+            subtitle: 'Quick answers',
+            color: '#FFD700',
+        },
+        {
+            id: 'support',
+            icon: 'bi-headset',
+            title: 'Support Center',
+            subtitle: 'Help resources',
+            color: '#FF6B00',
+        },
+    ];
+
+    const modalContent = {
+        'contact-info': {
+            title: 'Contact Information',
+            type: 'info' as const,
+            content: (
+                <div className="contact-info-content">
+                    <div className="info-item">
+                        <div className="info-icon-wrapper">
+                            <i className="bi-envelope-fill"></i>
+                        </div>
+                        <div className="info-text">
+                            <h3>Email</h3>
+                            <p>
+                                <a href="mailto:support@famtree.com">support@famtree.com</a>
+                            </p>
+                            <span className="info-note">We typically respond within 24 hours</span>
+                        </div>
+                    </div>
+
+                    <div className="info-item">
+                        <div className="info-icon-wrapper">
+                            <i className="bi-geo-alt-fill"></i>
+                        </div>
+                        <div className="info-text">
+                            <h3>Location</h3>
+                            <p>Lagos, Nigeria</p>
+                            <span className="info-note">Serving families worldwide</span>
+                        </div>
+                    </div>
+
+                    <div className="info-item">
+                        <div className="info-icon-wrapper">
+                            <i className="bi-clock-fill"></i>
+                        </div>
+                        <div className="info-text">
+                            <h3>Office Hours</h3>
+                            <p>Monday - Friday: 9AM - 5PM WAT</p>
+                            <span className="info-note">Weekend support available for urgent matters</span>
+                        </div>
+                    </div>
+
+                    <div className="info-item">
+                        <div className="info-icon-wrapper">
+                            <i className="bi-chat-dots-fill"></i>
+                        </div>
+                        <div className="info-text">
+                            <h3>Live Chat</h3>
+                            <p>Available during business hours</p>
+                            <span className="info-note">Get instant answers to your questions</span>
+                        </div>
+                    </div>
+
+                    <div className="social-section">
+                        <h3>Connect With Us</h3>
+                        <div className="social-links">
+                            <a href="#" className="social-link" aria-label="Facebook">
+                                <i className="bi-facebook"></i>
+                                <span>Facebook</span>
+                            </a>
+                            <a href="#" className="social-link" aria-label="Instagram">
+                                <i className="bi-instagram"></i>
+                                <span>Instagram</span>
+                            </a>
+                            <a href="#" className="social-link" aria-label="Twitter">
+                                <i className="bi-twitter"></i>
+                                <span>Twitter</span>
+                            </a>
+                            <a href="#" className="social-link" aria-label="LinkedIn">
+                                <i className="bi-linkedin"></i>
+                                <span>LinkedIn</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            ),
+        },
+        faqs: {
+            title: 'Frequently Asked Questions',
+            type: 'info' as const,
+            content: (
+                <div className="faq-content">
+                    <div className="faq-item">
+                        <h3>
+                            <i className="bi-patch-question-fill"></i>
+                            How do I get started with FamTree?
+                        </h3>
+                        <p>
+                            Simply click the "Sign Up" button, create your account, and start building your family tree.
+                            Our intuitive interface guides you through every step of the process.
+                        </p>
+                    </div>
+
+                    <div className="faq-item">
+                        <h3>
+                            <i className="bi-patch-question-fill"></i>
+                            Is my family data secure?
+                        </h3>
+                        <p>
+                            Absolutely! We use enterprise-grade encryption and security measures to protect your family's
+                            information. Your data is backed up regularly and stored securely in the cloud.
+                        </p>
+                    </div>
+
+                    <div className="faq-item">
+                        <h3>
+                            <i className="bi-patch-question-fill"></i>
+                            Can I invite family members?
+                        </h3>
+                        <p>
+                            Yes! You can invite unlimited family members to view and contribute to your family tree.
+                            Each member can have different access levels based on your privacy settings.
+                        </p>
+                    </div>
+
+                    <div className="faq-item">
+                        <h3>
+                            <i className="bi-patch-question-fill"></i>
+                            What file formats can I upload?
+                        </h3>
+                        <p>
+                            We support various formats including images (JPG, PNG, GIF), videos (MP4, MOV), and documents
+                            (PDF, DOC, DOCX). Maximum file size is 50MB per upload.
+                        </p>
+                    </div>
+
+                    <div className="faq-item">
+                        <h3>
+                            <i className="bi-patch-question-fill"></i>
+                            Is there a mobile app?
+                        </h3>
+                        <p>
+                            Our platform is fully responsive and works great on all devices. A dedicated mobile app
+                            is currently in development and will be available soon on iOS and Android.
+                        </p>
+                    </div>
+
+                    <div className="faq-item">
+                        <h3>
+                            <i className="bi-patch-question-fill"></i>
+                            How do I export my family tree?
+                        </h3>
+                        <p>
+                            You can export your family tree as a PDF, GEDCOM file, or generate a beautiful family book.
+                            Go to Settings → Export to access these options.
+                        </p>
+                    </div>
+                </div>
+            ),
+        },
+        support: {
+            title: 'Support Center',
+            type: 'info' as const,
+            content: (
+                <div className="support-content">
+                    <div className="support-item">
+                        <div className="support-icon">
+                            <i className="bi-book-fill"></i>
+                        </div>
+                        <h3>Documentation</h3>
+                        <p>Comprehensive guides and tutorials to help you make the most of FamTree.</p>
+                        <a href="#" className="support-link">
+                            View Documentation <i className="bi-arrow-right"></i>
+                        </a>
+                    </div>
+
+                    <div className="support-item">
+                        <div className="support-icon">
+                            <i className="bi-play-circle-fill"></i>
+                        </div>
+                        <h3>Video Tutorials</h3>
+                        <p>Watch step-by-step video guides on using FamTree features.</p>
+                        <a href="#" className="support-link">
+                            Watch Tutorials <i className="bi-arrow-right"></i>
+                        </a>
+                    </div>
+
+                    <div className="support-item">
+                        <div className="support-icon">
+                            <i className="bi-people-fill"></i>
+                        </div>
+                        <h3>Community Forum</h3>
+                        <p>Connect with other users, share tips, and get advice from the community.</p>
+                        <a href="#" className="support-link">
+                            Join Community <i className="bi-arrow-right"></i>
+                        </a>
+                    </div>
+
+                    <div className="support-item">
+                        <div className="support-icon">
+                            <i className="bi-lightbulb-fill"></i>
+                        </div>
+                        <h3>Feature Requests</h3>
+                        <p>Have an idea? Submit feature requests and vote on upcoming features.</p>
+                        <a href="#" className="support-link">
+                            Submit Request <i className="bi-arrow-right"></i>
+                        </a>
+                    </div>
+
+                    <div className="support-item">
+                        <div className="support-icon">
+                            <i className="bi-bug-fill"></i>
+                        </div>
+                        <h3>Report an Issue</h3>
+                        <p>Found a bug? Let us know so we can fix it quickly.</p>
+                        <a href="#" className="support-link">
+                            Report Issue <i className="bi-arrow-right"></i>
+                        </a>
+                    </div>
+
+                    <div className="support-item">
+                        <div className="support-icon">
+                            <i className="bi-telephone-fill"></i>
+                        </div>
+                        <h3>Priority Support</h3>
+                        <p>Premium users get access to priority email and phone support.</p>
+                        <a href="#" className="support-link">
+                            Learn More <i className="bi-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+            ),
+        },
     };
 
     const localBusinessSchema = {
@@ -44,9 +295,9 @@ export default function Contact() {
     };
 
     return (
-        <GuestLayout>
+        <GuestLayout hideFooter hideNavigation>
             <Head
-                title="Contact FamTree - Get In Touch"
+                title="Contact FamTree - Get In Touch With Our Team"
                 meta={[
                     {
                         name: 'description',
@@ -63,377 +314,73 @@ export default function Contact() {
                 </script>
             </Head>
 
-            {/* Hero Section */}
+            <HomeHeader />
+            <FloatingNavDock />
+            <FloatingSocialDock />
+
             <section className="contact-hero">
-                <div className="hero-bg"></div>
-                <div className="hero-content">
-                    <h1>Get In Touch</h1>
-                    <p>We'd love to hear from you. Send us a message and we'll respond as soon as possible.</p>
+                <div className="contact-hero-content">
+                    <div className="hero-badge">
+                        <i className="bi-envelope-fill"></i>
+                        <span>Contact Us</span>
+                    </div>
+
+                    <h1 className="contact-title">
+                        We're Here to
+                        <span className="gradient-text"> Help You</span>
+                    </h1>
+
+                    <p className="contact-description">
+                        Have questions or need assistance? Choose how you'd like to reach out.
+                        Our team is ready to support you in preserving your family's legacy.
+                    </p>
+
+                    <div className="contact-cards">
+                        {contactCards.map((card, index) => (
+                            <div
+                                key={card.id}
+                                className="contact-card"
+                                onClick={() => setOpenModal(card.id)}
+                                style={{
+                                    '--card-color': card.color,
+                                    animationDelay: `${index * 0.1}s`,
+                                } as React.CSSProperties}
+                            >
+                                <div className="card-icon">
+                                    <i className={card.icon}></i>
+                                </div>
+                                <h3>{card.title}</h3>
+                                <p>{card.subtitle}</p>
+                                <div className="card-arrow">
+                                    <i className="bi-arrow-right"></i>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Background decoration */}
+                <div className="contact-background">
+                    <div className="bg-shape shape-1"></div>
+                    <div className="bg-shape shape-2"></div>
+                    <div className="bg-shape shape-3"></div>
                 </div>
             </section>
 
-            {/* Contact Form Section */}
-            <section className="contact-section">
-                <div className="contact-wrapper">
-                    {/* Contact Form */}
-                    <div className="contact-form-wrapper">
-                        <h2>Send us a Message</h2>
-
-                        {submitted && (
-                            <div className="success-message">
-                                ✓ Thank you! Your message has been sent successfully. We'll get back to you soon.
-                            </div>
-                        )}
-
-                        <form onSubmit={handleSubmit} className="contact-form">
-                            <div className="form-group">
-                                <label htmlFor="name">Full Name</label>
-                                <input
-                                    type="text"
-                                    id="name"
-                                    name="name"
-                                    value={data.name}
-                                    onChange={(e) => setData('name', e.target.value)}
-                                    placeholder="Your full name"
-                                    className={errors.name ? 'error' : ''}
-                                />
-                                {errors.name && <span className="error-msg">{errors.name}</span>}
-                            </div>
-
-                            <div className="form-group">
-                                <label htmlFor="email">Email Address</label>
-                                <input
-                                    type="email"
-                                    id="email"
-                                    name="email"
-                                    value={data.email}
-                                    onChange={(e) => setData('email', e.target.value)}
-                                    placeholder="your@email.com"
-                                    className={errors.email ? 'error' : ''}
-                                />
-                                {errors.email && <span className="error-msg">{errors.email}</span>}
-                            </div>
-
-                            <div className="form-group">
-                                <label htmlFor="subject">Subject</label>
-                                <input
-                                    type="text"
-                                    id="subject"
-                                    name="subject"
-                                    value={data.subject}
-                                    onChange={(e) => setData('subject', e.target.value)}
-                                    placeholder="How can we help?"
-                                    className={errors.subject ? 'error' : ''}
-                                />
-                                {errors.subject && <span className="error-msg">{errors.subject}</span>}
-                            </div>
-
-                            <div className="form-group">
-                                <label htmlFor="message">Message</label>
-                                <textarea
-                                    id="message"
-                                    name="message"
-                                    rows={6}
-                                    value={data.message}
-                                    onChange={(e) => setData('message', e.target.value)}
-                                    placeholder="Tell us more..."
-                                    className={errors.message ? 'error' : ''}
-                                ></textarea>
-                                {errors.message && <span className="error-msg">{errors.message}</span>}
-                            </div>
-
-                            <button type="submit" disabled={processing} className="submit-btn">
-                                {processing ? 'Sending...' : 'Send Message'}
-                            </button>
-                        </form>
-                    </div>
-
-                    {/* Contact Info */}
-                    <div className="contact-info-wrapper">
-                        <h2>Contact Information</h2>
-
-                        <div className="info-box">
-                            <div className="info-icon">✉️</div>
-                            <div className="info-content">
-                                <h3>Email</h3>
-                                <p>
-                                    <a href="mailto:support@famtree.com">support@famtree.com</a>
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="info-box">
-                            <div className="info-icon">📍</div>
-                            <div className="info-content">
-                                <h3>Location</h3>
-                                <p>Lagos, Nigeria</p>
-                            </div>
-                        </div>
-
-                        <div className="info-box">
-                            <div className="info-icon">🕐</div>
-                            <div className="info-content">
-                                <h3>Office Hours</h3>
-                                <p>Monday - Friday: 9AM - 5PM WAT</p>
-                            </div>
-                        </div>
-
-                        <div className="social-links">
-                            <h3>Follow Us</h3>
-                            <div className="social-icons">
-                                <a href="#" className="social-icon">𝕏</a>
-                                <a href="#" className="social-icon">f</a>
-                                <a href="#" className="social-icon">in</a>
-                                <a href="#" className="social-icon">📷</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <style>{`
-                .contact-hero {
-                    position: relative;
-                    height: 300px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    background: #0F1F35;
-                    overflow: hidden;
-                }
-
-                .hero-bg {
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
-                    background: linear-gradient(135deg, #0F1F35 0%, #1a2f47 100%);
-                    opacity: 0.5;
-                }
-
-                .hero-content {
-                    position: relative;
-                    z-index: 2;
-                    color: white;
-                    text-align: center;
-                }
-
-                .hero-content h1 {
-                    font-size: 2.5rem;
-                    margin: 0 0 16px;
-                    font-weight: 700;
-                }
-
-                .hero-content p {
-                    font-size: 1.1rem;
-                    margin: 0;
-                    opacity: 0.9;
-                }
-
-                .contact-section {
-                    padding: 60px 20px;
-                    background: #f5f5f5;
-                }
-
-                .contact-wrapper {
-                    max-width: 1100px;
-                    margin: 0 auto;
-                    display: grid;
-                    grid-template-columns: 1fr 1fr;
-                    gap: 40px;
-                }
-
-                .contact-form-wrapper h2,
-                .contact-info-wrapper h2 {
-                    font-size: 1.8rem;
-                    margin: 0 0 32px;
-                    color: #0F1F35;
-                }
-
-                .contact-form {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 20px;
-                }
-
-                .form-group {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 8px;
-                }
-
-                .form-group label {
-                    font-weight: 600;
-                    color: #0F1F35;
-                    font-size: 0.95rem;
-                }
-
-                .form-group input,
-                .form-group textarea {
-                    padding: 12px 16px;
-                    border: 1px solid #e0e0e0;
-                    border-radius: 8px;
-                    font-size: 1rem;
-                    font-family: inherit;
-                    transition: all 0.3s ease;
-                    background: white;
-                }
-
-                .form-group input:focus,
-                .form-group textarea:focus {
-                    outline: none;
-                    border-color: #D4A574;
-                    box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.1);
-                }
-
-                .form-group input.error,
-                .form-group textarea.error {
-                    border-color: #e74c3c;
-                }
-
-                .error-msg {
-                    color: #e74c3c;
-                    font-size: 0.85rem;
-                }
-
-                .success-message {
-                    background: #d4edda;
-                    color: #155724;
-                    padding: 16px;
-                    border-radius: 8px;
-                    margin-bottom: 24px;
-                    font-weight: 600;
-                }
-
-                .submit-btn {
-                    padding: 14px 32px;
-                    background: #D4A574;
-                    color: white;
-                    border: none;
-                    border-radius: 8px;
-                    font-size: 1rem;
-                    font-weight: 700;
-                    cursor: pointer;
-                    transition: all 0.3s ease;
-                    margin-top: 12px;
-                }
-
-                .submit-btn:hover:not(:disabled) {
-                    transform: translateY(-2px);
-                    box-shadow: 0 8px 16px rgba(212, 165, 116, 0.3);
-                }
-
-                .submit-btn:disabled {
-                    opacity: 0.6;
-                    cursor: not-allowed;
-                }
-
-                .contact-info-wrapper {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 24px;
-                }
-
-                .info-box {
-                    background: white;
-                    padding: 24px;
-                    border-radius: 12px;
-                    display: flex;
-                    gap: 16px;
-                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-                    transition: all 0.3s ease;
-                }
-
-                .info-box:hover {
-                    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-                    transform: translateY(-2px);
-                }
-
-                .info-icon {
-                    font-size: 2rem;
-                    display: flex;
-                    align-items: center;
-                }
-
-                .info-content h3 {
-                    margin: 0 0 8px;
-                    color: #0F1F35;
-                    font-size: 1.1rem;
-                }
-
-                .info-content p {
-                    margin: 0;
-                    color: #666;
-                    font-size: 0.95rem;
-                }
-
-                .info-content a {
-                    color: #D4A574;
-                    text-decoration: none;
-                    font-weight: 600;
-                    transition: color 0.3s ease;
-                }
-
-                .info-content a:hover {
-                    color: #0F1F35;
-                }
-
-                .social-links {
-                    background: white;
-                    padding: 24px;
-                    border-radius: 12px;
-                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-                }
-
-                .social-links h3 {
-                    margin: 0 0 16px;
-                    color: #0F1F35;
-                    font-size: 1.1rem;
-                }
-
-                .social-icons {
-                    display: flex;
-                    gap: 12px;
-                }
-
-                .social-icon {
-                    width: 44px;
-                    height: 44px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    background: #f5f5f5;
-                    border-radius: 8px;
-                    color: #0F1F35;
-                    text-decoration: none;
-                    font-weight: 600;
-                    font-size: 1rem;
-                    transition: all 0.3s ease;
-                }
-
-                .social-icon:hover {
-                    background: #D4A574;
-                    color: white;
-                    transform: translateY(-2px);
-                }
-
-                @media (max-width: 768px) {
-                    .hero-content h1 {
-                        font-size: 1.8rem;
-                    }
-
-                    .contact-wrapper {
-                        grid-template-columns: 1fr;
-                        gap: 32px;
-                    }
-
-                    .contact-form-wrapper h2,
-                    .contact-info-wrapper h2 {
-                        font-size: 1.5rem;
-                    }
-                }
-            `}</style>
+            {/* Contact Modals */}
+            {openModal && (
+                <ContactModal
+                    isOpen={true}
+                    onClose={() => {
+                        setOpenModal(null);
+                        setSubmitted(false);
+                    }}
+                    title={openModal === 'send-message' ? 'Send us a Message' : modalContent[openModal as keyof typeof modalContent]?.title}
+                    type={openModal === 'send-message' ? 'form' : modalContent[openModal as keyof typeof modalContent]?.type}
+                    content={openModal === 'send-message' ? undefined : modalContent[openModal as keyof typeof modalContent]?.content}
+                    formData={openModal === 'send-message' ? { data, setData, post, processing, errors, submitted, setSubmitted, reset } : undefined}
+                />
+            )}
         </GuestLayout>
     );
 }

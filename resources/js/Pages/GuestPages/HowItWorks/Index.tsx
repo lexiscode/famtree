@@ -1,59 +1,199 @@
+import { useState } from 'react';
 import { Head } from '@inertiajs/react';
 import GuestLayout from '@/Layouts/GuestLayout';
-import { useInView } from 'react-intersection-observer';
-import './HowItWorks.css';
+import HomeHeader from '@/Components/Navigation/HomeHeader';
+import FloatingNavDock from '@/Components/Navigation/FloatingNavDock';
+import FloatingSocialDock from '@/Components/Navigation/FloatingSocialDock';
+import ProcessModal from './components/ProcessModal';
+import './HowItWorksNew.css';
 
 export default function HowItWorks() {
-    const { ref: headerRef, inView: headerInView } = useInView({ threshold: 0.3, triggerOnce: true });
-    const { ref: stepsRef, inView: stepsInView } = useInView({ threshold: 0.3, triggerOnce: true });
-    const { ref: ctaRef, inView: ctaInView } = useInView({ threshold: 0.3, triggerOnce: true });
+    const [openModal, setOpenModal] = useState<string | null>(null);
 
-    const steps = [
+    const processCards = [
         {
-            id: 1,
-            title: 'Sign Up',
-            description: 'Choose your family name, location, and create a secure account in minutes.',
-            details: ['Create your family profile', 'Set privacy preferences', 'Customize family settings'],
-            icon: '📝',
+            id: 'steps',
+            icon: 'bi-list-ol',
+            title: 'The Process',
+            subtitle: 'Step by step guide',
+            color: '#FFD700',
         },
         {
-            id: 2,
-            title: 'Build Your Family Base',
-            description: 'Add your immediate family members - parents, siblings, and children.',
-            details: ['Add family members', 'Define relationships', 'Upload photos and bios'],
-            icon: '👨‍👩‍👧‍👦',
+            id: 'benefits',
+            icon: 'bi-star-fill',
+            title: 'Why FamTree',
+            subtitle: 'Key advantages',
+            color: '#FF6B00',
         },
         {
-            id: 3,
-            title: 'Link Families',
-            description: 'Connect with other family branches through marriages and relationships.',
-            details: ['Add extended family', 'Link in-laws and relatives', 'Build complete family tree'],
-            icon: '🔗',
+            id: 'getting-started',
+            icon: 'bi-rocket-takeoff-fill',
+            title: 'Getting Started',
+            subtitle: 'Quick start guide',
+            color: '#FFD700',
         },
         {
-            id: 4,
-            title: 'Preserve Legacy',
-            description: 'Upload stories, photos, documents, and create lasting digital memories.',
-            details: ['Share family stories', 'Upload multimedia', 'Create memorial pages'],
-            icon: '📚',
-        },
-        {
-            id: 5,
-            title: 'Invite & Connect',
-            description: 'Invite relatives to join, verify connections, and grow your family tree together.',
-            details: ['Send invitations', 'Verify relationships', 'Collaborate on family history'],
-            icon: '🎉',
+            id: 'best-practices',
+            icon: 'bi-lightbulb-fill',
+            title: 'Best Practices',
+            subtitle: 'Tips for success',
+            color: '#FF6B00',
         },
     ];
 
+    const modalContent = {
+        steps: {
+            title: 'The Process',
+            description: 'Follow these five simple steps to preserve your family\'s legacy forever',
+            type: 'steps' as const,
+            items: [
+                {
+                    icon: 'bi-person-plus-fill',
+                    title: 'Sign Up',
+                    description: 'Choose your family name, location, and create a secure account in minutes.',
+                    details: ['Create your family profile', 'Set privacy preferences', 'Customize family settings'],
+                },
+                {
+                    icon: 'bi-people-fill',
+                    title: 'Build Your Family Base',
+                    description: 'Add your immediate family members - parents, siblings, and children.',
+                    details: ['Add family members', 'Define relationships', 'Upload photos and bios'],
+                },
+                {
+                    icon: 'bi-link-45deg',
+                    title: 'Link Families',
+                    description: 'Connect with other family branches through marriages and relationships.',
+                    details: ['Add extended family', 'Link in-laws and relatives', 'Build complete family tree'],
+                },
+                {
+                    icon: 'bi-archive-fill',
+                    title: 'Preserve Legacy',
+                    description: 'Upload stories, photos, documents, and create lasting digital memories.',
+                    details: ['Share family stories', 'Upload multimedia', 'Create memorial pages'],
+                },
+                {
+                    icon: 'bi-send-fill',
+                    title: 'Invite & Connect',
+                    description: 'Invite relatives to join, verify connections, and grow your family tree together.',
+                    details: ['Send invitations', 'Verify relationships', 'Collaborate on family history'],
+                },
+            ],
+        },
+        benefits: {
+            title: 'Why Choose FamTree',
+            description: 'Discover what makes FamTree the best choice for preserving your family heritage',
+            type: 'grid' as const,
+            items: [
+                {
+                    icon: 'bi-lightning-charge-fill',
+                    title: 'Fast & Easy',
+                    description: 'Get started in minutes, not hours. Simple and intuitive interface designed for everyone.',
+                },
+                {
+                    icon: 'bi-shield-lock-fill',
+                    title: 'Secure & Private',
+                    description: 'Enterprise-grade security keeps your family\'s stories safe and private with encryption.',
+                },
+                {
+                    icon: 'bi-globe',
+                    title: 'Connect Globally',
+                    description: 'Stay connected with family members across continents and time zones effortlessly.',
+                },
+                {
+                    icon: 'bi-infinity',
+                    title: 'Forever Preserved',
+                    description: 'Your family\'s legacy is preserved safely for generations to come with cloud backup.',
+                },
+                {
+                    icon: 'bi-phone-fill',
+                    title: 'Mobile Friendly',
+                    description: 'Access your family tree anytime, anywhere from any device - phone, tablet, or computer.',
+                },
+                {
+                    icon: 'bi-diagram-3-fill',
+                    title: 'Visual Tree Builder',
+                    description: 'Beautiful, interactive family tree visualizations that bring your heritage to life.',
+                },
+            ],
+        },
+        'getting-started': {
+            title: 'Getting Started',
+            description: 'Your quick-start guide to building your first family tree on FamTree',
+            type: 'steps' as const,
+            items: [
+                {
+                    icon: 'bi-box-arrow-in-right',
+                    title: 'Create Your Account',
+                    description: 'Sign up with your email or social media account in less than a minute.',
+                    details: ['Click "Sign Up" button', 'Enter your information', 'Verify your email'],
+                },
+                {
+                    icon: 'bi-house-fill',
+                    title: 'Set Up Your Family Space',
+                    description: 'Choose your family name and set up your private family space.',
+                    details: ['Pick a family name', 'Add family description', 'Set privacy settings'],
+                },
+                {
+                    icon: 'bi-person-fill-add',
+                    title: 'Add Your First Members',
+                    description: 'Start by adding yourself and your immediate family members.',
+                    details: ['Add your profile', 'Add parents and siblings', 'Upload profile photos'],
+                },
+                {
+                    icon: 'bi-share-fill',
+                    title: 'Invite Your Family',
+                    description: 'Send invitations to family members to join and contribute to the tree.',
+                    details: ['Generate invite links', 'Share via email or social media', 'Family members verify connections'],
+                },
+            ],
+        },
+        'best-practices': {
+            title: 'Best Practices',
+            description: 'Tips and recommendations for building a comprehensive family tree',
+            type: 'grid' as const,
+            items: [
+                {
+                    icon: 'bi-camera-fill',
+                    title: 'Add Photos Early',
+                    description: 'Upload photos of family members as soon as you add them. Visual memories are powerful.',
+                },
+                {
+                    icon: 'bi-chat-square-text-fill',
+                    title: 'Document Stories',
+                    description: 'Record family stories, anecdotes, and memories while they\'re fresh in your mind.',
+                },
+                {
+                    icon: 'bi-check-circle-fill',
+                    title: 'Verify Information',
+                    description: 'Double-check dates, names, and relationships with family members for accuracy.',
+                },
+                {
+                    icon: 'bi-collection-fill',
+                    title: 'Organize Documents',
+                    description: 'Upload birth certificates, marriage certificates, and other important documents.',
+                },
+                {
+                    icon: 'bi-people',
+                    title: 'Collaborate',
+                    description: 'Invite family members to contribute their knowledge and help build the tree together.',
+                },
+                {
+                    icon: 'bi-arrow-clockwise',
+                    title: 'Update Regularly',
+                    description: 'Keep your family tree current by adding new events, photos, and stories regularly.',
+                },
+            ],
+        },
+    };
+
     return (
-        <GuestLayout>
+        <GuestLayout hideFooter hideNavigation>
             <Head
-                title="How FamTree Works - 5 Simple Steps"
+                title="How FamTree Works - Simple Steps to Preserve Your Legacy"
                 meta={[
                     {
                         name: 'description',
-                        content: 'Learn how FamTree works in 5 simple steps. Build your family tree, connect with relatives, preserve memories, and celebrate heritage.',
+                        content: 'Learn how FamTree works in simple steps. Build your family tree, connect with relatives, preserve memories, and celebrate heritage.',
                     },
                     {
                         name: 'keywords',
@@ -61,11 +201,11 @@ export default function HowItWorks() {
                     },
                     {
                         property: 'og:title',
-                        content: 'How FamTree Works - 5 Simple Steps',
+                        content: 'How FamTree Works - Simple Steps',
                     },
                     {
                         property: 'og:description',
-                        content: 'Discover how to build your family tree and preserve your heritage in 5 easy steps.',
+                        content: 'Discover how to build your family tree and preserve your heritage in simple steps.',
                     },
                     {
                         property: 'og:type',
@@ -86,92 +226,70 @@ export default function HowItWorks() {
                 ]}
             />
 
-            {/* Header */}
-            <section className="hiw-header" ref={headerRef}>
-                <div className={`hiw-header-content ${headerInView ? 'in-view' : ''}`}>
-                    <h1>How FamTree Works</h1>
-                    <p>Five simple steps to preserve your family's legacy forever.</p>
-                </div>
-            </section>
+            <HomeHeader />
+            <FloatingNavDock />
+            <FloatingSocialDock />
 
-            {/* Steps Timeline */}
-            <section className="hiw-timeline" ref={stepsRef}>
-                <div className={`hiw-container ${stepsInView ? 'in-view' : ''}`}>
-                    <div className="timeline-line"></div>
+            <section className="how-it-works-hero">
+                <div className="how-it-works-hero-content">
+                    <div className="hero-badge">
+                        <i className="bi-gear-fill"></i>
+                        <span>How It Works</span>
+                    </div>
 
-                    {steps.map((step, index) => (
-                        <div key={step.id} className={`timeline-step step-${step.id} ${index % 2 === 0 ? 'left' : 'right'}`}>
-                            <div className="step-connector">
-                                <div className="step-dot">
-                                    <span className="step-number">{step.id}</span>
+                    <h1 className="how-it-works-title">
+                        Building Your Legacy,
+                        <span className="gradient-text"> Made Simple</span>
+                    </h1>
+
+                    <p className="how-it-works-description">
+                        Preserving your family heritage has never been easier. Explore our simple process,
+                        discover key benefits, and learn best practices for creating a meaningful family tree.
+                    </p>
+
+                    <div className="process-cards">
+                        {processCards.map((card, index) => (
+                            <div
+                                key={card.id}
+                                className="process-card"
+                                onClick={() => setOpenModal(card.id)}
+                                style={{
+                                    '--card-color': card.color,
+                                    animationDelay: `${index * 0.1}s`,
+                                } as React.CSSProperties}
+                            >
+                                <div className="card-icon">
+                                    <i className={card.icon}></i>
+                                </div>
+                                <h3>{card.title}</h3>
+                                <p>{card.subtitle}</p>
+                                <div className="card-arrow">
+                                    <i className="bi-arrow-right"></i>
                                 </div>
                             </div>
-
-                            <div className="step-content">
-                                <div className="step-card">
-                                    <div className="step-icon">{step.icon}</div>
-                                    <h2>{step.title}</h2>
-                                    <p className="step-description">{step.description}</p>
-                                    <ul className="step-details">
-                                        {step.details.map((detail, idx) => (
-                                            <li key={idx}>
-                                                <span className="detail-icon">✓</span>
-                                                {detail}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </section>
-
-            {/* Benefits Section */}
-            <section className="hiw-benefits">
-                <div className="hiw-container">
-                    <h2>Why Choose FamTree?</h2>
-                    <div className="benefits-grid">
-                        <div className="benefit-card">
-                            <div className="benefit-icon">⚡</div>
-                            <h3>Fast & Easy</h3>
-                            <p>Get started in minutes, not hours. Simple and intuitive interface.</p>
-                        </div>
-                        <div className="benefit-card">
-                            <div className="benefit-icon">🔒</div>
-                            <h3>Secure & Private</h3>
-                            <p>Enterprise-grade security keeps your family's stories safe and private.</p>
-                        </div>
-                        <div className="benefit-card">
-                            <div className="benefit-icon">🌍</div>
-                            <h3>Connect Globally</h3>
-                            <p>Stay connected with family members across continents and time zones.</p>
-                        </div>
-                        <div className="benefit-card">
-                            <div className="benefit-icon">♾️</div>
-                            <h3>Forever Preserved</h3>
-                            <p>Your family's legacy is preserved safely for generations to come.</p>
-                        </div>
+                        ))}
                     </div>
                 </div>
-            </section>
 
-            {/* CTA Section */}
-            <section className="hiw-cta" ref={ctaRef}>
-                <div className={`hiw-container ${ctaInView ? 'in-view' : ''}`}>
-                    <h2>Ready to Start Your Journey?</h2>
-                    <p>Begin preserving your family's legacy today. It's free, easy, and secure.</p>
-                    <div className="hiw-cta-buttons">
-                        <button className="cta-btn cta-btn-primary">
-                            <span>Create Your Family Space</span>
-                            <span>→</span>
-                        </button>
-                        <button className="cta-btn cta-btn-secondary">
-                            Watch Video Tutorial
-                        </button>
-                    </div>
+                {/* Background decoration */}
+                <div className="how-it-works-background">
+                    <div className="bg-shape shape-1"></div>
+                    <div className="bg-shape shape-2"></div>
+                    <div className="bg-shape shape-3"></div>
                 </div>
             </section>
+
+            {/* Process Modals */}
+            {openModal && (
+                <ProcessModal
+                    isOpen={true}
+                    onClose={() => setOpenModal(null)}
+                    title={modalContent[openModal as keyof typeof modalContent].title}
+                    description={modalContent[openModal as keyof typeof modalContent].description}
+                    type={modalContent[openModal as keyof typeof modalContent].type}
+                    items={modalContent[openModal as keyof typeof modalContent].items}
+                />
+            )}
         </GuestLayout>
     );
 }
