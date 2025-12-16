@@ -15,7 +15,6 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('user_id');
             $table->enum('type', ['text', 'voice'])->default('text');
-            $table->string('title')->nullable();
             $table->longText('content')->nullable();
             $table->string('voice_url')->nullable();
             $table->integer('voice_duration')->nullable(); // in seconds

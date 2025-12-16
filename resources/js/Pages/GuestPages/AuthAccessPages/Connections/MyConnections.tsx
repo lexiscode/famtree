@@ -38,10 +38,6 @@ export default function MyConnections({
         return acc;
     }, {} as Record<string, Connection[]>);
 
-    const isUndoWindowExpired = (expiryDate: string): boolean => {
-        return new Date() > new Date(expiryDate);
-    };
-
     const openUndoModal = (connectionId: number) => {
         setSelectedConnectionId(connectionId);
         setShowUndoModal(true);
@@ -197,7 +193,7 @@ export default function MyConnections({
                                                 <strong>{connection.relationship_label}</strong>
                                             </div>
 
-                                            <div className={`connection-card-actions pb-2 ${connection.can_undo && !isUndoWindowExpired(connection.undo_expires_at) ? '' : 'single-button'}`}>
+                                            <div className={`connection-card-actions pb-2 ${connection.can_undo ? '' : 'single-button'}`}>
                                                 <button
                                                     className="connection-action-btn connection-action-view"
                                                     onClick={() => router.visit(route('profile.view', connection.user.id))}
@@ -206,12 +202,12 @@ export default function MyConnections({
                                                     <ExternalLink size={16} className="me-1" style={{ display: 'inline' }} />
                                                     View Profile
                                                 </button>
-                                                {connection.can_undo && !isUndoWindowExpired(connection.undo_expires_at) && (
+                                                {connection.can_undo && (
                                                     <button
                                                         className="connection-action-btn connection-action-undo"
                                                         onClick={() => openUndoModal(connection.id)}
                                                         disabled={loading}
-                                                        title="Undo this connection within 24 hours"
+                                                        title="Undo this connection"
                                                     >
                                                         {loading ? (
                                                             <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" />
@@ -263,7 +259,7 @@ export default function MyConnections({
                             <div className="modal-body-undo">
                                 <h2 className="modal-title-undo">Undo Connection?</h2>
                                 <p className="modal-message-undo">
-                                    Are you sure you want to undo this connection? This action can only be done within 24 hours of acceptance.
+                                    Are you sure you want to undo this connection? This will remove the connection between you and this person.
                                 </p>
                             </div>
 

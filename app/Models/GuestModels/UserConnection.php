@@ -78,14 +78,12 @@ class UserConnection extends Model
     }
 
     /**
-     * Check if undo window is still available (within 24 hours)
+     * Check if connection can be undone
+     * Users can undo accepted connections at any time
      */
     public function canUndo(): bool
     {
-        if (!$this->isActive() || !$this->accepted_at) {
-            return false;
-        }
-
-        return $this->accepted_at->addHours(24)->isFuture();
+        // Allow undo for any accepted connection
+        return $this->isActive() && $this->accepted_at !== null;
     }
 }

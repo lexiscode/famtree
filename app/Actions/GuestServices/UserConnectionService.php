@@ -168,7 +168,7 @@ class UserConnectionService
     }
 
     /**
-     * Undo connection acceptance within 24h window
+     * Undo connection acceptance at any time
      */
     public function undoConnection(int $connectionId, int $userId): array
     {
@@ -188,10 +188,10 @@ class UserConnectionService
             ]);
         }
 
-        // Check if within 24h window
+        // Verify connection can be undone
         if (!$connection->canUndo()) {
             throw ValidationException::withMessages([
-                'undo_window' => ['The 24-hour undo window for this connection has expired'],
+                'undo' => ['This connection cannot be undone'],
             ]);
         }
 
