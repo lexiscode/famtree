@@ -366,7 +366,7 @@ export default function MyProfile({ user, connections, connectionCount, pendingR
                         title="View profile completion status"
                         style={{
                             position: 'fixed',
-                            bottom: '90px',
+                            bottom: '100px',
                             right: '30px',
                             width: '65px',
                             height: '65px',
