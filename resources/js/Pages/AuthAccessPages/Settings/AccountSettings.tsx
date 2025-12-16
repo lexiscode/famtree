@@ -14,6 +14,11 @@ interface User {
     phone?: string | null;
     address?: string | null;
     bio?: string | null;
+    gender?: string | null;
+    country?: string | null;
+    state?: string | null;
+    city?: string | null;
+    family_status?: string | null;
     profile_image_url?: string | null;
     job_title?: string | null;
     education_level?: string | null;
@@ -60,6 +65,11 @@ export default function AccountSettings() {
                 address: user.address || '',
                 bio: user.bio || '',
                 date_of_birth: formattedDate,
+                gender: user.gender || '',
+                country: user.country || '',
+                state: user.state || '',
+                city: user.city || '',
+                family_status: user.family_status || '',
                 job_title: user.job_title || '',
                 education_level: user.education_level || '',
             });
@@ -112,6 +122,11 @@ export default function AccountSettings() {
         address: '',
         bio: '',
         date_of_birth: '',
+        gender: '',
+        country: '',
+        state: '',
+        city: '',
+        family_status: '',
         job_title: '',
         education_level: '',
     });
@@ -355,6 +370,11 @@ export default function AccountSettings() {
         formData.append('address', profileForm.address);
         formData.append('bio', profileForm.bio);
         formData.append('date_of_birth', profileForm.date_of_birth);
+        formData.append('gender', profileForm.gender);
+        formData.append('country', profileForm.country);
+        formData.append('state', profileForm.state);
+        formData.append('city', profileForm.city);
+        formData.append('family_status', profileForm.family_status);
         formData.append('job_title', profileForm.job_title);
         formData.append('education_level', profileForm.education_level);
 
@@ -523,6 +543,79 @@ export default function AccountSettings() {
                                         value={profileForm.date_of_birth}
                                         onChange={handleProfileChange}
                                     />
+                                </div>
+
+                                {/* Gender */}
+                                <div className="settings-form-group">
+                                    <label className="settings-label">Gender</label>
+                                    <select
+                                        name="gender"
+                                        className="settings-select"
+                                        value={profileForm.gender}
+                                        onChange={handleProfileChange}
+                                    >
+                                        <option value="">Select gender...</option>
+                                        <option value="male">Male</option>
+                                        <option value="female">Female</option>
+                                    </select>
+                                </div>
+
+                                {/* Country */}
+                                <div className="settings-form-group">
+                                    <label className="settings-label">Country</label>
+                                    <input
+                                        type="text"
+                                        name="country"
+                                        className="settings-input"
+                                        placeholder="Enter your country"
+                                        value={profileForm.country}
+                                        onChange={handleProfileChange}
+                                    />
+                                </div>
+
+                                {/* State */}
+                                <div className="settings-form-group">
+                                    <label className="settings-label">State/Province</label>
+                                    <input
+                                        type="text"
+                                        name="state"
+                                        className="settings-input"
+                                        placeholder="Enter your state or province"
+                                        value={profileForm.state}
+                                        onChange={handleProfileChange}
+                                    />
+                                </div>
+
+                                {/* City */}
+                                <div className="settings-form-group">
+                                    <label className="settings-label">City</label>
+                                    <input
+                                        type="text"
+                                        name="city"
+                                        className="settings-input"
+                                        placeholder="Enter your city"
+                                        value={profileForm.city}
+                                        onChange={handleProfileChange}
+                                    />
+                                </div>
+
+                                {/* Relationship Status */}
+                                <div className="settings-form-group">
+                                    <label className="settings-label">Relationship Status</label>
+                                    <select
+                                        name="family_status"
+                                        className="settings-select"
+                                        value={profileForm.family_status}
+                                        onChange={handleProfileChange}
+                                    >
+                                        <option value="">Select relationship status...</option>
+                                        <option value="single">Single</option>
+                                        <option value="dating">Dating</option>
+                                        <option value="married">Married</option>
+                                        <option value="divorced">Divorced</option>
+                                        <option value="widowed">Widowed</option>
+                                        <option value="prefer_not_to_say">Prefer not to say</option>
+                                    </select>
                                 </div>
 
                                 {/* Job Title */}

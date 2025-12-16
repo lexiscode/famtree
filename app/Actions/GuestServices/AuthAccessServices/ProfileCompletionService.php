@@ -19,7 +19,7 @@ class ProfileCompletionService
             $user->load('familyInfo');
         }
 
-        // Define essential fields to track (8 fields total)
+        // Define essential fields to track (9 fields total)
         $fields = [
             'profile_image' => [
                 'label' => 'Profile Picture',
@@ -51,14 +51,19 @@ class ProfileCompletionService
                 'value' => $user->familyInfo?->family_status,
                 'model' => 'familyInfo'
             ],
-            'city' => [
-                'label' => 'City',
-                'value' => $user->familyInfo?->city,
-                'model' => 'familyInfo'
-            ],
             'country' => [
                 'label' => 'Country',
                 'value' => $user->familyInfo?->country,
+                'model' => 'familyInfo'
+            ],
+            'state' => [
+                'label' => 'State/Province',
+                'value' => $user->familyInfo?->state_province,
+                'model' => 'familyInfo'
+            ],
+            'city' => [
+                'label' => 'City',
+                'value' => $user->familyInfo?->city,
                 'model' => 'familyInfo'
             ],
         ];

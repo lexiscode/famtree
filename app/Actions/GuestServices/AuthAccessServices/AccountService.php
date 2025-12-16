@@ -68,6 +68,7 @@ class AccountService
             'address',
             'bio',
             'date_of_birth',
+            'gender',
         ];
 
         $userData = [];
@@ -95,7 +96,14 @@ class AccountService
         }
 
         // Fields that belong to the user_family_info table
-        $familyInfoFields = ['job_title' => 'current_occupation', 'education_level' => 'education_level'];
+        $familyInfoFields = [
+            'job_title' => 'current_occupation',
+            'education_level' => 'education_level',
+            'country' => 'country',
+            'state' => 'state_province',
+            'city' => 'city',
+            'family_status' => 'family_status',
+        ];
         $familyData = [];
 
         foreach ($familyInfoFields as $inputField => $dbField) {
