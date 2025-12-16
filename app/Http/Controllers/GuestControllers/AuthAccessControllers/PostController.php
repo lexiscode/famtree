@@ -215,7 +215,6 @@ class PostController extends Controller
         try {
             $user = auth()->user();
             $data = request()->validate([
-                'title' => 'nullable|string|max:255',
                 'content' => 'nullable|string|max:5000',
             ]);
 

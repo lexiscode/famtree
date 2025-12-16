@@ -43,7 +43,7 @@ class UserConnectionRepository
         $connection->update([
             'status' => 'accepted',
             'accepted_at' => now(),
-            'expires_at' => now()->addHours(24), // 24h undo window
+            'expires_at' => null, // No expiry - users can undo at any time
         ]);
 
         return $connection;
@@ -74,7 +74,7 @@ class UserConnectionRepository
     }
 
     /**
-     * Undo a connection acceptance (within 24h window)
+     * Undo a connection acceptance at any time
      */
     public function undoConnection(int $connectionId): UserConnection
     {
@@ -84,6 +84,25 @@ class UserConnectionRepository
         ]);
 
         return $connection;
+    }
+
+    /**
+     * Get connection between two users (regardless of direction)
+     */
+    public function getConnectionBetween(int $userId1, int $userId2): ?UserConnection
+    {
+        return UserConnection::where('status', 'accepted')
+            ->where(function ($q) use ($userId1, $userId2) {
+                $q->where(function ($q) use ($userId1, $userId2) {
+                    $q->where('requester_user_id', $userId1)
+                      ->where('recipient_user_id', $userId2);
+                })
+                ->orWhere(function ($q) use ($userId1, $userId2) {
+                    $q->where('requester_user_id', $userId2)
+                      ->where('recipient_user_id', $userId1);
+                });
+            })
+            ->first();
     }
 
     /**

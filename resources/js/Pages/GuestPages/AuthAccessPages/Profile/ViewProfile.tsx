@@ -1,7 +1,7 @@
-import { useMemo, useEffect } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { Mail, Phone, MapPin, Cake, FileText, Users, Send, Clock, CheckCircle, Lock, Briefcase, BookOpen, ArrowRight, Image, Newspaper, Plus, ArrowLeft } from 'lucide-react';
+import { Mail, Phone, MapPin, Cake, FileText, Users, Send, Clock, CheckCircle, Lock, Briefcase, BookOpen, ArrowRight, Image, Newspaper, Plus, ArrowLeft, Undo2, AlertCircle, X } from 'lucide-react';
 
 interface Profile {
     id: number;
@@ -31,6 +31,8 @@ interface Props {
     connectionStatus: string | null;
     relationshipType: string | null;
     relationshipLabel: string | null;
+    connectionId: number | null;
+    canUndoConnection: boolean;
     pendingRequest: { id: number; status: string } | null;
     sentRequest: { id: number; status: string } | null;
     mutualConnectionsCount: number;
@@ -48,6 +50,8 @@ export default function ViewProfile({
     connectionStatus,
     relationshipType,
     relationshipLabel,
+    connectionId,
+    canUndoConnection,
     pendingRequest,
     sentRequest,
     mutualConnectionsCount,
@@ -57,6 +61,9 @@ export default function ViewProfile({
     accessDenied,
     accessDeniedReason,
 }: Props) {
+    const [showUndoModal, setShowUndoModal] = useState(false);
+    const [loading, setLoading] = useState(false);
+
     // Redirect back to previous page if access is denied
     useEffect(() => {
         if (accessDenied && accessDeniedReason) {
@@ -70,6 +77,40 @@ export default function ViewProfile({
     const handleProfileNavigation = (userId: number, userName: string) => {
         // Navigate to the profile
         router.visit(route('profile.view', userId));
+    };
+
+    const openUndoModal = () => {
+        setShowUndoModal(true);
+    };
+
+    const closeUndoModal = () => {
+        setShowUndoModal(false);
+    };
+
+    const handleUndoConnection = async () => {
+        if (!connectionId) return;
+
+        setLoading(true);
+        closeUndoModal();
+
+        try {
+            const response = await fetch(route('connections.undo-acceptance', connectionId), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+            });
+
+            if (response.ok) {
+                // Redirect back to connections page after successful undo
+                router.visit(route('connections.index'));
+            }
+        } catch (error) {
+            console.error('Error undoing connection:', error);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const formatDateOfBirth = (dateString: string | null) => {
@@ -153,6 +194,26 @@ export default function ViewProfile({
                                     <span className="profile-relationship-badge">
                                         ✓ {formatRelationshipLabel(relationshipType)}
                                     </span>
+                                )}
+
+                                {/* Undo Connection Button */}
+                                {connectionStatus === 'connected' && canUndoConnection && connectionId && (
+                                    <button
+                                        className="profile-btn profile-btn-secondary"
+                                        onClick={openUndoModal}
+                                        disabled={loading}
+                                        style={{ width: '100%', marginTop: '1rem', backgroundColor: '#fca5a5', color: '#7f1d1d', border: 'none' }}
+                                        title="Undo this connection"
+                                    >
+                                        {loading ? (
+                                            <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" />
+                                        ) : (
+                                            <>
+                                                <Undo2 size={18} />
+                                                Undo Connection
+                                            </>
+                                        )}
+                                    </button>
                                 )}
 
                                 {/* Request Status Section */}
@@ -453,6 +514,60 @@ export default function ViewProfile({
                         </div>
                     </div>
                 </div>
+
+                {/* Undo Connection Confirmation Modal */}
+                {showUndoModal && (
+                    <div className="modal-backdrop-undo" onClick={closeUndoModal}>
+                        <div className="modal-content-undo" onClick={(e) => e.stopPropagation()}>
+                            <div className="modal-header-undo">
+                                <div className="modal-icon-undo">
+                                    <AlertCircle size={24} />
+                                </div>
+                                <button
+                                    className="modal-close-btn-undo"
+                                    onClick={closeUndoModal}
+                                    title="Close modal"
+                                >
+                                    <X size={20} />
+                                </button>
+                            </div>
+
+                            <div className="modal-body-undo">
+                                <h2 className="modal-title-undo">Undo Connection?</h2>
+                                <p className="modal-message-undo">
+                                    Are you sure you want to undo this connection? This will remove the connection between you and {profile.name}.
+                                </p>
+                            </div>
+
+                            <div className="modal-footer-undo">
+                                <button
+                                    className="modal-btn-cancel-undo"
+                                    onClick={closeUndoModal}
+                                    disabled={loading}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    className="modal-btn-confirm-undo"
+                                    onClick={handleUndoConnection}
+                                    disabled={loading}
+                                >
+                                    {loading ? (
+                                        <>
+                                            <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
+                                            Undoing...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Undo2 size={18} style={{ display: 'inline' }} />
+                                            Undo Connection
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </AuthAccessLayout>
     );

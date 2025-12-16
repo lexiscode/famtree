@@ -1,0 +1,149 @@
+.floating-social-dock {
+    position: fixed;
+    left: 30px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1000;
+    animation: slideInLeft 0.6s ease-out;
+}
+
+.social-dock-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 20px 12px;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 30px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.social-dock-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.social-dock-icon {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 16px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.social-dock-item:hover .social-dock-icon {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 107, 0, 0.15));
+    border-color: var(--social-color);
+    transform: scale(1.1) rotate(5deg);
+    box-shadow: 0 8px 24px rgba(255, 215, 0, 0.3);
+}
+
+.social-icon {
+    font-size: 22px;
+    color: #FFD700;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+    transition: all 0.3s ease;
+}
+
+.social-dock-item:hover .social-icon {
+    color: var(--social-color);
+    transform: scale(1.1);
+}
+
+.social-dock-tooltip {
+    position: absolute;
+    left: 70px;
+    white-space: nowrap;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, rgba(20, 20, 30, 0.95), rgba(30, 30, 45, 0.95));
+    backdrop-filter: blur(10px);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 12px;
+    border: 1px solid var(--social-color);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    animation: tooltipFadeInLeft 0.2s ease-out;
+    pointer-events: none;
+}
+
+.social-dock-tooltip::after {
+    content: '';
+    position: absolute;
+    left: -6px;
+    top: 50%;
+    transform: translateY(-50%) rotate(45deg);
+    width: 12px;
+    height: 12px;
+    background: rgba(20, 20, 30, 0.95);
+    border-left: 1px solid var(--social-color);
+    border-bottom: 1px solid var(--social-color);
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateY(-50%) translateX(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(-50%) translateX(0);
+    }
+}
+
+@keyframes tooltipFadeInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .floating-social-dock {
+        left: 15px;
+    }
+
+    .social-dock-container {
+        padding: 15px 8px;
+        gap: 12px;
+        border-radius: 25px;
+    }
+
+    .social-dock-icon {
+        width: 45px;
+        height: 45px;
+    }
+
+    .social-icon {
+        font-size: 20px;
+    }
+
+    .social-dock-tooltip {
+        left: 60px;
+        padding: 8px 16px;
+        font-size: 13px;
+    }
+}
+
+/* Hide on very small screens to avoid clutter */
+@media (max-width: 480px) {
+    .floating-social-dock {
+        display: none;
+    }
+}

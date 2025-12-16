@@ -9,7 +9,6 @@ use App\Http\Requests\GuestRequests\AuthAccessRequests\VerifyTwoFARequest;
 use App\Actions\GuestServices\AuthService;
 use App\Actions\GuestServices\AuthAccessServices\AccountService;
 use App\Actions\GuestServices\AuthAccessServices\TwoFactorAuthService;
-use App\Actions\GuestServices\OnboardingService;
 use App\Models\GuestModels\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,7 +19,6 @@ class AuthController extends Controller
 {
     public function __construct(
         private AuthService $authService,
-        private OnboardingService $onboardingService,
         private AccountService $accountService,
         private TwoFactorAuthService $twoFactorService
     ) {
@@ -39,16 +37,8 @@ class AuthController extends Controller
             // Log the user in after registration
             Auth::guard('web')->login($user);
 
-            // Initialize onboarding steps for new user
-            $this->onboardingService->initializeOnboarding($user->id);
-
-            // Redirect to onboarding if not completed
-            if (!$user->onboarding_completed) {
-                return redirect()->route('onboarding.show')->with('success', 'Account created successfully! Let\'s get started with your profile.');
-            }
-
-            // Otherwise redirect to profile
-            return redirect()->route('profile.me')->with('success', 'Account created successfully!');
+            // Redirect to home page
+            return redirect()->route('home')->with('success', 'Account created successfully! Welcome to FamTree.');
         } catch (\Exception $e) {
             return redirect()->back()->withInput()->with('error', $e->getMessage());
         }
@@ -85,16 +75,7 @@ class AuthController extends Controller
             // Log user in with remember me option
             Auth::guard('web')->login($user, $validated['rememberMe'] ?? false);
 
-            // Initialize onboarding steps if not already done (for users who didn't complete it)
-            if (!$user->onboarding_completed) {
-                $existingSteps = $user->onboardingSteps()->count();
-                if ($existingSteps === 0) {
-                    $this->onboardingService->initializeOnboarding($user->id);
-                }
-                return redirect()->route('onboarding.show')->with('success', 'Login successful! Let\'s complete your profile setup.');
-            }
-
-            // Otherwise redirect to profile
+            // Redirect to home page
             return redirect()->route('home')->with('success', 'Login successful!');
         } catch (\Exception $e) {
             return redirect()->back()->withInput()->with('error', $e->getMessage());
@@ -143,17 +124,8 @@ class AuthController extends Controller
             // Log the user in
             Auth::guard('web')->login($user, $rememberMe);
 
-            // Initialize onboarding steps if not already done
-            if (!$user->onboarding_completed) {
-                $existingSteps = $user->onboardingSteps()->count();
-                if ($existingSteps === 0) {
-                    $this->onboardingService->initializeOnboarding($user->id);
-                }
-                return redirect()->route('onboarding.show')->with('success', 'Login successful! Let\'s complete your profile setup.');
-            }
-
-            // Otherwise redirect to profile
-            return redirect()->route('profile.me')->with('success', 'Login successful!');
+            // Redirect to home page
+            return redirect()->route('home')->with('success', 'Login successful!');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'An error occurred. Please try again.');
         }

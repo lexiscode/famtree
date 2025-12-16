@@ -4,16 +4,21 @@ import NavigationBar from '@/Components/Navigation/NavigationBar';
 import Footer from '@/Components/Footer/Footer';
 import CTAModal from '@/Components/Modal/CTAModal';
 
-export default function GuestLayoutContent({ children }: PropsWithChildren) {
+interface GuestLayoutContentProps extends PropsWithChildren {
+    hideFooter?: boolean;
+    hideNavigation?: boolean;
+}
+
+export default function GuestLayoutContent({ children, hideFooter = false, hideNavigation = false }: GuestLayoutContentProps) {
     const { isCtaModalOpen, ctaModalTab, closeCtaModal } = useModal();
 
     return (
         <div className="guest-layout">
-            <NavigationBar />
-            <main className="guest-main-content" style={{ marginTop: '80px' }}>
+            {!hideNavigation && <NavigationBar />}
+            <main className="guest-main-content" style={{ marginTop: hideNavigation ? '0' : '80px' }}>
                 {children}
             </main>
-            <Footer />
+            {!hideFooter && <Footer />}
             <CTAModal
                 isOpen={isCtaModalOpen}
                 onClose={closeCtaModal}

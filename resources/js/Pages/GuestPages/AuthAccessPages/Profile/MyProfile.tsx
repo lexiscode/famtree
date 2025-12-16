@@ -1,8 +1,10 @@
 import { useMemo, useState, useCallback } from 'react';
 import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { Mail, Phone, MapPin, Cake, FileText, Users, Edit, Settings, Briefcase, BookOpen, ArrowRight, LogOut, X, Bell, BookMarked, User as UserIcon, Lightbulb, Plus, Network } from 'lucide-react';
+import { Mail, Phone, MapPin, Cake, FileText, Users, Edit, Settings, Briefcase, BookOpen, ArrowRight, LogOut, X, Bell, BookMarked, User as UserIcon, Lightbulb, Plus, Network, TrendingUp } from 'lucide-react';
 import CreatePostModal from '../Stories/CreatePostModal';
+import ProfileCompletionModal from '@/Components/Profile/ProfileCompletionModal';
+import { ProfileCompletion } from '@/types/inertia';
 
 interface User {
     id: number;
@@ -31,11 +33,13 @@ interface Props {
     sentRequestCount: number;
     unreadNotificationCount: number;
     suggestedConnectionsCount: number;
+    profileCompletion: ProfileCompletion;
 }
 
-export default function MyProfile({ user, connections, connectionCount, pendingRequestCount, sentRequestCount, unreadNotificationCount, suggestedConnectionsCount }: Props) {
+export default function MyProfile({ user, connections, connectionCount, pendingRequestCount, sentRequestCount, unreadNotificationCount, suggestedConnectionsCount, profileCompletion }: Props) {
     const [showImagePopup, setShowImagePopup] = useState(false);
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const [showCompletionModal, setShowCompletionModal] = useState(false);
 
     const formatDate = (dateString: string | null) => {
         if (!dateString) return null;
@@ -346,7 +350,7 @@ export default function MyProfile({ user, connections, connectionCount, pendingR
                     </div>
                 )}
 
-                {/* Floating Action Button */}
+                {/* Floating Action Button - Create Post */}
                 <button
                     className="fab-btn"
                     onClick={() => setShowCreateModal(true)}
@@ -355,11 +359,61 @@ export default function MyProfile({ user, connections, connectionCount, pendingR
                     <Plus size={24} />
                 </button>
 
+                {/* Floating Profile Completion Button - Show only if incomplete */}
+                {profileCompletion.percentage < 100 && (
+                    <button
+                        onClick={() => setShowCompletionModal(true)}
+                        title="View profile completion status"
+                        style={{
+                            position: 'fixed',
+                            bottom: '100px',
+                            right: '30px',
+                            width: '65px',
+                            height: '65px',
+                            borderRadius: '50%',
+                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                            border: 'none',
+                            color: 'white',
+                            boxShadow: '0 8px 24px rgba(102, 126, 234, 0.4)',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '2px',
+                            transition: 'all 0.3s ease',
+                            zIndex: 1000,
+                            fontWeight: '700',
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'scale(1.1)';
+                            e.currentTarget.style.boxShadow = '0 12px 32px rgba(102, 126, 234, 0.5)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'scale(1)';
+                            e.currentTarget.style.boxShadow = '0 8px 24px rgba(102, 126, 234, 0.4)';
+                        }}
+                    >
+                        <TrendingUp size={22} />
+                        <span style={{ fontSize: '0.75rem', fontWeight: '700' }}>
+                            {profileCompletion.percentage}%
+                        </span>
+                    </button>
+                )}
+
                 {/* Create Post Modal */}
                 {showCreateModal && (
                     <CreatePostModal
                         onClose={() => setShowCreateModal(false)}
                         onPostCreated={handlePostCreated}
+                    />
+                )}
+
+                {/* Profile Completion Modal */}
+                {showCompletionModal && (
+                    <ProfileCompletionModal
+                        data={profileCompletion}
+                        onClose={() => setShowCompletionModal(false)}
                     />
                 )}
             </div>

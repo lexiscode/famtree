@@ -351,7 +351,8 @@ class ConnectionRequestController extends Controller
             $q->where('first_name', 'like', '%' . $query . '%')
               ->orWhere('last_name', 'like', '%' . $query . '%')
               ->orWhere('username', 'like', '%' . $query . '%')
-              ->orWhere('email', 'like', '%' . $query . '%');
+              ->orWhere('email', 'like', '%' . $query . '%')
+              ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ['%' . $query . '%']);
         })
         ->where('id', '!=', $userId)
         ->limit($limit)

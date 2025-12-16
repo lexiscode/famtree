@@ -76,11 +76,18 @@ class ProfileController extends Controller
         // Check if they are connected and get relationship type from viewer's perspective
         $connectionStatus = null;
         $relationshipType = null;
+        $connection = null;
+        $canUndoConnection = false;
 
         if ($relationshipContext === 'connected' || $relationshipContext === 'nuclear_family') {
             $relationshipType = $this->connectionRepository->getRelationshipFromViewerPerspective($viewer->id, $owner->id);
             if ($relationshipType) {
                 $connectionStatus = 'connected';
+                // Get the actual connection record
+                $connection = $this->connectionRepository->getConnectionBetween($viewer->id, $owner->id);
+                if ($connection) {
+                    $canUndoConnection = $connection->canUndo();
+                }
             }
         }
 
@@ -164,6 +171,8 @@ class ProfileController extends Controller
             'connectionStatus' => $connectionStatus,
             'relationshipType' => $relationshipType,
             'relationshipLabel' => $relationshipType ? ucfirst(str_replace('_', ' ', $relationshipType)) : null,
+            'connectionId' => $connection?->id,
+            'canUndoConnection' => $canUndoConnection,
             'pendingRequest' => $pendingRequest ? [
                 'id' => $pendingRequest->id,
                 'status' => $pendingRequest->status,

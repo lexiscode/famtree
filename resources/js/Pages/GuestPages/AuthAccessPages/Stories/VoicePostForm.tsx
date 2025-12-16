@@ -5,7 +5,6 @@ import { VoicePostFormProps } from '@/types';
 import VoiceRecorder from '@/Components/VoiceRecorder';
 
 export default function VoicePostForm({ onClose, onPostCreated }: VoicePostFormProps) {
-    const [title, setTitle] = useState('');
     const [recordingBlob, setRecordingBlob] = useState<Blob | null>(null);
     const [recordingDuration, setRecordingDuration] = useState(0);
     const [images, setImages] = useState<File[]>([]);
@@ -62,11 +61,6 @@ export default function VoicePostForm({ onClose, onPostCreated }: VoicePostFormP
         setError(null);
 
         // Validation
-        if (!title.trim()) {
-            setError('Title is required');
-            return;
-        }
-
         if (!recordingBlob) {
             setError('Recording is required for voice posts');
             return;
@@ -77,7 +71,6 @@ export default function VoicePostForm({ onClose, onPostCreated }: VoicePostFormP
         try {
             const formData = new FormData();
             formData.append('type', 'voice');
-            formData.append('title', title);
             formData.append('voice_file', recordingBlob, 'recording.webm');
             formData.append('voice_duration', recordingDuration.toString());
 
@@ -109,22 +102,6 @@ export default function VoicePostForm({ onClose, onPostCreated }: VoicePostFormP
         <form onSubmit={handleSubmit} className="create-post-form">
             {/* Error Message */}
             {error && <div className="error-alert">{error}</div>}
-
-            {/* Title */}
-            <div className="form-group">
-                <label htmlFor="voice-title" className="form-label">Title</label>
-                <input
-                    id="voice-title"
-                    type="text"
-                    placeholder="What's on your mind?"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    className="form-input"
-                    maxLength={255}
-                    disabled={isLoading}
-                />
-                <small className="char-count">{title.length}/255</small>
-            </div>
 
             {/* Voice Recording */}
             <div className="form-group">
