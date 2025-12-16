@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { usePage, router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { Clock, Check, X, ArrowLeft, AlertCircle, Mail, Phone, MapPin, Cake, FileText, Users } from 'lucide-react';
+import { Clock, Check, X, ArrowLeft, AlertCircle, Mail, Phone, MapPin, Cake, FileText, Users, ChevronDown, ChevronUp } from 'lucide-react';
 import { PendingRequest, PendingRequestsProps } from '@/types';
 import ProfileSidebar from '../Stories/ProfileSidebar';
 
@@ -19,6 +19,7 @@ export default function PendingRequests({
     const [showAcceptModal, setShowAcceptModal] = useState(false);
     const [showDeclineModal, setShowDeclineModal] = useState(false);
     const [selectedRequestId, setSelectedRequestId] = useState<number | null>(null);
+    const [expandedRequestId, setExpandedRequestId] = useState<number | null>(null);
 
     const openAcceptModal = (connectionId: number) => {
         setSelectedRequestId(connectionId);
@@ -38,6 +39,10 @@ export default function PendingRequests({
     const closeDeclineModal = () => {
         setShowDeclineModal(false);
         setSelectedRequestId(null);
+    };
+
+    const toggleExpand = (requestId: number) => {
+        setExpandedRequestId(expandedRequestId === requestId ? null : requestId);
     };
 
     const handleAccept = async () => {
@@ -129,29 +134,44 @@ export default function PendingRequests({
                         </div>
                     ) : (
                         <div className="connection-requests-list">
-                            {requests.map(request => (
-                                <div
-                                    key={request.id}
-                                    className="connection-request-item"
-                                >
-                                    {/* User Info Header */}
-                                    <div className="connection-request-header">
-                                        <img
-                                            src={request.requester.profile_image_url || 'https://via.placeholder.com/56'}
-                                            alt={request.requester.name}
-                                            className="connection-request-avatar"
-                                        />
-                                        <div className="connection-request-info">
-                                            <h4 className="connection-request-name">{request.requester.name}</h4>
-                                            <p className="connection-request-username text-center">@{request.requester.username}</p>
-                                        </div>
-                                        <span className="connection-request-badge connection-request-badge-sent">
-                                            ⏳ Pending
-                                        </span>
-                                    </div>
+                            {requests.map(request => {
+                                const isExpanded = expandedRequestId === request.id;
 
-                                    {/* Request Details */}
-                                    <div className="connection-request-details pb-3">
+                                return (
+                                    <div
+                                        key={request.id}
+                                        className="connection-request-item"
+                                    >
+                                        {/* Clickable User Info Header */}
+                                        <div
+                                            className="connection-request-header"
+                                            onClick={() => toggleExpand(request.id)}
+                                            style={{ cursor: 'pointer', userSelect: 'none' }}
+                                        >
+                                            <img
+                                                src={request.requester.profile_image_url || 'https://via.placeholder.com/56'}
+                                                alt={request.requester.name}
+                                                className="connection-request-avatar"
+                                            />
+                                            <div className="connection-request-info">
+                                                <h4 className="connection-request-name">{request.requester.name}</h4>
+                                                <p className="connection-request-username text-center">@{request.requester.username}</p>
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                <span className="connection-request-badge connection-request-badge-sent">
+                                                    ⏳ Pending
+                                                </span>
+                                                {isExpanded ? (
+                                                    <ChevronUp size={20} style={{ color: '#6b7280' }} />
+                                                ) : (
+                                                    <ChevronDown size={20} style={{ color: '#6b7280' }} />
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Collapsible Request Details */}
+                                        {isExpanded && (
+                                            <div className="connection-request-details pb-3">
                                         {/* Relationship Badge */}
                                         <div style={{ marginBottom: '16px' }}>
                                             <div style={{
@@ -411,49 +431,57 @@ export default function PendingRequests({
                                                 Requested {new Date(request.requested_at).toLocaleDateString()}
                                             </span>
                                         </div>
-                                    </div>
 
-                                    {/* Actions */}
-                                    <div className="connection-request-actions">
-                                        <button
-                                            className="connection-request-btn-accept"
-                                            onClick={() => openAcceptModal(request.id)}
-                                            disabled={loading === request.id}
-                                            title="Accept this connection request"
-                                        >
-                                            {loading === request.id ? (
-                                                <>
-                                                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
-                                                    Accepting...
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <Check size={18} style={{ display: 'inline' }} />
-                                                    Accept
-                                                </>
-                                            )}
-                                        </button>
-                                        <button
-                                            className="connection-request-btn-decline"
-                                            onClick={() => openDeclineModal(request.id)}
-                                            disabled={loading === request.id}
-                                            title="Decline this connection request"
-                                        >
-                                            {loading === request.id ? (
-                                                <>
-                                                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
-                                                    Declining...
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <X size={18} style={{ display: 'inline' }} />
-                                                    Decline
-                                                </>
-                                            )}
-                                        </button>
+                                                {/* Actions */}
+                                                <div className="connection-request-actions">
+                                                    <button
+                                                        className="connection-request-btn-accept"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            openAcceptModal(request.id);
+                                                        }}
+                                                        disabled={loading === request.id}
+                                                        title="Accept this connection request"
+                                                    >
+                                                        {loading === request.id ? (
+                                                            <>
+                                                                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
+                                                                Accepting...
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <Check size={18} style={{ display: 'inline' }} />
+                                                                Accept
+                                                            </>
+                                                        )}
+                                                    </button>
+                                                    <button
+                                                        className="connection-request-btn-decline"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            openDeclineModal(request.id);
+                                                        }}
+                                                        disabled={loading === request.id}
+                                                        title="Decline this connection request"
+                                                    >
+                                                        {loading === request.id ? (
+                                                            <>
+                                                                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
+                                                                Declining...
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <X size={18} style={{ display: 'inline' }} />
+                                                                Decline
+                                                            </>
+                                                        )}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     )}
 
