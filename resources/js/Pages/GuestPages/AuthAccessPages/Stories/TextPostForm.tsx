@@ -5,7 +5,6 @@ import { TextPostFormProps } from '@/types';
 import RichTextEditor from '@/Components/RichTextEditor';
 
 export default function TextPostForm({ onClose, onPostCreated }: TextPostFormProps) {
-    const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
     const [images, setImages] = useState<File[]>([]);
     const [imagePreviews, setImagePreviews] = useState<string[]>([]);
@@ -55,11 +54,6 @@ export default function TextPostForm({ onClose, onPostCreated }: TextPostFormPro
         setError(null);
 
         // Validation
-        if (!title.trim()) {
-            setError('Title is required');
-            return;
-        }
-
         if (!content.trim()) {
             setError('Content is required for text posts');
             return;
@@ -70,7 +64,6 @@ export default function TextPostForm({ onClose, onPostCreated }: TextPostFormPro
         try {
             const formData = new FormData();
             formData.append('type', 'text');
-            formData.append('title', title);
             formData.append('content', content);
 
             // Add images
@@ -101,22 +94,6 @@ export default function TextPostForm({ onClose, onPostCreated }: TextPostFormPro
         <form onSubmit={handleSubmit} className="create-post-form">
             {/* Error Message */}
             {error && <div className="error-alert">{error}</div>}
-
-            {/* Title */}
-            <div className="form-group">
-                <label htmlFor="text-title" className="form-label">Title</label>
-                <input
-                    id="text-title"
-                    type="text"
-                    placeholder="What's on your mind?"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    className="form-input"
-                    maxLength={255}
-                    disabled={isLoading}
-                />
-                <small className="char-count">{title.length}/255</small>
-            </div>
 
             {/* Content */}
             <div className="form-group">

@@ -13,7 +13,6 @@ class Post extends Model
     protected $fillable = [
         'user_id',
         'type',
-        'title',
         'content',
         'voice_url',
         'voice_duration',

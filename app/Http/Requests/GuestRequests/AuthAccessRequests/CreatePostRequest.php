@@ -15,7 +15,6 @@ class CreatePostRequest extends FormRequest
     {
         return [
             'type' => 'required|in:text,voice',
-            'title' => 'required|string|max:255',
             'content' => 'nullable|string|max:5000',
             'voice_file' => 'nullable|file|mimes:webm,wav,mp3|max:20000',
             'voice_duration' => 'nullable|integer|min:1|max:600',
@@ -29,8 +28,6 @@ class CreatePostRequest extends FormRequest
         return [
             'type.required' => 'Post type is required',
             'type.in' => 'Post type must be either text or voice',
-            'title.required' => 'Title is required',
-            'title.max' => 'Title cannot exceed 255 characters',
             'content.max' => 'Content cannot exceed 5000 characters',
             'voice_file.mimes' => 'Voice file must be in webm, wav, or mp3 format',
             'voice_file.max' => 'Voice file cannot exceed 20MB',
