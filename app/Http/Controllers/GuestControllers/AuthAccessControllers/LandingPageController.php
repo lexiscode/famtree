@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Actions\GuestServices\ProfilePrivacyService;
 use App\Actions\GuestServices\NotificationService;
 use App\Actions\GuestServices\AuthAccessServices\SuggestedConnectionService;
+use App\Actions\GuestServices\AuthAccessServices\ProfileCompletionService;
 use App\Repositories\GuestRepositories\UserConnectionRepository;
 
 class LandingPageController extends Controller
@@ -16,6 +17,7 @@ class LandingPageController extends Controller
         private UserConnectionRepository $connectionRepository,
         private NotificationService $notificationService,
         private SuggestedConnectionService $suggestedConnectionService,
+        private ProfileCompletionService $profileCompletionService,
     ) {}
 
     /**
@@ -31,12 +33,7 @@ class LandingPageController extends Controller
             return redirect()->route('home');
         }
 
-        // If user hasn't completed onboarding, redirect to onboarding
-        if (!$user->onboarding_completed) {
-            return redirect()->route('onboarding.show');
-        }
-
-        // User has completed onboarding, show their profile
+        // Show their profile
         // Get all user connections
         $connections = $this->connectionRepository->getConnections($user->id);
         $connectionCount = count($connections);
@@ -71,6 +68,9 @@ class LandingPageController extends Controller
         // Get suggested connections count
         $suggestedConnectionsCount = $this->suggestedConnectionService->getSuggestedMembersCount($user->id);
 
+        // Get profile completion data
+        $profileCompletion = $this->profileCompletionService->getProfileCompletion($user);
+
         return Inertia::render('GuestPages/AuthAccessPages/Profile/MyProfile', [
             'user' => $userData,
             'connections' => $connections,
@@ -79,6 +79,7 @@ class LandingPageController extends Controller
             'sentRequestCount' => count($sentRequests),
             'unreadNotificationCount' => $unreadNotificationCount,
             'suggestedConnectionsCount' => $suggestedConnectionsCount,
+            'profileCompletion' => $profileCompletion,
         ]);
     }
 }

@@ -81,18 +81,6 @@ Route::middleware(['web', 'auth'])->group(function () {
     // Authentication routes
     Route::post('/logout', [AuthController::class, 'logout'])->name('auth.logout');
 
-    // Onboarding routes
-    Route::prefix('onboarding')->group(function () {
-        Route::get('/', [OnboardingController::class, 'show'])->name('onboarding.show');
-        Route::post('/basic-info', [OnboardingController::class, 'saveBasicInfo'])->name('onboarding.save.basic-info');
-        Route::post('/family-status', [OnboardingController::class, 'saveFamilyStatus'])->name('onboarding.save.family-status');
-        Route::post('/location-info', [OnboardingController::class, 'saveLocationInfo'])->name('onboarding.save.location-info');
-        Route::post('/profile-image', [OnboardingController::class, 'saveProfileImage'])->name('onboarding.save.profile-image');
-        Route::post('/education-work', [OnboardingController::class, 'saveEducationWork'])->name('onboarding.save.education-work');
-        Route::post('/siblings-search', [OnboardingController::class, 'saveSiblingsSearch'])->name('onboarding.save.siblings-search');
-        Route::post('/complete', [OnboardingController::class, 'complete'])->name('onboarding.complete');
-    });
-
     // Connection routes
     Route::prefix('connections')->group(function () {
         Route::get('/', [ConnectionRequestController::class, 'index'])->name('connections.index');
