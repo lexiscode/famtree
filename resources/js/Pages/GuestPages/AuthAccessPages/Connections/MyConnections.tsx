@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { usePage, router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { Users, UserPlus, Search, Filter, ExternalLink, Undo2, ArrowLeft, AlertCircle, X } from 'lucide-react';
+import { Users, UserPlus, Search, Filter, ExternalLink, ArrowLeft } from 'lucide-react';
 import { Connection, MyConnectionsProps } from '@/types';
 import ProfileSidebar from '../Stories/ProfileSidebar';
 
@@ -18,9 +18,6 @@ export default function MyConnections({
     const [connections, setConnections] = useState(initialConnections);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterType, setFilterType] = useState(relationship_filter || '');
-    const [showUndoModal, setShowUndoModal] = useState(false);
-    const [selectedConnectionId, setSelectedConnectionId] = useState<number | null>(null);
-    const [loading, setLoading] = useState(false);
 
     const filteredConnections = connections.filter(conn => {
         const matchesSearch = conn.user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -37,41 +34,6 @@ export default function MyConnections({
         acc[key].push(conn);
         return acc;
     }, {} as Record<string, Connection[]>);
-
-    const openUndoModal = (connectionId: number) => {
-        setSelectedConnectionId(connectionId);
-        setShowUndoModal(true);
-    };
-
-    const closeUndoModal = () => {
-        setShowUndoModal(false);
-        setSelectedConnectionId(null);
-    };
-
-    const handleUndoConnection = async () => {
-        if (selectedConnectionId === null) return;
-
-        setLoading(true);
-        closeUndoModal();
-
-        try {
-            const response = await fetch(route('connections.undo-acceptance', selectedConnectionId), {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                },
-            });
-
-            if (response.ok) {
-                setConnections(connections.filter(c => c.id !== selectedConnectionId));
-            }
-        } catch (error) {
-            console.error('Error undoing connection:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
 
     return (
         <AuthAccessLayout>
@@ -193,7 +155,7 @@ export default function MyConnections({
                                                 <strong>{connection.relationship_label}</strong>
                                             </div>
 
-                                            <div className={`connection-card-actions pb-2 ${connection.can_undo ? '' : 'single-button'}`}>
+                                            <div className="connection-card-actions pb-2 single-button">
                                                 <button
                                                     className="connection-action-btn connection-action-view"
                                                     onClick={() => router.visit(route('profile.view', connection.user.id))}
@@ -202,20 +164,6 @@ export default function MyConnections({
                                                     <ExternalLink size={16} className="me-1" style={{ display: 'inline' }} />
                                                     View Profile
                                                 </button>
-                                                {connection.can_undo && (
-                                                    <button
-                                                        className="connection-action-btn connection-action-undo"
-                                                        onClick={() => openUndoModal(connection.id)}
-                                                        disabled={loading}
-                                                        title="Undo this connection"
-                                                    >
-                                                        {loading ? (
-                                                            <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" />
-                                                        ) : (
-                                                            <Undo2 size={16} style={{ display: 'inline' }} />
-                                                        )}
-                                                    </button>
-                                                )}
                                             </div>
 
                                         
@@ -238,60 +186,6 @@ export default function MyConnections({
                 </div>
                     </div>
                 </div>
-
-                {/* Undo Connection Confirmation Modal */}
-                {showUndoModal && (
-                    <div className="modal-backdrop-undo" onClick={closeUndoModal}>
-                        <div className="modal-content-undo" onClick={(e) => e.stopPropagation()}>
-                            <div className="modal-header-undo">
-                                <div className="modal-icon-undo">
-                                    <AlertCircle size={24} />
-                                </div>
-                                <button
-                                    className="modal-close-btn-undo"
-                                    onClick={closeUndoModal}
-                                    title="Close modal"
-                                >
-                                    <X size={20} />
-                                </button>
-                            </div>
-
-                            <div className="modal-body-undo">
-                                <h2 className="modal-title-undo">Undo Connection?</h2>
-                                <p className="modal-message-undo">
-                                    Are you sure you want to undo this connection? This will remove the connection between you and this person.
-                                </p>
-                            </div>
-
-                            <div className="modal-footer-undo">
-                                <button
-                                    className="modal-btn-cancel-undo"
-                                    onClick={closeUndoModal}
-                                    disabled={loading}
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    className="modal-btn-confirm-undo"
-                                    onClick={handleUndoConnection}
-                                    disabled={loading}
-                                >
-                                    {loading ? (
-                                        <>
-                                            <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
-                                            Undoing...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Undo2 size={18} style={{ display: 'inline' }} />
-                                            Undo Connection
-                                        </>
-                                    )}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
             </div>
         </AuthAccessLayout>
     );
