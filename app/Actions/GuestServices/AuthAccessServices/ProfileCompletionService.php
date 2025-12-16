@@ -24,7 +24,10 @@ class ProfileCompletionService
             ->whereIn('status', ['pending', 'accepted'])
             ->count();
 
-        // Define essential fields to track (10 fields total)
+        // Calculate total stories/posts shared by user
+        $sharedStoriesCount = \App\Models\GuestModels\Post::where('user_id', $user->id)->count();
+
+        // Define essential fields to track (11 fields total)
         $fields = [
             'profile_image' => [
                 'label' => 'Profile Picture',
@@ -75,6 +78,11 @@ class ProfileCompletionService
                 'label' => 'Send Connection Requests (at least 2)',
                 'value' => $sentRequestsCount >= 2 ? $sentRequestsCount : null,
                 'model' => 'connections'
+            ],
+            'share_story' => [
+                'label' => 'Share at Least One Story',
+                'value' => $sharedStoriesCount >= 1 ? $sharedStoriesCount : null,
+                'model' => 'posts'
             ],
         ];
 
