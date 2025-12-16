@@ -19,7 +19,12 @@ class ProfileCompletionService
             $user->load('familyInfo');
         }
 
-        // Define essential fields to track (9 fields total)
+        // Calculate total connection requests sent (pending + accepted where user is requester)
+        $sentRequestsCount = \App\Models\GuestModels\UserConnection::where('requester_user_id', $user->id)
+            ->whereIn('status', ['pending', 'accepted'])
+            ->count();
+
+        // Define essential fields to track (10 fields total)
         $fields = [
             'profile_image' => [
                 'label' => 'Profile Picture',
@@ -65,6 +70,11 @@ class ProfileCompletionService
                 'label' => 'City',
                 'value' => $user->familyInfo?->city,
                 'model' => 'familyInfo'
+            ],
+            'connection_requests' => [
+                'label' => 'Send Connection Requests (at least 2)',
+                'value' => $sentRequestsCount >= 2 ? $sentRequestsCount : null,
+                'model' => 'connections'
             ],
         ];
 
