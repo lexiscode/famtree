@@ -396,17 +396,28 @@ class UserConnectionRepository
      */
     private function getInverseRelationship(string $relationshipType, ?string $requesterGender = null, ?string $recipientGender = null): string
     {
-        // For son/daughter relationships, determine parent gender
+        // For son/daughter relationships, determine parent gender based on requester
         if (($relationshipType === 'son' || $relationshipType === 'daughter') && $requesterGender) {
             return $requesterGender === 'male' ? 'father' : 'mother';
         }
 
-        // Handle gender-specific sibling relationships - only if both users are the same gender
-        if ($relationshipType === 'brother' && $requesterGender === 'male' && $recipientGender === 'male') {
-            return 'brother'; // Both male -> same relationship
+        // For mother/father relationships, determine child gender based on requester
+        if (($relationshipType === 'mother' || $relationshipType === 'father') && $requesterGender) {
+            return $requesterGender === 'male' ? 'son' : 'daughter';
         }
-        if ($relationshipType === 'sister' && $requesterGender === 'female' && $recipientGender === 'female') {
-            return 'sister'; // Both female -> same relationship
+
+        // Handle gender-specific sibling relationships
+        if ($relationshipType === 'brother' || $relationshipType === 'sister') {
+            // If both are same gender
+            if ($requesterGender === $recipientGender) {
+                return $relationshipType; // Keep the same relationship
+            }
+            // If different genders, inverse based on REQUESTER's gender (the other person)
+            if ($requesterGender === 'male') {
+                return 'brother';
+            } elseif ($requesterGender === 'female') {
+                return 'sister';
+            }
         }
 
         // Handle aunt/uncle based on requester's gender
