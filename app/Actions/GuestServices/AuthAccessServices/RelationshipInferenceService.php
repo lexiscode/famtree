@@ -156,7 +156,23 @@ class RelationshipInferenceService
             'sister_mother' => 'mother',
             'sister_father' => 'father',
 
-            // Parent with child
+            // Children viewing their other parent (spousal inference)
+            'son_mother' => 'wife',
+            'son_father' => 'husband',
+            'daughter_mother' => 'wife',
+            'daughter_father' => 'husband',
+
+            // Parent with child through siblings (parent viewing their children)
+            'son_brother' => 'son',
+            'son_sister' => 'daughter',
+            'daughter_brother' => 'son',
+            'daughter_sister' => 'daughter',
+            'son_son' => 'son',
+            'son_daughter' => 'daughter',
+            'daughter_son' => 'son',
+            'daughter_daughter' => 'daughter',
+
+            // Parent's children viewing their aunts/uncles children (parent → child → child)
             'mother_son' => 'uncle',
             'mother_daughter' => 'aunt',
             'father_son' => 'uncle',
@@ -191,6 +207,16 @@ class RelationshipInferenceService
             'sibling_child' => ['type' => 'nephew', 'confidence' => 85], // or niece
             'sibling_mother' => 'mother',
             'sibling_father' => 'father',
+
+            // Child viewing siblings (parent's perspective - child_brother = son, child_sister = daughter)
+            'child_brother' => 'son',
+            'child_sister' => 'daughter',
+            'child_son' => 'son',
+            'child_daughter' => 'daughter',
+
+            // Child viewing parent (spousal inference)
+            'child_mother' => 'wife',
+            'child_father' => 'husband',
 
             // Default fallbacks
             'child_child' => 'cousin',

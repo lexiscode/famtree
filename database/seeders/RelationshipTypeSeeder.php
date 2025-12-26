@@ -26,7 +26,6 @@ class RelationshipTypeSeeder extends Seeder
             ['type_key' => 'daughter', 'label' => 'Daughter', 'description' => 'Your biological or adoptive daughter', 'sort_order' => 8, 'is_bidirectional' => false],
 
             // Sibling relationships
-            ['type_key' => 'sibling', 'label' => 'Sibling', 'description' => 'Your brother or sister', 'sort_order' => 9, 'is_bidirectional' => true],
             ['type_key' => 'brother', 'label' => 'Brother', 'description' => 'Your biological or adoptive brother', 'sort_order' => 10, 'is_bidirectional' => true],
             ['type_key' => 'sister', 'label' => 'Sister', 'description' => 'Your biological or adoptive sister', 'sort_order' => 11, 'is_bidirectional' => true],
 
@@ -47,7 +46,8 @@ class RelationshipTypeSeeder extends Seeder
             // Step relationships
             ['type_key' => 'step_mother', 'label' => 'Step-mother', 'description' => 'Your step-mother', 'sort_order' => 22, 'is_bidirectional' => false],
             ['type_key' => 'step_father', 'label' => 'Step-father', 'description' => 'Your step-father', 'sort_order' => 23, 'is_bidirectional' => false],
-            ['type_key' => 'step_sibling', 'label' => 'Step-sibling', 'description' => 'Your step-brother or step-sister', 'sort_order' => 24, 'is_bidirectional' => true],
+            ['type_key' => 'step_brother', 'label' => 'Step-brother', 'description' => 'Your step-brother', 'sort_order' => 24, 'is_bidirectional' => true],
+            ['type_key' => 'step_sister', 'label' => 'Step-sister', 'description' => 'Your step-sister', 'sort_order' => 24, 'is_bidirectional' => true],
             ['type_key' => 'step_child', 'label' => 'Step-child', 'description' => 'Your step-child', 'sort_order' => 25, 'is_bidirectional' => false],
 
             // In-law relationships
