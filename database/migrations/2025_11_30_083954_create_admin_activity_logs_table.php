@@ -20,7 +20,7 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->ipAddress('ip_address')->nullable();
             $table->text('user_agent')->nullable();
-            $table->timestamp('created_at')->useCurrent();
+            $table->timestamps();
 
             // Add indexes
             $table->index('admin_id');
