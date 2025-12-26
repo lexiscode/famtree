@@ -15,6 +15,7 @@ interface RegisterFormData {
   lastName: string;
   username: string;
   email: string;
+  gender: string;
   password: string;
   password_confirmation: string;
 }
@@ -52,6 +53,7 @@ export default function CTAModal({
     lastName: '',
     username: '',
     email: '',
+    gender: '',
     password: '',
     password_confirmation: '',
   });
@@ -124,6 +126,7 @@ export default function CTAModal({
           lastName: '',
           username: '',
           email: '',
+          gender: '',
           password: '',
           password_confirmation: '',
         });
@@ -181,6 +184,7 @@ export default function CTAModal({
                 lastName: '',
                 username: '',
                 email: '',
+                gender: '',
                 password: '',
                 password_confirmation: '',
               });
@@ -427,6 +431,27 @@ export default function CTAModal({
                   placeholder="your@email.com"
                   disabled={isSubmitting}
                 />
+              </div>
+
+              {/* Gender Field */}
+              <div className="form-group">
+                <label htmlFor="register-gender">Gender *</label>
+                <select
+                  id="register-gender"
+                  value={registerFormData.gender}
+                  onChange={(e) =>
+                    setRegisterFormData({
+                      ...registerFormData,
+                      gender: e.target.value,
+                    })
+                  }
+                  disabled={isSubmitting}
+                  required
+                >
+                  <option value="">Select Gender</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                </select>
               </div>
 
               {/* Password Field */}

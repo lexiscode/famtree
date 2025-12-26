@@ -26,6 +26,7 @@ class RegisterRequest extends FormRequest
             'lastName' => 'required|string|min:2|max:255',
             'username' => 'required|string|min:3|max:255|unique:users',
             'email' => 'required|email|max:255|unique:users',
+            'gender' => 'required|in:male,female',
             'password' => [
                 'required',
                 'string',
@@ -56,6 +57,8 @@ class RegisterRequest extends FormRequest
             'email.required' => 'Email is required.',
             'email.email' => 'Please provide a valid email address.',
             'email.unique' => 'This email is already registered.',
+            'gender.required' => 'Gender is required.',
+            'gender.in' => 'Please select a valid gender.',
             'password.required' => 'Password is required.',
             'password.min' => 'Password must be at least 8 characters.',
             'password.regex' => 'Password must contain uppercase, lowercase, and number.',
