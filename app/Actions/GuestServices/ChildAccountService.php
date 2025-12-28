@@ -264,18 +264,15 @@ class ChildAccountService
      */
     private function determineRelationshipType(?string $parentGender, ?string $childGender): string
     {
-        // Default to "son" if either gender is missing
-        if (!$parentGender || !$childGender) {
-            return 'son';
-        }
-
         // Determine based on child's gender (what the child is called from parent's perspective)
+        // Parent's gender doesn't matter for this determination
         if ($childGender === 'male') {
             return 'son';
         } elseif ($childGender === 'female') {
             return 'daughter';
         }
 
-        return 'son'; // Default fallback
+        // Default to "son" only if child's gender is missing/unknown
+        return 'son';
     }
 }

@@ -28,7 +28,8 @@ class FamilyTreeService
         $nodes[] = $this->formatUserNode($user, 'root');
         $processedUsers[$userId] = true;
 
-        // Process all connections
+        // Step 1: Process ALL first-level connections first
+        $firstLevelUsers = [];
         foreach ($allConnections as $connection) {
             $connectedUser = $connection->requester_user_id === $userId
                 ? $connection->recipient
@@ -40,24 +41,33 @@ class FamilyTreeService
                 $userId
             );
 
-            if (!isset($processedUsers[$connectedUser->id])) {
-                $nodes[] = $this->formatUserNode($connectedUser, $relationshipType);
+            // Skip nephew/niece relationships (only show direct children, not siblings' children)
+            if (!in_array($relationshipType, ['nephew', 'niece'])) {
+                if (!isset($processedUsers[$connectedUser->id])) {
+                    $nodes[] = $this->formatUserNode($connectedUser, $relationshipType);
+                    $processedUsers[$connectedUser->id] = true;
+                    $firstLevelUsers[] = $connectedUser->id;
+                }
+
+                // Create edge (connection line) between users
+                $edges[] = [
+                    'id' => "edge-{$userId}-{$connectedUser->id}",
+                    'source' => $userId,
+                    'target' => $connectedUser->id,
+                    'relationshipType' => $relationshipType,
+                    'label' => $this->formatRelationshipLabel($relationshipType),
+                    'color' => $this->getRelationshipColor($relationshipType),
+                ];
+            } else {
+                // Mark nephew/niece as processed to prevent adding them later in second-level connections
                 $processedUsers[$connectedUser->id] = true;
             }
+        }
 
-            // Create edge (connection line) between users
-            $edges[] = [
-                'id' => "edge-{$userId}-{$connectedUser->id}",
-                'source' => $userId,
-                'target' => $connectedUser->id,
-                'relationshipType' => $relationshipType,
-                'label' => $this->formatRelationshipLabel($relationshipType),
-                'color' => $this->getRelationshipColor($relationshipType),
-            ];
-
-            // Recursively add connections of connected users (up to 2 levels deep)
+        // Step 2: Now process second-level connections for each first-level user
+        foreach ($firstLevelUsers as $connectedUserId) {
             $this->addSecondLevelConnections(
-                $connectedUser->id,
+                $connectedUserId,
                 $userId,
                 $nodes,
                 $edges,
@@ -82,6 +92,16 @@ class FamilyTreeService
         array &$edges,
         array &$processedUsers
     ): void {
+        // Get the relationship type of the connected user to the root user
+        $firstLevelRelationship = null;
+        foreach ($this->connectionRepository->getConnections($rootUserId) as $conn) {
+            $otherUserId = $conn->requester_user_id === $rootUserId ? $conn->recipient_user_id : $conn->requester_user_id;
+            if ($otherUserId === $connectedUserId) {
+                $firstLevelRelationship = $this->getRelationshipFromUserPerspective($conn, $rootUserId);
+                break;
+            }
+        }
+
         $secondLevelConnections = $this->connectionRepository->getConnections($connectedUserId);
 
         foreach ($secondLevelConnections as $connection) {
@@ -98,6 +118,18 @@ class FamilyTreeService
                 $connection,
                 $connectedUserId
             );
+
+            // Skip siblings' children (nephews/nieces) - don't show them in the tree
+            if (in_array($firstLevelRelationship, ['brother', 'sister', 'sibling']) &&
+                in_array($relationshipType, ['son', 'daughter', 'child', 'nephew', 'niece'])) {
+                continue;
+            }
+
+            // Skip parents' grandchildren (which are actually siblings' children = nephews/nieces)
+            if (in_array($firstLevelRelationship, ['father', 'mother', 'parent']) &&
+                in_array($relationshipType, ['grandson', 'granddaughter', 'grandchild'])) {
+                continue;
+            }
 
             $nodes[] = $this->formatUserNode($secondLevelUser, $relationshipType);
             $processedUsers[$secondLevelUser->id] = true;
@@ -206,9 +238,9 @@ class FamilyTreeService
             return $requesterGender === 'male' ? 'uncle' : 'aunt';
         }
 
-        // Handle niece/nephew based on recipient's gender
-        if (($relationshipType === 'aunt' || $relationshipType === 'uncle') && $recipientGender) {
-            return $recipientGender === 'male' ? 'nephew' : 'niece';
+        // Handle niece/nephew based on requester's gender (the person we're viewing)
+        if (($relationshipType === 'aunt' || $relationshipType === 'uncle') && $requesterGender) {
+            return $requesterGender === 'male' ? 'nephew' : 'niece';
         }
 
         $inverseMap = [

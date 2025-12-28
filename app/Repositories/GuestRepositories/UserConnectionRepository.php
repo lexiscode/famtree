@@ -425,9 +425,9 @@ class UserConnectionRepository
             return $requesterGender === 'male' ? 'uncle' : 'aunt';
         }
 
-        // Handle niece/nephew based on recipient's gender
-        if (($relationshipType === 'aunt' || $relationshipType === 'uncle') && $recipientGender) {
-            return $recipientGender === 'male' ? 'nephew' : 'niece';
+        // Handle niece/nephew based on requester's gender (the person we're viewing)
+        if (($relationshipType === 'aunt' || $relationshipType === 'uncle') && $requesterGender) {
+            return $requesterGender === 'male' ? 'nephew' : 'niece';
         }
 
         $inverseMap = [

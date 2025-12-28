@@ -204,6 +204,7 @@ export default function CreateChild({ parentName }: Props) {
                                         className="child-create-input"
                                         value={formData.date_of_birth}
                                         onChange={handleInputChange}
+                                        max={new Date().toISOString().split('T')[0]}
                                         required
                                     />
                                     {errors.date_of_birth && (

@@ -5,6 +5,7 @@ namespace App\Actions\GuestServices;
 use App\Repositories\GuestRepositories\UserConnectionRepository;
 use App\Repositories\GuestRepositories\UserProfileRepository;
 use App\Models\GuestModels\RelationshipType;
+use App\Actions\GuestServices\AuthAccessServices\RelationshipInferenceService;
 use Illuminate\Validation\ValidationException;
 use Carbon\Carbon;
 
@@ -12,7 +13,8 @@ class UserConnectionService
 {
     public function __construct(
         private UserConnectionRepository $connectionRepository,
-        private UserProfileRepository $profileRepository
+        private UserProfileRepository $profileRepository,
+        private RelationshipInferenceService $inferenceService
     ) {
     }
 
@@ -363,36 +365,17 @@ class UserConnectionService
 
     /**
      * Get the relationship label from the recipient's perspective
-     * Considers gender of both users to determine the correct relationship type
+     * Uses gender-aware inverse relationship logic from RelationshipInferenceService
      */
     private function getRelationshipLabelFromRecipientPerspective($connection, ?string $requesterGender, ?string $recipientGender): string
     {
         $relationshipType = $connection->relationship_type;
 
-        // Get the inverse relationship based on the logic in UserConnectionRepository
-        $inverseMap = $this->getInverseRelationshipMap();
-        $inverseType = $inverseMap[$relationshipType] ?? $relationshipType;
+        // Use the gender-aware inverse relationship method from RelationshipInferenceService
+        $inverseType = $this->inferenceService->getInverseRelationship($relationshipType, $requesterGender);
 
-        // Special handling for gender-specific relationships
-        // If both genders are the same and the relationship is gender-specific, don't reverse
-        if ($requesterGender && $recipientGender && $requesterGender === $recipientGender) {
-            // Both are the same gender - apply same-gender logic
-            return $this->getGenderAwareRelationshipLabel($relationshipType, $requesterGender, $recipientGender);
-        }
-
-        // For different genders, we need to apply gender-specific inversions
-        if ($requesterGender && $recipientGender && $requesterGender !== $recipientGender) {
-            return $this->getGenderDifferentRelationshipLabel($relationshipType, $requesterGender, $recipientGender);
-        }
-
-        // For bidirectional relationships without gender distinctions, return as-is
-        if ($this->isBidirectionalNonGenderSpecific($relationshipType)) {
-            return $connection->relationshipType?->label ?? $relationshipType;
-        }
-
-        // Otherwise, use the inverse relationship
-        $inverseRelationshipType = RelationshipType::where('type_key', $inverseType)->first();
-        return $inverseRelationshipType?->label ?? $connection->relationshipType?->label ?? $relationshipType;
+        // Get the human-readable label for the inverse relationship
+        return $this->inferenceService->getRelationshipLabel($inverseType);
     }
 
     /**

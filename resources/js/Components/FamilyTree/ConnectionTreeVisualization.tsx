@@ -120,13 +120,62 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData }) => {
 
         levels.forEach(level => {
             const nodesInLevel = levelMap[level];
-            const levelWidth = nodesInLevel.length * nodeWidth;
+            const y = level * levelHeight;
 
-            nodesInLevel.forEach((nodeId, index) => {
-                const x = (index * nodeWidth) - (levelWidth / 2) + (nodeWidth / 2);
-                const y = level * levelHeight;
-                positions[nodeId] = { x, y, level };
-            });
+            // Special handling for level 0 (root user and siblings)
+            if (level === 0) {
+                // Separate nodes by type
+                const rootNode = nodesInLevel.find(id => {
+                    const node = nodes.find(n => n.id === id);
+                    return node?.relationshipType === 'root';
+                });
+
+                const brothers = nodesInLevel.filter(id => {
+                    const node = nodes.find(n => n.id === id);
+                    return node?.relationshipType === 'brother';
+                });
+
+                const sisters = nodesInLevel.filter(id => {
+                    const node = nodes.find(n => n.id === id);
+                    return node?.relationshipType === 'sister';
+                });
+
+                const others = nodesInLevel.filter(id => {
+                    const node = nodes.find(n => n.id === id);
+                    return node && !['root', 'brother', 'sister'].includes(node.relationshipType);
+                });
+
+                // Position root user at center (x = 0)
+                if (rootNode) {
+                    positions[rootNode] = { x: 0, y, level };
+                }
+
+                // Position sisters on the LEFT (negative x)
+                sisters.forEach((nodeId, index) => {
+                    const x = -(index + 1) * nodeWidth;
+                    positions[nodeId] = { x, y, level };
+                });
+
+                // Position brothers on the RIGHT (positive x)
+                brothers.forEach((nodeId, index) => {
+                    const x = (index + 1) * nodeWidth;
+                    positions[nodeId] = { x, y, level };
+                });
+
+                // Position other level 0 relatives (spouse, cousin, etc.)
+                // Place them after brothers on the right
+                others.forEach((nodeId, index) => {
+                    const x = (brothers.length + index + 1) * nodeWidth;
+                    positions[nodeId] = { x, y, level };
+                });
+            } else {
+                // Standard positioning for other levels
+                const levelWidth = nodesInLevel.length * nodeWidth;
+                nodesInLevel.forEach((nodeId, index) => {
+                    const x = (index * nodeWidth) - (levelWidth / 2) + (nodeWidth / 2);
+                    positions[nodeId] = { x, y, level };
+                });
+            }
         });
 
         // Calculate SVG dimensions
