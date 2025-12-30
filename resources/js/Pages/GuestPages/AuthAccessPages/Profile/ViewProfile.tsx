@@ -1,7 +1,7 @@
 import { useMemo, useEffect, useState } from 'react';
 import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { Mail, Phone, MapPin, Cake, FileText, Users, Send, Clock, CheckCircle, Lock, Briefcase, BookOpen, ArrowRight, Image, Newspaper, Plus, ArrowLeft, Undo2, AlertCircle, X } from 'lucide-react';
+import { Mail, Phone, MapPin, Cake, FileText, Users, Send, Clock, CheckCircle, Lock, Briefcase, BookOpen, ArrowRight, Image, Newspaper, Plus, ArrowLeft, Undo2, AlertCircle, X, Network } from 'lucide-react';
 
 interface Profile {
     id: number;
@@ -301,6 +301,15 @@ export default function ViewProfile({
                                     >
                                         <Users size={18} />
                                         View Connections
+                                    </button>
+                                    <button
+                                        className="profile-btn profile-btn-secondary"
+                                        onClick={() => router.visit(route('profile.tree', { userId: profile.id }))}
+                                        style={{ width: '100%', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', border: 'none' }}
+                                        title="View their interactive family tree"
+                                    >
+                                        <Network size={18} />
+                                        View Family Tree
                                     </button>
                                     <button
                                         className="profile-btn profile-btn-secondary"

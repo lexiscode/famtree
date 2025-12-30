@@ -125,6 +125,9 @@ Route::middleware(['web', 'auth'])->group(function () {
     // Your Tree (Connection Tree Visualization) route
     Route::get('/your-tree', [ConnectionTreeController::class, 'index'])->name('your-tree.index');
 
+    // View Another User's Tree route
+    Route::get('/profile/{userId}/tree', [ConnectionTreeController::class, 'viewUserTree'])->name('profile.tree');
+
     // Child Account routes
     Route::prefix('child-accounts')->group(function () {
         Route::get('/', [ChildAccountController::class, 'index'])->name('child-accounts.index');
