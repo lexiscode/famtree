@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
+import ProfileSidebar from '../Stories/ProfileSidebar';
 import { ArrowLeft, Users, UserPlus, UserMinus, Search, UserCheck } from 'lucide-react';
 
 interface User {
@@ -23,6 +24,8 @@ interface TargetUser {
     name: string;
     username: string;
     profile_image_url: string | null;
+    bio: string | null;
+    status: string;
 }
 
 interface Props {
@@ -31,6 +34,10 @@ interface Props {
     followerCount: number;
     followingCount: number;
     isOwnProfile: boolean;
+    connectionCount: number;
+    pendingRequestCount: number;
+    sentRequestCount: number;
+    unreadNotificationCount: number;
 }
 
 export default function FollowersList({
@@ -39,6 +46,10 @@ export default function FollowersList({
     followerCount,
     followingCount,
     isOwnProfile,
+    connectionCount,
+    pendingRequestCount,
+    sentRequestCount,
+    unreadNotificationCount,
 }: Props) {
     const [followersState, setFollowersState] = useState(followers);
     const [loadingUserId, setLoadingUserId] = useState<number | null>(null);
@@ -90,14 +101,29 @@ export default function FollowersList({
 
     return (
         <AuthAccessLayout>
-            <div style={{
-                background: 'linear-gradient(135deg, #F8F9FA 0%, #E8F0FF 100%)',
-                minHeight: '100vh',
-                paddingTop: '2rem',
-                paddingBottom: '4rem',
-                fontFamily: 'Inter, sans-serif'
-            }}>
-                <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '0 1.5rem' }}>
+            <div className="connections-page">
+                <div className="connections-grid-layout">
+                    {/* Left Sidebar - Profile */}
+                    <div className="connections-left-sidebar">
+                        <ProfileSidebar
+                            user={user}
+                            connectionCount={connectionCount}
+                            pendingRequestCount={pendingRequestCount}
+                            sentRequestCount={sentRequestCount}
+                            unreadNotificationCount={unreadNotificationCount}
+                        />
+                    </div>
+
+                    {/* Center Content */}
+                    <div className="connections-center-content">
+                        <div style={{
+                            background: 'linear-gradient(135deg, #F8F9FA 0%, #E8F0FF 100%)',
+                            minHeight: '100vh',
+                            paddingTop: '2rem',
+                            paddingBottom: '4rem',
+                            fontFamily: 'Inter, sans-serif'
+                        }}>
+                            <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '0 1.5rem' }}>
                     {/* Header Section */}
                     <div style={{
                         background: '#FFFFFF',
@@ -460,6 +486,9 @@ export default function FollowersList({
                             ))}
                         </div>
                     )}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 

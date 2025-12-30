@@ -5,12 +5,16 @@ namespace App\Http\Controllers\GuestControllers\AuthAccessControllers;
 use Inertia\Inertia;
 use App\Http\Controllers\Controller;
 use App\Actions\GuestServices\UserFollowService;
+use App\Actions\GuestServices\NotificationService;
+use App\Repositories\GuestRepositories\UserConnectionRepository;
 use App\Models\GuestModels\User;
 
 class UserFollowController extends Controller
 {
     public function __construct(
         private UserFollowService $followService,
+        private UserConnectionRepository $connectionRepository,
+        private NotificationService $notificationService,
     ) {}
 
     /**
@@ -57,6 +61,12 @@ class UserFollowController extends Controller
         // Get follow status for the target user
         $followStatus = $this->followService->getFollowStatus($viewer->id, $userId);
 
+        // Get connection counts for the viewer (for sidebar)
+        $connections = $this->connectionRepository->getConnections($viewer->id);
+        $pendingRequests = $this->connectionRepository->getPendingRequestsForUser($viewer->id);
+        $sentRequests = $this->connectionRepository->getSentRequestsByUser($viewer->id);
+        $unreadNotificationCount = $this->notificationService->getUnreadCount($viewer->id);
+
         return Inertia::render('GuestPages/AuthAccessPages/Follow/FollowersList', [
             'user' => [
                 'id' => $targetUser->id,
@@ -65,11 +75,17 @@ class UserFollowController extends Controller
                 'name' => trim($targetUser->first_name . ' ' . $targetUser->last_name),
                 'username' => $targetUser->username,
                 'profile_image_url' => $targetUser->profile_image_url,
+                'bio' => $targetUser->bio,
+                'status' => $targetUser->status,
             ],
             'followers' => $followers,
             'followerCount' => $followStatus['follower_count'],
             'followingCount' => $followStatus['following_count'],
             'isOwnProfile' => $viewer->id === $userId,
+            'connectionCount' => count($connections),
+            'pendingRequestCount' => count($pendingRequests),
+            'sentRequestCount' => count($sentRequests),
+            'unreadNotificationCount' => $unreadNotificationCount,
         ]);
     }
 
@@ -87,6 +103,12 @@ class UserFollowController extends Controller
         // Get follow status for the target user
         $followStatus = $this->followService->getFollowStatus($viewer->id, $userId);
 
+        // Get connection counts for the viewer (for sidebar)
+        $connections = $this->connectionRepository->getConnections($viewer->id);
+        $pendingRequests = $this->connectionRepository->getPendingRequestsForUser($viewer->id);
+        $sentRequests = $this->connectionRepository->getSentRequestsByUser($viewer->id);
+        $unreadNotificationCount = $this->notificationService->getUnreadCount($viewer->id);
+
         return Inertia::render('GuestPages/AuthAccessPages/Follow/FollowingList', [
             'user' => [
                 'id' => $targetUser->id,
@@ -95,11 +117,17 @@ class UserFollowController extends Controller
                 'name' => trim($targetUser->first_name . ' ' . $targetUser->last_name),
                 'username' => $targetUser->username,
                 'profile_image_url' => $targetUser->profile_image_url,
+                'bio' => $targetUser->bio,
+                'status' => $targetUser->status,
             ],
             'following' => $following,
             'followerCount' => $followStatus['follower_count'],
             'followingCount' => $followStatus['following_count'],
             'isOwnProfile' => $viewer->id === $userId,
+            'connectionCount' => count($connections),
+            'pendingRequestCount' => count($pendingRequests),
+            'sentRequestCount' => count($sentRequests),
+            'unreadNotificationCount' => $unreadNotificationCount,
         ]);
     }
 }
