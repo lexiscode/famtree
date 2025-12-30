@@ -223,6 +223,8 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::get('/privacy/field-privacy', [PrivacyController::class, 'getFieldPrivacy'])->name('settings.get-field-privacy');
         Route::post('/privacy/content-privacy', [PrivacyController::class, 'updateContentPrivacy'])->name('settings.update-content-privacy');
         Route::get('/privacy/content-privacy', [PrivacyController::class, 'getContentPrivacy'])->name('settings.get-content-privacy');
+        Route::post('/privacy/nuclear-family-blur', [PrivacyController::class, 'updateNuclearFamilyBlur'])->name('settings.update-nuclear-family-blur');
+        Route::get('/privacy/nuclear-family-blur', [PrivacyController::class, 'getNuclearFamilyBlur'])->name('settings.get-nuclear-family-blur');
 
         Route::get('/notifications', function () {
             return Inertia::render('AuthAccessPages/Settings/NotificationSettings');

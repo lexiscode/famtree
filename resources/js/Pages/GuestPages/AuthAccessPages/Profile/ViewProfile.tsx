@@ -36,9 +36,9 @@ interface Props {
     pendingRequest: { id: number; status: string } | null;
     sentRequest: { id: number; status: string } | null;
     mutualConnectionsCount: number;
-    mutualConnections: Array<{ id: number; name: string; username: string; profile_image_url: string }>;
+    mutualConnections: Array<{ id: number; name: string; username: string; profile_image_url: string; shouldBlur?: boolean }>;
     nonMutualConnectionsCount: number;
-    nonMutualConnections: Array<{ id: number; name: string; username: string; profile_image_url: string }>;
+    nonMutualConnections: Array<{ id: number; name: string; username: string; profile_image_url: string; shouldBlur?: boolean }>;
     accessDenied: boolean;
     accessDeniedReason: string | null;
 }
@@ -422,17 +422,22 @@ export default function ViewProfile({
                                             <div
                                                 key={connection.id}
                                                 className="profile-mutual-item"
-                                                onClick={() => handleProfileNavigation(connection.id, connection.name)}
-                                                style={{ cursor: 'pointer' }}
-                                                title={`View ${connection.name}'s profile`}
+                                                onClick={() => !connection.shouldBlur && handleProfileNavigation(connection.id, connection.name)}
+                                                style={{ cursor: connection.shouldBlur ? 'not-allowed' : 'pointer', opacity: connection.shouldBlur ? 0.6 : 1 }}
+                                                title={connection.shouldBlur ? 'This user has hidden their nuclear family details' : `View ${connection.name}'s profile`}
                                             >
                                                 <img
                                                     src={connection.profile_image_url || 'https://via.placeholder.com/70'}
                                                     alt={connection.name}
                                                     className="profile-mutual-avatar"
+                                                    style={{ filter: connection.shouldBlur ? 'blur(8px)' : 'none' }}
                                                 />
-                                                <div className="profile-mutual-name">{connection.name}</div>
-                                                <div className="profile-mutual-username">@{connection.username}</div>
+                                                <div className="profile-mutual-name" style={{ filter: connection.shouldBlur ? 'blur(4px)' : 'none' }}>
+                                                    {connection.shouldBlur ? '████████' : connection.name}
+                                                </div>
+                                                <div className="profile-mutual-username" style={{ filter: connection.shouldBlur ? 'blur(4px)' : 'none' }}>
+                                                    {connection.shouldBlur ? '@████████' : `@${connection.username}`}
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
@@ -477,17 +482,22 @@ export default function ViewProfile({
                                             <div
                                                 key={connection.id}
                                                 className="profile-mutual-item profile-nonmutual-item"
-                                                onClick={() => handleProfileNavigation(connection.id, connection.name)}
-                                                style={{ cursor: 'pointer' }}
-                                                title={`View ${connection.name}'s profile`}
+                                                onClick={() => !connection.shouldBlur && handleProfileNavigation(connection.id, connection.name)}
+                                                style={{ cursor: connection.shouldBlur ? 'not-allowed' : 'pointer', opacity: connection.shouldBlur ? 0.6 : 1 }}
+                                                title={connection.shouldBlur ? 'This user has hidden their nuclear family details' : `View ${connection.name}'s profile`}
                                             >
                                                 <img
                                                     src={connection.profile_image_url || 'https://via.placeholder.com/70'}
                                                     alt={connection.name}
                                                     className="profile-mutual-avatar"
+                                                    style={{ filter: connection.shouldBlur ? 'blur(8px)' : 'none' }}
                                                 />
-                                                <div className="profile-mutual-name">{connection.name}</div>
-                                                <div className="profile-mutual-username">@{connection.username}</div>
+                                                <div className="profile-mutual-name" style={{ filter: connection.shouldBlur ? 'blur(4px)' : 'none' }}>
+                                                    {connection.shouldBlur ? '████████' : connection.name}
+                                                </div>
+                                                <div className="profile-mutual-username" style={{ filter: connection.shouldBlur ? 'blur(4px)' : 'none' }}>
+                                                    {connection.shouldBlur ? '@████████' : `@${connection.username}`}
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
