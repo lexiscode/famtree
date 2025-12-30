@@ -26,6 +26,7 @@ use App\Http\Controllers\GuestControllers\AuthAccessControllers\PostController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\ConnectionFeedsController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\UserReportController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\UserBlockController;
+use App\Http\Controllers\GuestControllers\AuthAccessControllers\UserFollowController;
 use App\Http\Controllers\GuestControllers\OnboardingController;
 use App\Http\Controllers\GuestControllers\StatusController;
 use App\Http\Controllers\GuestControllers\NotificationController;
@@ -168,6 +169,14 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/search', function () {
         return Inertia::render('AuthAccessPages/Search/Users');
     })->name('search.index');
+
+    // Follow/Unfollow routes
+    Route::prefix('users')->group(function () {
+        Route::post('/{userId}/follow', [UserFollowController::class, 'follow'])->name('users.follow');
+        Route::post('/{userId}/unfollow', [UserFollowController::class, 'unfollow'])->name('users.unfollow');
+        Route::get('/{userId}/followers', [UserFollowController::class, 'followers'])->name('users.followers');
+        Route::get('/{userId}/following', [UserFollowController::class, 'following'])->name('users.following');
+    });
 
     // Gallery routes
     Route::prefix('galleries')->group(function () {

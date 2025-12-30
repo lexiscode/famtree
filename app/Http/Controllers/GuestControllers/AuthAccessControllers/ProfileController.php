@@ -5,6 +5,7 @@ namespace App\Http\Controllers\GuestControllers\AuthAccessControllers;
 use App\Http\Controllers\Controller;
 use App\Actions\GuestServices\ProfilePrivacyService;
 use App\Actions\GuestServices\AuthAccessServices\UserBlockService;
+use App\Actions\GuestServices\UserFollowService;
 use App\Repositories\GuestRepositories\UserConnectionRepository;
 use App\Models\GuestModels\User;
 use Inertia\Inertia;
@@ -15,6 +16,7 @@ class ProfileController extends Controller
         private ProfilePrivacyService $privacyService,
         private UserConnectionRepository $connectionRepository,
         private UserBlockService $blockService,
+        private UserFollowService $followService,
     ) {}
 
     /**
@@ -179,6 +181,9 @@ class ProfileController extends Controller
             ];
         }
 
+        // Get follow status
+        $followStatus = $this->followService->getFollowStatus($viewer->id, $owner->id);
+
         return Inertia::render('GuestPages/AuthAccessPages/Profile/ViewProfile', [
             'profile' => $profileData,
             'visibleFields' => $visibleFields,
@@ -220,6 +225,10 @@ class ProfileController extends Controller
             }),
             'accessDenied' => $accessDenied,
             'accessDeniedReason' => $accessDeniedReason,
+            'isFollowing' => $followStatus['is_following'],
+            'isFollowedBy' => $followStatus['is_followed_by'],
+            'followerCount' => $followStatus['follower_count'],
+            'followingCount' => $followStatus['following_count'],
         ]);
     }
 

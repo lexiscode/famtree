@@ -41,6 +41,10 @@ interface Props {
     nonMutualConnections: Array<{ id: number; name: string; username: string; profile_image_url: string; shouldBlur?: boolean }>;
     accessDenied: boolean;
     accessDeniedReason: string | null;
+    isFollowing: boolean;
+    isFollowedBy: boolean;
+    followerCount: number;
+    followingCount: number;
 }
 
 export default function ViewProfile({
@@ -60,9 +64,15 @@ export default function ViewProfile({
     nonMutualConnections,
     accessDenied,
     accessDeniedReason,
+    isFollowing: initialIsFollowing,
+    isFollowedBy,
+    followerCount: initialFollowerCount,
+    followingCount,
 }: Props) {
     const [showUndoModal, setShowUndoModal] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [isFollowing, setIsFollowing] = useState(initialIsFollowing);
+    const [followerCount, setFollowerCount] = useState(initialFollowerCount);
 
     // Redirect back to previous page if access is denied
     useEffect(() => {
@@ -77,6 +87,42 @@ export default function ViewProfile({
     const handleProfileNavigation = (userId: number, userName: string) => {
         // Navigate to the profile
         router.visit(route('profile.view', userId));
+    };
+
+    const handleFollowToggle = async () => {
+        setLoading(true);
+        try {
+            if (isFollowing) {
+                // Unfollow
+                router.post(route('users.unfollow', profile.id), {}, {
+                    preserveState: false,
+                    onSuccess: () => {
+                        setIsFollowing(false);
+                        setFollowerCount(prev => prev - 1);
+                        setLoading(false);
+                    },
+                    onError: () => {
+                        setLoading(false);
+                    }
+                });
+            } else {
+                // Follow
+                router.post(route('users.follow', profile.id), {}, {
+                    preserveState: false,
+                    onSuccess: () => {
+                        setIsFollowing(true);
+                        setFollowerCount(prev => prev + 1);
+                        setLoading(false);
+                    },
+                    onError: () => {
+                        setLoading(false);
+                    }
+                });
+            }
+        } catch (error) {
+            setLoading(false);
+            console.error('Error toggling follow:', error);
+        }
     };
 
     const openUndoModal = () => {
@@ -275,6 +321,52 @@ export default function ViewProfile({
                                         </small>
                                     </div>
                                 )}
+
+                                {/* Follower/Following Stats */}
+                                <div className="profile-stats" style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem', justifyContent: 'center' }}>
+                                    <div
+                                        className="stat-item"
+                                        onClick={() => router.visit(route('users.followers', profile.id))}
+                                        style={{ cursor: 'pointer', textAlign: 'center', padding: '0.75rem', backgroundColor: '#F3F4F6', borderRadius: '8px', flex: 1 }}
+                                        title="View followers"
+                                    >
+                                        <div style={{ fontWeight: '700', fontSize: '1.25rem', color: '#1F2937' }}>{followerCount}</div>
+                                        <div style={{ fontSize: '0.875rem', color: '#6B7280' }}>Followers</div>
+                                    </div>
+                                    <div
+                                        className="stat-item"
+                                        onClick={() => router.visit(route('users.following', profile.id))}
+                                        style={{ cursor: 'pointer', textAlign: 'center', padding: '0.75rem', backgroundColor: '#F3F4F6', borderRadius: '8px', flex: 1 }}
+                                        title="View following"
+                                    >
+                                        <div style={{ fontWeight: '700', fontSize: '1.25rem', color: '#1F2937' }}>{followingCount}</div>
+                                        <div style={{ fontSize: '0.875rem', color: '#6B7280' }}>Following</div>
+                                    </div>
+                                </div>
+
+                                {/* Follow/Unfollow Button */}
+                                <button
+                                    className="profile-btn"
+                                    onClick={handleFollowToggle}
+                                    disabled={loading}
+                                    style={{
+                                        width: '100%',
+                                        marginTop: '1rem',
+                                        backgroundColor: isFollowing ? '#E5E7EB' : '#3B82F6',
+                                        color: isFollowing ? '#374151' : '#FFFFFF',
+                                        border: 'none',
+                                        fontWeight: '600'
+                                    }}
+                                >
+                                    {loading ? (
+                                        <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" />
+                                    ) : (
+                                        <>
+                                            <Users size={18} />
+                                            {isFollowing ? 'Unfollow' : 'Follow'}
+                                        </>
+                                    )}
+                                </button>
 
                                 {/* Gallery, Stories, and Connections Buttons */}
                                 <div className="profile-actions" style={{ marginTop: '2rem', gap: '0.75rem' }}>
