@@ -63,8 +63,8 @@ class UserFollowController extends Controller
 
         // Get connection counts for the viewer (for sidebar)
         $connections = $this->connectionRepository->getConnections($viewer->id);
-        $pendingRequests = $this->connectionRepository->getPendingRequestsForUser($viewer->id);
-        $sentRequests = $this->connectionRepository->getSentRequestsByUser($viewer->id);
+        $pendingRequests = $this->connectionRepository->getPendingRequests($viewer->id);
+        $sentRequests = $this->connectionRepository->getSentRequests($viewer->id);
         $unreadNotificationCount = $this->notificationService->getUnreadCount($viewer->id);
 
         return Inertia::render('GuestPages/AuthAccessPages/Follow/FollowersList', [
@@ -105,8 +105,8 @@ class UserFollowController extends Controller
 
         // Get connection counts for the viewer (for sidebar)
         $connections = $this->connectionRepository->getConnections($viewer->id);
-        $pendingRequests = $this->connectionRepository->getPendingRequestsForUser($viewer->id);
-        $sentRequests = $this->connectionRepository->getSentRequestsByUser($viewer->id);
+        $pendingRequests = $this->connectionRepository->getPendingRequests($viewer->id);
+        $sentRequests = $this->connectionRepository->getSentRequests($viewer->id);
         $unreadNotificationCount = $this->notificationService->getUnreadCount($viewer->id);
 
         return Inertia::render('GuestPages/AuthAccessPages/Follow/FollowingList', [
