@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import ProfileSidebar from '../Stories/ProfileSidebar';
+import UserProfileSidebar from '@/Components/Profile/UserProfileSidebar';
 import { ArrowLeft, Users, UserPlus, UserMinus, Search, UserCheck } from 'lucide-react';
 
 interface User {
@@ -17,10 +17,8 @@ interface User {
     is_mutual: boolean;
 }
 
-interface TargetUser {
+interface Profile {
     id: number;
-    first_name: string;
-    last_name: string;
     name: string;
     username: string;
     profile_image_url: string | null;
@@ -29,27 +27,41 @@ interface TargetUser {
 }
 
 interface Props {
-    user: TargetUser;
+    profile: Profile;
     followers: User[];
+    relationshipContext: string | null;
+    connectionStatus: string | null;
+    relationshipType: string | null;
+    relationshipLabel: string | null;
+    connectionId: number | null;
+    canUndoConnection: boolean;
+    pendingRequest: { id: number; status: string } | null;
+    sentRequest: { id: number; status: string } | null;
+    mutualConnectionsCount: number;
+    isFollowing: boolean;
+    isFollowedBy: boolean;
     followerCount: number;
     followingCount: number;
     isOwnProfile: boolean;
-    connectionCount: number;
-    pendingRequestCount: number;
-    sentRequestCount: number;
-    unreadNotificationCount: number;
 }
 
 export default function FollowersList({
-    user,
+    profile,
     followers,
+    relationshipContext,
+    connectionStatus,
+    relationshipType,
+    relationshipLabel,
+    connectionId,
+    canUndoConnection,
+    pendingRequest,
+    sentRequest,
+    mutualConnectionsCount,
+    isFollowing,
+    isFollowedBy,
     followerCount,
     followingCount,
     isOwnProfile,
-    connectionCount,
-    pendingRequestCount,
-    sentRequestCount,
-    unreadNotificationCount,
 }: Props) {
     const [followersState, setFollowersState] = useState(followers);
     const [loadingUserId, setLoadingUserId] = useState<number | null>(null);
@@ -105,12 +117,22 @@ export default function FollowersList({
                 <div className="connections-grid-layout">
                     {/* Left Sidebar - Profile */}
                     <div className="connections-left-sidebar">
-                        <ProfileSidebar
-                            user={user}
-                            connectionCount={connectionCount}
-                            pendingRequestCount={pendingRequestCount}
-                            sentRequestCount={sentRequestCount}
-                            unreadNotificationCount={unreadNotificationCount}
+                        <UserProfileSidebar
+                            profile={profile}
+                            relationshipContext={relationshipContext}
+                            connectionStatus={connectionStatus}
+                            relationshipType={relationshipType}
+                            relationshipLabel={relationshipLabel}
+                            connectionId={connectionId}
+                            canUndoConnection={canUndoConnection}
+                            pendingRequest={pendingRequest}
+                            sentRequest={sentRequest}
+                            mutualConnectionsCount={mutualConnectionsCount}
+                            isFollowing={isFollowing}
+                            isFollowedBy={isFollowedBy}
+                            followerCount={followerCount}
+                            followingCount={followingCount}
+                            isOwnProfile={isOwnProfile}
                         />
                     </div>
 
@@ -135,7 +157,7 @@ export default function FollowersList({
                     }}>
                         {/* Back Button */}
                         <button
-                            onClick={() => router.visit(route('profile.view', user.id))}
+                            onClick={() => router.visit(route('profile.view', profile.id))}
                             style={{
                                 display: 'inline-flex',
                                 alignItems: 'center',
@@ -175,8 +197,8 @@ export default function FollowersList({
                                     opacity: 0.2
                                 }} />
                                 <img
-                                    src={user.profile_image_url || 'https://via.placeholder.com/100'}
-                                    alt={user.name}
+                                    src={profile.profile_image_url || 'https://via.placeholder.com/100'}
+                                    alt={profile.name}
                                     style={{
                                         width: '100px',
                                         height: '100px',
@@ -198,9 +220,9 @@ export default function FollowersList({
                                     WebkitTextFillColor: 'transparent',
                                     fontFamily: 'Poppins, sans-serif'
                                 }}>
-                                    {user.name}
+                                    {profile.name}
                                 </h1>
-                                <p style={{ color: '#6B7280', fontSize: '1rem', marginBottom: '1rem' }}>@{user.username}</p>
+                                <p style={{ color: '#6B7280', fontSize: '1rem', marginBottom: '1rem' }}>@{profile.username}</p>
 
                                 {/* Tab Navigation */}
                                 <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -223,7 +245,7 @@ export default function FollowersList({
                                         {followerCount} Followers
                                     </div>
                                     <div
-                                        onClick={() => router.visit(route('users.following', user.id))}
+                                        onClick={() => router.visit(route('users.following', profile.id))}
                                         style={{
                                             padding: '0.75rem 1.5rem',
                                             background: '#F8F9FA',
@@ -315,7 +337,7 @@ export default function FollowersList({
                                 <Users size={40} style={{ color: '#0052E8', opacity: 0.5 }} />
                             </div>
                             <h3 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#1F2937', marginBottom: '0.5rem' }}>
-                                {searchQuery ? 'No followers found' : (isOwnProfile ? 'No followers yet' : `${user.first_name} has no followers yet`)}
+                                {searchQuery ? 'No followers found' : (isOwnProfile ? 'No followers yet' : `${profile.name} has no followers yet`)}
                             </h3>
                             <p style={{ color: '#6B7280', fontSize: '0.9375rem' }}>
                                 {searchQuery ? 'Try a different search term' : 'Start building your network'}
