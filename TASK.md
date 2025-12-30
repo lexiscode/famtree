@@ -1,1 +1,7 @@
-In http://localhost/profile/{id}, lets add a "View Tree" button to this page, whereby users can view another user's family tree. The same UI tree design we have in http://localhost/your-tree. It will be nice when other users can get to access and view the tree. Most likely this should be in a different page/route, or if you can add it within the same /profile/{id} page, with the expand and zoom in/out features.
+Now, i will like to add an entirely new feature to this app. This feature involves "follow/unfollow" functionality.
+
+Whereby all users using the app can decide to follow/unfollow each other, similar to how Twitter works. And whenever a user makes a new story/post and set it as public, all their followers and non-followers can see that particular story, likewise their connected users too.
+
+So i think there should be a follow/unfollow (count) button in a user's profile page, http://localhost/profile/1. And everyone can view their follower's lists as well.
+
+Create a todo plan on how you can approach this and implement it properly. 

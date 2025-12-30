@@ -77,11 +77,8 @@ class PostController extends Controller
         $viewer = auth()->user();
         $targetUser = \App\Models\GuestModels\User::findOrFail($userId)->load('familyInfo');
 
-        // Check content visibility setting (stories)
-        if (!$this->canViewContent($viewer, $targetUser, 'stories')) {
-            return redirect()->route('profile.view', ['userId' => $userId])
-                ->with('error', 'You do not have permission to view this user\'s stories.');
-        }
+        // Note: Stories now have per-story privacy settings, so we allow access to the page
+        // Individual stories will be filtered based on their privacy settings
 
         // Format user data for display
         $userData = [

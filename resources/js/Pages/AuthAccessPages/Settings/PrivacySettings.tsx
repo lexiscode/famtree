@@ -44,9 +44,8 @@ export default function PrivacySettings() {
     });
     const [fieldLoadingState, setFieldLoadingState] = useState<{ [key: string]: boolean }>({});
 
-    // Content-Level Privacy Controls (Stories and Galleries)
+    // Content-Level Privacy Controls (Galleries only - Stories now have per-post privacy)
     const [contentVisibility, setContentVisibility] = useState({
-        stories: 'connected',
         galleries: 'connected',
     });
     const [isLoadingContentPrivacy, setIsLoadingContentPrivacy] = useState(true);
@@ -654,8 +653,8 @@ export default function PrivacySettings() {
                                 <Lock size={24} />
                             </div>
                             <div className="settings-section-title-wrapper">
-                                <h2 className="settings-section-title">Content Privacy</h2>
-                                <p className="settings-section-subtitle">Control who can view your stories and galleries</p>
+                                <h2 className="settings-section-title">Gallery Privacy</h2>
+                                <p className="settings-section-subtitle">Control who can view your galleries (Stories have per-post privacy)</p>
                             </div>
                         </div>
 
@@ -678,25 +677,10 @@ export default function PrivacySettings() {
                                 </div>
                             ) : (
                                 <>
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '2rem', marginBottom: '2rem' }}>
+                                    <div style={{ marginBottom: '2rem', maxWidth: '400px' }}>
                                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                                             <label className="settings-label" style={{ marginBottom: '0.75rem' }}>
-                                                Stories
-                                            </label>
-                                            <select
-                                                value={contentVisibility.stories}
-                                                onChange={(e) => setContentVisibility({ ...contentVisibility, stories: e.target.value })}
-                                                className="settings-select"
-                                                disabled={saveLoading}
-                                            >
-                                                <option value="public">Public</option>
-                                                <option value="connected">Connected Only</option>
-                                                <option value="private">Private</option>
-                                            </select>
-                                        </div>
-                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                            <label className="settings-label" style={{ marginBottom: '0.75rem' }}>
-                                                Galleries
+                                                Galleries Visibility
                                             </label>
                                             <select
                                                 value={contentVisibility.galleries}
@@ -708,6 +692,9 @@ export default function PrivacySettings() {
                                                 <option value="connected">Connected Only</option>
                                                 <option value="private">Private</option>
                                             </select>
+                                            <small style={{ color: '#666', marginTop: '0.5rem', fontSize: '0.875rem' }}>
+                                                Note: Each story now has its own privacy setting when you create it
+                                            </small>
                                         </div>
                                     </div>
 
@@ -717,7 +704,7 @@ export default function PrivacySettings() {
                                             disabled={saveLoading}
                                             className="settings-btn settings-btn-primary"
                                         >
-                                            {saveLoading ? 'Saving...' : 'Save Content Privacy Settings'}
+                                            {saveLoading ? 'Saving...' : 'Save Gallery Privacy Settings'}
                                         </button>
                                     </div>
                                 </>
