@@ -285,11 +285,14 @@ class UserConnectionRepository
             })
             ->values(); // Reset keys to sequential integers
 
-        // Find intersection
-        $mutualIds = $user1Connections->intersect($user2Connections);
+        // Find intersection using native PHP function to avoid collection issues
+        $mutualIds = array_intersect(
+            $user1Connections->toArray(),
+            $user2Connections->toArray()
+        );
 
         // Get the actual user records
-        return User::whereIn('id', $mutualIds->toArray())->get();
+        return User::whereIn('id', $mutualIds)->get();
     }
 
     /**
