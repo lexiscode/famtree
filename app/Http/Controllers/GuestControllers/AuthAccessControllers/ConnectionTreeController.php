@@ -4,6 +4,7 @@ namespace App\Http\Controllers\GuestControllers\AuthAccessControllers;
 
 use App\Http\Controllers\Controller;
 use App\Actions\GuestServices\AuthAccessServices\FamilyTreeService as ConnectionTreeService;
+use App\Actions\GuestServices\ProfilePrivacyService;
 use App\Repositories\GuestRepositories\UserConnectionRepository;
 use App\Models\GuestModels\User;
 use Inertia\Inertia;
@@ -12,7 +13,8 @@ class ConnectionTreeController extends Controller
 {
     public function __construct(
         private ConnectionTreeService $connectionTreeService,
-        private UserConnectionRepository $connectionRepository
+        private UserConnectionRepository $connectionRepository,
+        private ProfilePrivacyService $privacyService
     ) {}
 
     /**
@@ -69,6 +71,24 @@ class ConnectionTreeController extends Controller
 
         // Get connection tree data for the specified user
         $connectionTreeData = $this->connectionTreeService->buildFamilyTree($userId);
+
+        // Apply nuclear family blur if needed
+        $shouldBlurNuclearFamily = $owner->blur_nuclear_family_for_public && !$this->isConnectedDirect($viewer, $owner) && $viewer->id !== $userId;
+
+        if ($shouldBlurNuclearFamily) {
+            // Add shouldBlur flag to nuclear family nodes
+            $connectionTreeData['nodes'] = array_map(function ($node) use ($owner) {
+                $isNuclearFamily = $this->privacyService->getRelationshipContext($node['id'], $owner->id) === 'nuclear_family';
+                $node['shouldBlur'] = $isNuclearFamily;
+                return $node;
+            }, $connectionTreeData['nodes']);
+        } else {
+            // Ensure all nodes have shouldBlur set to false
+            $connectionTreeData['nodes'] = array_map(function ($node) {
+                $node['shouldBlur'] = false;
+                return $node;
+            }, $connectionTreeData['nodes']);
+        }
 
         return Inertia::render('GuestPages/AuthAccessPages/ViewUserTree/Index', [
             'connectionTreeData' => $connectionTreeData,

@@ -10,6 +10,7 @@ interface Node {
     relationshipType: string;
     relationshipLabel: string;
     nodeColor: string;
+    shouldBlur?: boolean;
 }
 
 interface Edge {
@@ -539,18 +540,19 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData }) => {
                             const x = pos.x - (minX || 0) + padding;
                             const y = pos.y - (minY || 0) + padding;
                             const isRoot = node.id === treeData.rootUserId;
-                            const isHovered = hoveredNode === node.id;
+                            const isHovered = hoveredNode === node.id && !node.shouldBlur;
                             const radius = isRoot ? 60 : 50;
+                            const shouldBlur = node.shouldBlur || false;
 
                             return (
                                 <g
                                     key={`node-${node.id}`}
-                                    onMouseEnter={() => setHoveredNode(node.id)}
+                                    onMouseEnter={() => !shouldBlur && setHoveredNode(node.id)}
                                     onMouseLeave={() => setHoveredNode(null)}
-                                    style={{ cursor: 'pointer' }}
+                                    style={{ cursor: shouldBlur ? 'not-allowed' : 'pointer', opacity: shouldBlur ? 0.6 : 1 }}
                                 >
                                     {/* Glow effect */}
-                                    {(isRoot || isHovered) && (
+                                    {(isRoot || isHovered) && !shouldBlur && (
                                         <circle
                                             cx={x}
                                             cy={y}
@@ -570,7 +572,9 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData }) => {
                                         strokeWidth={isHovered ? 4 : 3}
                                         style={{
                                             transition: 'all 0.3s ease',
-                                            filter: `drop-shadow(0 ${isHovered ? 12 : 8}px ${isHovered ? 24 : 16}px rgba(0, 0, 0, 0.4))`
+                                            filter: shouldBlur
+                                                ? 'blur(8px) drop-shadow(0 8px 16px rgba(0, 0, 0, 0.4))'
+                                                : `drop-shadow(0 ${isHovered ? 12 : 8}px ${isHovered ? 24 : 16}px rgba(0, 0, 0, 0.4))`
                                         }}
                                     />
                                     {/* Clip path for circular image */}
@@ -591,6 +595,9 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData }) => {
                                                 height={radius * 2 - 10}
                                                 clipPath={`url(#clip-${node.id})`}
                                                 preserveAspectRatio="xMidYMid slice"
+                                                style={{
+                                                    filter: shouldBlur ? 'blur(8px)' : 'none'
+                                                }}
                                             />
                                         </>
                                     ) : (
@@ -602,8 +609,11 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData }) => {
                                             fontSize={isRoot ? 32 : 24}
                                             fontWeight="800"
                                             fill={isRoot ? '#FFFFFF' : '#0F172A'}
+                                            style={{
+                                                filter: shouldBlur ? 'blur(4px)' : 'none'
+                                            }}
                                         >
-                                            {node.name.charAt(0).toUpperCase()}
+                                            {shouldBlur ? '█' : node.name.charAt(0).toUpperCase()}
                                         </text>
                                     )}
                                     {/* Name label */}
@@ -616,12 +626,17 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData }) => {
                                         fill="#FFFFFF"
                                         style={{
                                             textShadow: '0 2px 8px rgba(0,0,0,0.8)',
+                                            filter: shouldBlur ? 'blur(4px)' : 'none'
                                         }}
                                     >
-                                        {node.name.split(' ')[0]}
+                                        {shouldBlur ? '████████' : node.name.split(' ')[0]}
                                     </text>
+                                    {/* Blurred badge */}
+                                    {shouldBlur && (
+                                        <title>This user has hidden their nuclear family details</title>
+                                    )}
                                     {/* Relationship badge */}
-                                   
+
                                 </g>
                             );
                         })}
