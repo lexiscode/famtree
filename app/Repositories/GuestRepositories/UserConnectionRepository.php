@@ -268,7 +268,8 @@ class UserConnectionRepository
                 return $connection->requester_user_id === $userId1
                     ? $connection->recipient_user_id
                     : $connection->requester_user_id;
-            });
+            })
+            ->values(); // Reset keys to sequential integers
 
         // Get all connections of user 2
         $user2Connections = UserConnection::where('status', 'accepted')
@@ -281,7 +282,8 @@ class UserConnectionRepository
                 return $connection->requester_user_id === $userId2
                     ? $connection->recipient_user_id
                     : $connection->requester_user_id;
-            });
+            })
+            ->values(); // Reset keys to sequential integers
 
         // Find intersection
         $mutualIds = $user1Connections->intersect($user2Connections);
