@@ -287,7 +287,7 @@ class UserConnectionRepository
         $mutualIds = $user1Connections->intersect($user2Connections);
 
         // Get the actual user records
-        return User::whereIn('id', $mutualIds)->get();
+        return User::whereIn('id', $mutualIds->toArray())->get();
     }
 
     /**
