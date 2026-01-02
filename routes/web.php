@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GuestControllers\AuthController;
+use App\Http\Controllers\GuestControllers\OAuthController;
 use App\Http\Controllers\GuestControllers\BlogController;
 use App\Http\Controllers\GuestControllers\HomeController;
 use App\Http\Controllers\GuestControllers\AboutController;
@@ -64,6 +65,12 @@ Route::middleware(['web', 'guest'])->group(function () {
     // Authentication routes
     Route::post('/register', [AuthController::class, 'register'])->name('auth.register');
     Route::post('/login', [AuthController::class, 'login'])->name('auth.login');
+
+    // OAuth routes
+    Route::get('/auth/google', [OAuthController::class, 'redirectToGoogle'])->name('auth.google');
+    Route::get('/auth/google/callback', [OAuthController::class, 'handleGoogleCallback'])->name('auth.google.callback');
+    Route::get('/auth/oauth/complete', [OAuthController::class, 'showCompletionForm'])->name('auth.oauth.complete');
+    Route::post('/auth/oauth/complete', [OAuthController::class, 'completeRegistration'])->name('auth.oauth.complete.submit');
 });
 
 // 2FA verification routes (accessible without full authentication)

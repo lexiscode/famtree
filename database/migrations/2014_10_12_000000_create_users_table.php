@@ -26,7 +26,7 @@ return new class extends Migration
             $table->text('address')->nullable();
             $table->text('bio')->nullable();
             $table->date('date_of_birth')->nullable();
-            $table->enum('gender', ['male', 'female'])->nullable();
+            $table->enum('gender', ['male', 'female']);
             $table->string('profile_image_url')->nullable();
 
             // Family and account type fields

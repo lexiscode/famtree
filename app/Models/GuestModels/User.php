@@ -47,6 +47,9 @@ class User extends Authenticatable
         'stories_visibility',
         'galleries_visibility',
         'scheduled_deletion_at',
+        'google_id',
+        'oauth_provider',
+        'oauth_linked_at',
     ];
 
     /**
@@ -75,6 +78,7 @@ class User extends Authenticatable
         'onboarding_completed' => 'boolean',
         'two_fa_enabled' => 'boolean',
         'blur_nuclear_family_for_public' => 'boolean',
+        'oauth_linked_at' => 'datetime',
     ];
 
     /**
