@@ -31,4 +31,6 @@ COPY deploy/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 EXPOSE 80
 
+RUN php artisan migrate --force || true
+
 CMD ["supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
