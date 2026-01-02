@@ -10,6 +10,7 @@ interface Node {
     relationshipType: string;
     relationshipLabel: string;
     nodeColor: string;
+    shouldBlur?: boolean;
 }
 
 interface Edge {
@@ -56,48 +57,61 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData }) => {
         const positions: Record<number, NodePosition> = {};
         const { nodes, edges, rootUserId } = treeData;
 
-        // Build adjacency list
-        const adjacencyList: Record<number, number[]> = {};
-        nodes.forEach(node => {
-            adjacencyList[node.id] = [];
-        });
-        edges.forEach(edge => {
-            if (!adjacencyList[edge.source]) adjacencyList[edge.source] = [];
-            if (!adjacencyList[edge.target]) adjacencyList[edge.target] = [];
-            adjacencyList[edge.source].push(edge.target);
-        });
+        // Map relationship types to vertical levels
+        const getRelationshipLevel = (relationshipType: string): number => {
+            const levelMap: Record<string, number> = {
+                // Grandparents (2 levels above)
+                'grandmother': -2,
+                'grandfather': -2,
+                'grandparent': -2,
 
-        // BFS to assign levels
-        const visited = new Set<number>();
-        const queue: Array<{ id: number; level: number }> = [{ id: rootUserId, level: 0 }];
+                // Parents (1 level above)
+                'mother': -1,
+                'father': -1,
+                'parent': -1,
+
+                // Root user and siblings (same level)
+                'root': 0,
+                'brother': 0,
+                'sister': 0,
+                'sibling': 0,
+
+                // Spouse (same level as root)
+                'husband': 0,
+                'wife': 0,
+                'partner': 0,
+
+                // Children (1 level below)
+                'son': 1,
+                'daughter': 1,
+                'child': 1,
+
+                // Grandchildren (2 levels below)
+                'grandson': 2,
+                'granddaughter': 2,
+                'grandchild': 2,
+
+                // Extended family at appropriate levels
+                'aunt': -1,
+                'uncle': -1,
+                'nephew': 1,
+                'niece': 1,
+                'cousin': 0,
+            };
+
+            return levelMap[relationshipType] ?? 0;
+        };
+
+        // Group nodes by their calculated level based on relationship type
         const levelMap: Record<number, number[]> = {};
 
-        while (queue.length > 0) {
-            const current = queue.shift();
-            if (!current) continue;
-
-            if (visited.has(current.id)) continue;
-            visited.add(current.id);
-
-            if (!levelMap[current.level]) {
-                levelMap[current.level] = [];
-            }
-            levelMap[current.level].push(current.id);
-
-            const neighbors = adjacencyList[current.id] || [];
-            neighbors.forEach(neighborId => {
-                if (!visited.has(neighborId)) {
-                    queue.push({ id: neighborId, level: current.level + 1 });
-                }
-            });
-        }
-
-        // Add unvisited nodes (disconnected components)
         nodes.forEach(node => {
-            if (!visited.has(node.id)) {
-                if (!levelMap[0]) levelMap[0] = [];
-                levelMap[0].push(node.id);
+            const level = getRelationshipLevel(node.relationshipType);
+
+            if (!levelMap[level]) {
+                levelMap[level] = [];
             }
+            levelMap[level].push(node.id);
         });
 
         // Calculate positions
@@ -107,13 +121,62 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData }) => {
 
         levels.forEach(level => {
             const nodesInLevel = levelMap[level];
-            const levelWidth = nodesInLevel.length * nodeWidth;
+            const y = level * levelHeight;
 
-            nodesInLevel.forEach((nodeId, index) => {
-                const x = (index * nodeWidth) - (levelWidth / 2) + (nodeWidth / 2);
-                const y = level * levelHeight;
-                positions[nodeId] = { x, y, level };
-            });
+            // Special handling for level 0 (root user and siblings)
+            if (level === 0) {
+                // Separate nodes by type
+                const rootNode = nodesInLevel.find(id => {
+                    const node = nodes.find(n => n.id === id);
+                    return node?.relationshipType === 'root';
+                });
+
+                const brothers = nodesInLevel.filter(id => {
+                    const node = nodes.find(n => n.id === id);
+                    return node?.relationshipType === 'brother';
+                });
+
+                const sisters = nodesInLevel.filter(id => {
+                    const node = nodes.find(n => n.id === id);
+                    return node?.relationshipType === 'sister';
+                });
+
+                const others = nodesInLevel.filter(id => {
+                    const node = nodes.find(n => n.id === id);
+                    return node && !['root', 'brother', 'sister'].includes(node.relationshipType);
+                });
+
+                // Position root user at center (x = 0)
+                if (rootNode) {
+                    positions[rootNode] = { x: 0, y, level };
+                }
+
+                // Position sisters on the LEFT (negative x)
+                sisters.forEach((nodeId, index) => {
+                    const x = -(index + 1) * nodeWidth;
+                    positions[nodeId] = { x, y, level };
+                });
+
+                // Position brothers on the RIGHT (positive x)
+                brothers.forEach((nodeId, index) => {
+                    const x = (index + 1) * nodeWidth;
+                    positions[nodeId] = { x, y, level };
+                });
+
+                // Position other level 0 relatives (spouse, cousin, etc.)
+                // Place them after brothers on the right
+                others.forEach((nodeId, index) => {
+                    const x = (brothers.length + index + 1) * nodeWidth;
+                    positions[nodeId] = { x, y, level };
+                });
+            } else {
+                // Standard positioning for other levels
+                const levelWidth = nodesInLevel.length * nodeWidth;
+                nodesInLevel.forEach((nodeId, index) => {
+                    const x = (index * nodeWidth) - (levelWidth / 2) + (nodeWidth / 2);
+                    positions[nodeId] = { x, y, level };
+                });
+            }
         });
 
         // Calculate SVG dimensions
@@ -400,70 +463,72 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData }) => {
                         transition: isDragging ? 'none' : 'transform 0.3s ease-out'
                     }}
                 >
-                    {/* Draw edges */}
+                    {/* Draw edges - only show connections to the root user */}
                     <g>
-                        {treeData.edges.map((edge) => {
-                            const sourcePos = nodePositions[edge.source];
-                            const targetPos = nodePositions[edge.target];
+                        {treeData.edges
+                            .filter(edge => edge.source === treeData.rootUserId || edge.target === treeData.rootUserId)
+                            .map((edge) => {
+                                const sourcePos = nodePositions[edge.source];
+                                const targetPos = nodePositions[edge.target];
 
-                            if (!sourcePos || !targetPos) return null;
+                                if (!sourcePos || !targetPos) return null;
 
-                            const x1 = sourcePos.x - (minX || 0) + padding;
-                            const y1 = sourcePos.y - (minY || 0) + padding;
-                            const x2 = targetPos.x - (minX || 0) + padding;
-                            const y2 = targetPos.y - (minY || 0) + padding;
+                                const x1 = sourcePos.x - (minX || 0) + padding;
+                                const y1 = sourcePos.y - (minY || 0) + padding;
+                                const x2 = targetPos.x - (minX || 0) + padding;
+                                const y2 = targetPos.y - (minY || 0) + padding;
 
-                            // Use cubic bezier curve for smooth connections
-                            const midY = (y1 + y2) / 2;
+                                // Use cubic bezier curve for smooth connections
+                                const midY = (y1 + y2) / 2;
 
-                            return (
-                                <g key={edge.id}>
-                                    {/* Glow effect */}
-                                    <path
-                                        d={`M ${x1} ${y1 + 60} C ${x1} ${midY}, ${x2} ${midY}, ${x2} ${y2 - 60}`}
-                                        stroke={edge.color}
-                                        strokeWidth="4"
-                                        fill="none"
-                                        opacity="0.3"
-                                        filter="blur(8px)"
-                                    />
-                                    {/* Main line */}
-                                    <path
-                                        d={`M ${x1} ${y1 + 60} C ${x1} ${midY}, ${x2} ${midY}, ${x2} ${y2 - 60}`}
-                                        stroke={edge.color}
-                                        strokeWidth="3"
-                                        fill="none"
-                                        opacity="0.9"
-                                        strokeLinecap="round"
-                                    />
-                                    {/* Relationship label */}
-                                    <g>
-                                        <rect
-                                            x={(x1 + x2) / 2 - 50}
-                                            y={midY - 15}
-                                            width="100"
-                                            height="30"
-                                            fill="rgba(15, 23, 42, 0.95)"
+                                return (
+                                    <g key={edge.id}>
+                                        {/* Glow effect */}
+                                        <path
+                                            d={`M ${x1} ${y1 + 60} C ${x1} ${midY}, ${x2} ${midY}, ${x2} ${y2 - 60}`}
                                             stroke={edge.color}
-                                            strokeWidth="2"
-                                            rx="15"
-                                            ry="15"
+                                            strokeWidth="4"
+                                            fill="none"
+                                            opacity="0.3"
+                                            filter="blur(8px)"
                                         />
-                                        <text
-                                            x={(x1 + x2) / 2}
-                                            y={midY + 4}
-                                            textAnchor="middle"
-                                            fontSize="11"
-                                            fontWeight="700"
-                                            fill={edge.color}
-                                            style={{ textTransform: 'uppercase', letterSpacing: '0.5px' }}
-                                        >
-                                            {edge.label}
-                                        </text>
+                                        {/* Main line */}
+                                        <path
+                                            d={`M ${x1} ${y1 + 60} C ${x1} ${midY}, ${x2} ${midY}, ${x2} ${y2 - 60}`}
+                                            stroke={edge.color}
+                                            strokeWidth="3"
+                                            fill="none"
+                                            opacity="0.9"
+                                            strokeLinecap="round"
+                                        />
+                                        {/* Relationship label */}
+                                        <g>
+                                            <rect
+                                                x={(x1 + x2) / 2 - 50}
+                                                y={midY - 15}
+                                                width="100"
+                                                height="30"
+                                                fill="rgba(15, 23, 42, 0.95)"
+                                                stroke={edge.color}
+                                                strokeWidth="2"
+                                                rx="15"
+                                                ry="15"
+                                            />
+                                            <text
+                                                x={(x1 + x2) / 2}
+                                                y={midY + 4}
+                                                textAnchor="middle"
+                                                fontSize="11"
+                                                fontWeight="700"
+                                                fill={edge.color}
+                                                style={{ textTransform: 'uppercase', letterSpacing: '0.5px' }}
+                                            >
+                                                {edge.label}
+                                            </text>
+                                        </g>
                                     </g>
-                                </g>
-                            );
-                        })}
+                                );
+                            })}
                     </g>
 
                     {/* Draw nodes */}
@@ -475,18 +540,19 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData }) => {
                             const x = pos.x - (minX || 0) + padding;
                             const y = pos.y - (minY || 0) + padding;
                             const isRoot = node.id === treeData.rootUserId;
-                            const isHovered = hoveredNode === node.id;
+                            const isHovered = hoveredNode === node.id && !node.shouldBlur;
                             const radius = isRoot ? 60 : 50;
+                            const shouldBlur = node.shouldBlur || false;
 
                             return (
                                 <g
                                     key={`node-${node.id}`}
-                                    onMouseEnter={() => setHoveredNode(node.id)}
+                                    onMouseEnter={() => !shouldBlur && setHoveredNode(node.id)}
                                     onMouseLeave={() => setHoveredNode(null)}
-                                    style={{ cursor: 'pointer' }}
+                                    style={{ cursor: shouldBlur ? 'not-allowed' : 'pointer', opacity: shouldBlur ? 0.6 : 1 }}
                                 >
                                     {/* Glow effect */}
-                                    {(isRoot || isHovered) && (
+                                    {(isRoot || isHovered) && !shouldBlur && (
                                         <circle
                                             cx={x}
                                             cy={y}
@@ -506,7 +572,9 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData }) => {
                                         strokeWidth={isHovered ? 4 : 3}
                                         style={{
                                             transition: 'all 0.3s ease',
-                                            filter: `drop-shadow(0 ${isHovered ? 12 : 8}px ${isHovered ? 24 : 16}px rgba(0, 0, 0, 0.4))`
+                                            filter: shouldBlur
+                                                ? 'blur(8px) drop-shadow(0 8px 16px rgba(0, 0, 0, 0.4))'
+                                                : `drop-shadow(0 ${isHovered ? 12 : 8}px ${isHovered ? 24 : 16}px rgba(0, 0, 0, 0.4))`
                                         }}
                                     />
                                     {/* Clip path for circular image */}
@@ -527,6 +595,9 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData }) => {
                                                 height={radius * 2 - 10}
                                                 clipPath={`url(#clip-${node.id})`}
                                                 preserveAspectRatio="xMidYMid slice"
+                                                style={{
+                                                    filter: shouldBlur ? 'blur(8px)' : 'none'
+                                                }}
                                             />
                                         </>
                                     ) : (
@@ -538,8 +609,11 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData }) => {
                                             fontSize={isRoot ? 32 : 24}
                                             fontWeight="800"
                                             fill={isRoot ? '#FFFFFF' : '#0F172A'}
+                                            style={{
+                                                filter: shouldBlur ? 'blur(4px)' : 'none'
+                                            }}
                                         >
-                                            {node.name.charAt(0).toUpperCase()}
+                                            {shouldBlur ? '█' : node.name.charAt(0).toUpperCase()}
                                         </text>
                                     )}
                                     {/* Name label */}
@@ -552,36 +626,17 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData }) => {
                                         fill="#FFFFFF"
                                         style={{
                                             textShadow: '0 2px 8px rgba(0,0,0,0.8)',
+                                            filter: shouldBlur ? 'blur(4px)' : 'none'
                                         }}
                                     >
-                                        {node.name.split(' ')[0]}
+                                        {shouldBlur ? '████████' : node.name.split(' ')[0]}
                                     </text>
-                                    {/* Relationship badge */}
-                                    {!isRoot && (
-                                        <g>
-                                            <rect
-                                                x={x - 45}
-                                                y={y + radius + 35}
-                                                width="90"
-                                                height="24"
-                                                fill="rgba(15, 23, 42, 0.9)"
-                                                stroke={node.nodeColor}
-                                                strokeWidth="2"
-                                                rx="12"
-                                                ry="12"
-                                            />
-                                            <text
-                                                x={x}
-                                                y={y + radius + 50}
-                                                textAnchor="middle"
-                                                fontSize="10"
-                                                fontWeight="600"
-                                                fill="#FFFFFF"
-                                            >
-                                                {node.relationshipLabel}
-                                            </text>
-                                        </g>
+                                    {/* Blurred badge */}
+                                    {shouldBlur && (
+                                        <title>This user has hidden their nuclear family details</title>
                                     )}
+                                    {/* Relationship badge */}
+
                                 </g>
                             );
                         })}

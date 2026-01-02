@@ -88,7 +88,7 @@ class ChildAccountController extends Controller
             'last_name' => 'required|string|max:255',
             'username' => 'required|string|max:255|unique:users,username',
             'gender' => 'required|in:male,female',
-            'date_of_birth' => 'required|date|before:today',
+            'date_of_birth' => 'required|date|before_or_equal:today',
         ]);
 
         try {

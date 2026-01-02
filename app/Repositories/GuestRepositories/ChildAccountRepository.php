@@ -85,7 +85,14 @@ class ChildAccountRepository
      */
     public function removeChildAccount(int $childId): bool
     {
-        return User::destroy($childId) > 0;
+        $child = User::find($childId);
+
+        if (!$child) {
+            return false;
+        }
+
+        // Permanently delete the child user (not soft delete)
+        return $child->forceDelete();
     }
 
     /**

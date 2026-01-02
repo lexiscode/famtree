@@ -264,4 +264,27 @@ class NotificationService
     {
         return $this->notificationRepository->hasUnread($userId);
     }
+
+    /**
+     * Notify when someone follows you
+     */
+    public function sendFollowNotification(int $followerId, int $followedUserId): void
+    {
+        $follower = User::find($followerId);
+
+        if (!$follower || !User::find($followedUserId)) {
+            return;
+        }
+
+        $this->createNotification(
+            $followedUserId,
+            'user_followed',
+            'New Follower',
+            "{$follower->first_name} {$follower->last_name} started following you.",
+            $followerId,
+            $followerId,
+            'user_follow',
+            route('profile.view', ['userId' => $followerId])
+        );
+    }
 }

@@ -168,4 +168,39 @@ class PrivacyController extends Controller
             ],
         ]);
     }
+
+    /**
+     * Update nuclear family blur setting for public profiles
+     */
+    public function updateNuclearFamilyBlur(\Illuminate\Http\Request $request): JsonResponse
+    {
+        $user = auth()->user();
+        $validated = $request->validate([
+            'blur_nuclear_family_for_public' => 'required|boolean',
+        ]);
+
+        // Update the blur setting
+        $user->update([
+            'blur_nuclear_family_for_public' => $validated['blur_nuclear_family_for_public'],
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Nuclear family blur setting updated successfully.',
+            'blur_nuclear_family_for_public' => $user->blur_nuclear_family_for_public,
+        ]);
+    }
+
+    /**
+     * Get nuclear family blur setting
+     */
+    public function getNuclearFamilyBlur(): JsonResponse
+    {
+        $user = auth()->user();
+
+        return response()->json([
+            'success' => true,
+            'blur_nuclear_family_for_public' => $user->blur_nuclear_family_for_public ?? false,
+        ]);
+    }
 }

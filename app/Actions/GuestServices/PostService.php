@@ -24,6 +24,7 @@ class PostService
         $postData = [
             'user_id' => $user->id,
             'type' => $data['type'],
+            'privacy' => $data['privacy'] ?? 'connected',
             'title' => $data['title'] ?? null,
             'content' => $data['type'] === 'text' ? $data['content'] : null,
         ];
@@ -97,12 +98,12 @@ class PostService
     }
 
     /**
-     * Get user's posts
+     * Get user's posts (filtered by privacy settings)
      */
     public function getUserPosts(int $userId, int $limit = 20, int $offset = 0)
     {
-        $posts = $this->postRepository->getUserPosts($userId, $limit, $offset);
         $currentUserId = auth()->id();
+        $posts = $this->postRepository->getUserPosts($userId, $currentUserId, $limit, $offset);
         return $this->formatPosts($posts, $currentUserId);
     }
 
@@ -118,22 +119,22 @@ class PostService
     }
 
     /**
-     * Search user posts
+     * Search user posts (filtered by privacy settings)
      */
     public function searchPosts(int $userId, string $query)
     {
-        $posts = $this->postRepository->searchUserPosts($userId, $query);
         $currentUserId = auth()->id();
+        $posts = $this->postRepository->searchUserPosts($userId, $currentUserId, $query);
         return $this->formatPosts($posts, $currentUserId);
     }
 
     /**
-     * Filter posts by type
+     * Filter posts by type (filtered by privacy settings)
      */
     public function filterPostsByType(int $userId, string $type)
     {
-        $posts = $this->postRepository->filterByType($userId, $type);
         $currentUserId = auth()->id();
+        $posts = $this->postRepository->filterByType($userId, $currentUserId, $type);
         return $this->formatPosts($posts, $currentUserId);
     }
 
@@ -311,11 +312,12 @@ class PostService
     }
 
     /**
-     * Get engagement statistics for user's posts
+     * Get engagement statistics for user's posts (filtered by privacy settings)
      */
     public function getEngagementStats(int $userId)
     {
-        $posts = $this->postRepository->getUserPosts($userId, 1000);
+        $currentUserId = auth()->id();
+        $posts = $this->postRepository->getUserPosts($userId, $currentUserId, 1000, 0);
 
         $totalReactions = $posts->sum('reactions_count');
         $totalComments = $posts->sum('comments_count');
@@ -336,11 +338,12 @@ class PostService
     }
 
     /**
-     * Get top engaged posts
+     * Get top engaged posts (filtered by privacy settings)
      */
     public function getTopEngagedPosts(int $userId, int $limit = 5)
     {
-        $posts = $this->postRepository->getUserPosts($userId, 1000);
+        $currentUserId = auth()->id();
+        $posts = $this->postRepository->getUserPosts($userId, $currentUserId, 1000, 0);
 
         $topPosts = $posts
             ->sortByDesc(function ($post) {
@@ -348,7 +351,6 @@ class PostService
             })
             ->take($limit);
 
-        $currentUserId = auth()->id();
         return $this->formatPosts($topPosts, $currentUserId);
     }
 }

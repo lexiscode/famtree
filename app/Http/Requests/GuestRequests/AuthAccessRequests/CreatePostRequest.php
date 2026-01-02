@@ -15,6 +15,7 @@ class CreatePostRequest extends FormRequest
     {
         return [
             'type' => 'required|in:text,voice',
+            'privacy' => 'required|in:public,connected,private',
             'content' => 'nullable|string|max:5000',
             'voice_file' => 'nullable|file|mimes:webm,wav,mp3|max:20000',
             'voice_duration' => 'nullable|integer|min:1|max:600',
@@ -28,6 +29,8 @@ class CreatePostRequest extends FormRequest
         return [
             'type.required' => 'Post type is required',
             'type.in' => 'Post type must be either text or voice',
+            'privacy.required' => 'Privacy setting is required',
+            'privacy.in' => 'Privacy setting must be public, connected, or private',
             'content.max' => 'Content cannot exceed 5000 characters',
             'voice_file.mimes' => 'Voice file must be in webm, wav, or mp3 format',
             'voice_file.max' => 'Voice file cannot exceed 20MB',

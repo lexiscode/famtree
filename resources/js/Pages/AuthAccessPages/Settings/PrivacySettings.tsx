@@ -44,12 +44,15 @@ export default function PrivacySettings() {
     });
     const [fieldLoadingState, setFieldLoadingState] = useState<{ [key: string]: boolean }>({});
 
-    // Content-Level Privacy Controls (Stories and Galleries)
+    // Content-Level Privacy Controls (Galleries only - Stories now have per-post privacy)
     const [contentVisibility, setContentVisibility] = useState({
-        stories: 'connected',
         galleries: 'connected',
     });
     const [isLoadingContentPrivacy, setIsLoadingContentPrivacy] = useState(true);
+
+    // Nuclear Family Blur Setting
+    const [blurNuclearFamily, setBlurNuclearFamily] = useState(false);
+    const [isLoadingBlurSetting, setIsLoadingBlurSetting] = useState(true);
 
     const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const [saveLoading, setSaveLoading] = useState(false);
@@ -172,6 +175,21 @@ export default function PrivacySettings() {
         }
     };
 
+    const fetchNuclearFamilyBlur = async () => {
+        setIsLoadingBlurSetting(true);
+        try {
+            const response = await fetch(route('settings.get-nuclear-family-blur'));
+            const data = await response.json();
+            if (data.success) {
+                setBlurNuclearFamily(data.blur_nuclear_family_for_public ?? false);
+            }
+        } catch (error) {
+            console.error('Error fetching nuclear family blur setting:', error);
+        } finally {
+            setIsLoadingBlurSetting(false);
+        }
+    };
+
     const handleSaveContentPrivacy = async () => {
         setSaveLoading(true);
         setSaveMessage(null);
@@ -202,10 +220,46 @@ export default function PrivacySettings() {
         }
     };
 
+    const handleBlurNuclearFamilyToggle = async (newValue: boolean) => {
+        setBlurNuclearFamily(newValue);
+        setSaveLoading(true);
+        setSaveMessage(null);
+
+        try {
+            const response = await fetch(route('settings.update-nuclear-family-blur'), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+                body: JSON.stringify({
+                    blur_nuclear_family_for_public: newValue,
+                }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                setSaveMessage({ type: 'error', text: data.error || 'Failed to update blur setting.' });
+                // Revert on error
+                setBlurNuclearFamily(!newValue);
+            } else {
+                setSaveMessage({ type: 'success', text: data.message || 'Blur setting updated successfully.' });
+            }
+        } catch (error) {
+            setSaveMessage({ type: 'error', text: 'An error occurred while updating blur setting.' });
+            // Revert on error
+            setBlurNuclearFamily(!newValue);
+        } finally {
+            setSaveLoading(false);
+        }
+    };
+
     useEffect(() => {
         fetchBlockedUsers();
         fetchFieldPrivacy();
         fetchContentPrivacy();
+        fetchNuclearFamilyBlur();
         // Load current profile visibility from authenticated user
         if (props.auth?.user?.profile_visibility) {
             setProfileVisibility(props.auth.user.profile_visibility as 'public' | 'connected' | 'private');
@@ -474,6 +528,59 @@ export default function PrivacySettings() {
                         </div>
                     </div>
 
+                    {/* Nuclear Family Blur Setting */}
+                    {profileVisibility === 'public' && (
+                        <div className="settings-section">
+                            <div className="settings-section-header">
+                                <div className="settings-section-icon">
+                                    <EyeOff size={24} />
+                                </div>
+                                <div className="settings-section-title-wrapper">
+                                    <h2 className="settings-section-title">Nuclear Family Privacy</h2>
+                                    <p className="settings-section-subtitle">Control visibility of close family members on public profiles</p>
+                                </div>
+                            </div>
+
+                            <div className="settings-section-body">
+                                {saveMessage && (
+                                    <div className={`settings-alert settings-alert-${saveMessage.type}`}>
+                                        <div className="settings-alert-icon">
+                                            {saveMessage.type === 'success' ? <Check size={20} /> : <AlertTriangle size={20} />}
+                                        </div>
+                                        <div className="settings-alert-content">
+                                            <p className="settings-alert-message">{saveMessage.text}</p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {isLoadingBlurSetting ? (
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+                                        <Loader size={20} style={{ animation: 'spin 1s linear infinite', marginRight: '0.5rem' }} />
+                                        <span style={{ color: '#666' }}>Loading blur setting...</span>
+                                    </div>
+                                ) : (
+                                    <div className="settings-toggle-group">
+                                        <div className="settings-toggle-info">
+                                            <h3 className="settings-toggle-title">Blur Nuclear Family Members</h3>
+                                            <p className="settings-toggle-description">
+                                                When enabled, non-connected users viewing your public profile will see blurred names and profile images for your nuclear family members (parents, children, siblings). Connected users will see everything normally.
+                                            </p>
+                                        </div>
+                                        <label className="settings-switch">
+                                            <input
+                                                type="checkbox"
+                                                checked={blurNuclearFamily}
+                                                onChange={(e) => handleBlurNuclearFamilyToggle(e.target.checked)}
+                                                disabled={saveLoading}
+                                            />
+                                            <span className="settings-switch-slider"></span>
+                                        </label>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Privacy Field Controls */}
                     <div className="settings-section">
                         <div className="settings-section-header">
@@ -546,8 +653,8 @@ export default function PrivacySettings() {
                                 <Lock size={24} />
                             </div>
                             <div className="settings-section-title-wrapper">
-                                <h2 className="settings-section-title">Content Privacy</h2>
-                                <p className="settings-section-subtitle">Control who can view your stories and galleries</p>
+                                <h2 className="settings-section-title">Gallery Privacy</h2>
+                                <p className="settings-section-subtitle">Control who can view your galleries (Stories have per-post privacy)</p>
                             </div>
                         </div>
 
@@ -570,25 +677,10 @@ export default function PrivacySettings() {
                                 </div>
                             ) : (
                                 <>
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '2rem', marginBottom: '2rem' }}>
+                                    <div style={{ marginBottom: '2rem', maxWidth: '400px' }}>
                                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                                             <label className="settings-label" style={{ marginBottom: '0.75rem' }}>
-                                                Stories
-                                            </label>
-                                            <select
-                                                value={contentVisibility.stories}
-                                                onChange={(e) => setContentVisibility({ ...contentVisibility, stories: e.target.value })}
-                                                className="settings-select"
-                                                disabled={saveLoading}
-                                            >
-                                                <option value="public">Public</option>
-                                                <option value="connected">Connected Only</option>
-                                                <option value="private">Private</option>
-                                            </select>
-                                        </div>
-                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                            <label className="settings-label" style={{ marginBottom: '0.75rem' }}>
-                                                Galleries
+                                                Galleries Visibility
                                             </label>
                                             <select
                                                 value={contentVisibility.galleries}
@@ -600,6 +692,9 @@ export default function PrivacySettings() {
                                                 <option value="connected">Connected Only</option>
                                                 <option value="private">Private</option>
                                             </select>
+                                            <small style={{ color: '#666', marginTop: '0.5rem', fontSize: '0.875rem' }}>
+                                                Note: Each story now has its own privacy setting when you create it
+                                            </small>
                                         </div>
                                     </div>
 
@@ -609,7 +704,7 @@ export default function PrivacySettings() {
                                             disabled={saveLoading}
                                             className="settings-btn settings-btn-primary"
                                         >
-                                            {saveLoading ? 'Saving...' : 'Save Content Privacy Settings'}
+                                            {saveLoading ? 'Saving...' : 'Save Gallery Privacy Settings'}
                                         </button>
                                     </div>
                                 </>

@@ -1,19 +1,26 @@
 import { useCallback, useState } from 'react';
 import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { ArrowLeft, AlertCircle, Info, Lightbulb } from 'lucide-react';
+import { ArrowLeft, AlertCircle, Info, Lightbulb, Users, CheckCircle } from 'lucide-react';
 import './CreateTree.css';
 
-interface Props {
-    connectionCount: number;
+interface NuclearFamilyMember {
+    user_id: number;
+    name: string;
+    role: 'spouse' | 'child';
 }
 
-export default function CreateTree({ connectionCount }: Props) {
+interface Props {
+    canCreate: boolean;
+    validationErrors: string[];
+    nuclearFamilyMembers: NuclearFamilyMember[];
+}
+
+export default function CreateTree({ canCreate, validationErrors, nuclearFamilyMembers }: Props) {
     const [formData, setFormData] = useState({
         tree_name: '',
         description: '',
         is_public: false,
-        auto_populate: false,
     });
 
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -97,8 +104,43 @@ export default function CreateTree({ connectionCount }: Props) {
 
                     {/* Form Container */}
                     <div className="tree-form-container">
-                        <h1 className="tree-form-title">Create Your Family Tree</h1>
-                        <p className="tree-form-subtitle">Build and manage your family tree with ease</p>
+                        <h1 className="tree-form-title">Create Your Nuclear Family Tree</h1>
+                        <p className="tree-form-subtitle">Create a family tree for you and your immediate family</p>
+
+                        {/* Validation Errors */}
+                        {!canCreate && validationErrors.length > 0 && (
+                            <div className="tree-error-alert" style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem', padding: '1.5rem', borderRadius: '10px', marginBottom: '2rem' }}>
+                                <AlertCircle size={22} style={{ marginTop: '0.1rem', flexShrink: 0 }} />
+                                <div style={{ flex: 1 }}>
+                                    <div style={{ fontWeight: 700, marginBottom: '0.75rem', fontSize: '0.95rem' }}>Unable to Create Family Tree</div>
+                                    <ul style={{ margin: 0, paddingLeft: '1.4rem' }}>
+                                        {validationErrors.map((error, index) => (
+                                            <li key={index} style={{ marginBottom: '0.4rem', fontSize: '0.9rem' }}>{error}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Nuclear Family Preview */}
+                        {canCreate && nuclearFamilyMembers.length > 0 && (
+                            <div className="tree-info-alert" style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem', padding: '1.5rem', borderRadius: '10px', marginBottom: '2rem' }}>
+                                <Users size={22} style={{ marginTop: '0.1rem', flexShrink: 0 }} />
+                                <div style={{ flex: 1 }}>
+                                    <div style={{ fontWeight: 700, marginBottom: '0.75rem', fontSize: '0.95rem' }}>Nuclear Family Members</div>
+                                    <p style={{ margin: '0 0 0.85rem 0', fontSize: '0.9rem', color: '#555' }}>
+                                        The following family members will be automatically added to your tree:
+                                    </p>
+                                    <ul style={{ margin: 0, paddingLeft: '1.4rem' }}>
+                                        {nuclearFamilyMembers.map((member) => (
+                                            <li key={member.user_id} style={{ marginBottom: '0.4rem', fontSize: '0.9rem' }}>
+                                                <strong>{member.name}</strong> ({member.role})
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </div>
+                        )}
 
                         <form onSubmit={handleSubmit}>
                             {/* Tree Name Field */}
@@ -143,39 +185,16 @@ export default function CreateTree({ connectionCount }: Props) {
                                 </div>
                             </div>
 
-                            {/* Auto-Populate Setting */}
-                            <div className="tree-form-group">
-                                <label className="tree-form-label">Add Members</label>
-                                {connectionCount > 0 ? (
-                                    <>
-                                        <label className="tree-form-checkbox">
-                                            <input type="checkbox" name="auto_populate" checked={formData.auto_populate} onChange={handleInputChange} />
-                                            <span>Automatically add my {connectionCount} connection{connectionCount !== 1 ? 's' : ''} to this tree</span>
-                                        </label>
-                                        <div className="tree-form-help" style={{ marginTop: '0.6rem' }}>
-                                            This will invite your existing connections to join the tree. You can add or remove members anytime.
-                                        </div>
-                                    </>
-                                ) : (
-                                    <div className="tree-info-alert" style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem', padding: '1.2rem', borderRadius: '10px', marginBottom: 0 }}>
-                                        <Info size={20} style={{ marginTop: '0.1rem', flexShrink: 0 }} />
-                                        <div style={{ fontSize: '0.9rem', lineHeight: '1.6' }}>
-                                            You don't have any connections yet. <strong>Start making connections</strong> first so you can auto-populate members when creating trees.
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
                             {/* Tips Box */}
                             <div className="tree-info-alert" style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem', padding: '1.5rem', borderRadius: '10px' }}>
                                 <Lightbulb size={22} style={{ marginTop: '0.1rem', flexShrink: 0 }} />
                                 <div style={{ fontSize: '0.9rem', lineHeight: '1.7' }}>
-                                    <div style={{ fontWeight: 700, marginBottom: '0.75rem', fontSize: '0.95rem' }}>Tips for building a great family tree:</div>
+                                    <div style={{ fontWeight: 700, marginBottom: '0.75rem', fontSize: '0.95rem' }}>About Nuclear Family Trees:</div>
                                     <ul style={{ margin: 0, paddingLeft: '1.4rem' }}>
-                                        <li style={{ marginBottom: '0.4rem' }}>Start with immediate family members (parents, siblings, children)</li>
-                                        <li style={{ marginBottom: '0.4rem' }}>Add relationships to help visualize family connections</li>
-                                        <li style={{ marginBottom: '0.4rem' }}>Invite family members to collaborate and grow the tree together</li>
-                                        <li>Keep information up-to-date for accuracy and meaningful connections</li>
+                                        <li style={{ marginBottom: '0.4rem' }}>Your nuclear family members (spouse and children) will be automatically added</li>
+                                        <li style={{ marginBottom: '0.4rem' }}>Nuclear family members can add their own spouse and children to the tree</li>
+                                        <li style={{ marginBottom: '0.4rem' }}>You can send connection requests to other family trees to merge families</li>
+                                        <li>Once merged, both tree creators become co-admins with equal permissions</li>
                                     </ul>
                                 </div>
                             </div>
@@ -192,9 +211,9 @@ export default function CreateTree({ connectionCount }: Props) {
                                 <button
                                     type="submit"
                                     className="tree-form-submit"
-                                    disabled={loading || !formData.tree_name.trim()}
+                                    disabled={!canCreate || loading || !formData.tree_name.trim()}
                                 >
-                                    {loading ? 'Creating Family Tree...' : 'Create Family Tree'}
+                                    {loading ? 'Creating Nuclear Family Tree...' : 'Create Nuclear Family Tree'}
                                 </button>
                             </div>
                         </form>

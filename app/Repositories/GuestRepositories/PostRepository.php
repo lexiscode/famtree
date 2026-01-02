@@ -8,15 +8,45 @@ class PostRepository
 {
     /**
      * Get all posts for a user with relationships
+     * Filters posts based on privacy settings and viewer's relationship to post owner
      */
-    public function getUserPosts(int $userId, int $limit = 20, int $offset = 0)
+    public function getUserPosts(int $userId, int $viewerId, int $limit = 20, int $offset = 0)
     {
-        return Post::where('user_id', $userId)
-            ->with(['user', 'images', 'reactions', 'comments.user'])
-            ->orderBy('created_at', 'desc')
-            ->limit($limit)
-            ->offset($offset)
-            ->get();
+        $query = Post::where('user_id', $userId)
+            ->with(['user', 'images', 'reactions', 'comments.user']);
+
+        // If viewer is not the owner, filter by privacy settings
+        if ($viewerId !== $userId) {
+            $query->where(function ($q) use ($userId, $viewerId) {
+                // Always show public posts
+                $q->where('privacy', 'public')
+                  // Show 'connected' posts only if viewer is connected to owner
+                  ->orWhere(function ($subQ) use ($userId, $viewerId) {
+                      $subQ->where('privacy', 'connected')
+                           ->whereExists(function ($connQuery) use ($userId, $viewerId) {
+                               $connQuery->select(\DB::raw(1))
+                                   ->from('user_connections')
+                                   ->where('status', 'accepted')
+                                   ->where(function ($q) use ($userId, $viewerId) {
+                                       $q->where(function ($q) use ($userId, $viewerId) {
+                                           $q->where('requester_user_id', $viewerId)
+                                             ->where('recipient_user_id', $userId);
+                                       })
+                                       ->orWhere(function ($q) use ($userId, $viewerId) {
+                                           $q->where('requester_user_id', $userId)
+                                             ->where('recipient_user_id', $viewerId);
+                                       });
+                                   });
+                           });
+                  });
+                // Note: 'private' posts are never shown to others
+            });
+        }
+
+        return $query->orderBy('created_at', 'desc')
+                     ->limit($limit)
+                     ->offset($offset)
+                     ->get();
     }
 
     /**
@@ -66,15 +96,42 @@ class PostRepository
 
     /**
      * Search posts by title or content
+     * Filters posts based on privacy settings and viewer's relationship to post owner
      */
-    public function searchUserPosts(int $userId, string $query, int $limit = 20)
+    public function searchUserPosts(int $userId, int $viewerId, string $query, int $limit = 20)
     {
-        return Post::where('user_id', $userId)
+        $queryBuilder = Post::where('user_id', $userId)
             ->where(function ($q) use ($query) {
                 $q->where('title', 'like', "%{$query}%")
                   ->orWhere('content', 'like', "%{$query}%");
-            })
-            ->with(['user', 'images', 'reactions', 'comments.user'])
+            });
+
+        // Apply privacy filtering if viewer is not the owner
+        if ($viewerId !== $userId) {
+            $queryBuilder->where(function ($q) use ($userId, $viewerId) {
+                $q->where('privacy', 'public')
+                  ->orWhere(function ($subQ) use ($userId, $viewerId) {
+                      $subQ->where('privacy', 'connected')
+                           ->whereExists(function ($connQuery) use ($userId, $viewerId) {
+                               $connQuery->select(\DB::raw(1))
+                                   ->from('user_connections')
+                                   ->where('status', 'accepted')
+                                   ->where(function ($q) use ($userId, $viewerId) {
+                                       $q->where(function ($q) use ($userId, $viewerId) {
+                                           $q->where('requester_user_id', $viewerId)
+                                             ->where('recipient_user_id', $userId);
+                                       })
+                                       ->orWhere(function ($q) use ($userId, $viewerId) {
+                                           $q->where('requester_user_id', $userId)
+                                             ->where('recipient_user_id', $viewerId);
+                                       });
+                                   });
+                           });
+                  });
+            });
+        }
+
+        return $queryBuilder->with(['user', 'images', 'reactions', 'comments.user'])
             ->orderBy('created_at', 'desc')
             ->limit($limit)
             ->get();
@@ -82,12 +139,39 @@ class PostRepository
 
     /**
      * Filter posts by type
+     * Filters posts based on privacy settings and viewer's relationship to post owner
      */
-    public function filterByType(int $userId, string $type, int $limit = 20)
+    public function filterByType(int $userId, int $viewerId, string $type, int $limit = 20)
     {
-        return Post::where('user_id', $userId)
-            ->where('type', $type)
-            ->with(['user', 'images', 'reactions', 'comments.user'])
+        $query = Post::where('user_id', $userId)
+            ->where('type', $type);
+
+        // Apply privacy filtering if viewer is not the owner
+        if ($viewerId !== $userId) {
+            $query->where(function ($q) use ($userId, $viewerId) {
+                $q->where('privacy', 'public')
+                  ->orWhere(function ($subQ) use ($userId, $viewerId) {
+                      $subQ->where('privacy', 'connected')
+                           ->whereExists(function ($connQuery) use ($userId, $viewerId) {
+                               $connQuery->select(\DB::raw(1))
+                                   ->from('user_connections')
+                                   ->where('status', 'accepted')
+                                   ->where(function ($q) use ($userId, $viewerId) {
+                                       $q->where(function ($q) use ($userId, $viewerId) {
+                                           $q->where('requester_user_id', $viewerId)
+                                             ->where('recipient_user_id', $userId);
+                                       })
+                                       ->orWhere(function ($q) use ($userId, $viewerId) {
+                                           $q->where('requester_user_id', $userId)
+                                             ->where('recipient_user_id', $viewerId);
+                                       });
+                                   });
+                           });
+                  });
+            });
+        }
+
+        return $query->with(['user', 'images', 'reactions', 'comments.user'])
             ->orderBy('created_at', 'desc')
             ->limit($limit)
             ->get();

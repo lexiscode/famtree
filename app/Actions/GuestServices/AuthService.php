@@ -38,6 +38,7 @@ class AuthService
             'last_name' => $data['lastName'],
             'username' => $data['username'],
             'email' => $data['email'],
+            'gender' => $data['gender'],
             'password' => Hash::make($data['password']),
         ]);
 

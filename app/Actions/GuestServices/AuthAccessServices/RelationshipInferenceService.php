@@ -156,11 +156,47 @@ class RelationshipInferenceService
             'sister_mother' => 'mother',
             'sister_father' => 'father',
 
-            // Parent with child
-            'mother_son' => 'uncle',
-            'mother_daughter' => 'aunt',
-            'father_son' => 'uncle',
-            'father_daughter' => 'aunt',
+            // Children viewing their other parent (spousal inference)
+            'son_mother' => 'wife',
+            'son_father' => 'husband',
+            'daughter_mother' => 'wife',
+            'daughter_father' => 'husband',
+
+            // Parent with child through siblings (parent viewing their children)
+            'son_brother' => 'son',
+            'son_sister' => 'daughter',
+            'daughter_brother' => 'son',
+            'daughter_sister' => 'daughter',
+
+            // Grandparent relationships (parent → child → grandchild)
+            'son_son' => 'grandson',
+            'son_daughter' => 'granddaughter',
+            'daughter_son' => 'grandson',
+            'daughter_daughter' => 'granddaughter',
+
+            // Parent's grandchildren are nieces/nephews (viewing through parent to their grandchild)
+            'father_grandson' => 'nephew',
+            'father_granddaughter' => 'niece',
+            'mother_grandson' => 'nephew',
+            'mother_granddaughter' => 'niece',
+            'parent_grandson' => 'nephew',
+            'parent_granddaughter' => 'niece',
+
+            // Parent's children are siblings (parent → child → child)
+            'mother_son' => 'brother',
+            'mother_daughter' => 'sister',
+            'father_son' => 'brother',
+            'father_daughter' => 'sister',
+            'parent_son' => 'brother',        // When parent gender unknown
+            'parent_daughter' => 'sister',    // When parent gender unknown
+
+            // Parent's siblings are aunts/uncles (parent → sibling)
+            'mother_brother' => 'uncle',
+            'mother_sister' => 'aunt',
+            'father_brother' => 'uncle',
+            'father_sister' => 'aunt',
+            'parent_brother' => 'uncle',      // When parent gender unknown
+            'parent_sister' => 'aunt',        // When parent gender unknown
 
             // Sibling with child (nephew/niece relationships)
             'brother_son' => 'nephew',
@@ -184,13 +220,26 @@ class RelationshipInferenceService
             'mother_father' => 'grandfather',
             'father_mother' => 'grandmother',
             'father_father' => 'grandfather',
+            'parent_mother' => 'grandmother',  // When parent gender unknown
+            'parent_father' => 'grandfather',  // When parent gender unknown
             'mother_child' => 'grandmother',
             'father_child' => 'grandfather',
+            'parent_child' => 'grandparent',   // When both genders unknown
 
             // Extended relationships
             'sibling_child' => ['type' => 'nephew', 'confidence' => 85], // or niece
             'sibling_mother' => 'mother',
             'sibling_father' => 'father',
+
+            // Child viewing siblings (parent's perspective - child_brother = son, child_sister = daughter)
+            'child_brother' => 'son',
+            'child_sister' => 'daughter',
+            'child_son' => 'son',
+            'child_daughter' => 'daughter',
+
+            // Child viewing parent (spousal inference)
+            'child_mother' => 'wife',
+            'child_father' => 'husband',
 
             // Default fallbacks
             'child_child' => 'cousin',
@@ -201,34 +250,75 @@ class RelationshipInferenceService
 
     /**
      * Get the inverse relationship type
+     * Gender-aware for relationships where the inverse depends on the requester's gender
      */
-    private function getInverseRelationship(string $relationshipType, ?string $requesterGender = null): string
+    public function getInverseRelationship(string $relationshipType, ?string $requesterGender = null): string
     {
+        // Gender-aware inverse for sibling relationships
+        if ($relationshipType === 'brother' || $relationshipType === 'sister') {
+            if ($requesterGender === 'female') {
+                return 'sister';
+            } elseif ($requesterGender === 'male') {
+                return 'brother';
+            }
+            return 'sibling';
+        }
+
+        // Gender-aware inverse for parent-child relationships
+        if ($relationshipType === 'son' || $relationshipType === 'daughter') {
+            if ($requesterGender === 'female') {
+                return 'mother';
+            } elseif ($requesterGender === 'male') {
+                return 'father';
+            }
+            return 'parent';
+        }
+
+        // Gender-aware inverse for grandparent-grandchild relationships
+        if ($relationshipType === 'grandson' || $relationshipType === 'granddaughter') {
+            if ($requesterGender === 'female') {
+                return 'grandmother';
+            } elseif ($requesterGender === 'male') {
+                return 'grandfather';
+            }
+            return 'grandparent';
+        }
+
+        // Gender-aware inverse for niece/nephew
+        if ($relationshipType === 'niece' || $relationshipType === 'nephew') {
+            if ($requesterGender === 'female') {
+                return 'aunt';
+            } elseif ($requesterGender === 'male') {
+                return 'uncle';
+            }
+            return 'aunt'; // fallback
+        }
+
+        // Gender-aware inverse for aunt/uncle
+        if ($relationshipType === 'aunt' || $relationshipType === 'uncle') {
+            if ($requesterGender === 'female') {
+                return 'niece';
+            } elseif ($requesterGender === 'male') {
+                return 'nephew';
+            }
+            return 'nephew'; // fallback
+        }
+
         $inverseMap = [
-            // Sibling relationships
-            'brother' => 'brother',
-            'sister' => 'sister',
+            // Sibling relationships (gender-neutral)
             'sibling' => 'sibling',
 
             // Parent-child
             'mother' => 'child',
             'father' => 'child',
-            'child' => 'mother',
-            'son' => 'father',
-            'daughter' => 'mother',
+            'child' => 'parent',
 
             // Grandparent
             'grandmother' => 'grandchild',
             'grandfather' => 'grandchild',
-            'grandson' => 'grandfather',
-            'granddaughter' => 'grandmother',
-            'grandchild' => 'grandmother',
+            'grandchild' => 'grandparent',
 
-            // Extended family
-            'aunt' => 'niece',
-            'uncle' => 'nephew',
-            'niece' => 'aunt',
-            'nephew' => 'uncle',
+            // Extended family (aunt/uncle and niece/nephew are handled by gender-aware logic above)
             'cousin' => 'cousin',
 
             // Spousal

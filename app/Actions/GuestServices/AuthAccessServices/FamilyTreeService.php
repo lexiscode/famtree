@@ -3,12 +3,17 @@
 namespace App\Actions\GuestServices\AuthAccessServices;
 
 use App\Repositories\GuestRepositories\UserConnectionRepository;
+use App\Repositories\GuestRepositories\FamilyTreeRepository;
+use App\Repositories\GuestRepositories\AuthAccessRepositories\FamilyTreeAdminRepository;
 use App\Models\GuestModels\User;
 
 class FamilyTreeService
 {
     public function __construct(
-        private UserConnectionRepository $connectionRepository
+        private UserConnectionRepository $connectionRepository,
+        private FamilyTreeRepository $familyTreeRepository,
+        private FamilyTreeAdminRepository $familyTreeAdminRepository,
+        private FamilyTreeValidationService $validationService
     ) {}
 
     /**
@@ -28,7 +33,8 @@ class FamilyTreeService
         $nodes[] = $this->formatUserNode($user, 'root');
         $processedUsers[$userId] = true;
 
-        // Process all connections
+        // Step 1: Process ALL first-level connections first
+        $firstLevelUsers = [];
         foreach ($allConnections as $connection) {
             $connectedUser = $connection->requester_user_id === $userId
                 ? $connection->recipient
@@ -40,24 +46,33 @@ class FamilyTreeService
                 $userId
             );
 
-            if (!isset($processedUsers[$connectedUser->id])) {
-                $nodes[] = $this->formatUserNode($connectedUser, $relationshipType);
+            // Skip nephew/niece relationships (only show direct children, not siblings' children)
+            if (!in_array($relationshipType, ['nephew', 'niece'])) {
+                if (!isset($processedUsers[$connectedUser->id])) {
+                    $nodes[] = $this->formatUserNode($connectedUser, $relationshipType);
+                    $processedUsers[$connectedUser->id] = true;
+                    $firstLevelUsers[] = $connectedUser->id;
+                }
+
+                // Create edge (connection line) between users
+                $edges[] = [
+                    'id' => "edge-{$userId}-{$connectedUser->id}",
+                    'source' => $userId,
+                    'target' => $connectedUser->id,
+                    'relationshipType' => $relationshipType,
+                    'label' => $this->formatRelationshipLabel($relationshipType),
+                    'color' => $this->getRelationshipColor($relationshipType),
+                ];
+            } else {
+                // Mark nephew/niece as processed to prevent adding them later in second-level connections
                 $processedUsers[$connectedUser->id] = true;
             }
+        }
 
-            // Create edge (connection line) between users
-            $edges[] = [
-                'id' => "edge-{$userId}-{$connectedUser->id}",
-                'source' => $userId,
-                'target' => $connectedUser->id,
-                'relationshipType' => $relationshipType,
-                'label' => $this->formatRelationshipLabel($relationshipType),
-                'color' => $this->getRelationshipColor($relationshipType),
-            ];
-
-            // Recursively add connections of connected users (up to 2 levels deep)
+        // Step 2: Now process second-level connections for each first-level user
+        foreach ($firstLevelUsers as $connectedUserId) {
             $this->addSecondLevelConnections(
-                $connectedUser->id,
+                $connectedUserId,
                 $userId,
                 $nodes,
                 $edges,
@@ -82,6 +97,16 @@ class FamilyTreeService
         array &$edges,
         array &$processedUsers
     ): void {
+        // Get the relationship type of the connected user to the root user
+        $firstLevelRelationship = null;
+        foreach ($this->connectionRepository->getConnections($rootUserId) as $conn) {
+            $otherUserId = $conn->requester_user_id === $rootUserId ? $conn->recipient_user_id : $conn->requester_user_id;
+            if ($otherUserId === $connectedUserId) {
+                $firstLevelRelationship = $this->getRelationshipFromUserPerspective($conn, $rootUserId);
+                break;
+            }
+        }
+
         $secondLevelConnections = $this->connectionRepository->getConnections($connectedUserId);
 
         foreach ($secondLevelConnections as $connection) {
@@ -98,6 +123,18 @@ class FamilyTreeService
                 $connection,
                 $connectedUserId
             );
+
+            // Skip siblings' children (nephews/nieces) - don't show them in the tree
+            if (in_array($firstLevelRelationship, ['brother', 'sister', 'sibling']) &&
+                in_array($relationshipType, ['son', 'daughter', 'child', 'nephew', 'niece'])) {
+                continue;
+            }
+
+            // Skip parents' grandchildren (which are actually siblings' children = nephews/nieces)
+            if (in_array($firstLevelRelationship, ['father', 'mother', 'parent']) &&
+                in_array($relationshipType, ['grandson', 'granddaughter', 'grandchild'])) {
+                continue;
+            }
 
             $nodes[] = $this->formatUserNode($secondLevelUser, $relationshipType);
             $processedUsers[$secondLevelUser->id] = true;
@@ -206,9 +243,9 @@ class FamilyTreeService
             return $requesterGender === 'male' ? 'uncle' : 'aunt';
         }
 
-        // Handle niece/nephew based on recipient's gender
-        if (($relationshipType === 'aunt' || $relationshipType === 'uncle') && $recipientGender) {
-            return $recipientGender === 'male' ? 'nephew' : 'niece';
+        // Handle niece/nephew based on requester's gender (the person we're viewing)
+        if (($relationshipType === 'aunt' || $relationshipType === 'uncle') && $requesterGender) {
+            return $requesterGender === 'male' ? 'nephew' : 'niece';
         }
 
         $inverseMap = [
@@ -330,5 +367,184 @@ class FamilyTreeService
         ];
 
         return $colorMap[$relationshipType] ?? '#F1F5F9'; // Default light gray
+    }
+
+    /**
+     * Create a new nuclear family tree
+     *
+     * @param User $user
+     * @param array $treeData ['tree_name', 'description', 'is_public']
+     * @return array ['success' => bool, 'tree' => FamilyTree|null, 'members_added' => int, 'errors' => array]
+     */
+    public function createNuclearFamilyTree(User $user, array $treeData): array
+    {
+        // Validate user can create tree
+        $validation = $this->validationService->canCreateFamilyTree($user);
+
+        if (!$validation['can_create']) {
+            return [
+                'success' => false,
+                'tree' => null,
+                'members_added' => 0,
+                'errors' => $validation['errors'],
+            ];
+        }
+
+        try {
+            // Create the family tree
+            $tree = $this->familyTreeRepository->create([
+                'root_user_id' => $user->id,
+                'tree_name' => $treeData['tree_name'],
+                'description' => $treeData['description'] ?? null,
+                'is_public' => $treeData['is_public'] ?? false,
+                'created_by_user_id' => $user->id,
+                'is_nuclear_family' => true,
+            ]);
+
+            // Add creator as admin
+            $this->familyTreeAdminRepository->create(
+                familyTreeId: $tree->id,
+                userId: $user->id,
+                role: 'creator',
+                grantedByUserId: null
+            );
+
+            // Add creator as member with full permissions
+            $this->familyTreeRepository->addMemberWithRole(
+                treeId: $tree->id,
+                userId: $user->id,
+                addedByUserId: $user->id,
+                nuclearFamilyRole: null,
+                canAddMembers: true
+            );
+
+            // Auto-add nuclear family members (spouse + children)
+            $nuclearFamilyMembers = $this->validationService->getNuclearFamilyMemberIds($user->id);
+            $membersAdded = 0;
+
+            foreach ($nuclearFamilyMembers as $member) {
+                $this->familyTreeRepository->addMemberWithRole(
+                    treeId: $tree->id,
+                    userId: $member['user_id'],
+                    addedByUserId: $user->id,
+                    nuclearFamilyRole: $member['role'],
+                    canAddMembers: true
+                );
+                $membersAdded++;
+            }
+
+            return [
+                'success' => true,
+                'tree' => $tree->fresh('admins.user', 'members.user'),
+                'members_added' => $membersAdded,
+                'errors' => [],
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'tree' => null,
+                'members_added' => 0,
+                'errors' => ['Failed to create family tree: ' . $e->getMessage()],
+            ];
+        }
+    }
+
+    /**
+     * Check if a user can add members to a tree
+     *
+     * @param int $treeId
+     * @param int $userId
+     * @return bool
+     */
+    public function canAddMembers(int $treeId, int $userId): bool
+    {
+        // Admins can always add members
+        if ($this->familyTreeAdminRepository->isAdmin($treeId, $userId)) {
+            return true;
+        }
+
+        // Nuclear family members with can_add_members permission can add
+        $memberEntry = $this->familyTreeRepository->getMemberEntry($treeId, $userId);
+        if ($memberEntry && $memberEntry->canAddMembers()) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Add a nuclear family member to a tree
+     *
+     * @param int $treeId
+     * @param int $memberUserId
+     * @param int $addedByUserId
+     * @return array ['success' => bool, 'message' => string, 'error' => string|null]
+     */
+    public function addNuclearFamilyMember(int $treeId, int $memberUserId, int $addedByUserId): array
+    {
+        // Verify adder has permission
+        if (!$this->canAddMembers($treeId, $addedByUserId)) {
+            return [
+                'success' => false,
+                'message' => null,
+                'error' => 'You do not have permission to add members to this family tree.',
+            ];
+        }
+
+        // Check if member is already in the tree
+        if ($this->familyTreeRepository->isMember($treeId, $memberUserId)) {
+            return [
+                'success' => false,
+                'message' => null,
+                'error' => 'This user is already a member of the family tree.',
+            ];
+        }
+
+        // Verify user being added is nuclear family of adder
+        $nuclearFamilyMembers = $this->validationService->getNuclearFamilyMemberIds($addedByUserId);
+        $memberIds = array_column($nuclearFamilyMembers, 'user_id');
+
+        if (!in_array($memberUserId, $memberIds)) {
+            return [
+                'success' => false,
+                'message' => null,
+                'error' => 'You can only add your nuclear family members (spouse or children) to the family tree.',
+            ];
+        }
+
+        // Find the role for this member
+        $role = null;
+        foreach ($nuclearFamilyMembers as $member) {
+            if ($member['user_id'] === $memberUserId) {
+                $role = $member['role'];
+                break;
+            }
+        }
+
+        // Add the member with proper role and permissions
+        try {
+            $this->familyTreeRepository->addMemberWithRole(
+                treeId: $treeId,
+                userId: $memberUserId,
+                addedByUserId: $addedByUserId,
+                nuclearFamilyRole: $role,
+                canAddMembers: true
+            );
+
+            $memberUser = User::find($memberUserId);
+            $memberName = $memberUser ? trim($memberUser->first_name . ' ' . $memberUser->last_name) : 'Member';
+
+            return [
+                'success' => true,
+                'message' => "{$memberName} has been added to the family tree.",
+                'error' => null,
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => null,
+                'error' => 'Failed to add member: ' . $e->getMessage(),
+            ];
+        }
     }
 }

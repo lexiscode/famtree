@@ -7,6 +7,7 @@ import VoiceRecorder from '@/Components/VoiceRecorder';
 export default function VoicePostForm({ onClose, onPostCreated }: VoicePostFormProps) {
     const [recordingBlob, setRecordingBlob] = useState<Blob | null>(null);
     const [recordingDuration, setRecordingDuration] = useState(0);
+    const [privacy, setPrivacy] = useState<'public' | 'connected' | 'private'>('connected');
     const [images, setImages] = useState<File[]>([]);
     const [imagePreviews, setImagePreviews] = useState<string[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -71,6 +72,7 @@ export default function VoicePostForm({ onClose, onPostCreated }: VoicePostFormP
         try {
             const formData = new FormData();
             formData.append('type', 'voice');
+            formData.append('privacy', privacy);
             formData.append('voice_file', recordingBlob, 'recording.webm');
             formData.append('voice_duration', recordingDuration.toString());
 
@@ -107,6 +109,33 @@ export default function VoicePostForm({ onClose, onPostCreated }: VoicePostFormP
             <div className="form-group">
                 <label className="form-label">Voice Recording</label>
                 <VoiceRecorder onRecordingComplete={handleRecordingComplete} />
+            </div>
+
+            {/* Privacy Setting */}
+            <div className="form-group">
+                <label htmlFor="privacy" className="form-label">Who can see this?</label>
+                <select
+                    id="privacy"
+                    value={privacy}
+                    onChange={(e) => setPrivacy(e.target.value as 'public' | 'connected' | 'private')}
+                    className="form-select"
+                    disabled={isLoading}
+                    style={{
+                        padding: '0.75rem',
+                        borderRadius: '8px',
+                        border: '1px solid #E0E0E0',
+                        fontSize: '0.95rem',
+                        width: '100%',
+                        cursor: isLoading ? 'not-allowed' : 'pointer'
+                    }}
+                >
+                    <option value="public">Public - Anyone can see</option>
+                    <option value="connected">Connected Only - Only your connections</option>
+                    <option value="private">Private - Only you</option>
+                </select>
+                <small style={{ color: '#666', fontSize: '0.85rem', marginTop: '0.5rem', display: 'block' }}>
+                    Choose who can see this specific story
+                </small>
             </div>
 
             {/* Image Upload */}

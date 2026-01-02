@@ -6,6 +6,7 @@ import RichTextEditor from '@/Components/RichTextEditor';
 
 export default function TextPostForm({ onClose, onPostCreated }: TextPostFormProps) {
     const [content, setContent] = useState('');
+    const [privacy, setPrivacy] = useState<'public' | 'connected' | 'private'>('connected');
     const [images, setImages] = useState<File[]>([]);
     const [imagePreviews, setImagePreviews] = useState<string[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -64,6 +65,7 @@ export default function TextPostForm({ onClose, onPostCreated }: TextPostFormPro
         try {
             const formData = new FormData();
             formData.append('type', 'text');
+            formData.append('privacy', privacy);
             formData.append('content', content);
 
             // Add images
@@ -105,6 +107,33 @@ export default function TextPostForm({ onClose, onPostCreated }: TextPostFormPro
                     maxLength={5000}
                     disabled={isLoading}
                 />
+            </div>
+
+            {/* Privacy Setting */}
+            <div className="form-group">
+                <label htmlFor="privacy" className="form-label">Who can see this?</label>
+                <select
+                    id="privacy"
+                    value={privacy}
+                    onChange={(e) => setPrivacy(e.target.value as 'public' | 'connected' | 'private')}
+                    className="form-select"
+                    disabled={isLoading}
+                    style={{
+                        padding: '0.75rem',
+                        borderRadius: '8px',
+                        border: '1px solid #E0E0E0',
+                        fontSize: '0.95rem',
+                        width: '100%',
+                        cursor: isLoading ? 'not-allowed' : 'pointer'
+                    }}
+                >
+                    <option value="public">Public - Anyone can see</option>
+                    <option value="connected">Connected Only - Only your connections</option>
+                    <option value="private">Private - Only you</option>
+                </select>
+                <small style={{ color: '#666', fontSize: '0.85rem', marginTop: '0.5rem', display: 'block' }}>
+                    Choose who can see this specific story
+                </small>
             </div>
 
             {/* Image Upload */}

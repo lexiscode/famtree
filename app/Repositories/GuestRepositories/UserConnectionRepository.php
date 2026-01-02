@@ -268,7 +268,8 @@ class UserConnectionRepository
                 return $connection->requester_user_id === $userId1
                     ? $connection->recipient_user_id
                     : $connection->requester_user_id;
-            });
+            })
+            ->values(); // Reset keys to sequential integers
 
         // Get all connections of user 2
         $user2Connections = UserConnection::where('status', 'accepted')
@@ -281,10 +282,14 @@ class UserConnectionRepository
                 return $connection->requester_user_id === $userId2
                     ? $connection->recipient_user_id
                     : $connection->requester_user_id;
-            });
+            })
+            ->values(); // Reset keys to sequential integers
 
-        // Find intersection
-        $mutualIds = $user1Connections->intersect($user2Connections);
+        // Find intersection using native PHP function to avoid collection issues
+        $mutualIds = array_intersect(
+            $user1Connections->toArray(),
+            $user2Connections->toArray()
+        );
 
         // Get the actual user records
         return User::whereIn('id', $mutualIds)->get();
@@ -396,17 +401,28 @@ class UserConnectionRepository
      */
     private function getInverseRelationship(string $relationshipType, ?string $requesterGender = null, ?string $recipientGender = null): string
     {
-        // For son/daughter relationships, determine parent gender
+        // For son/daughter relationships, determine parent gender based on requester
         if (($relationshipType === 'son' || $relationshipType === 'daughter') && $requesterGender) {
             return $requesterGender === 'male' ? 'father' : 'mother';
         }
 
-        // Handle gender-specific sibling relationships - only if both users are the same gender
-        if ($relationshipType === 'brother' && $requesterGender === 'male' && $recipientGender === 'male') {
-            return 'brother'; // Both male -> same relationship
+        // For mother/father relationships, determine child gender based on requester
+        if (($relationshipType === 'mother' || $relationshipType === 'father') && $requesterGender) {
+            return $requesterGender === 'male' ? 'son' : 'daughter';
         }
-        if ($relationshipType === 'sister' && $requesterGender === 'female' && $recipientGender === 'female') {
-            return 'sister'; // Both female -> same relationship
+
+        // Handle gender-specific sibling relationships
+        if ($relationshipType === 'brother' || $relationshipType === 'sister') {
+            // If both are same gender
+            if ($requesterGender === $recipientGender) {
+                return $relationshipType; // Keep the same relationship
+            }
+            // If different genders, inverse based on REQUESTER's gender (the other person)
+            if ($requesterGender === 'male') {
+                return 'brother';
+            } elseif ($requesterGender === 'female') {
+                return 'sister';
+            }
         }
 
         // Handle aunt/uncle based on requester's gender
@@ -414,9 +430,9 @@ class UserConnectionRepository
             return $requesterGender === 'male' ? 'uncle' : 'aunt';
         }
 
-        // Handle niece/nephew based on recipient's gender
-        if (($relationshipType === 'aunt' || $relationshipType === 'uncle') && $recipientGender) {
-            return $recipientGender === 'male' ? 'nephew' : 'niece';
+        // Handle niece/nephew based on requester's gender (the person we're viewing)
+        if (($relationshipType === 'aunt' || $relationshipType === 'uncle') && $requesterGender) {
+            return $requesterGender === 'male' ? 'nephew' : 'niece';
         }
 
         $inverseMap = [

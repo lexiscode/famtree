@@ -5,6 +5,7 @@ namespace App\Http\Controllers\GuestControllers\AuthAccessControllers;
 use App\Http\Controllers\Controller;
 use App\Actions\GuestServices\ProfilePrivacyService;
 use App\Actions\GuestServices\AuthAccessServices\UserBlockService;
+use App\Actions\GuestServices\UserFollowService;
 use App\Repositories\GuestRepositories\UserConnectionRepository;
 use App\Models\GuestModels\User;
 use Inertia\Inertia;
@@ -15,6 +16,7 @@ class ProfileController extends Controller
         private ProfilePrivacyService $privacyService,
         private UserConnectionRepository $connectionRepository,
         private UserBlockService $blockService,
+        private UserFollowService $followService,
     ) {}
 
     /**
@@ -106,6 +108,9 @@ class ProfileController extends Controller
         $allOwnerConnections = collect([]);
         $allOwnerConnectionUsers = collect([]);
 
+        // Check if owner wants to blur nuclear family for non-connected viewers
+        $shouldBlurNuclearFamily = $owner->blur_nuclear_family_for_public && $relationshipContext === 'public';
+
         if ($relationshipContext === 'connected' || $relationshipContext === 'nuclear_family') {
             $mutualConnections = $this->connectionRepository->getMutualConnections($viewer->id, $owner->id);
             // Get all connections of the owner
@@ -120,6 +125,18 @@ class ProfileController extends Controller
             // Filter out mutual connections to get non-mutual ones
             $mutualIds = collect($mutualConnections)->pluck('id')->toArray();
             $nonMutualConnections = $allOwnerConnectionUsers->filter(fn ($user) => !in_array($user->id, $mutualIds))->take(5);
+        } elseif ($relationshipContext === 'public') {
+            // For non-connected viewers, still show connections if profile is public
+            $allOwnerConnections = $this->connectionRepository->getConnections($owner->id);
+
+            // Extract actual user objects from connections
+            $allOwnerConnectionUsers = $allOwnerConnections->map(function ($connection) use ($owner) {
+                // Return the other user in the connection (not the owner)
+                return $connection->requester_user_id === $owner->id ? $connection->recipient : $connection->requester;
+            })->filter(); // Remove null values
+
+            // For public viewers, show all as non-mutual
+            $nonMutualConnections = $allOwnerConnectionUsers->take(5);
         }
 
         // Get actual user data (for blur effect in frontend)
@@ -164,6 +181,9 @@ class ProfileController extends Controller
             ];
         }
 
+        // Get follow status
+        $followStatus = $this->followService->getFollowStatus($viewer->id, $owner->id);
+
         return Inertia::render('GuestPages/AuthAccessPages/Profile/ViewProfile', [
             'profile' => $profileData,
             'visibleFields' => $visibleFields,
@@ -182,21 +202,33 @@ class ProfileController extends Controller
                 'status' => $sentRequest->status,
             ] : null,
             'mutualConnectionsCount' => count($mutualConnections),
-            'mutualConnections' => collect($mutualConnections)->take(5)->map(fn ($user) => [
-                'id' => $user->id,
-                'name' => trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')),
-                'username' => $user->username,
-                'profile_image_url' => $user->profile_image_url,
-            ]),
+            'mutualConnections' => collect($mutualConnections)->take(5)->map(function ($user) use ($shouldBlurNuclearFamily, $owner) {
+                $isNuclearFamily = $shouldBlurNuclearFamily && $this->privacyService->getRelationshipContext($user->id, $owner->id) === 'nuclear_family';
+                return [
+                    'id' => $user->id,
+                    'name' => trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')),
+                    'username' => $user->username,
+                    'profile_image_url' => $user->profile_image_url,
+                    'shouldBlur' => $isNuclearFamily,
+                ];
+            }),
             'nonMutualConnectionsCount' => $allOwnerConnectionUsers->count() - count($mutualConnections),
-            'nonMutualConnections' => collect($nonMutualConnections)->map(fn ($user) => [
-                'id' => $user->id,
-                'name' => trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')),
-                'username' => $user->username,
-                'profile_image_url' => $user->profile_image_url,
-            ]),
+            'nonMutualConnections' => collect($nonMutualConnections)->map(function ($user) use ($shouldBlurNuclearFamily, $owner) {
+                $isNuclearFamily = $shouldBlurNuclearFamily && $this->privacyService->getRelationshipContext($user->id, $owner->id) === 'nuclear_family';
+                return [
+                    'id' => $user->id,
+                    'name' => trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')),
+                    'username' => $user->username,
+                    'profile_image_url' => $user->profile_image_url,
+                    'shouldBlur' => $isNuclearFamily,
+                ];
+            }),
             'accessDenied' => $accessDenied,
             'accessDeniedReason' => $accessDeniedReason,
+            'isFollowing' => $followStatus['is_following'],
+            'isFollowedBy' => $followStatus['is_followed_by'],
+            'followerCount' => $followStatus['follower_count'],
+            'followingCount' => $followStatus['following_count'],
         ]);
     }
 
@@ -208,7 +240,7 @@ class ProfileController extends Controller
         $visibility = $owner->profile_visibility ?? 'connected';
 
         return match ($visibility) {
-            'public' => $this->isConnectedDirect($viewer, $owner) || $this->isConnectedIndirect($viewer, $owner),
+            'public' => true,
             'connected' => $this->isConnectedDirect($viewer, $owner),
             'private' => false,
             default => false,

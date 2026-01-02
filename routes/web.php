@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GuestControllers\AuthController;
+use App\Http\Controllers\GuestControllers\OAuthController;
 use App\Http\Controllers\GuestControllers\BlogController;
 use App\Http\Controllers\GuestControllers\HomeController;
 use App\Http\Controllers\GuestControllers\AboutController;
@@ -26,6 +27,7 @@ use App\Http\Controllers\GuestControllers\AuthAccessControllers\PostController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\ConnectionFeedsController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\UserReportController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\UserBlockController;
+use App\Http\Controllers\GuestControllers\AuthAccessControllers\UserFollowController;
 use App\Http\Controllers\GuestControllers\OnboardingController;
 use App\Http\Controllers\GuestControllers\StatusController;
 use App\Http\Controllers\GuestControllers\NotificationController;
@@ -63,6 +65,12 @@ Route::middleware(['web', 'guest'])->group(function () {
     // Authentication routes
     Route::post('/register', [AuthController::class, 'register'])->name('auth.register');
     Route::post('/login', [AuthController::class, 'login'])->name('auth.login');
+
+    // OAuth routes
+    Route::get('/auth/google', [OAuthController::class, 'redirectToGoogle'])->name('auth.google');
+    Route::get('/auth/google/callback', [OAuthController::class, 'handleGoogleCallback'])->name('auth.google.callback');
+    Route::get('/auth/oauth/complete', [OAuthController::class, 'showCompletionForm'])->name('auth.oauth.complete');
+    Route::post('/auth/oauth/complete', [OAuthController::class, 'completeRegistration'])->name('auth.oauth.complete.submit');
 });
 
 // 2FA verification routes (accessible without full authentication)
@@ -110,20 +118,43 @@ Route::middleware(['web', 'auth'])->group(function () {
 
     // Family Tree routes
     Route::prefix('family-tree')->group(function () {
+        // List trees (updated to show admin trees)
         Route::get('/', [FamilyTreeController::class, 'index'])->name('family-tree.index');
+
+        // Create/store with validation
         Route::get('/create', [FamilyTreeController::class, 'create'])->name('family-tree.create');
         Route::post('/', [FamilyTreeController::class, 'store'])->name('family-tree.store');
+
+        // View tree
         Route::get('/{treeId}', [FamilyTreeController::class, 'show'])->name('family-tree.show');
+
+        // Edit/update/delete (admin-only)
         Route::get('/{treeId}/edit', [FamilyTreeController::class, 'edit'])->name('family-tree.edit');
         Route::put('/{treeId}', [FamilyTreeController::class, 'update'])->name('family-tree.update');
         Route::delete('/{treeId}', [FamilyTreeController::class, 'destroy'])->name('family-tree.destroy');
+
+        // Member management (nuclear family only)
         Route::post('/{treeId}/add-member', [FamilyTreeController::class, 'addMember'])->name('family-tree.add-member');
         Route::delete('/{treeId}/members/{userId}', [FamilyTreeController::class, 'removeMember'])->name('family-tree.remove-member');
+
+        // Tree data
         Route::get('/{treeId}/data', [FamilyTreeController::class, 'getTreeData'])->name('family-tree.data');
+
+        // Tree connection requests
+        Route::post('/connections/send', [FamilyTreeController::class, 'sendConnectionRequest'])->name('family-tree.connections.send');
+        Route::post('/connections/{connectionId}/accept', [FamilyTreeController::class, 'acceptConnectionRequest'])->name('family-tree.connections.accept');
+        Route::post('/connections/{connectionId}/decline', [FamilyTreeController::class, 'declineConnectionRequest'])->name('family-tree.connections.decline');
+        Route::get('/{treeId}/connections', [FamilyTreeController::class, 'getConnectionRequests'])->name('family-tree.connections');
+
+        // Admin management
+        Route::get('/{treeId}/admins', [FamilyTreeController::class, 'getAdmins'])->name('family-tree.admins');
     });
 
     // Your Tree (Connection Tree Visualization) route
     Route::get('/your-tree', [ConnectionTreeController::class, 'index'])->name('your-tree.index');
+
+    // View Another User's Tree route
+    Route::get('/profile/{userId}/tree', [ConnectionTreeController::class, 'viewUserTree'])->name('profile.tree');
 
     // Child Account routes
     Route::prefix('child-accounts')->group(function () {
@@ -165,6 +196,14 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/search', function () {
         return Inertia::render('AuthAccessPages/Search/Users');
     })->name('search.index');
+
+    // Follow/Unfollow routes
+    Route::prefix('users')->group(function () {
+        Route::post('/{userId}/follow', [UserFollowController::class, 'follow'])->name('users.follow');
+        Route::post('/{userId}/unfollow', [UserFollowController::class, 'unfollow'])->name('users.unfollow');
+        Route::get('/{userId}/followers', [UserFollowController::class, 'followers'])->name('users.followers');
+        Route::get('/{userId}/following', [UserFollowController::class, 'following'])->name('users.following');
+    });
 
     // Gallery routes
     Route::prefix('galleries')->group(function () {
@@ -223,6 +262,8 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::get('/privacy/field-privacy', [PrivacyController::class, 'getFieldPrivacy'])->name('settings.get-field-privacy');
         Route::post('/privacy/content-privacy', [PrivacyController::class, 'updateContentPrivacy'])->name('settings.update-content-privacy');
         Route::get('/privacy/content-privacy', [PrivacyController::class, 'getContentPrivacy'])->name('settings.get-content-privacy');
+        Route::post('/privacy/nuclear-family-blur', [PrivacyController::class, 'updateNuclearFamilyBlur'])->name('settings.update-nuclear-family-blur');
+        Route::get('/privacy/nuclear-family-blur', [PrivacyController::class, 'getNuclearFamilyBlur'])->name('settings.get-nuclear-family-blur');
 
         Route::get('/notifications', function () {
             return Inertia::render('AuthAccessPages/Settings/NotificationSettings');

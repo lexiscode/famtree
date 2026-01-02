@@ -43,9 +43,13 @@ class User extends Authenticatable
         'two_fa_secret',
         'two_fa_backup_codes',
         'profile_visibility',
+        'blur_nuclear_family_for_public',
         'stories_visibility',
         'galleries_visibility',
         'scheduled_deletion_at',
+        'google_id',
+        'oauth_provider',
+        'oauth_linked_at',
     ];
 
     /**
@@ -73,6 +77,8 @@ class User extends Authenticatable
         'is_child_account' => 'boolean',
         'onboarding_completed' => 'boolean',
         'two_fa_enabled' => 'boolean',
+        'blur_nuclear_family_for_public' => 'boolean',
+        'oauth_linked_at' => 'datetime',
     ];
 
     /**

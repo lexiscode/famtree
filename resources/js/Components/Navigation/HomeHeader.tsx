@@ -31,18 +31,6 @@ export default function HomeHeader() {
                         <div className="auth-btn-glow"></div>
                     )}
                 </button>
-                <button
-                    className="auth-btn auth-btn-signup"
-                    onMouseEnter={() => setAuthHovered('signup')}
-                    onMouseLeave={() => setAuthHovered(null)}
-                    onClick={() => openCtaModal('register')}
-                >
-                    <i className="bi-person-plus-fill auth-btn-icon"></i>
-                    <span className="auth-btn-text">Sign Up</span>
-                    {authHovered === 'signup' && (
-                        <div className="auth-btn-glow"></div>
-                    )}
-                </button>
             </div>
         </div>
     );

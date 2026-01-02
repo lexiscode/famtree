@@ -119,17 +119,7 @@ export default function NavigationBar() {
                 Login
               </button>
             </li>
-            <li className="nav-item">
-              <button
-                className="btn btn-secondary btn-sm"
-                onClick={() => {
-                  openCtaModal('register');
-                  setIsMobileMenuOpen(false);
-                }}
-              >
-                Sign Up
-              </button>
-            </li>
+ 
           </ul>
         </div>
       </div>

@@ -1,7 +1,7 @@
 import { useMemo, useEffect, useState } from 'react';
 import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { Mail, Phone, MapPin, Cake, FileText, Users, Send, Clock, CheckCircle, Lock, Briefcase, BookOpen, ArrowRight, Image, Newspaper, Plus, ArrowLeft, Undo2, AlertCircle, X } from 'lucide-react';
+import { Mail, Phone, MapPin, Cake, FileText, Users, Send, Clock, CheckCircle, Lock, Briefcase, BookOpen, ArrowRight, Image, Newspaper, Plus, ArrowLeft, Undo2, AlertCircle, X, Network } from 'lucide-react';
 
 interface Profile {
     id: number;
@@ -36,11 +36,15 @@ interface Props {
     pendingRequest: { id: number; status: string } | null;
     sentRequest: { id: number; status: string } | null;
     mutualConnectionsCount: number;
-    mutualConnections: Array<{ id: number; name: string; username: string; profile_image_url: string }>;
+    mutualConnections: Array<{ id: number; name: string; username: string; profile_image_url: string; shouldBlur?: boolean }>;
     nonMutualConnectionsCount: number;
-    nonMutualConnections: Array<{ id: number; name: string; username: string; profile_image_url: string }>;
+    nonMutualConnections: Array<{ id: number; name: string; username: string; profile_image_url: string; shouldBlur?: boolean }>;
     accessDenied: boolean;
     accessDeniedReason: string | null;
+    isFollowing: boolean;
+    isFollowedBy: boolean;
+    followerCount: number;
+    followingCount: number;
 }
 
 export default function ViewProfile({
@@ -60,9 +64,15 @@ export default function ViewProfile({
     nonMutualConnections,
     accessDenied,
     accessDeniedReason,
+    isFollowing: initialIsFollowing,
+    isFollowedBy,
+    followerCount: initialFollowerCount,
+    followingCount,
 }: Props) {
     const [showUndoModal, setShowUndoModal] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [isFollowing, setIsFollowing] = useState(initialIsFollowing);
+    const [followerCount, setFollowerCount] = useState(initialFollowerCount);
 
     // Redirect back to previous page if access is denied
     useEffect(() => {
@@ -77,6 +87,42 @@ export default function ViewProfile({
     const handleProfileNavigation = (userId: number, userName: string) => {
         // Navigate to the profile
         router.visit(route('profile.view', userId));
+    };
+
+    const handleFollowToggle = async () => {
+        setLoading(true);
+        try {
+            if (isFollowing) {
+                // Unfollow
+                router.post(route('users.unfollow', profile.id), {}, {
+                    preserveState: false,
+                    onSuccess: () => {
+                        setIsFollowing(false);
+                        setFollowerCount(prev => prev - 1);
+                        setLoading(false);
+                    },
+                    onError: () => {
+                        setLoading(false);
+                    }
+                });
+            } else {
+                // Follow
+                router.post(route('users.follow', profile.id), {}, {
+                    preserveState: false,
+                    onSuccess: () => {
+                        setIsFollowing(true);
+                        setFollowerCount(prev => prev + 1);
+                        setLoading(false);
+                    },
+                    onError: () => {
+                        setLoading(false);
+                    }
+                });
+            }
+        } catch (error) {
+            setLoading(false);
+            console.error('Error toggling follow:', error);
+        }
     };
 
     const openUndoModal = () => {
@@ -276,6 +322,52 @@ export default function ViewProfile({
                                     </div>
                                 )}
 
+                                {/* Follower/Following Stats */}
+                                <div className="profile-stats" style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem', justifyContent: 'center' }}>
+                                    <div
+                                        className="stat-item"
+                                        onClick={() => router.visit(route('users.followers', profile.id))}
+                                        style={{ cursor: 'pointer', textAlign: 'center', padding: '0.75rem', backgroundColor: '#F3F4F6', borderRadius: '8px', flex: 1 }}
+                                        title="View followers"
+                                    >
+                                        <div style={{ fontWeight: '700', fontSize: '1.25rem', color: '#1F2937' }}>{followerCount}</div>
+                                        <div style={{ fontSize: '0.875rem', color: '#6B7280' }}>Followers</div>
+                                    </div>
+                                    <div
+                                        className="stat-item"
+                                        onClick={() => router.visit(route('users.following', profile.id))}
+                                        style={{ cursor: 'pointer', textAlign: 'center', padding: '0.75rem', backgroundColor: '#F3F4F6', borderRadius: '8px', flex: 1 }}
+                                        title="View following"
+                                    >
+                                        <div style={{ fontWeight: '700', fontSize: '1.25rem', color: '#1F2937' }}>{followingCount}</div>
+                                        <div style={{ fontSize: '0.875rem', color: '#6B7280' }}>Following</div>
+                                    </div>
+                                </div>
+
+                                {/* Follow/Unfollow Button */}
+                                <button
+                                    className="profile-btn"
+                                    onClick={handleFollowToggle}
+                                    disabled={loading}
+                                    style={{
+                                        width: '100%',
+                                        marginTop: '1rem',
+                                        backgroundColor: isFollowing ? '#E5E7EB' : '#3B82F6',
+                                        color: isFollowing ? '#374151' : '#FFFFFF',
+                                        border: 'none',
+                                        fontWeight: '600'
+                                    }}
+                                >
+                                    {loading ? (
+                                        <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" />
+                                    ) : (
+                                        <>
+                                            <Users size={18} />
+                                            {isFollowing ? 'Unfollow' : 'Follow'}
+                                        </>
+                                    )}
+                                </button>
+
                                 {/* Gallery, Stories, and Connections Buttons */}
                                 <div className="profile-actions" style={{ marginTop: '2rem', gap: '0.75rem' }}>
                                     <button
@@ -301,6 +393,15 @@ export default function ViewProfile({
                                     >
                                         <Users size={18} />
                                         View Connections
+                                    </button>
+                                    <button
+                                        className="profile-btn profile-btn-secondary"
+                                        onClick={() => router.visit(route('profile.tree', { userId: profile.id }))}
+                                        style={{ width: '100%', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', border: 'none' }}
+                                        title="View their interactive family tree"
+                                    >
+                                        <Network size={18} />
+                                        View Family Tree
                                     </button>
                                     <button
                                         className="profile-btn profile-btn-secondary"
@@ -422,17 +523,22 @@ export default function ViewProfile({
                                             <div
                                                 key={connection.id}
                                                 className="profile-mutual-item"
-                                                onClick={() => handleProfileNavigation(connection.id, connection.name)}
-                                                style={{ cursor: 'pointer' }}
-                                                title={`View ${connection.name}'s profile`}
+                                                onClick={() => !connection.shouldBlur && handleProfileNavigation(connection.id, connection.name)}
+                                                style={{ cursor: connection.shouldBlur ? 'not-allowed' : 'pointer', opacity: connection.shouldBlur ? 0.6 : 1 }}
+                                                title={connection.shouldBlur ? 'This user has hidden their nuclear family details' : `View ${connection.name}'s profile`}
                                             >
                                                 <img
                                                     src={connection.profile_image_url || 'https://via.placeholder.com/70'}
                                                     alt={connection.name}
                                                     className="profile-mutual-avatar"
+                                                    style={{ filter: connection.shouldBlur ? 'blur(8px)' : 'none' }}
                                                 />
-                                                <div className="profile-mutual-name">{connection.name}</div>
-                                                <div className="profile-mutual-username">@{connection.username}</div>
+                                                <div className="profile-mutual-name" style={{ filter: connection.shouldBlur ? 'blur(4px)' : 'none' }}>
+                                                    {connection.shouldBlur ? '████████' : connection.name}
+                                                </div>
+                                                <div className="profile-mutual-username" style={{ filter: connection.shouldBlur ? 'blur(4px)' : 'none' }}>
+                                                    {connection.shouldBlur ? '@████████' : `@${connection.username}`}
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
@@ -477,17 +583,22 @@ export default function ViewProfile({
                                             <div
                                                 key={connection.id}
                                                 className="profile-mutual-item profile-nonmutual-item"
-                                                onClick={() => handleProfileNavigation(connection.id, connection.name)}
-                                                style={{ cursor: 'pointer' }}
-                                                title={`View ${connection.name}'s profile`}
+                                                onClick={() => !connection.shouldBlur && handleProfileNavigation(connection.id, connection.name)}
+                                                style={{ cursor: connection.shouldBlur ? 'not-allowed' : 'pointer', opacity: connection.shouldBlur ? 0.6 : 1 }}
+                                                title={connection.shouldBlur ? 'This user has hidden their nuclear family details' : `View ${connection.name}'s profile`}
                                             >
                                                 <img
                                                     src={connection.profile_image_url || 'https://via.placeholder.com/70'}
                                                     alt={connection.name}
                                                     className="profile-mutual-avatar"
+                                                    style={{ filter: connection.shouldBlur ? 'blur(8px)' : 'none' }}
                                                 />
-                                                <div className="profile-mutual-name">{connection.name}</div>
-                                                <div className="profile-mutual-username">@{connection.username}</div>
+                                                <div className="profile-mutual-name" style={{ filter: connection.shouldBlur ? 'blur(4px)' : 'none' }}>
+                                                    {connection.shouldBlur ? '████████' : connection.name}
+                                                </div>
+                                                <div className="profile-mutual-username" style={{ filter: connection.shouldBlur ? 'blur(4px)' : 'none' }}>
+                                                    {connection.shouldBlur ? '@████████' : `@${connection.username}`}
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
