@@ -1,12 +1,13 @@
 import { useCallback } from 'react';
 import { Link } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { Plus, Globe, Lock, Users, Calendar, ArrowRight, Sparkles, Zap } from 'lucide-react';
+import { Plus, Globe, Lock, Users, Calendar, ArrowRight, Sparkles, Zap, Shield, Crown } from 'lucide-react';
 import './Index.css';
 
-interface User {
+interface Admin {
     id: number;
     name: string;
+    role: 'creator' | 'co_admin';
 }
 
 interface TreeData {
@@ -14,72 +15,82 @@ interface TreeData {
     name: string;
     description?: string;
     is_public: boolean;
+    is_nuclear_family: boolean;
     member_count: number;
+    admins: Admin[];
     created_at: string;
-    created_by?: User;
 }
 
 interface Props {
-    myTrees: TreeData[];
+    adminTrees: TreeData[];
     memberTrees: TreeData[];
 }
 
-export default function Index({ myTrees, memberTrees }: Props) {
+export default function Index({ adminTrees, memberTrees }: Props) {
     const formatDate = useCallback((dateString: string) => {
         const date = new Date(dateString);
         return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
     }, []);
 
-    const TreeCard = ({ tree, isOwner = false }: { tree: TreeData; isOwner?: boolean }) => (
-        <Link href={route('family-tree.show', { treeId: tree.id })} className="tree-card">
-            <div className="tree-card-header">
-                <h3 className="tree-card-title">{tree.name}</h3>
-                <div style={{ display: 'flex', gap: '1.3rem', flexWrap: 'wrap' }}>
-                    {tree.is_public ? (
-                        <div className="tree-card-badge public">
-                            <Globe size={16} />
-                            <span>Public</span>
-                        </div>
-                    ) : (
-                        <div className="tree-card-badge private">
-                            <Lock size={16} />
-                            <span>Private</span>
-                        </div>
-                    )}
-                    {isOwner && (
-                        <div className="tree-card-badge owner">
-                            <Sparkles size={16} />
-                            <span>Owner</span>
-                        </div>
-                    )}
-                </div>
-            </div>
+    const TreeCard = ({ tree, isAdmin = false }: { tree: TreeData; isAdmin?: boolean }) => {
+        const creatorAdmin = tree.admins?.find((a) => a.role === 'creator');
+        const userIsCreator = isAdmin && tree.admins?.some((a) => a.role === 'creator');
 
-            {tree.description && <p className="tree-card-description">{tree.description}</p>}
-
-            <div className="tree-card-stats">
-                <div className="tree-card-stat">
-                    <Users size={16} />
-                    <span>{tree.member_count} member{tree.member_count !== 1 ? 's' : ''}</span>
+        return (
+            <Link href={route('family-tree.show', { treeId: tree.id })} className="tree-card">
+                <div className="tree-card-header">
+                    <h3 className="tree-card-title">{tree.name}</h3>
+                    <div style={{ display: 'flex', gap: '1.3rem', flexWrap: 'wrap' }}>
+                        {tree.is_public ? (
+                            <div className="tree-card-badge public">
+                                <Globe size={16} />
+                                <span>Public</span>
+                            </div>
+                        ) : (
+                            <div className="tree-card-badge private">
+                                <Lock size={16} />
+                                <span>Private</span>
+                            </div>
+                        )}
+                        {isAdmin && (
+                            <div className="tree-card-badge owner">
+                                <Shield size={16} />
+                                <span>Admin</span>
+                            </div>
+                        )}
+                    </div>
                 </div>
-                <div className="tree-card-stat">
-                    <Calendar size={16} />
-                    <span>{formatDate(tree.created_at)}</span>
-                </div>
-            </div>
 
-            {!isOwner && tree.created_by && (
-                <div className="tree-card-creator">
-                    Created by <strong>{tree.created_by.name}</strong>
-                </div>
-            )}
+                {tree.description && <p className="tree-card-description">{tree.description}</p>}
 
-            <div className="tree-card-action">
-                <span>View Tree</span>
-                <ArrowRight size={16} />
-            </div>
-        </Link>
-    );
+                <div className="tree-card-stats">
+                    <div className="tree-card-stat">
+                        <Users size={16} />
+                        <span>{tree.member_count} member{tree.member_count !== 1 ? 's' : ''}</span>
+                    </div>
+                    <div className="tree-card-stat">
+                        <Calendar size={16} />
+                        <span>{formatDate(tree.created_at)}</span>
+                    </div>
+                    <div className="tree-card-stat">
+                        <Shield size={16} />
+                        <span>{tree.admins?.length || 0} admin{tree.admins?.length !== 1 ? 's' : ''}</span>
+                    </div>
+                </div>
+
+                {!isAdmin && creatorAdmin && (
+                    <div className="tree-card-creator">
+                        Created by <strong>{creatorAdmin.name}</strong>
+                    </div>
+                )}
+
+                <div className="tree-card-action">
+                    <span>View Tree</span>
+                    <ArrowRight size={16} />
+                </div>
+            </Link>
+        );
+    };
 
     return (
         <AuthAccessLayout>
@@ -103,19 +114,19 @@ export default function Index({ myTrees, memberTrees }: Props) {
                         </div>
                     </div>
 
-                    {/* My Trees Section */}
+                    {/* Admin Trees Section */}
                     <div style={{ marginBottom: '3rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
-                            <Zap size={24} style={{ color: '#0052E8' }} />
+                            <Shield size={24} style={{ color: '#0052E8' }} />
                             <h2 style={{ margin: 0, color: '#faf8f8ff', fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.3px' }}>
-                                My Trees
+                                Trees I Manage
                             </h2>
                             <span style={{ background: 'linear-gradient(135deg, #0052E8, #00D4FF)', color: 'white', padding: '0.35rem 0.75rem', borderRadius: '50px', fontSize: '0.8rem', fontWeight: 700, marginLeft: '0.5rem' }}>
-                                {myTrees.length}
+                                {adminTrees.length}
                             </span>
                         </div>
 
-                        {myTrees.length === 0 ? (
+                        {adminTrees.length === 0 ? (
                             <div className="tree-empty-state">
                                 <div className="tree-empty-icon">🌳</div>
                                 <h3 className="tree-empty-title">No family trees yet</h3>
@@ -127,8 +138,8 @@ export default function Index({ myTrees, memberTrees }: Props) {
                             </div>
                         ) : (
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.75rem' }}>
-                                {myTrees.map((tree) => (
-                                    <TreeCard key={tree.id} tree={tree} isOwner={true} />
+                                {adminTrees.map((tree) => (
+                                    <TreeCard key={tree.id} tree={tree} isAdmin={true} />
                                 ))}
                             </div>
                         )}
@@ -149,14 +160,14 @@ export default function Index({ myTrees, memberTrees }: Props) {
 
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.75rem' }}>
                                 {memberTrees.map((tree) => (
-                                    <TreeCard key={tree.id} tree={tree} isOwner={false} />
+                                    <TreeCard key={tree.id} tree={tree} isAdmin={false} />
                                 ))}
                             </div>
                         </div>
                     )}
 
                     {/* Empty Suggestion Box */}
-                    {myTrees.length === 0 && memberTrees.length === 0 && (
+                    {adminTrees.length === 0 && memberTrees.length === 0 && (
                         <div
                             style={{
                                 background: 'linear-gradient(135deg, rgba(0, 82, 232, 0.08) 0%, rgba(0, 212, 255, 0.05) 100%)',

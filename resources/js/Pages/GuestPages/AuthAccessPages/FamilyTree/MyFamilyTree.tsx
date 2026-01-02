@@ -1,30 +1,46 @@
 import { useCallback, useState } from 'react';
 import { usePage, router, Link } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { Users, Plus, Edit, Trash2, Download, Share2, Lock, Globe, Home, CheckCircle, XCircle, Network } from 'lucide-react';
-import FamilyTreeDiagram from '@/Components/FamilyTree/FamilyTreeDiagram';
+import { Users, Plus, Edit, Trash2, Download, Share2, Lock, Globe, Home, CheckCircle, XCircle, Network, Shield, Crown } from 'lucide-react';
+import TreeConnectionManager from '@/Components/FamilyTree/TreeConnectionManager';
 import './MyFamilyTree.css';
 
-interface User {
+interface Admin {
     id: number;
     name: string;
-    username: string;
-    profile_image_url?: string;
-    status: string;
+    role: 'creator' | 'co_admin';
+    granted_at: string;
 }
 
-interface TreeMember extends User {
+interface TreeMember {
+    id: number;
+    name: string;
+    nuclear_family_role?: 'spouse' | 'child' | 'extended' | 'merged' | null;
+    can_add_members: boolean;
     added_at: string;
-    added_by: {
-        id: number;
-        name: string;
-    };
 }
 
-interface Connection {
-    from: number;
-    to: number;
-    relationship: string;
+interface TreeConnection {
+    id: number;
+    requester_tree_id: number;
+    recipient_tree_id: number;
+    status: 'pending' | 'accepted' | 'declined';
+    requested_at: string;
+    accepted_at?: string;
+    message?: string;
+    requester_tree?: {
+        id: number;
+        tree_name: string;
+    };
+    recipient_tree?: {
+        id: number;
+        tree_name: string;
+    };
+    requested_by?: {
+        id: number;
+        first_name: string;
+        last_name: string;
+    };
 }
 
 interface TreeData {
@@ -32,35 +48,22 @@ interface TreeData {
     name: string;
     description?: string;
     is_public: boolean;
-    root_user_id: number;
-    created_by_user_id: number;
+    is_nuclear_family: boolean;
     created_at: string;
-    updated_at: string;
-    is_owner?: boolean;
-}
-
-interface Stats {
-    tree_id: number;
-    member_count: number;
-    tree_name: string;
-    is_public: boolean;
-    created_at: string;
-    created_by: {
-        id: number;
-        name: string;
-    };
 }
 
 interface Props {
     tree: TreeData;
+    admins: Admin[];
     members: TreeMember[];
-    connections: Connection[];
-    stats: Stats;
-    isOwner: boolean;
+    pendingRequests: TreeConnection[];
+    sentRequests: TreeConnection[];
+    isAdmin: boolean;
     isMember: boolean;
+    canAddMembers: boolean;
 }
 
-export default function MyFamilyTree({ tree, members, connections, stats, isOwner, isMember }: Props) {
+export default function MyFamilyTree({ tree, admins, members, pendingRequests, sentRequests, isAdmin, isMember, canAddMembers }: Props) {
     const { props } = usePage();
     const { auth } = props;
     const user = auth?.user;
@@ -104,8 +107,8 @@ export default function MyFamilyTree({ tree, members, connections, stats, isOwne
     const handleExportTree = useCallback(() => {
         const data = {
             tree: tree,
+            admins: admins,
             members: members,
-            connections: connections,
         };
         const element = document.createElement('a');
         element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(JSON.stringify(data, null, 2)));
@@ -114,7 +117,7 @@ export default function MyFamilyTree({ tree, members, connections, stats, isOwne
         document.body.appendChild(element);
         element.click();
         document.body.removeChild(element);
-    }, [tree, members, connections]);
+    }, [tree, admins, members]);
 
     return (
         <AuthAccessLayout>
@@ -139,17 +142,17 @@ export default function MyFamilyTree({ tree, members, connections, stats, isOwne
                                         Private
                                     </div>
                                 )}
-                                {isOwner && (
+                                {isAdmin && (
                                     <div className="tree-badge owner">
-                                        <Home size={16} />
-                                        Owner
+                                        <Shield size={16} />
+                                        Admin
                                     </div>
                                 )}
                             </div>
                         </div>
 
                         {/* Action Buttons */}
-                        {isOwner && (
+                        {isAdmin && (
                             <div className="tree-header-actions">
                                 <Link href={route('family-tree.edit', { treeId: tree.id })} className="tree-action-btn secondary">
                                     <Edit size={18} />
@@ -169,47 +172,52 @@ export default function MyFamilyTree({ tree, members, connections, stats, isOwne
                         {/* Statistics Grid */}
                         <div className="tree-stats">
                             <div className="tree-stat">
-                                <div className="tree-stat-value">{stats.member_count}</div>
+                                <div className="tree-stat-value">{members.length}</div>
                                 <div className="tree-stat-label">Total Members</div>
                             </div>
                             <div className="tree-stat">
-                                <div className="tree-stat-value">{connections.length}</div>
-                                <div className="tree-stat-label">Relationships</div>
+                                <div className="tree-stat-value">{admins.length}</div>
+                                <div className="tree-stat-label">Admins</div>
                             </div>
                             <div className="tree-stat">
-                                <div className="tree-stat-value">{new Date(stats.created_at).getFullYear()}</div>
+                                <div className="tree-stat-value">{new Date(tree.created_at).getFullYear()}</div>
                                 <div className="tree-stat-label">Created</div>
                             </div>
                             <div className="tree-stat">
-                                <div className="tree-stat-value">{stats.created_by?.name?.split(' ')[0] || 'Unknown'}</div>
+                                <div className="tree-stat-value">{admins.find(a => a.role === 'creator')?.name?.split(' ')[0] || 'Unknown'}</div>
                                 <div className="tree-stat-label">Creator</div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Family Tree Diagram */}
-                    {members.length > 1 && (
-                        <div className="tree-visualization-wrapper">
-                            <h2>
-                                <Network size={24} />
-                                Family Tree Diagram
-                            </h2>
+                    {/* Admins Section */}
+                    <div className="tree-visualization-wrapper">
+                        <h2>
+                            <Shield size={24} />
+                            Tree Administrators
+                        </h2>
 
-                            <div style={{
-                                background: 'rgba(15, 23, 42, 0.6)',
-                                borderRadius: '16px',
-                                padding: '2rem',
-                                border: '1px solid rgba(59, 130, 246, 0.2)',
-                                overflowX: 'auto'
-                            }}>
-                                <FamilyTreeDiagram
-                                    members={members}
-                                    connections={connections}
-                                    rootUserId={tree.root_user_id}
-                                />
-                            </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+                            {admins.map((admin) => (
+                                <div key={admin.id} style={{ background: 'linear-gradient(135deg, #F0F6FF 0%, rgba(0, 212, 255, 0.05) 100%)', borderRadius: '12px', border: '1px solid rgba(0, 82, 232, 0.1)', padding: '1.2rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: admin.role === 'creator' ? 'linear-gradient(135deg, #FFD700, #FFA500)' : 'linear-gradient(135deg, #0052E8, #00D4FF)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '1.2rem', fontWeight: 'bold' }}>
+                                            {admin.role === 'creator' ? <Crown size={20} /> : <Shield size={20} />}
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                            <div style={{ fontWeight: '700', fontSize: '0.95rem', color: '#1a1a1a' }}>{admin.name}</div>
+                                            <div style={{ fontSize: '0.8rem', color: '#6C757D', marginTop: '0.2rem', textTransform: 'capitalize' }}>
+                                                {admin.role === 'creator' ? 'Creator' : 'Co-Admin'}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div style={{ fontSize: '0.75rem', color: '#999', marginTop: '0.25rem' }}>
+                                        Granted: {new Date(admin.granted_at).toLocaleDateString()}
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                    )}
+                    </div>
 
                     {/* Members Grid */}
                     <div className="tree-visualization-wrapper">
@@ -223,7 +231,7 @@ export default function MyFamilyTree({ tree, members, connections, stats, isOwne
                                 <div className="tree-empty-icon">👥</div>
                                 <h3 className="tree-empty-title">No members in your tree</h3>
                                 <p className="tree-empty-text">Start building your family tree by inviting members or adding connections.</p>
-                                {isOwner && (
+                                {isAdmin && (
                                     <Link href={route('family-tree.index')} className="tree-empty-action">
                                         <Plus size={18} />
                                         Back to Trees
@@ -232,112 +240,81 @@ export default function MyFamilyTree({ tree, members, connections, stats, isOwne
                             </div>
                         ) : (
                             <div className="tree-members-container">
-                                {members.map((member) => {
-                                    const memberConnection = connections.find(
-                                        (c) => (c.from === tree.root_user_id && c.to === member.id) || (c.from === member.id && c.to === tree.root_user_id)
-                                    );
-
-                                    return (
-                                        <div key={member.id} className="tree-member-card">
-                                            {member.profile_image_url ? (
-                                                <img src={member.profile_image_url} alt={member.name} className="tree-member-avatar" />
-                                            ) : (
-                                                <div className="tree-member-avatar" style={{ background: 'linear-gradient(135deg, #0052E8, #00D4FF)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem', color: 'white', fontWeight: 'bold' }}>
-                                                    {member.name.charAt(0).toUpperCase()}
-                                                </div>
-                                            )}
-                                            <div className="tree-member-name">{member.name}</div>
-                                            <div className="tree-member-username">@{member.username}</div>
-
-                                            {memberConnection && (
-                                                <div className="tree-member-relation">
-                                                    {memberConnection.relationship}
-                                                </div>
-                                            )}
-
-                                            <div className={`tree-member-status ${member.status === 'alive' ? 'alive' : 'deceased'}`}>
-                                                {member.status === 'alive' ? (
-                                                    <>
-                                                        <CheckCircle size={16} />
-                                                        Alive
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <XCircle size={16} />
-                                                        Deceased
-                                                    </>
-                                                )}
-                                            </div>
-
-                                            {isOwner && member.id !== user?.id && (
-                                                <div className="tree-member-action">
-                                                    <Link href={route('profile.view', { userId: member.id })} className="tree-member-action-btn">
-                                                        View Profile
-                                                    </Link>
-                                                    <button className="tree-member-action-btn danger" onClick={() => handleRemoveMember(member.id, member.name)} disabled={loading}>
-                                                        Remove
-                                                    </button>
-                                                </div>
-                                            )}
-                                            {!isOwner && member.id !== user?.id && (
-                                                <div className="tree-member-action">
-                                                    <Link href={route('profile.view', { userId: member.id })} className="tree-member-action-btn" style={{ flex: 1 }}>
-                                                        View Profile
-                                                    </Link>
-                                                </div>
-                                            )}
+                                {members.map((member) => (
+                                    <div key={member.id} className="tree-member-card">
+                                        <div className="tree-member-avatar" style={{ background: 'linear-gradient(135deg, #0052E8, #00D4FF)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem', color: 'white', fontWeight: 'bold' }}>
+                                            {member.name.charAt(0).toUpperCase()}
                                         </div>
-                                    );
-                                })}
+                                        <div className="tree-member-name">{member.name}</div>
+
+                                        {member.nuclear_family_role && (
+                                            <div className="tree-member-relation" style={{
+                                                background: member.nuclear_family_role === 'spouse' ? 'rgba(236, 72, 153, 0.1)' :
+                                                            member.nuclear_family_role === 'child' ? 'rgba(59, 130, 246, 0.1)' :
+                                                            member.nuclear_family_role === 'merged' ? 'rgba(16, 185, 129, 0.1)' :
+                                                            'rgba(156, 163, 175, 0.1)',
+                                                color: member.nuclear_family_role === 'spouse' ? '#ec4899' :
+                                                       member.nuclear_family_role === 'child' ? '#3b82f6' :
+                                                       member.nuclear_family_role === 'merged' ? '#10b981' :
+                                                       '#6b7280',
+                                                padding: '0.4rem 0.8rem',
+                                                borderRadius: '6px',
+                                                fontSize: '0.85rem',
+                                                fontWeight: '600',
+                                                textTransform: 'capitalize',
+                                                marginTop: '0.5rem'
+                                            }}>
+                                                {member.nuclear_family_role}
+                                            </div>
+                                        )}
+
+                                        {member.can_add_members && (
+                                            <div style={{
+                                                fontSize: '0.75rem',
+                                                color: '#10b981',
+                                                marginTop: '0.5rem',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '0.3rem',
+                                                justifyContent: 'center'
+                                            }}>
+                                                <CheckCircle size={14} />
+                                                Can add members
+                                            </div>
+                                        )}
+
+                                        {isAdmin && member.id !== user?.id && (
+                                            <div className="tree-member-action">
+                                                <Link href={route('profile.view', { userId: member.id })} className="tree-member-action-btn">
+                                                    View Profile
+                                                </Link>
+                                                <button className="tree-member-action-btn danger" onClick={() => handleRemoveMember(member.id, member.name)} disabled={loading}>
+                                                    Remove
+                                                </button>
+                                            </div>
+                                        )}
+                                        {!isAdmin && member.id !== user?.id && (
+                                            <div className="tree-member-action">
+                                                <Link href={route('profile.view', { userId: member.id })} className="tree-member-action-btn" style={{ flex: 1 }}>
+                                                    View Profile
+                                                </Link>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
                             </div>
                         )}
                     </div>
 
-                    {/* Relationships Section */}
-                    {members.length > 1 && connections.length > 0 && (
-                        <div className="tree-visualization-wrapper" style={{ marginBottom: '2.5rem' }}>
-                            <h2>
-                                <Share2 size={24} />
-                                Key Relationships
-                            </h2>
-
-                            <div style={{ display: 'grid', gap: '1rem' }}>
-                                {connections.slice(0, 5).map((connection, idx) => {
-                                    const fromMember = members.find((m) => m.id === connection.from);
-                                    const toMember = members.find((m) => m.id === connection.to);
-
-                                    return fromMember && toMember && fromMember.name && toMember.name ? (
-                                        <div key={idx} style={{ padding: '1rem', background: 'linear-gradient(135deg, #F0F6FF 0%, rgba(0, 212, 255, 0.05) 100%)', borderRadius: '12px', border: '1px solid rgba(0, 82, 232, 0.1)', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'linear-gradient(135deg, #0052E8, #00D4FF)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '0.9rem', fontWeight: 'bold', flexShrink: 0 }}>
-                                                {fromMember.name?.charAt(0) || '?'}
-                                            </div>
-                                            <div style={{ flex: 1 }}>
-                                                <div style={{ fontSize: '0.9rem', fontWeight: '700', color: '#1a1a1a' }}>
-                                                    {fromMember.name || 'Unknown'}
-                                                </div>
-                                                <div style={{ fontSize: '0.8rem', color: '#6C757D', marginTop: '0.2rem' }}>
-                                                    <span style={{ background: 'rgba(0, 82, 232, 0.1)', padding: '0.2rem 0.6rem', borderRadius: '4px', color: '#0052E8', fontWeight: '600' }}>
-                                                        {connection.relationship}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <div style={{ textAlign: 'right' }}>
-                                                <div style={{ fontSize: '0.9rem', fontWeight: '700', color: '#1a1a1a' }}>
-                                                    {toMember.name || 'Unknown'}
-                                                </div>
-                                                <div style={{ fontSize: '0.8rem', color: '#6C757D', marginTop: '0.2rem' }}>
-                                                    @{toMember.username || 'unknown'}
-                                                </div>
-                                            </div>
-                                            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'linear-gradient(135deg, #00D97F, #00E8A0)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '0.9rem', fontWeight: 'bold', flexShrink: 0 }}>
-                                                {toMember.name?.charAt(0) || '?'}
-                                            </div>
-                                        </div>
-                                    ) : null;
-                                })}
-                            </div>
-                        </div>
-                    )}
+                    {/* Tree Connection Manager */}
+                    <TreeConnectionManager
+                        treeId={tree.id}
+                        treeName={tree.name}
+                        pendingRequests={pendingRequests}
+                        sentRequests={sentRequests}
+                        acceptedConnections={[]}
+                        isAdmin={isAdmin}
+                    />
                 </div>
             </div>
         </AuthAccessLayout>
