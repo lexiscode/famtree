@@ -1,10 +1,10 @@
 # ---------- Base PHP + Node ----------
-FROM php:8.2-fpm
+FROM php:8.2-cli
 
 RUN apt-get update && apt-get install -y \
-    git curl zip unzip nano libzip-dev libpng-dev libonig-dev libxml2-dev \
-    libpq-dev nginx nodejs npm supervisor \
-    && docker-php-ext-install pdo pdo_mysql mbstring zip exif pcntl bcmath
+    git curl zip unzip libzip-dev libpng-dev libonig-dev libxml2-dev \
+    nodejs npm \
+    && docker-php-ext-install pdo pdo_mysql mbstring zip exif bcmath
 
 # Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
@@ -19,23 +19,24 @@ RUN mkdir -p storage/framework/cache/data storage/framework/sessions storage/fra
     && chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
 
-# Install backend & frontend deps
+# Install backend dependencies
 RUN composer install --no-dev --optimize-autoloader
+
+# Build frontend (Inertia / React)
 RUN npm install
 RUN npm run build
 
-# Laravel optimizations
-RUN php artisan optimize:clear
+# Clear caches to avoid stale config
+RUN php artisan config:clear \
+ && php artisan route:clear \
+ && php artisan view:clear \
+ && php artisan cache:clear
 
-# Nginx config
-RUN rm /etc/nginx/sites-enabled/default
-COPY deploy/nginx.conf /etc/nginx/conf.d/default.conf
-
-# Supervisor to run Nginx + PHP-FPM together
-COPY deploy/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-
-EXPOSE 80
-
+# Run migrations on first deploy (safe for staging)
 RUN php artisan migrate --force || true
 
-CMD ["supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+# Render exposes a runtime-assigned port in $PORT
+EXPOSE $PORT
+
+# Start Laravel server
+CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=${PORT}"]
