@@ -3,12 +3,17 @@
 namespace App\Actions\GuestServices\AuthAccessServices;
 
 use App\Repositories\GuestRepositories\UserConnectionRepository;
+use App\Repositories\GuestRepositories\FamilyTreeRepository;
+use App\Repositories\GuestRepositories\AuthAccessRepositories\FamilyTreeAdminRepository;
 use App\Models\GuestModels\User;
 
 class FamilyTreeService
 {
     public function __construct(
-        private UserConnectionRepository $connectionRepository
+        private UserConnectionRepository $connectionRepository,
+        private FamilyTreeRepository $familyTreeRepository,
+        private FamilyTreeAdminRepository $familyTreeAdminRepository,
+        private FamilyTreeValidationService $validationService
     ) {}
 
     /**
@@ -362,5 +367,184 @@ class FamilyTreeService
         ];
 
         return $colorMap[$relationshipType] ?? '#F1F5F9'; // Default light gray
+    }
+
+    /**
+     * Create a new nuclear family tree
+     *
+     * @param User $user
+     * @param array $treeData ['tree_name', 'description', 'is_public']
+     * @return array ['success' => bool, 'tree' => FamilyTree|null, 'members_added' => int, 'errors' => array]
+     */
+    public function createNuclearFamilyTree(User $user, array $treeData): array
+    {
+        // Validate user can create tree
+        $validation = $this->validationService->canCreateFamilyTree($user);
+
+        if (!$validation['can_create']) {
+            return [
+                'success' => false,
+                'tree' => null,
+                'members_added' => 0,
+                'errors' => $validation['errors'],
+            ];
+        }
+
+        try {
+            // Create the family tree
+            $tree = $this->familyTreeRepository->create([
+                'root_user_id' => $user->id,
+                'tree_name' => $treeData['tree_name'],
+                'description' => $treeData['description'] ?? null,
+                'is_public' => $treeData['is_public'] ?? false,
+                'created_by_user_id' => $user->id,
+                'is_nuclear_family' => true,
+            ]);
+
+            // Add creator as admin
+            $this->familyTreeAdminRepository->create(
+                familyTreeId: $tree->id,
+                userId: $user->id,
+                role: 'creator',
+                grantedByUserId: null
+            );
+
+            // Add creator as member with full permissions
+            $this->familyTreeRepository->addMemberWithRole(
+                treeId: $tree->id,
+                userId: $user->id,
+                addedByUserId: $user->id,
+                nuclearFamilyRole: null,
+                canAddMembers: true
+            );
+
+            // Auto-add nuclear family members (spouse + children)
+            $nuclearFamilyMembers = $this->validationService->getNuclearFamilyMemberIds($user->id);
+            $membersAdded = 0;
+
+            foreach ($nuclearFamilyMembers as $member) {
+                $this->familyTreeRepository->addMemberWithRole(
+                    treeId: $tree->id,
+                    userId: $member['user_id'],
+                    addedByUserId: $user->id,
+                    nuclearFamilyRole: $member['role'],
+                    canAddMembers: true
+                );
+                $membersAdded++;
+            }
+
+            return [
+                'success' => true,
+                'tree' => $tree->fresh('admins.user', 'members.user'),
+                'members_added' => $membersAdded,
+                'errors' => [],
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'tree' => null,
+                'members_added' => 0,
+                'errors' => ['Failed to create family tree: ' . $e->getMessage()],
+            ];
+        }
+    }
+
+    /**
+     * Check if a user can add members to a tree
+     *
+     * @param int $treeId
+     * @param int $userId
+     * @return bool
+     */
+    public function canAddMembers(int $treeId, int $userId): bool
+    {
+        // Admins can always add members
+        if ($this->familyTreeAdminRepository->isAdmin($treeId, $userId)) {
+            return true;
+        }
+
+        // Nuclear family members with can_add_members permission can add
+        $memberEntry = $this->familyTreeRepository->getMemberEntry($treeId, $userId);
+        if ($memberEntry && $memberEntry->canAddMembers()) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Add a nuclear family member to a tree
+     *
+     * @param int $treeId
+     * @param int $memberUserId
+     * @param int $addedByUserId
+     * @return array ['success' => bool, 'message' => string, 'error' => string|null]
+     */
+    public function addNuclearFamilyMember(int $treeId, int $memberUserId, int $addedByUserId): array
+    {
+        // Verify adder has permission
+        if (!$this->canAddMembers($treeId, $addedByUserId)) {
+            return [
+                'success' => false,
+                'message' => null,
+                'error' => 'You do not have permission to add members to this family tree.',
+            ];
+        }
+
+        // Check if member is already in the tree
+        if ($this->familyTreeRepository->isMember($treeId, $memberUserId)) {
+            return [
+                'success' => false,
+                'message' => null,
+                'error' => 'This user is already a member of the family tree.',
+            ];
+        }
+
+        // Verify user being added is nuclear family of adder
+        $nuclearFamilyMembers = $this->validationService->getNuclearFamilyMemberIds($addedByUserId);
+        $memberIds = array_column($nuclearFamilyMembers, 'user_id');
+
+        if (!in_array($memberUserId, $memberIds)) {
+            return [
+                'success' => false,
+                'message' => null,
+                'error' => 'You can only add your nuclear family members (spouse or children) to the family tree.',
+            ];
+        }
+
+        // Find the role for this member
+        $role = null;
+        foreach ($nuclearFamilyMembers as $member) {
+            if ($member['user_id'] === $memberUserId) {
+                $role = $member['role'];
+                break;
+            }
+        }
+
+        // Add the member with proper role and permissions
+        try {
+            $this->familyTreeRepository->addMemberWithRole(
+                treeId: $treeId,
+                userId: $memberUserId,
+                addedByUserId: $addedByUserId,
+                nuclearFamilyRole: $role,
+                canAddMembers: true
+            );
+
+            $memberUser = User::find($memberUserId);
+            $memberName = $memberUser ? trim($memberUser->first_name . ' ' . $memberUser->last_name) : 'Member';
+
+            return [
+                'success' => true,
+                'message' => "{$memberName} has been added to the family tree.",
+                'error' => null,
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => null,
+                'error' => 'Failed to add member: ' . $e->getMessage(),
+            ];
+        }
     }
 }

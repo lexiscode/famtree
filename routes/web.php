@@ -118,16 +118,36 @@ Route::middleware(['web', 'auth'])->group(function () {
 
     // Family Tree routes
     Route::prefix('family-tree')->group(function () {
+        // List trees (updated to show admin trees)
         Route::get('/', [FamilyTreeController::class, 'index'])->name('family-tree.index');
+
+        // Create/store with validation
         Route::get('/create', [FamilyTreeController::class, 'create'])->name('family-tree.create');
         Route::post('/', [FamilyTreeController::class, 'store'])->name('family-tree.store');
+
+        // View tree
         Route::get('/{treeId}', [FamilyTreeController::class, 'show'])->name('family-tree.show');
+
+        // Edit/update/delete (admin-only)
         Route::get('/{treeId}/edit', [FamilyTreeController::class, 'edit'])->name('family-tree.edit');
         Route::put('/{treeId}', [FamilyTreeController::class, 'update'])->name('family-tree.update');
         Route::delete('/{treeId}', [FamilyTreeController::class, 'destroy'])->name('family-tree.destroy');
+
+        // Member management (nuclear family only)
         Route::post('/{treeId}/add-member', [FamilyTreeController::class, 'addMember'])->name('family-tree.add-member');
         Route::delete('/{treeId}/members/{userId}', [FamilyTreeController::class, 'removeMember'])->name('family-tree.remove-member');
+
+        // Tree data
         Route::get('/{treeId}/data', [FamilyTreeController::class, 'getTreeData'])->name('family-tree.data');
+
+        // Tree connection requests
+        Route::post('/connections/send', [FamilyTreeController::class, 'sendConnectionRequest'])->name('family-tree.connections.send');
+        Route::post('/connections/{connectionId}/accept', [FamilyTreeController::class, 'acceptConnectionRequest'])->name('family-tree.connections.accept');
+        Route::post('/connections/{connectionId}/decline', [FamilyTreeController::class, 'declineConnectionRequest'])->name('family-tree.connections.decline');
+        Route::get('/{treeId}/connections', [FamilyTreeController::class, 'getConnectionRequests'])->name('family-tree.connections');
+
+        // Admin management
+        Route::get('/{treeId}/admins', [FamilyTreeController::class, 'getAdmins'])->name('family-tree.admins');
     });
 
     // Your Tree (Connection Tree Visualization) route

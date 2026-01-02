@@ -14,10 +14,13 @@ class FamilyTreeMember extends Model
         'user_id',
         'added_by_user_id',
         'added_at',
+        'nuclear_family_role',
+        'can_add_members',
     ];
 
     protected $casts = [
         'added_at' => 'datetime',
+        'can_add_members' => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -44,5 +47,55 @@ class FamilyTreeMember extends Model
     public function addedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'added_by_user_id');
+    }
+
+    /**
+     * Check if this member is a nuclear family member (spouse or child)
+     *
+     * @return bool
+     */
+    public function isNuclearFamilyMember(): bool
+    {
+        return in_array($this->nuclear_family_role, ['spouse', 'child']);
+    }
+
+    /**
+     * Check if this member can add other members to the tree
+     *
+     * @return bool
+     */
+    public function canAddMembers(): bool
+    {
+        return $this->can_add_members;
+    }
+
+    /**
+     * Check if this member is a spouse
+     *
+     * @return bool
+     */
+    public function isSpouse(): bool
+    {
+        return $this->nuclear_family_role === 'spouse';
+    }
+
+    /**
+     * Check if this member is a child
+     *
+     * @return bool
+     */
+    public function isChild(): bool
+    {
+        return $this->nuclear_family_role === 'child';
+    }
+
+    /**
+     * Check if this member is from a merged tree
+     *
+     * @return bool
+     */
+    public function isFromMergedTree(): bool
+    {
+        return $this->nuclear_family_role === 'merged';
     }
 }

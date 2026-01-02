@@ -142,4 +142,131 @@ class FamilyTreeRepository
             ->where('created_by_user_id', $userId)
             ->exists();
     }
+
+    /**
+     * Get trees where user is an admin (excluding merged trees)
+     *
+     * @param int $userId
+     * @return Collection
+     */
+    public function getUserAdminTrees(int $userId): Collection
+    {
+        return FamilyTree::whereHas('admins', function ($query) use ($userId) {
+            $query->where('user_id', $userId);
+        })
+        ->whereNull('merged_into_tree_id')
+        ->with(['rootUser', 'createdBy', 'admins.user'])
+        ->orderBy('created_at', 'desc')
+        ->get();
+    }
+
+    /**
+     * Get nuclear family members only (spouse and children)
+     *
+     * @param int $treeId
+     * @return Collection
+     */
+    public function getNuclearFamilyMembers(int $treeId): Collection
+    {
+        return FamilyTreeMember::where('family_tree_id', $treeId)
+            ->whereIn('nuclear_family_role', ['spouse', 'child'])
+            ->with('user', 'addedBy')
+            ->orderBy('added_at', 'desc')
+            ->get();
+    }
+
+    /**
+     * Mark a tree as merged into another tree
+     *
+     * @param int $treeId
+     * @param int $mergedIntoTreeId
+     * @return FamilyTree
+     */
+    public function markAsMerged(int $treeId, int $mergedIntoTreeId): FamilyTree
+    {
+        $tree = FamilyTree::findOrFail($treeId);
+        $tree->update([
+            'merged_into_tree_id' => $mergedIntoTreeId,
+            'merged_at' => now(),
+        ]);
+
+        // Soft delete the merged tree
+        $tree->delete();
+
+        return $tree;
+    }
+
+    /**
+     * Add a tree ID to the merged_tree_ids array
+     *
+     * @param int $treeId
+     * @param int $mergedTreeId
+     * @return FamilyTree
+     */
+    public function addMergedTreeId(int $treeId, int $mergedTreeId): FamilyTree
+    {
+        $tree = FamilyTree::findOrFail($treeId);
+        $mergedTreeIds = $tree->merged_tree_ids ?? [];
+
+        if (!in_array($mergedTreeId, $mergedTreeIds)) {
+            $mergedTreeIds[] = $mergedTreeId;
+            $tree->update(['merged_tree_ids' => $mergedTreeIds]);
+        }
+
+        return $tree->fresh();
+    }
+
+    /**
+     * Add a member with nuclear family role and permissions
+     *
+     * @param int $treeId
+     * @param int $userId
+     * @param int $addedByUserId
+     * @param string|null $nuclearFamilyRole
+     * @param bool $canAddMembers
+     * @return FamilyTreeMember
+     */
+    public function addMemberWithRole(
+        int $treeId,
+        int $userId,
+        int $addedByUserId,
+        ?string $nuclearFamilyRole = null,
+        bool $canAddMembers = false
+    ): FamilyTreeMember {
+        return FamilyTreeMember::create([
+            'family_tree_id' => $treeId,
+            'user_id' => $userId,
+            'added_by_user_id' => $addedByUserId,
+            'added_at' => now(),
+            'nuclear_family_role' => $nuclearFamilyRole,
+            'can_add_members' => $canAddMembers,
+        ]);
+    }
+
+    /**
+     * Get a member entry for a specific user in a tree
+     *
+     * @param int $treeId
+     * @param int $userId
+     * @return FamilyTreeMember|null
+     */
+    public function getMemberEntry(int $treeId, int $userId): ?FamilyTreeMember
+    {
+        return FamilyTreeMember::where('family_tree_id', $treeId)
+            ->where('user_id', $userId)
+            ->first();
+    }
+
+    /**
+     * Get all non-merged trees
+     *
+     * @return Collection
+     */
+    public function getActiveTrees(): Collection
+    {
+        return FamilyTree::whereNull('merged_into_tree_id')
+            ->with(['rootUser', 'createdBy', 'admins.user'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+    }
 }
