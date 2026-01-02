@@ -32,11 +32,11 @@ RUN php artisan config:clear \
  && php artisan view:clear \
  && php artisan cache:clear
 
-# Run migrations on first deploy (safe for staging)
-RUN php artisan migrate --force || true
 
 # Render exposes a runtime-assigned port in $PORT
 EXPOSE $PORT
 
-# Start Laravel server
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=${PORT}"]
+# Run at container startup (not during build)
+CMD sh -c "php artisan migrate --force || true && \
+           php artisan serve --host=0.0.0.0 --port=$PORT"
+
