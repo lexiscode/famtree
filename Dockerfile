@@ -24,8 +24,9 @@ RUN composer install --no-dev --optimize-autoloader
 RUN npm install
 RUN npm run build
 
-# Laravel optimizations
-RUN php artisan optimize:clear
+# Laravel optimizations + storage symlink
+RUN php artisan optimize:clear \
+    && php artisan storage:link || true
 
 # Nginx config
 RUN rm /etc/nginx/sites-enabled/default
@@ -36,7 +37,6 @@ COPY deploy/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 EXPOSE 80
 
-RUN php artisan migrate --force || true
-
-CMD ["supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
-
+# Run DB migrations and start services at runtime
+CMD sh -c "php artisan migrate --force || true && \
+           supervisord -c /etc/supervisor/conf.d/supervisord.conf"
