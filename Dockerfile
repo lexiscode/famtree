@@ -14,6 +14,11 @@ WORKDIR /var/www/html
 # Copy app files
 COPY . .
 
+# Ensure Laravel directories exist and are writable
+RUN mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views bootstrap/cache \
+    && chown -R www-data:www-data storage bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
+
 # Install backend & frontend deps
 RUN composer install --no-dev --optimize-autoloader
 RUN npm install
