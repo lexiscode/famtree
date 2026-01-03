@@ -12,25 +12,36 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Drop the existing unique constraint that prevents re-creating connections
+        // Safely drop the old unique index if it exists
         Schema::table('user_connections', function (Blueprint $table) {
-            $table->dropUnique('unique_connection_pair');
+            try {
+                $table->dropUnique('unique_connection_pair');
+            } catch (\Throwable $e) {
+                // ignore if it doesn't exist
+            }
         });
 
-        // Create a new unique constraint that only applies to pending/accepted statuses
-        // This is done using a generated column approach with a partial unique index
-        // We'll add a generated column that is NULL for 'undone' and 'declined' statuses
+        // Add nullable column instead of generated column
         Schema::table('user_connections', function (Blueprint $table) {
-            // Add a generated column for the unique constraint
-            // When status is 'undone' or 'declined', this will be NULL, allowing duplicates
-            $table->string('active_status')->storedAs("IF(status IN ('pending', 'accepted'), status, NULL)")->nullable();
+            if (!Schema::hasColumn('user_connections', 'active_status')) {
+                $table->string('active_status')->nullable();
+            }
         });
 
-        // Add a unique index that includes the generated column
-        DB::statement('
-            ALTER TABLE user_connections
-            ADD UNIQUE KEY unique_active_connection (requester_user_id, recipient_user_id, relationship_type, active_status)
-        ');
+        // Populate active_status field based on status values
+        DB::table('user_connections')->update([
+            'active_status' => DB::raw(
+                "CASE WHEN status IN ('pending','accepted') THEN status ELSE NULL END"
+            )
+        ]);
+
+        // Create Laravel-portable unique index
+        Schema::table('user_connections', function (Blueprint $table) {
+            $table->unique(
+                ['requester_user_id', 'recipient_user_id', 'relationship_type', 'active_status'],
+                'unique_active_connection'
+            );
+        });
     }
 
     /**
@@ -39,13 +50,19 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('user_connections', function (Blueprint $table) {
-            $table->dropIndex('unique_active_connection');
-            $table->dropColumn('active_status');
-        });
+            try {
+                $table->dropUnique('unique_active_connection');
+            } catch (\Throwable $e) {}
 
-        // Restore the original constraint
-        Schema::table('user_connections', function (Blueprint $table) {
-            $table->unique(['requester_user_id', 'recipient_user_id', 'relationship_type'], 'unique_connection_pair');
+            if (Schema::hasColumn('user_connections', 'active_status')) {
+                $table->dropColumn('active_status');
+            }
+
+            $table->unique(
+                ['requester_user_id', 'recipient_user_id', 'relationship_type'],
+                'unique_connection_pair'
+            );
         });
     }
+
 };
