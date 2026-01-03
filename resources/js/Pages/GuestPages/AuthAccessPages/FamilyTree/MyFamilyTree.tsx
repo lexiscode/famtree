@@ -1,8 +1,9 @@
 import { useCallback, useState, useEffect } from 'react';
 import { usePage, router, Link } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { Users, Edit, Trash2, Lock, Globe, CheckCircle, Shield, Crown, TreePine, ArrowLeft, Copy, Check, X, AlertTriangle, UserPlus, CheckCircle2, XCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Users, Edit, Trash2, Lock, Globe, CheckCircle, Shield, Crown, TreePine, ArrowLeft, Copy, Check, X, AlertTriangle, UserPlus, CheckCircle2, XCircle, ChevronLeft, ChevronRight, MessageCircle } from 'lucide-react';
 import TreeConnectionManager from '@/Components/FamilyTree/TreeConnectionManager';
+import TreeChatWindow from '@/Components/FamilyTree/TreeChatWindow';
 import ProfileSidebar from '../Stories/ProfileSidebar';
 import { UserProfile } from '@/types';
 import './MyFamilyTree.css';
@@ -114,6 +115,8 @@ export default function MyFamilyTree({
     const [memberToRemove, setMemberToRemove] = useState<{ id: number; name: string } | null>(null);
     const [showFlashMessage, setShowFlashMessage] = useState(false);
     const [flashMessage, setFlashMessage] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+    const [showChat, setShowChat] = useState(false);
+    const [isChatMinimized, setIsChatMinimized] = useState(false);
 
     // Check for flash messages
     useEffect(() => {
@@ -627,6 +630,30 @@ export default function MyFamilyTree({
                         <X size={18} />
                     </button>
                 </div>
+            )}
+
+            {/* Floating Chat Button */}
+            {(isMember || isAdmin) && !showChat && (
+                <button
+                    onClick={() => setShowChat(true)}
+                    className="floating-chat-btn"
+                    title="Open Family Tree Chat"
+                >
+                    <MessageCircle size={24} />
+                    <span className="chat-btn-pulse"></span>
+                </button>
+            )}
+
+            {/* Tree Chat Window */}
+            {showChat && authUser && (
+                <TreeChatWindow
+                    treeId={tree.id}
+                    treeName={tree.tree_name}
+                    currentUserId={authUser.id}
+                    onClose={() => setShowChat(false)}
+                    isMinimized={isChatMinimized}
+                    onToggleMinimize={() => setIsChatMinimized(!isChatMinimized)}
+                />
             )}
         </AuthAccessLayout>
     );

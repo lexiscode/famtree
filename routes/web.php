@@ -148,6 +148,12 @@ Route::middleware(['web', 'auth'])->group(function () {
 
         // Admin management (UUID route model binding)
         Route::get('/{familyTree}/admins', [FamilyTreeController::class, 'getAdmins'])->name('family-tree.admins');
+
+        // Tree Chat routes (UUID route model binding)
+        Route::get('/{familyTree}/chat/messages', [\App\Http\Controllers\GuestControllers\AuthAccessControllers\TreeChatController::class, 'getMessages'])->name('family-tree.chat.messages');
+        Route::post('/{familyTree}/chat/send', [\App\Http\Controllers\GuestControllers\AuthAccessControllers\TreeChatController::class, 'sendMessage'])->name('family-tree.chat.send');
+        Route::post('/{familyTree}/chat/typing', [\App\Http\Controllers\GuestControllers\AuthAccessControllers\TreeChatController::class, 'typing'])->name('family-tree.chat.typing');
+        Route::post('/{familyTree}/chat/mark-read', [\App\Http\Controllers\GuestControllers\AuthAccessControllers\TreeChatController::class, 'markAsRead'])->name('family-tree.chat.mark-read');
     });
 
     // Your Tree (Connection Tree Visualization) route
