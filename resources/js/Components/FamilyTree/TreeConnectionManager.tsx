@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { router } from '@inertiajs/react';
-import { Users, Send, Check, X, Link2, AlertCircle } from 'lucide-react';
+import { Users, Send, Check, X, Link2, AlertCircle, Sparkles, ArrowLeft } from 'lucide-react';
+import './TreeConnectionManager.css';
 
 interface TreeConnection {
     id: number;
@@ -89,94 +90,71 @@ export default function TreeConnectionManager({
     }
 
     return (
-        <div style={{ marginTop: '2rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-                <h3 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 700, color: '#1a202c' }}>
-                    Tree Connections
-                </h3>
+        <div className="tree-connection-manager">
+            {/* Header */}
+            <div className="connection-header">
+                <div className="connection-title-group">
+                    <Link2 size={28} className="connection-icon" />
+                    <div>
+                        <h3 className="connection-title">Tree Connections</h3>
+                        <p className="connection-subtitle">Merge family trees to expand your network</p>
+                    </div>
+                </div>
                 {!showSendForm && (
-                    <button
-                        onClick={() => setShowSendForm(true)}
-                        style={{
-                            background: '#0052E8',
-                            color: 'white',
-                            border: 'none',
-                            padding: '0.65rem 1.2rem',
-                            borderRadius: '8px',
-                            cursor: 'pointer',
-                            fontSize: '0.9rem',
-                            fontWeight: 600,
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                        }}
-                    >
-                        <Send size={16} />
-                        Send Connection Request
+                    <button onClick={() => setShowSendForm(true)} className="connection-btn-send">
+                        <Send size={18} />
+                        <span>Send Request</span>
+                        <div className="button-glow"></div>
                     </button>
                 )}
             </div>
 
             {/* Send Connection Request Form */}
             {showSendForm && (
-                <div style={{ background: '#f7fafc', padding: '1.5rem', borderRadius: '10px', marginBottom: '1.5rem' }}>
-                    <h4 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', fontWeight: 600 }}>Send Connection Request</h4>
-                    <form onSubmit={handleSendRequest}>
-                        <div style={{ marginBottom: '1rem' }}>
-                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 600 }}>
-                                Target Tree ID
+                <div className="connection-form-card">
+                    <div className="form-card-header">
+                        <div className="form-card-icon">
+                            <Send size={24} />
+                        </div>
+                        <div>
+                            <h4 className="form-card-title">Send Connection Request</h4>
+                            <p className="form-card-subtitle">Connect with another family tree</p>
+                        </div>
+                    </div>
+
+                    <form onSubmit={handleSendRequest} className="connection-form">
+                        <div className="form-group">
+                            <label htmlFor="targetTreeId" className="form-label">
+                                Target Tree UUID <span className="required">*</span>
                             </label>
                             <input
-                                type="number"
+                                type="text"
+                                id="targetTreeId"
                                 value={targetTreeId}
                                 onChange={(e) => setTargetTreeId(e.target.value)}
-                                placeholder="Enter the ID of the tree you want to connect with"
+                                placeholder="e.g., 92cfb3ed-7378-473f-ae30-84a47fc16bbf"
                                 required
-                                style={{
-                                    width: '100%',
-                                    padding: '0.75rem',
-                                    border: '1px solid #e2e8f0',
-                                    borderRadius: '8px',
-                                    fontSize: '0.9rem',
-                                }}
+                                className="form-input"
                             />
+                            <span className="form-hint">Enter the UUID of the tree you want to connect with</span>
                         </div>
-                        <div style={{ marginBottom: '1rem' }}>
-                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 600 }}>
-                                Message (Optional)
+
+                        <div className="form-group">
+                            <label htmlFor="message" className="form-label">
+                                Message <span className="optional">(Optional)</span>
                             </label>
                             <textarea
+                                id="message"
                                 value={message}
                                 onChange={(e) => setMessage(e.target.value)}
-                                placeholder="Add a message explaining the connection..."
-                                rows={3}
-                                style={{
-                                    width: '100%',
-                                    padding: '0.75rem',
-                                    border: '1px solid #e2e8f0',
-                                    borderRadius: '8px',
-                                    fontSize: '0.9rem',
-                                    resize: 'vertical',
-                                }}
+                                placeholder="Explain how the families are related or why you're requesting a connection..."
+                                rows={4}
+                                className="form-textarea"
                             />
+                            <span className="form-hint">Help the other tree admin understand the connection</span>
                         </div>
-                        <div style={{ display: 'flex', gap: '0.75rem' }}>
-                            <button
-                                type="submit"
-                                disabled={loading || !targetTreeId}
-                                style={{
-                                    background: loading || !targetTreeId ? '#cbd5e0' : '#0052E8',
-                                    color: 'white',
-                                    border: 'none',
-                                    padding: '0.65rem 1.2rem',
-                                    borderRadius: '8px',
-                                    cursor: loading || !targetTreeId ? 'not-allowed' : 'pointer',
-                                    fontSize: '0.9rem',
-                                    fontWeight: 600,
-                                }}
-                            >
-                                {loading ? 'Sending...' : 'Send Request'}
-                            </button>
+
+                        <div className="form-actions">
                             <button
                                 type="button"
                                 onClick={() => {
@@ -184,18 +162,28 @@ export default function TreeConnectionManager({
                                     setTargetTreeId('');
                                     setMessage('');
                                 }}
-                                style={{
-                                    background: '#e2e8f0',
-                                    color: '#4a5568',
-                                    border: 'none',
-                                    padding: '0.65rem 1.2rem',
-                                    borderRadius: '8px',
-                                    cursor: 'pointer',
-                                    fontSize: '0.9rem',
-                                    fontWeight: 600,
-                                }}
+                                className="form-btn form-btn-cancel"
                             >
+                                <ArrowLeft size={18} />
                                 Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={loading || !targetTreeId.trim()}
+                                className="form-btn form-btn-submit"
+                            >
+                                {loading ? (
+                                    <>
+                                        <span className="spinner"></span>
+                                        Sending...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Sparkles size={18} />
+                                        Send Request
+                                    </>
+                                )}
+                                <div className="button-glow"></div>
                             </button>
                         </div>
                     </form>
@@ -204,75 +192,50 @@ export default function TreeConnectionManager({
 
             {/* Pending Requests (Received) */}
             {pendingRequests.length > 0 && (
-                <div style={{ marginBottom: '1.5rem' }}>
-                    <h4 style={{ margin: '0 0 1rem 0', fontSize: '1.05rem', fontWeight: 600, color: '#2d3748' }}>
-                        Pending Requests ({pendingRequests.length})
-                    </h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div className="connection-section">
+                    <div className="section-header">
+                        <div className="section-badge pending">
+                            <AlertCircle size={16} />
+                            {pendingRequests.length} Pending
+                        </div>
+                        <h4 className="section-title">Requests Awaiting Your Response</h4>
+                    </div>
+                    <div className="connection-list">
                         {pendingRequests.map((request) => (
-                            <div
-                                key={request.id}
-                                style={{
-                                    background: '#fff',
-                                    border: '1px solid #e2e8f0',
-                                    borderRadius: '10px',
-                                    padding: '1.2rem',
-                                }}
-                            >
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                    <div style={{ flex: 1 }}>
-                                        <div style={{ fontWeight: 600, marginBottom: '0.4rem' }}>
+                            <div key={request.id} className="connection-card pending-card">
+                                <div className="card-content">
+                                    <div className="card-header">
+                                        <div className="tree-name-badge">
                                             {request.requester_tree?.tree_name}
                                         </div>
-                                        <div style={{ fontSize: '0.85rem', color: '#718096', marginBottom: '0.5rem' }}>
+                                        <div className="requested-by">
                                             Requested by {request.requested_by?.first_name} {request.requested_by?.last_name}
                                         </div>
-                                        {request.message && (
-                                            <div style={{ fontSize: '0.9rem', color: '#4a5568', fontStyle: 'italic', marginTop: '0.5rem' }}>
-                                                "{request.message}"
-                                            </div>
-                                        )}
                                     </div>
-                                    <div style={{ display: 'flex', gap: '0.5rem', marginLeft: '1rem' }}>
-                                        <button
-                                            onClick={() => handleAccept(request.id)}
-                                            style={{
-                                                background: '#48bb78',
-                                                color: 'white',
-                                                border: 'none',
-                                                padding: '0.5rem 1rem',
-                                                borderRadius: '6px',
-                                                cursor: 'pointer',
-                                                fontSize: '0.85rem',
-                                                fontWeight: 600,
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '0.4rem',
-                                            }}
-                                        >
-                                            <Check size={14} />
-                                            Accept
-                                        </button>
-                                        <button
-                                            onClick={() => handleDecline(request.id)}
-                                            style={{
-                                                background: '#f56565',
-                                                color: 'white',
-                                                border: 'none',
-                                                padding: '0.5rem 1rem',
-                                                borderRadius: '6px',
-                                                cursor: 'pointer',
-                                                fontSize: '0.85rem',
-                                                fontWeight: 600,
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '0.4rem',
-                                            }}
-                                        >
-                                            <X size={14} />
-                                            Decline
-                                        </button>
+                                    {request.message && (
+                                        <div className="request-message">
+                                            <span className="message-icon">"</span>
+                                            {request.message}
+                                            <span className="message-icon">"</span>
+                                        </div>
+                                    )}
+                                    <div className="request-date">
+                                        Received {new Date(request.requested_at).toLocaleDateString('en-US', {
+                                            year: 'numeric',
+                                            month: 'short',
+                                            day: 'numeric'
+                                        })}
                                     </div>
+                                </div>
+                                <div className="card-actions">
+                                    <button onClick={() => handleAccept(request.id)} className="action-btn accept-btn">
+                                        <Check size={18} />
+                                        Accept & Merge
+                                    </button>
+                                    <button onClick={() => handleDecline(request.id)} className="action-btn decline-btn">
+                                        <X size={18} />
+                                        Decline
+                                    </button>
                                 </div>
                             </div>
                         ))}
@@ -282,26 +245,30 @@ export default function TreeConnectionManager({
 
             {/* Sent Requests */}
             {sentRequests.length > 0 && (
-                <div style={{ marginBottom: '1.5rem' }}>
-                    <h4 style={{ margin: '0 0 1rem 0', fontSize: '1.05rem', fontWeight: 600, color: '#2d3748' }}>
-                        Sent Requests ({sentRequests.length})
-                    </h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div className="connection-section">
+                    <div className="section-header">
+                        <div className="section-badge sent">
+                            <Send size={16} />
+                            {sentRequests.length} Sent
+                        </div>
+                        <h4 className="section-title">Requests Awaiting Response</h4>
+                    </div>
+                    <div className="connection-list">
                         {sentRequests.map((request) => (
-                            <div
-                                key={request.id}
-                                style={{
-                                    background: '#fffaf0',
-                                    border: '1px solid #fbd38d',
-                                    borderRadius: '10px',
-                                    padding: '1.2rem',
-                                }}
-                            >
-                                <div style={{ fontWeight: 600, marginBottom: '0.4rem' }}>
-                                    To: {request.recipient_tree?.tree_name}
+                            <div key={request.id} className="connection-card sent-card">
+                                <div className="sent-icon">
+                                    <Send size={20} />
                                 </div>
-                                <div style={{ fontSize: '0.85rem', color: '#744210' }}>
-                                    Waiting for response...
+                                <div className="card-content">
+                                    <div className="tree-name">To: {request.recipient_tree?.tree_name}</div>
+                                    <div className="sent-status">Waiting for response...</div>
+                                    <div className="request-date">
+                                        Sent {new Date(request.requested_at).toLocaleDateString('en-US', {
+                                            year: 'numeric',
+                                            month: 'short',
+                                            day: 'numeric'
+                                        })}
+                                    </div>
                                 </div>
                             </div>
                         ))}
@@ -311,31 +278,30 @@ export default function TreeConnectionManager({
 
             {/* Accepted Connections */}
             {acceptedConnections.length > 0 && (
-                <div>
-                    <h4 style={{ margin: '0 0 1rem 0', fontSize: '1.05rem', fontWeight: 600, color: '#2d3748' }}>
-                        Merged Trees ({acceptedConnections.length})
-                    </h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div className="connection-section">
+                    <div className="section-header">
+                        <div className="section-badge merged">
+                            <Check size={16} />
+                            {acceptedConnections.length} Merged
+                        </div>
+                        <h4 className="section-title">Successfully Merged Trees</h4>
+                    </div>
+                    <div className="connection-list">
                         {acceptedConnections.map((connection) => (
-                            <div
-                                key={connection.id}
-                                style={{
-                                    background: '#f0fff4',
-                                    border: '1px solid #9ae6b4',
-                                    borderRadius: '10px',
-                                    padding: '1.2rem',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.75rem',
-                                }}
-                            >
-                                <Link2 size={20} style={{ color: '#38a169' }} />
-                                <div>
-                                    <div style={{ fontWeight: 600 }}>
+                            <div key={connection.id} className="connection-card merged-card">
+                                <div className="merged-icon">
+                                    <Link2 size={24} />
+                                </div>
+                                <div className="card-content">
+                                    <div className="merged-trees">
                                         {connection.requester_tree?.tree_name} ↔ {connection.recipient_tree?.tree_name}
                                     </div>
-                                    <div style={{ fontSize: '0.85rem', color: '#2f855a' }}>
-                                        Merged on {new Date(connection.accepted_at!).toLocaleDateString()}
+                                    <div className="merged-date">
+                                        Merged on {new Date(connection.accepted_at!).toLocaleDateString('en-US', {
+                                            year: 'numeric',
+                                            month: 'long',
+                                            day: 'numeric'
+                                        })}
                                     </div>
                                 </div>
                             </div>
@@ -345,12 +311,20 @@ export default function TreeConnectionManager({
             )}
 
             {/* Empty State */}
-            {pendingRequests.length === 0 && sentRequests.length === 0 && acceptedConnections.length === 0 && (
-                <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#718096' }}>
-                    <Users size={48} style={{ margin: '0 auto 1rem', opacity: 0.5 }} />
-                    <p style={{ margin: 0, fontSize: '0.95rem' }}>
-                        No tree connections yet. Send a connection request to another family tree to merge your families together.
+            {pendingRequests.length === 0 && sentRequests.length === 0 && acceptedConnections.length === 0 && !showSendForm && (
+                <div className="connection-empty-state">
+                    <div className="empty-icon">
+                        <Link2 size={64} strokeWidth={1.5} />
+                    </div>
+                    <h4 className="empty-title">No Tree Connections Yet</h4>
+                    <p className="empty-text">
+                        Connect with other family trees to merge your families and expand your network.
+                        Send a connection request to get started.
                     </p>
+                    <button onClick={() => setShowSendForm(true)} className="empty-cta">
+                        <Send size={18} />
+                        <span>Send Connection Request</span>
+                    </button>
                 </div>
             )}
         </div>
