@@ -115,7 +115,7 @@ export default function TreeChatWindow({
             });
 
         return () => {
-            channel.leave();
+            window.Echo.leave(`family-tree.${treeId}`);
         };
     }, [treeId, scrollToBottom]);
 
