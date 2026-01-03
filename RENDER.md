@@ -22,6 +22,7 @@ RUN mkdir -p storage/framework/cache/data storage/framework/sessions storage/fra
     && chmod -R 775 storage bootstrap/cache
 
 # Install backend & frontend deps
+RUN composer require doctrine/dbal
 RUN composer install --no-dev --optimize-autoloader
 RUN npm install
 RUN npm run build
