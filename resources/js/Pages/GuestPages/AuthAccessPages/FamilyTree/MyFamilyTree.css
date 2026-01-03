@@ -530,6 +530,17 @@
     box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.3);
 }
 
+.member-card.available {
+    background: rgba(59, 130, 246, 0.05);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.member-card.available:hover {
+    background: rgba(59, 130, 246, 0.08);
+    border-color: rgba(59, 130, 246, 0.3);
+    box-shadow: 0 15px 35px -10px rgba(59, 130, 246, 0.2);
+}
+
 .member-avatar {
     width: 80px;
     height: 80px;
@@ -658,6 +669,24 @@
 .member-action-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+}
+
+.member-action-btn.full-width {
+    width: 100%;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    border-color: transparent;
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.member-action-btn.full-width:hover:not(:disabled) {
+    box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+    transform: translateY(-2px);
+}
+
+.member-action-btn.full-width:active:not(:disabled) {
+    transform: translateY(0);
 }
 
 /* Empty State */

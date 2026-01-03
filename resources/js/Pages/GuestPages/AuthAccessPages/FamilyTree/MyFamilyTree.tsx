@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { usePage, router, Link } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { Users, Edit, Trash2, Lock, Globe, CheckCircle, Shield, Crown, TreePine, ArrowLeft, Copy, Check, X, AlertTriangle } from 'lucide-react';
+import { Users, Edit, Trash2, Lock, Globe, CheckCircle, Shield, Crown, TreePine, ArrowLeft, Copy, Check, X, AlertTriangle, UserPlus } from 'lucide-react';
 import TreeConnectionManager from '@/Components/FamilyTree/TreeConnectionManager';
 import ProfileSidebar from '../Stories/ProfileSidebar';
 import { UserProfile } from '@/types';
@@ -22,6 +22,13 @@ interface TreeMember {
     nuclear_family_role?: 'spouse' | 'child' | 'extended' | 'merged' | null;
     can_add_members: boolean;
     added_at: string;
+}
+
+interface AvailableMember {
+    user_id: number;
+    name: string;
+    profile_image_url?: string;
+    role: 'spouse' | 'child';
 }
 
 interface TreeConnection {
@@ -67,6 +74,7 @@ interface Props {
     members: TreeMember[];
     pendingRequests: TreeConnection[];
     sentRequests: TreeConnection[];
+    availableMembers: AvailableMember[];
     isAdmin: boolean;
     isMember: boolean;
     canAddMembers: boolean;
@@ -83,6 +91,7 @@ export default function MyFamilyTree({
     members,
     pendingRequests,
     sentRequests,
+    availableMembers,
     isAdmin,
     isMember,
     canAddMembers
@@ -148,6 +157,25 @@ export default function MyFamilyTree({
             setTimeout(() => setCopied(false), 2000);
         });
     }, [tree.id]);
+
+    const handleAddMember = useCallback(
+        (userId: number, memberName: string) => {
+            setLoading(true);
+            router.post(
+                route('family-tree.add-member', { familyTree: tree.id }),
+                { user_id: userId },
+                {
+                    onSuccess: () => {
+                        setLoading(false);
+                    },
+                    onError: () => {
+                        setLoading(false);
+                    },
+                }
+            );
+        },
+        [tree.id]
+    );
 
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
@@ -403,6 +431,57 @@ export default function MyFamilyTree({
                             </div>
                         )}
                     </div>
+
+                    {/* Available Members to Add */}
+                    {isAdmin && availableMembers.length > 0 && (
+                        <div className="premium-section">
+                            <div className="section-header">
+                                <div className="section-icon">
+                                    <UserPlus size={24} />
+                                </div>
+                                <div className="section-title">
+                                    <h2>Available Family Members</h2>
+                                    <p>Add your nuclear family members to this tree</p>
+                                </div>
+                            </div>
+
+                            <div className="members-grid">
+                                {availableMembers.map((member) => (
+                                    <div key={member.user_id} className="member-card available">
+                                        <div className="member-avatar">
+                                            {member.profile_image_url ? (
+                                                <img
+                                                    src={member.profile_image_url}
+                                                    alt={member.name}
+                                                    className="member-avatar-img"
+                                                />
+                                            ) : (
+                                                <div className="member-avatar-fallback">
+                                                    {member.name.charAt(0).toUpperCase()}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <h3 className="member-name">{member.name}</h3>
+
+                                        <span className={`member-role-badge ${member.role}`}>
+                                            {member.role}
+                                        </span>
+
+                                        <div className="member-actions">
+                                            <button
+                                                className="member-action-btn primary full-width"
+                                                onClick={() => handleAddMember(member.user_id, member.name)}
+                                                disabled={loading}
+                                            >
+                                                <UserPlus size={16} />
+                                                {loading ? 'Adding...' : 'Add to Tree'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     {/* Tree Connection Manager */}
                     <TreeConnectionManager

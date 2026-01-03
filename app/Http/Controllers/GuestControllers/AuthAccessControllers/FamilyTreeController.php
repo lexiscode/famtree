@@ -246,6 +246,27 @@ class FamilyTreeController extends Controller
         $pendingRequests = $isAdmin ? $this->connectionRepository->getPendingRequests($familyTree->id) : collect();
         $sentRequests = $isAdmin ? $this->connectionRepository->getSentRequests($familyTree->id) : collect();
 
+        // Get available members to add (nuclear family members not already in tree) - for admins only
+        $availableMembers = [];
+        if ($isAdmin) {
+            $nuclearFamilyMembers = $this->validationService->getNuclearFamilyMemberIds($user->id);
+            $currentMemberIds = $members->pluck('user_id')->toArray();
+
+            foreach ($nuclearFamilyMembers as $member) {
+                if (!in_array($member['user_id'], $currentMemberIds)) {
+                    $memberUser = \App\Models\GuestModels\User::find($member['user_id']);
+                    if ($memberUser) {
+                        $availableMembers[] = [
+                            'user_id' => $memberUser->id,
+                            'name' => trim($memberUser->first_name . ' ' . $memberUser->last_name),
+                            'profile_image_url' => $memberUser->profile_image_url,
+                            'role' => $member['role'],
+                        ];
+                    }
+                }
+            }
+        }
+
         // Get user profile data and connection counts for sidebar
         $userProfile = $this->getUserProfileData($user);
         $connectionCount = $this->userConnectionRepository->getConnectionCount($user->id);
@@ -282,6 +303,7 @@ class FamilyTreeController extends Controller
             ]),
             'pendingRequests' => $pendingRequests,
             'sentRequests' => $sentRequests,
+            'availableMembers' => $availableMembers,
             'isAdmin' => $isAdmin,
             'isMember' => $isMember,
             'canAddMembers' => $this->treeService->canAddMembers($familyTree->id, $user->id),
