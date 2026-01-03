@@ -18,11 +18,18 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
 });
 
 Broadcast::channel('family-tree.{treeId}', function ($user, $treeId) {
+    // Since we use UUID for route model binding, we need to resolve UUID to tree ID
+    $tree = \App\Models\GuestModels\FamilyTree::where('uuid', $treeId)->first();
+
+    if (!$tree) {
+        return false;
+    }
+
     $treeRepository = app(\App\Repositories\GuestRepositories\FamilyTreeRepository::class);
     $adminRepository = app(\App\Repositories\GuestRepositories\AuthAccessRepositories\FamilyTreeAdminRepository::class);
 
-    $isMember = $treeRepository->isMember($treeId, $user->id);
-    $isAdmin = $adminRepository->isAdmin($treeId, $user->id);
+    $isMember = $treeRepository->isMember($tree->id, $user->id);
+    $isAdmin = $adminRepository->isAdmin($tree->id, $user->id);
 
     if ($isMember || $isAdmin) {
         return [

@@ -33,6 +33,7 @@ interface Props {
     treeId: string;
     treeName: string;
     currentUserId: number;
+    currentUserName: string;
     onClose: () => void;
     isMinimized: boolean;
     onToggleMinimize: () => void;
@@ -42,6 +43,7 @@ export default function TreeChatWindow({
     treeId,
     treeName,
     currentUserId,
+    currentUserName,
     onClose,
     isMinimized,
     onToggleMinimize,
@@ -55,6 +57,7 @@ export default function TreeChatWindow({
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const isTypingRef = useRef(false);
+    const channelRef = useRef<any>(null);
 
     // Scroll to bottom of messages
     const scrollToBottom = useCallback(() => {
@@ -99,36 +102,50 @@ export default function TreeChatWindow({
                 setMessages((prev) => [...prev, e.message]);
                 setTimeout(scrollToBottom, 100);
             })
-            .listenForWhisper('user.typing', (e: TypingUser) => {
-                setTypingUsers((prev) => {
-                    const exists = prev.find((u) => u.user_id === e.user_id);
-                    if (!exists) {
-                        return [...prev, e];
-                    }
-                    return prev;
-                });
+            .listen('TreeUserTyping', (e: { user_id: number; first_name: string; last_name: string; is_typing: boolean }) => {
+                if (e.is_typing) {
+                    setTypingUsers((prev) => {
+                        const exists = prev.find((u) => u.user_id === e.user_id);
+                        if (!exists) {
+                            return [...prev, {
+                                user_id: e.user_id,
+                                first_name: e.first_name,
+                                last_name: e.last_name,
+                            }];
+                        }
+                        return prev;
+                    });
 
-                // Remove typing indicator after 3 seconds
-                setTimeout(() => {
+                    // Remove typing indicator after 3 seconds
+                    setTimeout(() => {
+                        setTypingUsers((prev) => prev.filter((u) => u.user_id !== e.user_id));
+                    }, 3000);
+                } else {
+                    // User stopped typing
                     setTypingUsers((prev) => prev.filter((u) => u.user_id !== e.user_id));
-                }, 3000);
+                }
             });
 
+        // Store channel reference for whispers
+        channelRef.current = channel;
+
         return () => {
+            channelRef.current = null;
             window.Echo.leave(`family-tree.${treeId}`);
         };
     }, [treeId, scrollToBottom]);
 
-    // Handle typing indicator
+    // Handle typing indicator - use server-side broadcast instead of whispers
     const handleTyping = useCallback(() => {
-        if (!isTypingRef.current && window.Echo) {
+        if (!isTypingRef.current) {
             isTypingRef.current = true;
-            window.Echo.join(`family-tree.${treeId}`)
-                .whisper('user.typing', {
-                    user_id: currentUserId,
-                    first_name: 'You',
-                    last_name: '',
-                });
+
+            // Send typing=true to server
+            axios.post(route('family-tree.chat.typing', treeId), {
+                is_typing: true,
+            }).catch((error) => {
+                console.error('Error sending typing indicator:', error);
+            });
         }
 
         if (typingTimeoutRef.current) {
@@ -137,8 +154,15 @@ export default function TreeChatWindow({
 
         typingTimeoutRef.current = setTimeout(() => {
             isTypingRef.current = false;
+
+            // Send typing=false to server
+            axios.post(route('family-tree.chat.typing', treeId), {
+                is_typing: false,
+            }).catch((error) => {
+                console.error('Error stopping typing indicator:', error);
+            });
         }, 1000);
-    }, [treeId, currentUserId]);
+    }, [treeId]);
 
     // Send message
     const handleSendMessage = useCallback(async (e: React.FormEvent) => {

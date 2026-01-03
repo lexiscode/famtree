@@ -32,8 +32,11 @@ class TreeMessageSent implements ShouldBroadcastNow
      */
     public function broadcastOn(): array
     {
+        // Load the family tree relationship to get the UUID
+        $this->message->loadMissing('familyTree');
+
         return [
-            new PresenceChannel('family-tree.' . $this->message->family_tree_id),
+            new PresenceChannel('family-tree.' . $this->message->familyTree->uuid),
         ];
     }
 
@@ -44,17 +47,23 @@ class TreeMessageSent implements ShouldBroadcastNow
      */
     public function broadcastWith(): array
     {
+        // Load user relationship if not already loaded
+        $this->message->loadMissing('user');
+
+        // Wrap data in 'message' key to match frontend expectations
         return [
-            'id' => $this->message->id,
-            'family_tree_id' => $this->message->family_tree_id,
-            'user_id' => $this->message->user_id,
-            'message' => $this->message->message,
-            'created_at' => $this->message->created_at->toISOString(),
-            'user' => [
-                'id' => $this->message->user->id,
-                'first_name' => $this->message->user->first_name,
-                'last_name' => $this->message->user->last_name,
-                'profile_image_url' => $this->message->user->profile_image_url,
+            'message' => [
+                'id' => $this->message->id,
+                'family_tree_id' => $this->message->family_tree_id,
+                'user_id' => $this->message->user_id,
+                'message' => $this->message->message,
+                'created_at' => $this->message->created_at->toISOString(),
+                'user' => [
+                    'id' => $this->message->user->id,
+                    'first_name' => $this->message->user->first_name,
+                    'last_name' => $this->message->user->last_name,
+                    'profile_image_url' => $this->message->user->profile_image_url,
+                ],
             ],
         ];
     }

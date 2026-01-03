@@ -36,8 +36,15 @@ class TreeUserTyping implements ShouldBroadcastNow
      */
     public function broadcastOn(): array
     {
+        // Get the tree UUID from the numeric ID
+        $tree = \App\Models\GuestModels\FamilyTree::find($this->familyTreeId);
+
+        if (!$tree) {
+            return [];
+        }
+
         return [
-            new PresenceChannel('family-tree.' . $this->familyTreeId),
+            new PresenceChannel('family-tree.' . $tree->uuid),
         ];
     }
 
@@ -63,6 +70,6 @@ class TreeUserTyping implements ShouldBroadcastNow
      */
     public function broadcastAs(): string
     {
-        return 'user.typing';
+        return 'TreeUserTyping';
     }
 }
