@@ -18,6 +18,7 @@ interface Admin {
 interface TreeMember {
     id: number;
     name: string;
+    profile_image_url?: string;
     nuclear_family_role?: 'spouse' | 'child' | 'extended' | 'merged' | null;
     can_add_members: boolean;
     added_at: string;
@@ -337,7 +338,17 @@ export default function MyFamilyTree({
                                 {members.map((member) => (
                                     <div key={member.id} className="member-card">
                                         <div className="member-avatar">
-                                            {member.name.charAt(0).toUpperCase()}
+                                            {member.profile_image_url ? (
+                                                <img
+                                                    src={member.profile_image_url}
+                                                    alt={member.name}
+                                                    className="member-avatar-img"
+                                                />
+                                            ) : (
+                                                <div className="member-avatar-fallback">
+                                                    {member.name.charAt(0).toUpperCase()}
+                                                </div>
+                                            )}
                                         </div>
                                         <h3 className="member-name">{member.name}</h3>
 

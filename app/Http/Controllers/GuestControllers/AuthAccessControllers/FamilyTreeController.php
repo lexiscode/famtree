@@ -274,6 +274,7 @@ class FamilyTreeController extends Controller
             'members' => $members->map(fn($member) => [
                 'id' => $member->user->id,
                 'name' => trim($member->user->first_name . ' ' . $member->user->last_name),
+                'profile_image_url' => $member->user->profile_image_url,
                 'nuclear_family_role' => $member->nuclear_family_role,
                 'can_add_members' => $member->can_add_members,
                 'added_at' => $member->added_at,
