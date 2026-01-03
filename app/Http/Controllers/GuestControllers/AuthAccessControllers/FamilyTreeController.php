@@ -485,7 +485,7 @@ class FamilyTreeController extends Controller
         $user = auth()->user();
 
         if (!$user) {
-            return response()->json(['error' => 'Unauthorized'], 401);
+            return redirect()->route('home');
         }
 
         $validated = $request->validate([
@@ -500,25 +500,23 @@ class FamilyTreeController extends Controller
 
         // Verify user is admin of their tree
         if (!$this->adminRepository->isAdmin($myTree->id, $user->id)) {
-            return response()->json(['error' => 'You must be an admin of your family tree to send connection requests'], 403);
+            return redirect()->back()->with('error', 'You must be an admin of your family tree to send connection requests');
         }
 
         // Check if connection already exists
         if ($this->connectionRepository->connectionExists($myTree->id, $targetTree->id)) {
-            return response()->json(['error' => 'A connection request already exists between these trees'], 400);
+            return redirect()->back()->with('error', 'A connection request already exists between these trees');
         }
 
-        $connection = $this->connectionRepository->sendRequest(
+        $this->connectionRepository->sendRequest(
             $myTree->id,
             $targetTree->id,
             $user->id,
             $validated['message'] ?? null
         );
 
-        return response()->json([
-            'message' => 'Connection request sent successfully',
-            'connection' => $connection,
-        ]);
+        return redirect()->route('family-tree.show', $myTree->uuid)
+            ->with('success', 'Connection request sent successfully to ' . $targetTree->tree_name);
     }
 
     /**
@@ -529,19 +527,19 @@ class FamilyTreeController extends Controller
         $user = auth()->user();
 
         if (!$user) {
-            return response()->json(['error' => 'Unauthorized'], 401);
+            return redirect()->route('home');
         }
 
         // Verify user is admin of the recipient tree
         if (!$this->adminRepository->isAdmin($connection->recipient_tree_id, $user->id)) {
-            return response()->json(['error' => 'You must be an admin of the recipient tree to accept this request'], 403);
+            abort(403, 'You must be an admin of the recipient tree to accept this request');
         }
 
         // Merge the trees
         $result = $this->mergeService->mergeTrees($connection->id, $user->id);
 
         if (!$result['success']) {
-            return response()->json(['error' => $result['message']], 400);
+            return redirect()->back()->with('error', $result['message']);
         }
 
         // Get the merged tree UUID
@@ -559,17 +557,21 @@ class FamilyTreeController extends Controller
         $user = auth()->user();
 
         if (!$user) {
-            return response()->json(['error' => 'Unauthorized'], 401);
+            return redirect()->route('home');
         }
 
         // Verify user is admin of the recipient tree
         if (!$this->adminRepository->isAdmin($connection->recipient_tree_id, $user->id)) {
-            return response()->json(['error' => 'You must be an admin of the recipient tree to decline this request'], 403);
+            abort(403, 'You must be an admin of the recipient tree to decline this request');
         }
 
         $this->connectionRepository->declineRequest($connection->id);
 
-        return response()->json(['message' => 'Connection request declined']);
+        // Get the recipient tree UUID to redirect back
+        $recipientTree = FamilyTree::find($connection->recipient_tree_id);
+
+        return redirect()->route('family-tree.show', $recipientTree->uuid)
+            ->with('success', 'Connection request declined');
     }
 
     /**

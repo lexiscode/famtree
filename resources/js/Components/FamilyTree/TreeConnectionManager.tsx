@@ -56,7 +56,7 @@ export default function TreeConnectionManager({
             route('family-tree.connections.send'),
             {
                 my_tree_id: treeId,
-                target_tree_id: parseInt(targetTreeId),
+                target_tree_id: targetTreeId,
                 message: message || null,
             },
             {
