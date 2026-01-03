@@ -30,6 +30,7 @@ interface Props {
     pendingRequestCount: number;
     sentRequestCount: number;
     unreadNotificationCount: number;
+    hasCreatedTree: boolean;
     adminTrees: TreeData[];
     memberTrees: TreeData[];
 }
@@ -40,6 +41,7 @@ export default function Index({
     pendingRequestCount,
     sentRequestCount,
     unreadNotificationCount,
+    hasCreatedTree,
     adminTrees,
     memberTrees
 }: Props) {
@@ -166,11 +168,13 @@ export default function Index({
                                 Create, manage, and preserve your family legacy for generations to come
                             </p>
                         </div>
-                        <Link href={route('family-tree.create')} className="cta-button">
-                            <Plus size={20} strokeWidth={2.5} />
-                            <span>Create New Tree</span>
-                            <div className="button-glow"></div>
-                        </Link>
+                        {!hasCreatedTree && (
+                            <Link href={route('family-tree.create')} className="cta-button">
+                                <Plus size={20} strokeWidth={2.5} />
+                                <span>Create New Tree</span>
+                                <div className="button-glow"></div>
+                            </Link>
+                        )}
                     </div>
                 </div>
 

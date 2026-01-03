@@ -70,6 +70,12 @@ class FamilyTreeController extends Controller
                 return !$this->adminRepository->isAdmin($tree->id, $user->id);
             });
 
+        // Check if user has already created a tree (as creator, not co-admin)
+        $hasCreatedTree = $this->adminRepository->getUserAdminTrees($user->id)
+            ->contains(function ($tree) use ($user) {
+                return $tree->admins->where('user_id', $user->id)->where('role', 'creator')->isNotEmpty();
+            });
+
         // Get user profile data and connection counts for sidebar
         $userProfile = $this->getUserProfileData($user);
         $connectionCount = $this->userConnectionRepository->getConnectionCount($user->id);
@@ -82,6 +88,7 @@ class FamilyTreeController extends Controller
             'pendingRequestCount' => $pendingRequestCount,
             'sentRequestCount' => $sentRequestCount,
             'unreadNotificationCount' => 0,
+            'hasCreatedTree' => $hasCreatedTree,
             'adminTrees' => $adminTrees->map(fn($tree) => [
                 'id' => $tree->uuid,
                 'name' => $tree->tree_name,
@@ -122,6 +129,17 @@ class FamilyTreeController extends Controller
 
         if (!$user) {
             return redirect()->route('home');
+        }
+
+        // Check if user has already created a tree (as creator, not co-admin)
+        $hasCreatedTree = $this->adminRepository->getUserAdminTrees($user->id)
+            ->contains(function ($tree) use ($user) {
+                return $tree->admins->where('user_id', $user->id)->where('role', 'creator')->isNotEmpty();
+            });
+
+        if ($hasCreatedTree) {
+            return redirect()->route('family-tree.index')
+                ->with('error', 'You have already created a family tree. You can only create one tree, but you can merge with other trees to expand your family network.');
         }
 
         // Validate if user can create a tree
@@ -170,6 +188,17 @@ class FamilyTreeController extends Controller
 
         if (!$user) {
             return redirect()->route('home');
+        }
+
+        // Check if user has already created a tree (as creator, not co-admin)
+        $hasCreatedTree = $this->adminRepository->getUserAdminTrees($user->id)
+            ->contains(function ($tree) use ($user) {
+                return $tree->admins->where('user_id', $user->id)->where('role', 'creator')->isNotEmpty();
+            });
+
+        if ($hasCreatedTree) {
+            return redirect()->route('family-tree.index')
+                ->with('error', 'You have already created a family tree. You can only create one tree, but you can merge with other trees to expand your family network.');
         }
 
         $validated = $request->validate([
