@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
-import { router } from '@inertiajs/react';
+import { router, Link } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { ArrowLeft, AlertCircle, Info, Lightbulb, Users, CheckCircle } from 'lucide-react';
+import { ArrowLeft, AlertCircle, Users, CheckCircle, Lightbulb, Globe, Lock, Sparkles, TreePine } from 'lucide-react';
 import './CreateTree.css';
 
 interface NuclearFamilyMember {
@@ -69,155 +69,207 @@ export default function CreateTree({ canCreate, validationErrors, nuclearFamilyM
 
     return (
         <AuthAccessLayout>
-            <div className="family-tree-page">
-                <div className="family-tree-container">
-                    {/* Back Button */}
-                    <button
-                        onClick={handleCancel}
-                        style={{
-                            marginBottom: '2rem',
-                            background: 'none',
-                            border: 'none',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.65rem',
-                            color: '#0052E8',
-                            fontSize: '0.95rem',
-                            fontWeight: 700,
-                            transition: 'all 0.3s ease',
-                            padding: '0.75rem 1rem',
-                            borderRadius: '10px',
-                        }}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.background = 'rgba(0, 82, 232, 0.08)';
-                            e.currentTarget.style.transform = 'translateX(-4px)';
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.background = 'none';
-                            e.currentTarget.style.transform = 'none';
-                        }}
-                    >
-                        <ArrowLeft size={18} />
-                        Back to Family Trees
-                    </button>
+            <div className="premium-create-tree-page">
+                <div className="create-background">
+                    <div className="gradient-orb orb-1"></div>
+                    <div className="gradient-orb orb-2"></div>
+                </div>
 
-                    {/* Form Container */}
-                    <div className="tree-form-container">
-                        <h1 className="tree-form-title">Create Your Nuclear Family Tree</h1>
-                        <p className="tree-form-subtitle">Create a family tree for you and your immediate family</p>
+                <div className="create-container">
+                    {/* Header */}
+                    <div className="create-header">
+                        <Link href={route('family-tree.index')} className="back-button">
+                            <ArrowLeft size={20} />
+                            <span>Back to Trees</span>
+                        </Link>
 
-                        {/* Validation Errors */}
-                        {!canCreate && validationErrors.length > 0 && (
-                            <div className="tree-error-alert" style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem', padding: '1.5rem', borderRadius: '10px', marginBottom: '2rem' }}>
-                                <AlertCircle size={22} style={{ marginTop: '0.1rem', flexShrink: 0 }} />
-                                <div style={{ flex: 1 }}>
-                                    <div style={{ fontWeight: 700, marginBottom: '0.75rem', fontSize: '0.95rem' }}>Unable to Create Family Tree</div>
-                                    <ul style={{ margin: 0, paddingLeft: '1.4rem' }}>
-                                        {validationErrors.map((error, index) => (
-                                            <li key={index} style={{ marginBottom: '0.4rem', fontSize: '0.9rem' }}>{error}</li>
-                                        ))}
-                                    </ul>
+                        <div className="header-content">
+                            <div className="header-icon">
+                                <TreePine size={32} strokeWidth={2.5} />
+                            </div>
+                            <div>
+                                <h1>Create Nuclear Family Tree</h1>
+                                <p>Build your family legacy and connect with your loved ones</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Validation Errors */}
+                    {!canCreate && validationErrors.length > 0 && (
+                        <div className="alert alert-error">
+                            <div className="alert-icon">
+                                <AlertCircle size={24} />
+                            </div>
+                            <div className="alert-content">
+                                <h4>Unable to Create Family Tree</h4>
+                                <p>Please resolve the following requirements:</p>
+                                <ul>
+                                    {validationErrors.map((error, index) => (
+                                        <li key={index}>{error}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Nuclear Family Preview */}
+                    {canCreate && nuclearFamilyMembers.length > 0 && (
+                        <div className="alert alert-info">
+                            <div className="alert-icon">
+                                <Users size={24} />
+                            </div>
+                            <div className="alert-content">
+                                <h4>Nuclear Family Members</h4>
+                                <p>The following family members will be automatically added to your tree:</p>
+                                <div className="member-preview-grid">
+                                    {nuclearFamilyMembers.map((member) => (
+                                        <div key={member.user_id} className="member-preview-card">
+                                            <div className="member-avatar">
+                                                {member.name.charAt(0).toUpperCase()}
+                                            </div>
+                                            <div className="member-info">
+                                                <span className="member-name">{member.name}</span>
+                                                <span className="member-role">{member.role}</span>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
-                        )}
+                        </div>
+                    )}
 
-                        {/* Nuclear Family Preview */}
-                        {canCreate && nuclearFamilyMembers.length > 0 && (
-                            <div className="tree-info-alert" style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem', padding: '1.5rem', borderRadius: '10px', marginBottom: '2rem' }}>
-                                <Users size={22} style={{ marginTop: '0.1rem', flexShrink: 0 }} />
-                                <div style={{ flex: 1 }}>
-                                    <div style={{ fontWeight: 700, marginBottom: '0.75rem', fontSize: '0.95rem' }}>Nuclear Family Members</div>
-                                    <p style={{ margin: '0 0 0.85rem 0', fontSize: '0.9rem', color: '#555' }}>
-                                        The following family members will be automatically added to your tree:
-                                    </p>
-                                    <ul style={{ margin: 0, paddingLeft: '1.4rem' }}>
-                                        {nuclearFamilyMembers.map((member) => (
-                                            <li key={member.user_id} style={{ marginBottom: '0.4rem', fontSize: '0.9rem' }}>
-                                                <strong>{member.name}</strong> ({member.role})
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            </div>
-                        )}
-
-                        <form onSubmit={handleSubmit}>
-                            {/* Tree Name Field */}
-                            <div className="tree-form-group">
-                                <label className="tree-form-label">Family Tree Name *</label>
+                    {/* Form */}
+                    <form onSubmit={handleSubmit} className="premium-form">
+                        <div className="form-grid">
+                            {/* Tree Name */}
+                            <div className="form-group full-width">
+                                <label htmlFor="tree_name" className="form-label">
+                                    Family Tree Name <span className="required">*</span>
+                                </label>
                                 <input
                                     type="text"
+                                    id="tree_name"
                                     name="tree_name"
-                                    className="tree-form-input"
-                                    placeholder="e.g., Smith Family Tree, Johnson Generations"
+                                    className={`form-input ${errors.tree_name ? 'error' : ''}`}
+                                    placeholder="e.g., Smith Family Tree"
                                     value={formData.tree_name}
                                     onChange={handleInputChange}
                                     required
+                                    disabled={!canCreate}
                                 />
-                                {errors.tree_name && <div className="tree-error-alert" style={{ marginTop: '0.65rem', padding: '0.75rem', borderRadius: '8px', fontSize: '0.85rem' }}>{errors.tree_name}</div>}
-                                <div className="tree-form-help">Choose a name that represents your family</div>
+                                {errors.tree_name && (
+                                    <span className="error-message">{errors.tree_name}</span>
+                                )}
+                                <span className="form-hint">Choose a name that represents your family</span>
                             </div>
 
-                            {/* Description Field */}
-                            <div className="tree-form-group">
-                                <label className="tree-form-label">Description</label>
+                            {/* Description */}
+                            <div className="form-group full-width">
+                                <label htmlFor="description" className="form-label">
+                                    Description
+                                </label>
                                 <textarea
+                                    id="description"
                                     name="description"
-                                    className="tree-form-textarea"
-                                    placeholder="Add any details about this family tree, time period, location, or other important notes..."
+                                    className={`form-textarea ${errors.description ? 'error' : ''}`}
+                                    placeholder="Add details about your family tree, time period, location..."
                                     value={formData.description}
                                     onChange={handleInputChange}
+                                    rows={4}
+                                    disabled={!canCreate}
                                 />
-                                {errors.description && <div className="tree-error-alert" style={{ marginTop: '0.65rem', padding: '0.75rem', borderRadius: '8px', fontSize: '0.85rem' }}>{errors.description}</div>}
-                                <div className="tree-form-help">Help other family members understand the context of this tree</div>
+                                {errors.description && (
+                                    <span className="error-message">{errors.description}</span>
+                                )}
+                                <span className="form-hint">Help other family members understand the context</span>
                             </div>
 
-                            {/* Visibility Setting */}
-                            <div className="tree-form-group">
-                                <label className="tree-form-label">Visibility</label>
-                                <label className="tree-form-checkbox">
-                                    <input type="checkbox" name="is_public" checked={formData.is_public} onChange={handleInputChange} />
-                                    <span>Make this tree public</span>
-                                </label>
-                                <div className="tree-form-help" style={{ marginTop: '0.6rem' }}>
-                                    Public trees can be viewed by anyone with the link. Private trees are visible only to members.
+                            {/* Visibility */}
+                            <div className="form-group full-width">
+                                <label className="form-label">Visibility</label>
+                                <div className="visibility-options">
+                                    <label className={`visibility-option ${!formData.is_public ? 'active' : ''}`}>
+                                        <input
+                                            type="radio"
+                                            name="visibility"
+                                            checked={!formData.is_public}
+                                            onChange={() => setFormData(prev => ({ ...prev, is_public: false }))}
+                                            disabled={!canCreate}
+                                        />
+                                        <div className="option-content">
+                                            <Lock size={20} />
+                                            <div>
+                                                <span className="option-title">Private</span>
+                                                <span className="option-desc">Visible only to members</span>
+                                            </div>
+                                        </div>
+                                    </label>
+                                    <label className={`visibility-option ${formData.is_public ? 'active' : ''}`}>
+                                        <input
+                                            type="radio"
+                                            name="visibility"
+                                            checked={formData.is_public}
+                                            onChange={() => setFormData(prev => ({ ...prev, is_public: true }))}
+                                            disabled={!canCreate}
+                                        />
+                                        <div className="option-content">
+                                            <Globe size={20} />
+                                            <div>
+                                                <span className="option-title">Public</span>
+                                                <span className="option-desc">Anyone can view with link</span>
+                                            </div>
+                                        </div>
+                                    </label>
                                 </div>
                             </div>
+                        </div>
 
-                            {/* Tips Box */}
-                            <div className="tree-info-alert" style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem', padding: '1.5rem', borderRadius: '10px' }}>
-                                <Lightbulb size={22} style={{ marginTop: '0.1rem', flexShrink: 0 }} />
-                                <div style={{ fontSize: '0.9rem', lineHeight: '1.7' }}>
-                                    <div style={{ fontWeight: 700, marginBottom: '0.75rem', fontSize: '0.95rem' }}>About Nuclear Family Trees:</div>
-                                    <ul style={{ margin: 0, paddingLeft: '1.4rem' }}>
-                                        <li style={{ marginBottom: '0.4rem' }}>Your nuclear family members (spouse and children) will be automatically added</li>
-                                        <li style={{ marginBottom: '0.4rem' }}>Nuclear family members can add their own spouse and children to the tree</li>
-                                        <li style={{ marginBottom: '0.4rem' }}>You can send connection requests to other family trees to merge families</li>
-                                        <li>Once merged, both tree creators become co-admins with equal permissions</li>
-                                    </ul>
-                                </div>
+                        {/* Info Box */}
+                        <div className="info-box">
+                            <div className="info-icon">
+                                <Lightbulb size={22} />
                             </div>
+                            <div className="info-content">
+                                <h5>About Nuclear Family Trees</h5>
+                                <ul>
+                                    <li>Your nuclear family members (spouse and children) will be automatically added</li>
+                                    <li>Nuclear family members can add their own spouse and children to the tree</li>
+                                    <li>You can send connection requests to other family trees to merge families</li>
+                                    <li>Once merged, both tree creators become co-admins with equal permissions</li>
+                                </ul>
+                            </div>
+                        </div>
 
-                            {/* Action Buttons */}
-                            <div className="tree-form-actions">
-                                <button
-                                    type="button"
-                                    onClick={handleCancel}
-                                    className="tree-form-cancel"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="tree-form-submit"
-                                    disabled={!canCreate || loading || !formData.tree_name.trim()}
-                                >
-                                    {loading ? 'Creating Nuclear Family Tree...' : 'Create Nuclear Family Tree'}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
+                        {/* Actions */}
+                        <div className="form-actions">
+                            <button
+                                type="button"
+                                onClick={handleCancel}
+                                className="btn btn-secondary"
+                                disabled={loading}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                className="btn btn-primary"
+                                disabled={!canCreate || loading || !formData.tree_name.trim()}
+                            >
+                                {loading ? (
+                                    <>
+                                        <span className="spinner"></span>
+                                        Creating...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Sparkles size={20} />
+                                        Create Nuclear Family Tree
+                                    </>
+                                )}
+                                <div className="button-glow"></div>
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </AuthAccessLayout>

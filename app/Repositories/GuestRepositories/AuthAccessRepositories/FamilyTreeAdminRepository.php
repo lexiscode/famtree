@@ -5,6 +5,7 @@ namespace App\Repositories\GuestRepositories\AuthAccessRepositories;
 use App\Models\GuestModels\FamilyTreeAdmin;
 use App\Models\GuestModels\FamilyTree;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Collection as SupportCollection;
 
 class FamilyTreeAdminRepository
 {
@@ -73,9 +74,9 @@ class FamilyTreeAdminRepository
      * Get all trees where the user is an admin (not merged trees)
      *
      * @param int $userId
-     * @return Collection
+     * @return SupportCollection
      */
-    public function getUserAdminTrees(int $userId): Collection
+    public function getUserAdminTrees(int $userId): SupportCollection
     {
         return FamilyTreeAdmin::where('user_id', $userId)
             ->whereHas('familyTree', function ($query) {

@@ -206,17 +206,65 @@ class UserConnectionRepository
 
     /**
      * Get all connections with specific relationship type for a user
+     * This method handles bidirectional relationships by also searching for inverse relationships
      */
     public function getConnectionsByType(int $userId, string $relationshipType)
     {
+        // Get possible inverse relationship types
+        $inverseTypes = $this->getPossibleInverseTypes($relationshipType);
+
         return UserConnection::where('status', 'accepted')
-            ->where(function ($q) use ($userId) {
-                $q->where('requester_user_id', $userId)
-                  ->orWhere('recipient_user_id', $userId);
+            ->where(function ($q) use ($userId, $relationshipType, $inverseTypes) {
+                // User is requester with the exact relationship type
+                $q->where(function ($q) use ($userId, $relationshipType) {
+                    $q->where('requester_user_id', $userId)
+                      ->where('relationship_type', $relationshipType);
+                });
+
+                // OR user is recipient with inverse relationship type
+                if (!empty($inverseTypes)) {
+                    $q->orWhere(function ($q) use ($userId, $inverseTypes) {
+                        $q->where('recipient_user_id', $userId)
+                          ->whereIn('relationship_type', $inverseTypes);
+                    });
+                }
             })
-            ->where('relationship_type', $relationshipType)
             ->with(['requester', 'recipient'])
             ->get();
+    }
+
+    /**
+     * Get possible inverse relationship types for nuclear family relationships
+     *
+     * @param string $relationshipType
+     * @return array
+     */
+    private function getPossibleInverseTypes(string $relationshipType): array
+    {
+        $inverseMap = [
+            // When looking for 'son', also find connections where user is recipient of 'father'
+            'son' => ['father'],
+            'daughter' => ['mother', 'father'],
+
+            // When looking for 'father', also find connections where user is recipient of 'son' or 'daughter'
+            'father' => ['son', 'daughter'],
+            'mother' => ['son', 'daughter'],
+
+            // When looking for 'wife', also find connections where user is recipient of 'husband'
+            'wife' => ['husband'],
+            'husband' => ['wife'],
+
+            // Other relationships
+            'brother' => ['brother', 'sister'],
+            'sister' => ['brother', 'sister'],
+            'cousin' => ['cousin'],
+            'aunt' => ['nephew', 'niece'],
+            'uncle' => ['nephew', 'niece'],
+            'nephew' => ['aunt', 'uncle'],
+            'niece' => ['aunt', 'uncle'],
+        ];
+
+        return $inverseMap[$relationshipType] ?? [];
     }
 
     /**
