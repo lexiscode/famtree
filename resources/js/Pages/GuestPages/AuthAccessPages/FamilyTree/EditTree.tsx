@@ -5,7 +5,7 @@ import { ArrowLeft, Lightbulb, Globe, Lock, Sparkles, TreePine } from 'lucide-re
 import ProfileSidebar from '../Stories/ProfileSidebar';
 import { UserProfile } from '@/types';
 import './EditTree.css';
-import '../../../../css/connections.css';
+import '../../../../../css/connections.css';
 
 interface TreeData {
     id: number;

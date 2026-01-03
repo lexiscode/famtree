@@ -5,7 +5,7 @@ import { ArrowLeft, AlertCircle, Users, CheckCircle, Lightbulb, Globe, Lock, Spa
 import ProfileSidebar from '../Stories/ProfileSidebar';
 import { UserProfile } from '@/types';
 import './CreateTree.css';
-import '../../../../css/connections.css';
+import '../../../../../css/connections.css';
 
 interface NuclearFamilyMember {
     user_id: number;

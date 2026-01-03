@@ -6,7 +6,7 @@ import TreeConnectionManager from '@/Components/FamilyTree/TreeConnectionManager
 import ProfileSidebar from '../Stories/ProfileSidebar';
 import { UserProfile } from '@/types';
 import './MyFamilyTree.css';
-import '../../../../css/connections.css';
+import '../../../../../css/connections.css';
 
 interface Admin {
     id: number;

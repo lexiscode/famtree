@@ -5,7 +5,7 @@ import { Plus, Globe, Lock, Users, Calendar, Shield, Crown, Sparkles, TreePine, 
 import ProfileSidebar from '../Stories/ProfileSidebar';
 import { UserProfile } from '@/types';
 import './Index.css';
-import '../../../../css/connections.css';
+import '../../../../../css/connections.css';
 
 interface Admin {
     id: number;
