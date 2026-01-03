@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { usePage, router, Link } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { Users, Edit, Trash2, Lock, Globe, CheckCircle, Shield, Crown, TreePine, ArrowLeft, Copy, Check } from 'lucide-react';
+import { Users, Edit, Trash2, Lock, Globe, CheckCircle, Shield, Crown, TreePine, ArrowLeft, Copy, Check, X, AlertTriangle } from 'lucide-react';
 import TreeConnectionManager from '@/Components/FamilyTree/TreeConnectionManager';
 import ProfileSidebar from '../Stories/ProfileSidebar';
 import { UserProfile } from '@/types';
@@ -93,26 +93,40 @@ export default function MyFamilyTree({
 
     const [loading, setLoading] = useState(false);
     const [copied, setCopied] = useState(false);
+    const [showRemoveDialog, setShowRemoveDialog] = useState(false);
+    const [memberToRemove, setMemberToRemove] = useState<{ id: number; name: string } | null>(null);
 
     const handleRemoveMember = useCallback(
         (memberId: number, memberName: string) => {
-            if (confirm(`Are you sure you want to remove ${memberName} from the tree?`)) {
-                setLoading(true);
-                router.delete(
-                    route('family-tree.remove-member', { familyTree: tree.id, userId: memberId }),
-                    {
-                        onSuccess: () => {
-                            setLoading(false);
-                        },
-                        onError: () => {
-                            setLoading(false);
-                        },
-                    }
-                );
-            }
+            setMemberToRemove({ id: memberId, name: memberName });
+            setShowRemoveDialog(true);
         },
-        [tree.id]
+        []
     );
+
+    const confirmRemoveMember = useCallback(() => {
+        if (!memberToRemove) return;
+
+        setLoading(true);
+        setShowRemoveDialog(false);
+        router.delete(
+            route('family-tree.remove-member', { familyTree: tree.id, userId: memberToRemove.id }),
+            {
+                onSuccess: () => {
+                    setLoading(false);
+                    setMemberToRemove(null);
+                },
+                onError: () => {
+                    setLoading(false);
+                },
+            }
+        );
+    }, [tree.id, memberToRemove]);
+
+    const cancelRemoveMember = useCallback(() => {
+        setShowRemoveDialog(false);
+        setMemberToRemove(null);
+    }, []);
 
     const handleDeleteTree = useCallback(() => {
         if (confirm('Are you sure you want to delete this entire family tree? This action cannot be undone.')) {
@@ -404,6 +418,48 @@ export default function MyFamilyTree({
                 </div>
             </div>
             </div>
+
+            {/* Remove Member Confirmation Dialog */}
+            {showRemoveDialog && memberToRemove && (
+                <div className="dialog-overlay" onClick={cancelRemoveMember}>
+                    <div className="dialog-container" onClick={(e) => e.stopPropagation()}>
+                        <div className="dialog-header">
+                            <div className="dialog-icon-wrapper danger">
+                                <AlertTriangle size={32} />
+                            </div>
+                            <button className="dialog-close-btn" onClick={cancelRemoveMember}>
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="dialog-content">
+                            <h3 className="dialog-title">Remove Family Member?</h3>
+                            <p className="dialog-message">
+                                Are you sure you want to remove <strong>{memberToRemove.name}</strong> from this family tree?
+                                This action cannot be undone.
+                            </p>
+                        </div>
+
+                        <div className="dialog-actions">
+                            <button
+                                className="dialog-btn dialog-btn-cancel"
+                                onClick={cancelRemoveMember}
+                                disabled={loading}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                className="dialog-btn dialog-btn-danger"
+                                onClick={confirmRemoveMember}
+                                disabled={loading}
+                            >
+                                <Trash2 size={18} />
+                                {loading ? 'Removing...' : 'Remove Member'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </AuthAccessLayout>
     );
 }

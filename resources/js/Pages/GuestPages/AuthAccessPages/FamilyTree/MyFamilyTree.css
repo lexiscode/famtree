@@ -798,3 +798,207 @@
         width: 100%;
     }
 }
+
+/* Confirmation Dialog */
+.dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 1rem;
+    animation: dialogFadeIn 0.2s ease-out;
+}
+
+@keyframes dialogFadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.dialog-container {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    max-width: 480px;
+    width: 100%;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    animation: dialogSlideIn 0.3s ease-out;
+    overflow: hidden;
+}
+
+@keyframes dialogSlideIn {
+    from {
+        transform: scale(0.95) translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+    }
+}
+
+.dialog-header {
+    position: relative;
+    padding: 2rem 2rem 1rem 2rem;
+    display: flex;
+    justify-content: center;
+}
+
+.dialog-icon-wrapper {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+}
+
+.dialog-icon-wrapper.danger {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(220, 38, 38, 0.2) 100%);
+    border: 2px solid rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+}
+
+.dialog-close-btn {
+    position: absolute;
+    top: 1.25rem;
+    right: 1.25rem;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.dialog-close-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.dialog-content {
+    padding: 1rem 2rem 2rem 2rem;
+    text-align: center;
+}
+
+.dialog-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0 0 0.75rem 0;
+}
+
+.dialog-message {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+}
+
+.dialog-message strong {
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.dialog-actions {
+    display: flex;
+    gap: 0.75rem;
+    padding: 0 2rem 2rem 2rem;
+}
+
+.dialog-btn {
+    flex: 1;
+    padding: 0.875rem 1.5rem;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    outline: none;
+}
+
+.dialog-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.dialog-btn-cancel {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.dialog-btn-cancel:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.dialog-btn-danger {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.dialog-btn-danger:hover:not(:disabled) {
+    box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
+    transform: translateY(-2px);
+}
+
+.dialog-btn-danger:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .dialog-container {
+        margin: 1rem;
+    }
+
+    .dialog-header {
+        padding: 1.5rem 1.5rem 1rem 1.5rem;
+    }
+
+    .dialog-content {
+        padding: 1rem 1.5rem 1.5rem 1.5rem;
+    }
+
+    .dialog-actions {
+        padding: 0 1.5rem 1.5rem 1.5rem;
+        flex-direction: column;
+    }
+
+    .dialog-icon-wrapper {
+        width: 64px;
+        height: 64px;
+    }
+
+    .dialog-title {
+        font-size: 1.25rem;
+    }
+
+    .dialog-message {
+        font-size: 0.938rem;
+    }
+}
