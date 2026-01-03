@@ -1,6 +1,7 @@
 # ---------- Base PHP + Node ----------
 FROM php:8.2-fpm
 
+# Install dependencies
 RUN apt-get update && apt-get install -y \
     git curl zip unzip nano libzip-dev libpng-dev libonig-dev libxml2-dev \
     libpq-dev nginx nodejs npm supervisor \
@@ -19,8 +20,8 @@ RUN mkdir -p storage/framework/cache/data storage/framework/sessions storage/fra
     && chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
 
-# Install backend & frontend deps
-RUN composer require doctrine/dbal 
+# Install backend & frontend dependencies
+RUN composer require doctrine/dbal
 RUN composer install --no-dev --optimize-autoloader
 RUN npm install
 RUN npm run build
@@ -38,6 +39,11 @@ COPY deploy/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 EXPOSE 80
 
-# Run DB migrations and start services at runtime
-CMD sh -c "php artisan migrate --force || true && \
-           supervisord -c /etc/supervisor/conf.d/supervisord.conf"
+# Ensure SQLite file exists at runtime and then migrate & start supervisor
+CMD sh -c "\
+    mkdir -p /tmp && \
+    touch /tmp/database.sqlite && \
+    chmod 664 /tmp/database.sqlite && \
+    php artisan migrate --force || true && \
+    supervisord -c /etc/supervisor/conf.d/supervisord.conf \
+"
