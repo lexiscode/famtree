@@ -107,6 +107,7 @@ class FamilyTreeValidationService
     public function getNuclearFamilyMemberIds(int $userId): array
     {
         $members = [];
+        $addedUserIds = []; // Track already added users to prevent duplicates
 
         // Get spouse connections
         $spouseTypes = ['wife', 'husband'];
@@ -117,10 +118,14 @@ class FamilyTreeValidationService
                     ? $connection->recipient_user_id
                     : $connection->requester_user_id;
 
-                $members[] = [
-                    'user_id' => $memberId,
-                    'role' => 'spouse',
-                ];
+                // Only add if not already added
+                if (!in_array($memberId, $addedUserIds)) {
+                    $members[] = [
+                        'user_id' => $memberId,
+                        'role' => 'spouse',
+                    ];
+                    $addedUserIds[] = $memberId;
+                }
             }
         }
 
@@ -133,10 +138,14 @@ class FamilyTreeValidationService
                     ? $connection->recipient_user_id
                     : $connection->requester_user_id;
 
-                $members[] = [
-                    'user_id' => $memberId,
-                    'role' => 'child',
-                ];
+                // Only add if not already added
+                if (!in_array($memberId, $addedUserIds)) {
+                    $members[] = [
+                        'user_id' => $memberId,
+                        'role' => 'child',
+                    ];
+                    $addedUserIds[] = $memberId;
+                }
             }
         }
 
