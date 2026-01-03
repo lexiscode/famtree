@@ -2,7 +2,10 @@ import { useCallback } from 'react';
 import { Link } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
 import { Plus, Globe, Lock, Users, Calendar, Shield, Crown, Sparkles, TreePine, TrendingUp } from 'lucide-react';
+import ProfileSidebar from '../Stories/ProfileSidebar';
+import { UserProfile } from '@/types';
 import './Index.css';
+import '../../../../../css/connections.css';
 
 interface Admin {
     id: number;
@@ -22,11 +25,26 @@ interface TreeData {
 }
 
 interface Props {
+    user: UserProfile;
+    connectionCount: number;
+    pendingRequestCount: number;
+    sentRequestCount: number;
+    unreadNotificationCount: number;
+    hasCreatedTree: boolean;
     adminTrees: TreeData[];
     memberTrees: TreeData[];
 }
 
-export default function Index({ adminTrees, memberTrees }: Props) {
+export default function Index({
+    user,
+    connectionCount,
+    pendingRequestCount,
+    sentRequestCount,
+    unreadNotificationCount,
+    hasCreatedTree,
+    adminTrees,
+    memberTrees
+}: Props) {
     const formatDate = useCallback((dateString: string) => {
         const date = new Date(dateString);
         return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
@@ -37,7 +55,7 @@ export default function Index({ adminTrees, memberTrees }: Props) {
 
         return (
             <Link
-                href={route('family-tree.show', { treeId: tree.id })}
+                href={route('family-tree.show', tree.id)}
                 className="modern-tree-card"
             >
                 <div className="card-glow"></div>
@@ -110,7 +128,24 @@ export default function Index({ adminTrees, memberTrees }: Props) {
 
     return (
         <AuthAccessLayout>
-            <div className="premium-family-tree-page">
+            <div className="connections-page">
+                <div className="connections-grid-layout">
+                {/* Left Sidebar - Profile */}
+                {user && (
+                    <div className="connections-left-sidebar">
+                        <ProfileSidebar
+                            user={user}
+                            connectionCount={connectionCount}
+                            pendingRequestCount={pendingRequestCount}
+                            sentRequestCount={sentRequestCount}
+                            unreadNotificationCount={unreadNotificationCount}
+                        />
+                    </div>
+                )}
+
+                {/* Center Content */}
+                <div className="connections-center-content">
+                    <div className="premium-family-tree-page">
                 {/* Hero Section */}
                 <div className="hero-section">
                     <div className="hero-background">
@@ -133,11 +168,13 @@ export default function Index({ adminTrees, memberTrees }: Props) {
                                 Create, manage, and preserve your family legacy for generations to come
                             </p>
                         </div>
-                        <Link href={route('family-tree.create')} className="cta-button">
-                            <Plus size={20} strokeWidth={2.5} />
-                            <span>Create New Tree</span>
-                            <div className="button-glow"></div>
-                        </Link>
+                        {!hasCreatedTree && (
+                            <Link href={route('family-tree.create')} className="cta-button">
+                                <Plus size={20} strokeWidth={2.5} />
+                                <span>Create New Tree</span>
+                                <div className="button-glow"></div>
+                            </Link>
+                        )}
                     </div>
                 </div>
 
@@ -213,6 +250,9 @@ export default function Index({ adminTrees, memberTrees }: Props) {
                         </div>
                     )}
                 </div>
+            </div>
+                </div>
+            </div>
             </div>
         </AuthAccessLayout>
     );

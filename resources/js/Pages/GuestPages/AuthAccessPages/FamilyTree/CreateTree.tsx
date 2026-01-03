@@ -2,21 +2,39 @@ import { useCallback, useState } from 'react';
 import { router, Link } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
 import { ArrowLeft, AlertCircle, Users, CheckCircle, Lightbulb, Globe, Lock, Sparkles, TreePine } from 'lucide-react';
+import ProfileSidebar from '../Stories/ProfileSidebar';
+import { UserProfile } from '@/types';
 import './CreateTree.css';
+import '../../../../../css/connections.css';
 
 interface NuclearFamilyMember {
     user_id: number;
     name: string;
+    profile_image_url?: string;
     role: 'spouse' | 'child';
 }
 
 interface Props {
+    user: UserProfile;
+    connectionCount: number;
+    pendingRequestCount: number;
+    sentRequestCount: number;
+    unreadNotificationCount: number;
     canCreate: boolean;
     validationErrors: string[];
     nuclearFamilyMembers: NuclearFamilyMember[];
 }
 
-export default function CreateTree({ canCreate, validationErrors, nuclearFamilyMembers }: Props) {
+export default function CreateTree({
+    user,
+    connectionCount,
+    pendingRequestCount,
+    sentRequestCount,
+    unreadNotificationCount,
+    canCreate,
+    validationErrors,
+    nuclearFamilyMembers
+}: Props) {
     const [formData, setFormData] = useState({
         tree_name: '',
         description: '',
@@ -69,7 +87,24 @@ export default function CreateTree({ canCreate, validationErrors, nuclearFamilyM
 
     return (
         <AuthAccessLayout>
-            <div className="premium-create-tree-page">
+            <div className="connections-page">
+                <div className="connections-grid-layout">
+                {/* Left Sidebar - Profile */}
+                {user && (
+                    <div className="connections-left-sidebar">
+                        <ProfileSidebar
+                            user={user}
+                            connectionCount={connectionCount}
+                            pendingRequestCount={pendingRequestCount}
+                            sentRequestCount={sentRequestCount}
+                            unreadNotificationCount={unreadNotificationCount}
+                        />
+                    </div>
+                )}
+
+                {/* Center Content */}
+                <div className="connections-center-content">
+                    <div className="premium-create-tree-page">
                 <div className="create-background">
                     <div className="gradient-orb orb-1"></div>
                     <div className="gradient-orb orb-2"></div>
@@ -125,7 +160,17 @@ export default function CreateTree({ canCreate, validationErrors, nuclearFamilyM
                                     {nuclearFamilyMembers.map((member) => (
                                         <div key={member.user_id} className="member-preview-card">
                                             <div className="member-avatar">
-                                                {member.name.charAt(0).toUpperCase()}
+                                                {member.profile_image_url ? (
+                                                    <img
+                                                        src={member.profile_image_url}
+                                                        alt={member.name}
+                                                        className="member-avatar-img"
+                                                    />
+                                                ) : (
+                                                    <div className="member-avatar-fallback">
+                                                        {member.name.charAt(0).toUpperCase()}
+                                                    </div>
+                                                )}
                                             </div>
                                             <div className="member-info">
                                                 <span className="member-name">{member.name}</span>
@@ -271,6 +316,9 @@ export default function CreateTree({ canCreate, validationErrors, nuclearFamilyM
                         </div>
                     </form>
                 </div>
+            </div>
+                </div>
+            </div>
             </div>
         </AuthAccessLayout>
     );
