@@ -155,6 +155,7 @@ class FamilyTreeController extends Controller
                     $nuclearFamilyMembers[] = [
                         'user_id' => $memberUser->id,
                         'name' => trim($memberUser->first_name . ' ' . $memberUser->last_name),
+                        'profile_image_url' => $memberUser->profile_image_url,
                         'role' => $member['role'],
                     ];
                 }

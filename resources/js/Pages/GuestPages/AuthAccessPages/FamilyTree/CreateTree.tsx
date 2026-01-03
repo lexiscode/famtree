@@ -10,6 +10,7 @@ import '../../../../../css/connections.css';
 interface NuclearFamilyMember {
     user_id: number;
     name: string;
+    profile_image_url?: string;
     role: 'spouse' | 'child';
 }
 
@@ -159,7 +160,17 @@ export default function CreateTree({
                                     {nuclearFamilyMembers.map((member) => (
                                         <div key={member.user_id} className="member-preview-card">
                                             <div className="member-avatar">
-                                                {member.name.charAt(0).toUpperCase()}
+                                                {member.profile_image_url ? (
+                                                    <img
+                                                        src={member.profile_image_url}
+                                                        alt={member.name}
+                                                        className="member-avatar-img"
+                                                    />
+                                                ) : (
+                                                    <div className="member-avatar-fallback">
+                                                        {member.name.charAt(0).toUpperCase()}
+                                                    </div>
+                                                )}
                                             </div>
                                             <div className="member-info">
                                                 <span className="member-name">{member.name}</span>
