@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { usePage, router, Link } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { Users, Edit, Trash2, Lock, Globe, CheckCircle, Shield, Crown, TreePine, ArrowLeft } from 'lucide-react';
+import { Users, Edit, Trash2, Lock, Globe, CheckCircle, Shield, Crown, TreePine, ArrowLeft, Copy, Check } from 'lucide-react';
 import TreeConnectionManager from '@/Components/FamilyTree/TreeConnectionManager';
 import ProfileSidebar from '../Stories/ProfileSidebar';
 import { UserProfile } from '@/types';
@@ -91,6 +91,7 @@ export default function MyFamilyTree({
     const authUser = auth?.user;
 
     const [loading, setLoading] = useState(false);
+    const [copied, setCopied] = useState(false);
 
     const handleRemoveMember = useCallback(
         (memberId: number, memberName: string) => {
@@ -124,6 +125,13 @@ export default function MyFamilyTree({
                 },
             });
         }
+    }, [tree.id]);
+
+    const handleCopyUUID = useCallback(() => {
+        navigator.clipboard.writeText(tree.id).then(() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        });
     }, [tree.id]);
 
     const formatDate = (dateString: string) => {
@@ -229,6 +237,41 @@ export default function MyFamilyTree({
                             <div className="stat-card">
                                 <div className="stat-value">{creatorAdmin?.name?.split(' ')[0] || 'Unknown'}</div>
                                 <div className="stat-label">Creator</div>
+                            </div>
+                        </div>
+
+                        {/* Tree UUID Card */}
+                        <div className="tree-uuid-card">
+                            <div className="uuid-header">
+                                <div className="uuid-icon">
+                                    <TreePine size={20} />
+                                </div>
+                                <div className="uuid-content">
+                                    <h4 className="uuid-title">Tree ID (UUID)</h4>
+                                    <p className="uuid-subtitle">Share this ID to receive connection requests</p>
+                                </div>
+                            </div>
+                            <div className="uuid-display-wrapper">
+                                <div className="uuid-display">
+                                    <code className="uuid-code">{tree.id}</code>
+                                </div>
+                                <button
+                                    onClick={handleCopyUUID}
+                                    className={`uuid-copy-btn ${copied ? 'copied' : ''}`}
+                                    title="Copy UUID"
+                                >
+                                    {copied ? (
+                                        <>
+                                            <Check size={18} />
+                                            <span>Copied!</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Copy size={18} />
+                                            <span>Copy</span>
+                                        </>
+                                    )}
+                                </button>
                             </div>
                         </div>
                     </div>
