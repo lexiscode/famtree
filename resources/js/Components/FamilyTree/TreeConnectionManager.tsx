@@ -47,6 +47,9 @@ export default function TreeConnectionManager({
     const [targetTreeId, setTargetTreeId] = useState('');
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showAcceptDialog, setShowAcceptDialog] = useState(false);
+    const [showDeclineDialog, setShowDeclineDialog] = useState(false);
+    const [selectedRequest, setSelectedRequest] = useState<TreeConnection | null>(null);
 
     const handleSendRequest = useCallback((e: React.FormEvent) => {
         e.preventDefault();
@@ -56,7 +59,7 @@ export default function TreeConnectionManager({
             route('family-tree.connections.send'),
             {
                 my_tree_id: treeId,
-                target_tree_id: parseInt(targetTreeId),
+                target_tree_id: targetTreeId,
                 message: message || null,
             },
             {
@@ -73,16 +76,38 @@ export default function TreeConnectionManager({
         );
     }, [treeId, targetTreeId, message]);
 
-    const handleAccept = useCallback((connectionId: number) => {
-        if (confirm('Accept this tree connection request? The trees will be merged into one.')) {
-            router.post(route('family-tree.connections.accept', connectionId));
-        }
+    const handleAccept = useCallback((request: TreeConnection) => {
+        setSelectedRequest(request);
+        setShowAcceptDialog(true);
     }, []);
 
-    const handleDecline = useCallback((connectionId: number) => {
-        if (confirm('Decline this tree connection request?')) {
-            router.post(route('family-tree.connections.decline', connectionId));
-        }
+    const confirmAccept = useCallback(() => {
+        if (!selectedRequest) return;
+        setShowAcceptDialog(false);
+        router.post(route('family-tree.connections.accept', selectedRequest.id));
+        setSelectedRequest(null);
+    }, [selectedRequest]);
+
+    const cancelAccept = useCallback(() => {
+        setShowAcceptDialog(false);
+        setSelectedRequest(null);
+    }, []);
+
+    const handleDecline = useCallback((request: TreeConnection) => {
+        setSelectedRequest(request);
+        setShowDeclineDialog(true);
+    }, []);
+
+    const confirmDecline = useCallback(() => {
+        if (!selectedRequest) return;
+        setShowDeclineDialog(false);
+        router.post(route('family-tree.connections.decline', selectedRequest.id));
+        setSelectedRequest(null);
+    }, [selectedRequest]);
+
+    const cancelDecline = useCallback(() => {
+        setShowDeclineDialog(false);
+        setSelectedRequest(null);
     }, []);
 
     if (!isAdmin) {
@@ -228,11 +253,11 @@ export default function TreeConnectionManager({
                                     </div>
                                 </div>
                                 <div className="card-actions">
-                                    <button onClick={() => handleAccept(request.id)} className="action-btn accept-btn">
+                                    <button onClick={() => handleAccept(request)} className="action-btn accept-btn">
                                         <Check size={18} />
                                         Accept & Merge
                                     </button>
-                                    <button onClick={() => handleDecline(request.id)} className="action-btn decline-btn">
+                                    <button onClick={() => handleDecline(request)} className="action-btn decline-btn">
                                         <X size={18} />
                                         Decline
                                     </button>
@@ -325,6 +350,88 @@ export default function TreeConnectionManager({
                         <Send size={18} />
                         <span>Send Connection Request</span>
                     </button>
+                </div>
+            )}
+
+            {/* Accept Connection Dialog */}
+            {showAcceptDialog && selectedRequest && (
+                <div className="dialog-overlay" onClick={cancelAccept}>
+                    <div className="dialog-container" onClick={(e) => e.stopPropagation()}>
+                        <div className="dialog-header">
+                            <div className="dialog-icon-wrapper success">
+                                <Check size={32} />
+                            </div>
+                            <button className="dialog-close-btn" onClick={cancelAccept}>
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="dialog-content">
+                            <h3 className="dialog-title">Accept & Merge Trees?</h3>
+                            <p className="dialog-message">
+                                Are you sure you want to accept this connection request from <strong>{selectedRequest.requester_tree?.tree_name}</strong>?
+                                <br /><br />
+                                <strong>Important:</strong> The trees will be merged into one, and both creators will become co-admins with equal permissions.
+                            </p>
+                        </div>
+
+                        <div className="dialog-actions">
+                            <button
+                                className="dialog-btn dialog-btn-cancel"
+                                onClick={cancelAccept}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                className="dialog-btn dialog-btn-success"
+                                onClick={confirmAccept}
+                            >
+                                <Check size={18} />
+                                Accept & Merge
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Decline Connection Dialog */}
+            {showDeclineDialog && selectedRequest && (
+                <div className="dialog-overlay" onClick={cancelDecline}>
+                    <div className="dialog-container" onClick={(e) => e.stopPropagation()}>
+                        <div className="dialog-header">
+                            <div className="dialog-icon-wrapper warning">
+                                <X size={32} />
+                            </div>
+                            <button className="dialog-close-btn" onClick={cancelDecline}>
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="dialog-content">
+                            <h3 className="dialog-title">Decline Connection Request?</h3>
+                            <p className="dialog-message">
+                                Are you sure you want to decline the connection request from <strong>{selectedRequest.requester_tree?.tree_name}</strong>?
+                                <br /><br />
+                                This action cannot be undone, but they can send another request later if needed.
+                            </p>
+                        </div>
+
+                        <div className="dialog-actions">
+                            <button
+                                className="dialog-btn dialog-btn-cancel"
+                                onClick={cancelDecline}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                className="dialog-btn dialog-btn-warning"
+                                onClick={confirmDecline}
+                            >
+                                <X size={18} />
+                                Decline Request
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

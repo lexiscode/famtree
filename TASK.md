@@ -1,8 +1,31 @@
-I will like to remake the entire concept/idea regarding family tree. I know that currently, we have once had some integrations of a family tree, like in code line 119 - 131 in web.php. But what i want you to do right now is to remake and rethink the entire logic of family tree based on the new idea and logic i want concerning it which i'm going to be outlining below. So you could as well remove routes that we no longer will be needed in that family tree group routes.
+i will like to integrate a live chat within the family tree, like a group chat where everyone members of the family tree (also merged family tree members) can access and discuss inside of it. In this app, i will like us to use Laravel Pusher + Laravel Echo, whereby messages are being sent live and can be seen instantly, with even the "typing..." indication showing.
 
-New concept:
+✅ Features:
 
-- Only male gender users that create a family tree And that male gender must be above 18+
-- And that male gender must be connected to his wife or his son/daughter at least, before being granted permission to create a family tree of his own
-- In the family tree created by a male user, he can add his own nuclear family members to it, and also the members can have the same permission of adding their fellow nuclear family members if they are sibilings or the wife of the male gender to add.
-- And a family tree can send connections to others family tree, just as we send family connections requests, i want the same concept for family tree. For instance, Mr A and Mr B are both brothers, and each of them are marriage, and they both have started their own separate family trees. Mr A and Mr B can send familytree connections request to themselves, to which once connected, both family tree will be merged as ONE SINGLE group unit. And and the changes must reflect in both of them family tree page. So whatever is going on in that family tree, everyone will be able to see it, be it chats or polls or posts or whatever (in the future)
+✔ Real-time messaging
+✔ Presence channels (user lists)
+✔ Typing indicators
+✔ Reconnects and fallbacks
+✔ Works seamlessly with React
+
+📌 How It Works:
+
+Laravel broadcasts events (messages, typing updates).
+Echo listens in React and updates state in real time.
+Pusher delivers events.
+
+Installation Idea:
+
+docker-compose exec -it famtree bash composer require pusher/pusher-php-server
+docker-compose exec -it famtree bash npm install laravel-echo pusher-js
+
+
+Laravel .env:
+
+BROADCAST_DRIVER=pusher
+PUSHER_APP_ID=…
+PUSHER_APP_KEY=…
+PUSHER_APP_SECRET=…
+PUSHER_HOST=api-pusher.com
+PUSHER_PORT=443
+PUSHER_SCHEME=https

@@ -1,7 +1,7 @@
 import { useMemo, useState, useCallback } from 'react';
 import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { Mail, Phone, MapPin, Cake, FileText, Users, Edit, Settings, Briefcase, BookOpen, ArrowRight, LogOut, X, Bell, BookMarked, User as UserIcon, Lightbulb, Plus, Network, TrendingUp } from 'lucide-react';
+import { Mail, Phone, MapPin, Cake, FileText, Users, Edit, Settings, Briefcase, BookOpen, ArrowRight, LogOut, X, Bell, BookMarked, User as UserIcon, Lightbulb, Plus, Network, TrendingUp, TreePine } from 'lucide-react';
 import CreatePostModal from '../Stories/CreatePostModal';
 import ProfileCompletionModal from '@/Components/Profile/ProfileCompletionModal';
 import { ProfileCompletion } from '@/types/inertia';
@@ -174,6 +174,14 @@ export default function MyProfile({ user, connections, connectionCount, pendingR
                                     >
                                         <Users size={18} />
                                         View Connections
+                                    </button>
+                                    <button
+                                        className="profile-btn profile-btn-secondary"
+                                        onClick={() => router.visit(route('family-tree.index'))}
+                                        title="View and manage your family trees"
+                                    >
+                                        <TreePine size={18} />
+                                        Family Tree
                                     </button>
                                     <button
                                         className="profile-btn profile-btn-secondary"

@@ -86,6 +86,17 @@ class FamilyTreeRepository
     }
 
     /**
+     * Get paginated tree members
+     */
+    public function getTreeMembersPaginated(int $treeId, int $perPage = 12)
+    {
+        return FamilyTreeMember::where('family_tree_id', $treeId)
+            ->with('user', 'addedBy')
+            ->orderBy('added_at', 'desc')
+            ->paginate($perPage);
+    }
+
+    /**
      * Check if a user is a member of a tree
      */
     public function isMember(int $treeId, int $userId): bool

@@ -1,8 +1,9 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { usePage, router, Link } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { Users, Edit, Trash2, Lock, Globe, CheckCircle, Shield, Crown, TreePine, ArrowLeft, Copy, Check, X, AlertTriangle, UserPlus } from 'lucide-react';
+import { Users, Edit, Trash2, Lock, Globe, CheckCircle, Shield, Crown, TreePine, ArrowLeft, Copy, Check, X, AlertTriangle, UserPlus, CheckCircle2, XCircle, ChevronLeft, ChevronRight, MessageCircle } from 'lucide-react';
 import TreeConnectionManager from '@/Components/FamilyTree/TreeConnectionManager';
+import TreeChatWindow from '@/Components/FamilyTree/TreeChatWindow';
 import ProfileSidebar from '../Stories/ProfileSidebar';
 import { UserProfile } from '@/types';
 import './MyFamilyTree.css';
@@ -63,6 +64,14 @@ interface TreeData {
     created_at: string;
 }
 
+interface PaginatedMembers {
+    data: TreeMember[];
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+}
+
 interface Props {
     user: UserProfile;
     connectionCount: number;
@@ -71,7 +80,7 @@ interface Props {
     unreadNotificationCount: number;
     tree: TreeData;
     admins: Admin[];
-    members: TreeMember[];
+    members: PaginatedMembers;
     pendingRequests: TreeConnection[];
     sentRequests: TreeConnection[];
     availableMembers: AvailableMember[];
@@ -104,6 +113,24 @@ export default function MyFamilyTree({
     const [copied, setCopied] = useState(false);
     const [showRemoveDialog, setShowRemoveDialog] = useState(false);
     const [memberToRemove, setMemberToRemove] = useState<{ id: number; name: string } | null>(null);
+    const [showFlashMessage, setShowFlashMessage] = useState(false);
+    const [flashMessage, setFlashMessage] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+    const [showChat, setShowChat] = useState(false);
+    const [isChatMinimized, setIsChatMinimized] = useState(false);
+
+    // Check for flash messages
+    useEffect(() => {
+        const flash = props.flash;
+        if (flash?.success) {
+            setFlashMessage({ type: 'success', message: flash.success });
+            setShowFlashMessage(true);
+            setTimeout(() => setShowFlashMessage(false), 5000);
+        } else if (flash?.error) {
+            setFlashMessage({ type: 'error', message: flash.error });
+            setShowFlashMessage(true);
+            setTimeout(() => setShowFlashMessage(false), 5000);
+        }
+    }, [props.flash]);
 
     const handleRemoveMember = useCallback(
         (memberId: number, memberName: string) => {
@@ -176,6 +203,17 @@ export default function MyFamilyTree({
         },
         [tree.id]
     );
+
+    const handlePageChange = useCallback((page: number) => {
+        router.get(
+            route('family-tree.show', tree.id),
+            { page },
+            {
+                preserveState: true,
+                preserveScroll: true,
+            }
+        );
+    }, [tree.id]);
 
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
@@ -266,7 +304,7 @@ export default function MyFamilyTree({
                         {/* Stats Grid */}
                         <div className="tree-stats-grid">
                             <div className="stat-card">
-                                <div className="stat-value">{members.length}</div>
+                                <div className="stat-value">{members.total}</div>
                                 <div className="stat-label">Total Members</div>
                             </div>
                             <div className="stat-card">
@@ -357,11 +395,11 @@ export default function MyFamilyTree({
                             </div>
                             <div className="section-title">
                                 <h2>Family Members</h2>
-                                <p>{members.length} {members.length === 1 ? 'member' : 'members'} in this tree</p>
+                                <p>{members.total} {members.total === 1 ? 'member' : 'members'} in this tree</p>
                             </div>
                         </div>
 
-                        {members.length === 0 ? (
+                        {members.data.length === 0 ? (
                             <div className="empty-state">
                                 <div className="empty-icon">👥</div>
                                 <h3 className="empty-title">No Members Yet</h3>
@@ -377,7 +415,7 @@ export default function MyFamilyTree({
                             </div>
                         ) : (
                             <div className="members-grid">
-                                {members.map((member) => (
+                                {members.data.map((member) => (
                                     <div key={member.id} className="member-card">
                                         <div className="member-avatar">
                                             {member.profile_image_url ? (
@@ -428,6 +466,38 @@ export default function MyFamilyTree({
                                         )}
                                     </div>
                                 ))}
+                            </div>
+                        )}
+
+                        {/* Pagination Controls */}
+                        {members.data.length > 0 && members.last_page > 1 && (
+                            <div className="pagination-controls">
+                                <button
+                                    className="pagination-btn"
+                                    onClick={() => handlePageChange(members.current_page - 1)}
+                                    disabled={members.current_page === 1}
+                                >
+                                    <ChevronLeft size={18} />
+                                    Previous
+                                </button>
+
+                                <div className="pagination-info">
+                                    <span className="page-indicator">
+                                        Page <strong>{members.current_page}</strong> of <strong>{members.last_page}</strong>
+                                    </span>
+                                    <span className="total-items">
+                                        ({members.total} total {members.total === 1 ? 'member' : 'members'})
+                                    </span>
+                                </div>
+
+                                <button
+                                    className="pagination-btn"
+                                    onClick={() => handlePageChange(members.current_page + 1)}
+                                    disabled={members.current_page === members.last_page}
+                                >
+                                    Next
+                                    <ChevronRight size={18} />
+                                </button>
                             </div>
                         )}
                     </div>
@@ -538,6 +608,52 @@ export default function MyFamilyTree({
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Flash Message Toast */}
+            {showFlashMessage && flashMessage && (
+                <div className={`flash-toast flash-toast-${flashMessage.type}`}>
+                    <div className="flash-toast-icon">
+                        {flashMessage.type === 'success' ? (
+                            <CheckCircle2 size={24} />
+                        ) : (
+                            <XCircle size={24} />
+                        )}
+                    </div>
+                    <div className="flash-toast-content">
+                        <p className="flash-toast-message">{flashMessage.message}</p>
+                    </div>
+                    <button
+                        className="flash-toast-close"
+                        onClick={() => setShowFlashMessage(false)}
+                    >
+                        <X size={18} />
+                    </button>
+                </div>
+            )}
+
+            {/* Floating Chat Button */}
+            {(isMember || isAdmin) && !showChat && (
+                <button
+                    onClick={() => setShowChat(true)}
+                    className="floating-chat-btn"
+                    title="Open Family Tree Chat"
+                >
+                    <MessageCircle size={24} />
+                    <span className="chat-btn-pulse"></span>
+                </button>
+            )}
+
+            {/* Tree Chat Window */}
+            {showChat && authUser && (
+                <TreeChatWindow
+                    treeId={tree.id}
+                    treeName={tree.tree_name}
+                    currentUserId={authUser.id}
+                    onClose={() => setShowChat(false)}
+                    isMinimized={isChatMinimized}
+                    onToggleMinimize={() => setIsChatMinimized(!isChatMinimized)}
+                />
             )}
         </AuthAccessLayout>
     );
