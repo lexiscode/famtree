@@ -1,7 +1,7 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { usePage, router, Link } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { Users, Edit, Trash2, Lock, Globe, CheckCircle, Shield, Crown, TreePine, ArrowLeft, Copy, Check, X, AlertTriangle, UserPlus } from 'lucide-react';
+import { Users, Edit, Trash2, Lock, Globe, CheckCircle, Shield, Crown, TreePine, ArrowLeft, Copy, Check, X, AlertTriangle, UserPlus, CheckCircle2, XCircle } from 'lucide-react';
 import TreeConnectionManager from '@/Components/FamilyTree/TreeConnectionManager';
 import ProfileSidebar from '../Stories/ProfileSidebar';
 import { UserProfile } from '@/types';
@@ -104,6 +104,22 @@ export default function MyFamilyTree({
     const [copied, setCopied] = useState(false);
     const [showRemoveDialog, setShowRemoveDialog] = useState(false);
     const [memberToRemove, setMemberToRemove] = useState<{ id: number; name: string } | null>(null);
+    const [showFlashMessage, setShowFlashMessage] = useState(false);
+    const [flashMessage, setFlashMessage] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+    // Check for flash messages
+    useEffect(() => {
+        const flash = props.flash;
+        if (flash?.success) {
+            setFlashMessage({ type: 'success', message: flash.success });
+            setShowFlashMessage(true);
+            setTimeout(() => setShowFlashMessage(false), 5000);
+        } else if (flash?.error) {
+            setFlashMessage({ type: 'error', message: flash.error });
+            setShowFlashMessage(true);
+            setTimeout(() => setShowFlashMessage(false), 5000);
+        }
+    }, [props.flash]);
 
     const handleRemoveMember = useCallback(
         (memberId: number, memberName: string) => {
@@ -537,6 +553,28 @@ export default function MyFamilyTree({
                             </button>
                         </div>
                     </div>
+                </div>
+            )}
+
+            {/* Flash Message Toast */}
+            {showFlashMessage && flashMessage && (
+                <div className={`flash-toast flash-toast-${flashMessage.type}`}>
+                    <div className="flash-toast-icon">
+                        {flashMessage.type === 'success' ? (
+                            <CheckCircle2 size={24} />
+                        ) : (
+                            <XCircle size={24} />
+                        )}
+                    </div>
+                    <div className="flash-toast-content">
+                        <p className="flash-toast-message">{flashMessage.message}</p>
+                    </div>
+                    <button
+                        className="flash-toast-close"
+                        onClick={() => setShowFlashMessage(false)}
+                    >
+                        <X size={18} />
+                    </button>
                 </div>
             )}
         </AuthAccessLayout>
