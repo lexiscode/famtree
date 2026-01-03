@@ -22,8 +22,33 @@ class FamilyTreeController extends Controller
         private FamilyTreeAdminRepository $adminRepository,
         private FamilyTreeConnectionRepository $connectionRepository,
         private FamilyTreeValidationService $validationService,
-        private FamilyTreeMergeService $mergeService
+        private FamilyTreeMergeService $mergeService,
+        private \App\Repositories\GuestRepositories\UserConnectionRepository $userConnectionRepository
     ) {}
+
+    /**
+     * Get user profile data for ProfileSidebar
+     */
+    private function getUserProfileData($user): array
+    {
+        $user->load('familyInfo');
+
+        return [
+            'id' => $user->id,
+            'name' => $user->first_name . ' ' . $user->last_name,
+            'username' => $user->username,
+            'email' => $user->email,
+            'phone' => $user->phone,
+            'address' => $user->address,
+            'bio' => $user->bio,
+            'date_of_birth' => $user->date_of_birth,
+            'status' => $user->status ?? 'alive',
+            'job_title' => $user->familyInfo?->current_occupation ?? null,
+            'education' => $user->familyInfo?->education_level ?? null,
+            'profile_image_url' => $user->profile_image_url,
+            'created_at' => $user->created_at,
+        ];
+    }
 
     /**
      * Display user's family trees (where user is admin)
@@ -45,7 +70,18 @@ class FamilyTreeController extends Controller
                 return !$this->adminRepository->isAdmin($tree->id, $user->id);
             });
 
+        // Get user profile data and connection counts for sidebar
+        $userProfile = $this->getUserProfileData($user);
+        $connectionCount = $this->userConnectionRepository->getConnectionCount($user->id);
+        $pendingRequestCount = $this->userConnectionRepository->getPendingRequestCount($user->id);
+        $sentRequestCount = $this->userConnectionRepository->getSentRequestCount($user->id);
+
         return Inertia::render('GuestPages/AuthAccessPages/FamilyTree/Index', [
+            'user' => $userProfile,
+            'connectionCount' => $connectionCount,
+            'pendingRequestCount' => $pendingRequestCount,
+            'sentRequestCount' => $sentRequestCount,
+            'unreadNotificationCount' => 0,
             'adminTrees' => $adminTrees->map(fn($tree) => [
                 'id' => $tree->uuid,
                 'name' => $tree->tree_name,
@@ -107,7 +143,18 @@ class FamilyTreeController extends Controller
             }
         }
 
+        // Get user profile data and connection counts for sidebar
+        $userProfile = $this->getUserProfileData($user);
+        $connectionCount = $this->userConnectionRepository->getConnectionCount($user->id);
+        $pendingRequestCount = $this->userConnectionRepository->getPendingRequestCount($user->id);
+        $sentRequestCount = $this->userConnectionRepository->getSentRequestCount($user->id);
+
         return Inertia::render('GuestPages/AuthAccessPages/FamilyTree/CreateTree', [
+            'user' => $userProfile,
+            'connectionCount' => $connectionCount,
+            'pendingRequestCount' => $pendingRequestCount,
+            'sentRequestCount' => $sentRequestCount,
+            'unreadNotificationCount' => 0,
             'canCreate' => $validation['can_create'],
             'validationErrors' => $validation['errors'],
             'nuclearFamilyMembers' => $nuclearFamilyMembers,
@@ -169,7 +216,18 @@ class FamilyTreeController extends Controller
         $pendingRequests = $isAdmin ? $this->connectionRepository->getPendingRequests($familyTree->id) : collect();
         $sentRequests = $isAdmin ? $this->connectionRepository->getSentRequests($familyTree->id) : collect();
 
+        // Get user profile data and connection counts for sidebar
+        $userProfile = $this->getUserProfileData($user);
+        $connectionCount = $this->userConnectionRepository->getConnectionCount($user->id);
+        $pendingRequestCount = $this->userConnectionRepository->getPendingRequestCount($user->id);
+        $sentRequestCount = $this->userConnectionRepository->getSentRequestCount($user->id);
+
         return Inertia::render('GuestPages/AuthAccessPages/FamilyTree/MyFamilyTree', [
+            'user' => $userProfile,
+            'connectionCount' => $connectionCount,
+            'pendingRequestCount' => $pendingRequestCount,
+            'sentRequestCount' => $sentRequestCount,
+            'unreadNotificationCount' => 0,
             'tree' => [
                 'id' => $familyTree->uuid,
                 'name' => $familyTree->tree_name,
@@ -214,7 +272,18 @@ class FamilyTreeController extends Controller
             abort(403, 'Unauthorized to edit this family tree');
         }
 
+        // Get user profile data and connection counts for sidebar
+        $userProfile = $this->getUserProfileData($user);
+        $connectionCount = $this->userConnectionRepository->getConnectionCount($user->id);
+        $pendingRequestCount = $this->userConnectionRepository->getPendingRequestCount($user->id);
+        $sentRequestCount = $this->userConnectionRepository->getSentRequestCount($user->id);
+
         return Inertia::render('GuestPages/AuthAccessPages/FamilyTree/EditTree', [
+            'user' => $userProfile,
+            'connectionCount' => $connectionCount,
+            'pendingRequestCount' => $pendingRequestCount,
+            'sentRequestCount' => $sentRequestCount,
+            'unreadNotificationCount' => 0,
             'tree' => [
                 'id' => $familyTree->uuid,
                 'name' => $familyTree->tree_name,

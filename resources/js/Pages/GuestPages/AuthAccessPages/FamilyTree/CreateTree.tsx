@@ -2,7 +2,10 @@ import { useCallback, useState } from 'react';
 import { router, Link } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
 import { ArrowLeft, AlertCircle, Users, CheckCircle, Lightbulb, Globe, Lock, Sparkles, TreePine } from 'lucide-react';
+import ProfileSidebar from '../Stories/ProfileSidebar';
+import { UserProfile } from '@/types';
 import './CreateTree.css';
+import '../../../../css/connections.css';
 
 interface NuclearFamilyMember {
     user_id: number;
@@ -11,12 +14,26 @@ interface NuclearFamilyMember {
 }
 
 interface Props {
+    user: UserProfile;
+    connectionCount: number;
+    pendingRequestCount: number;
+    sentRequestCount: number;
+    unreadNotificationCount: number;
     canCreate: boolean;
     validationErrors: string[];
     nuclearFamilyMembers: NuclearFamilyMember[];
 }
 
-export default function CreateTree({ canCreate, validationErrors, nuclearFamilyMembers }: Props) {
+export default function CreateTree({
+    user,
+    connectionCount,
+    pendingRequestCount,
+    sentRequestCount,
+    unreadNotificationCount,
+    canCreate,
+    validationErrors,
+    nuclearFamilyMembers
+}: Props) {
     const [formData, setFormData] = useState({
         tree_name: '',
         description: '',
@@ -69,7 +86,23 @@ export default function CreateTree({ canCreate, validationErrors, nuclearFamilyM
 
     return (
         <AuthAccessLayout>
-            <div className="premium-create-tree-page">
+            <div className="connections-grid-layout">
+                {/* Left Sidebar - Profile */}
+                {user && (
+                    <div className="connections-left-sidebar">
+                        <ProfileSidebar
+                            user={user}
+                            connectionCount={connectionCount}
+                            pendingRequestCount={pendingRequestCount}
+                            sentRequestCount={sentRequestCount}
+                            unreadNotificationCount={unreadNotificationCount}
+                        />
+                    </div>
+                )}
+
+                {/* Center Content */}
+                <div className="connections-center-content">
+                    <div className="premium-create-tree-page">
                 <div className="create-background">
                     <div className="gradient-orb orb-1"></div>
                     <div className="gradient-orb orb-2"></div>
@@ -270,6 +303,8 @@ export default function CreateTree({ canCreate, validationErrors, nuclearFamilyM
                             </button>
                         </div>
                     </form>
+                </div>
+            </div>
                 </div>
             </div>
         </AuthAccessLayout>

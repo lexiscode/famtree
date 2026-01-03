@@ -2,7 +2,10 @@ import { useCallback, useState } from 'react';
 import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
 import { ArrowLeft, Lightbulb, Globe, Lock, Sparkles, TreePine } from 'lucide-react';
+import ProfileSidebar from '../Stories/ProfileSidebar';
+import { UserProfile } from '@/types';
 import './EditTree.css';
+import '../../../../css/connections.css';
 
 interface TreeData {
     id: number;
@@ -12,10 +15,22 @@ interface TreeData {
 }
 
 interface Props {
+    user: UserProfile;
+    connectionCount: number;
+    pendingRequestCount: number;
+    sentRequestCount: number;
+    unreadNotificationCount: number;
     tree: TreeData;
 }
 
-export default function EditTree({ tree }: Props) {
+export default function EditTree({
+    user,
+    connectionCount,
+    pendingRequestCount,
+    sentRequestCount,
+    unreadNotificationCount,
+    tree
+}: Props) {
     const [formData, setFormData] = useState({
         tree_name: tree.name,
         description: tree.description || '',
@@ -68,7 +83,23 @@ export default function EditTree({ tree }: Props) {
 
     return (
         <AuthAccessLayout>
-            <div className="premium-edit-tree-page">
+            <div className="connections-grid-layout">
+                {/* Left Sidebar - Profile */}
+                {user && (
+                    <div className="connections-left-sidebar">
+                        <ProfileSidebar
+                            user={user}
+                            connectionCount={connectionCount}
+                            pendingRequestCount={pendingRequestCount}
+                            sentRequestCount={sentRequestCount}
+                            unreadNotificationCount={unreadNotificationCount}
+                        />
+                    </div>
+                )}
+
+                {/* Center Content */}
+                <div className="connections-center-content">
+                    <div className="premium-edit-tree-page">
                 <div className="edit-background">
                     <div className="gradient-orb orb-1"></div>
                     <div className="gradient-orb orb-2"></div>
@@ -222,6 +253,8 @@ export default function EditTree({ tree }: Props) {
                             </button>
                         </div>
                     </form>
+                </div>
+            </div>
                 </div>
             </div>
         </AuthAccessLayout>

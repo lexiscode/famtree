@@ -3,7 +3,10 @@ import { usePage, router, Link } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
 import { Users, Edit, Trash2, Lock, Globe, CheckCircle, Shield, Crown, TreePine, ArrowLeft } from 'lucide-react';
 import TreeConnectionManager from '@/Components/FamilyTree/TreeConnectionManager';
+import ProfileSidebar from '../Stories/ProfileSidebar';
+import { UserProfile } from '@/types';
 import './MyFamilyTree.css';
+import '../../../../css/connections.css';
 
 interface Admin {
     id: number;
@@ -53,6 +56,11 @@ interface TreeData {
 }
 
 interface Props {
+    user: UserProfile;
+    connectionCount: number;
+    pendingRequestCount: number;
+    sentRequestCount: number;
+    unreadNotificationCount: number;
     tree: TreeData;
     admins: Admin[];
     members: TreeMember[];
@@ -63,10 +71,24 @@ interface Props {
     canAddMembers: boolean;
 }
 
-export default function MyFamilyTree({ tree, admins, members, pendingRequests, sentRequests, isAdmin, isMember, canAddMembers }: Props) {
+export default function MyFamilyTree({
+    user,
+    connectionCount,
+    pendingRequestCount,
+    sentRequestCount,
+    unreadNotificationCount,
+    tree,
+    admins,
+    members,
+    pendingRequests,
+    sentRequests,
+    isAdmin,
+    isMember,
+    canAddMembers
+}: Props) {
     const { props } = usePage();
     const { auth } = props;
-    const user = auth?.user;
+    const authUser = auth?.user;
 
     const [loading, setLoading] = useState(false);
 
@@ -112,7 +134,23 @@ export default function MyFamilyTree({ tree, admins, members, pendingRequests, s
 
     return (
         <AuthAccessLayout>
-            <div className="premium-family-tree-detail">
+            <div className="connections-grid-layout">
+                {/* Left Sidebar - Profile */}
+                {user && (
+                    <div className="connections-left-sidebar">
+                        <ProfileSidebar
+                            user={user}
+                            connectionCount={connectionCount}
+                            pendingRequestCount={pendingRequestCount}
+                            sentRequestCount={sentRequestCount}
+                            unreadNotificationCount={unreadNotificationCount}
+                        />
+                    </div>
+                )}
+
+                {/* Center Content */}
+                <div className="connections-center-content">
+                    <div className="premium-family-tree-detail">
                 {/* Animated Background */}
                 <div className="detail-background">
                     <div className="gradient-orb orb-1"></div>
@@ -272,7 +310,7 @@ export default function MyFamilyTree({ tree, admins, members, pendingRequests, s
                                             </div>
                                         )}
 
-                                        {member.id !== user?.id && (
+                                        {member.id !== authUser?.id && (
                                             <div className="member-actions">
                                                 <Link
                                                     href={route('profile.view', { userId: member.id })}
@@ -306,6 +344,8 @@ export default function MyFamilyTree({ tree, admins, members, pendingRequests, s
                         acceptedConnections={[]}
                         isAdmin={isAdmin}
                     />
+                </div>
+            </div>
                 </div>
             </div>
         </AuthAccessLayout>
