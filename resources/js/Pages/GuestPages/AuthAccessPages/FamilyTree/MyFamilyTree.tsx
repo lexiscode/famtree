@@ -1,7 +1,7 @@
 import { useCallback, useState, useEffect } from 'react';
 import { usePage, router, Link } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { Users, Edit, Trash2, Lock, Globe, CheckCircle, Shield, Crown, TreePine, ArrowLeft, Copy, Check, X, AlertTriangle, UserPlus, CheckCircle2, XCircle } from 'lucide-react';
+import { Users, Edit, Trash2, Lock, Globe, CheckCircle, Shield, Crown, TreePine, ArrowLeft, Copy, Check, X, AlertTriangle, UserPlus, CheckCircle2, XCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import TreeConnectionManager from '@/Components/FamilyTree/TreeConnectionManager';
 import ProfileSidebar from '../Stories/ProfileSidebar';
 import { UserProfile } from '@/types';
@@ -63,6 +63,14 @@ interface TreeData {
     created_at: string;
 }
 
+interface PaginatedMembers {
+    data: TreeMember[];
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+}
+
 interface Props {
     user: UserProfile;
     connectionCount: number;
@@ -71,7 +79,7 @@ interface Props {
     unreadNotificationCount: number;
     tree: TreeData;
     admins: Admin[];
-    members: TreeMember[];
+    members: PaginatedMembers;
     pendingRequests: TreeConnection[];
     sentRequests: TreeConnection[];
     availableMembers: AvailableMember[];
@@ -193,6 +201,17 @@ export default function MyFamilyTree({
         [tree.id]
     );
 
+    const handlePageChange = useCallback((page: number) => {
+        router.get(
+            route('family-tree.show', tree.id),
+            { page },
+            {
+                preserveState: true,
+                preserveScroll: true,
+            }
+        );
+    }, [tree.id]);
+
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
     };
@@ -282,7 +301,7 @@ export default function MyFamilyTree({
                         {/* Stats Grid */}
                         <div className="tree-stats-grid">
                             <div className="stat-card">
-                                <div className="stat-value">{members.length}</div>
+                                <div className="stat-value">{members.total}</div>
                                 <div className="stat-label">Total Members</div>
                             </div>
                             <div className="stat-card">
@@ -373,11 +392,11 @@ export default function MyFamilyTree({
                             </div>
                             <div className="section-title">
                                 <h2>Family Members</h2>
-                                <p>{members.length} {members.length === 1 ? 'member' : 'members'} in this tree</p>
+                                <p>{members.total} {members.total === 1 ? 'member' : 'members'} in this tree</p>
                             </div>
                         </div>
 
-                        {members.length === 0 ? (
+                        {members.data.length === 0 ? (
                             <div className="empty-state">
                                 <div className="empty-icon">👥</div>
                                 <h3 className="empty-title">No Members Yet</h3>
@@ -393,7 +412,7 @@ export default function MyFamilyTree({
                             </div>
                         ) : (
                             <div className="members-grid">
-                                {members.map((member) => (
+                                {members.data.map((member) => (
                                     <div key={member.id} className="member-card">
                                         <div className="member-avatar">
                                             {member.profile_image_url ? (
@@ -444,6 +463,38 @@ export default function MyFamilyTree({
                                         )}
                                     </div>
                                 ))}
+                            </div>
+                        )}
+
+                        {/* Pagination Controls */}
+                        {members.data.length > 0 && members.last_page > 1 && (
+                            <div className="pagination-controls">
+                                <button
+                                    className="pagination-btn"
+                                    onClick={() => handlePageChange(members.current_page - 1)}
+                                    disabled={members.current_page === 1}
+                                >
+                                    <ChevronLeft size={18} />
+                                    Previous
+                                </button>
+
+                                <div className="pagination-info">
+                                    <span className="page-indicator">
+                                        Page <strong>{members.current_page}</strong> of <strong>{members.last_page}</strong>
+                                    </span>
+                                    <span className="total-items">
+                                        ({members.total} total {members.total === 1 ? 'member' : 'members'})
+                                    </span>
+                                </div>
+
+                                <button
+                                    className="pagination-btn"
+                                    onClick={() => handlePageChange(members.current_page + 1)}
+                                    disabled={members.current_page === members.last_page}
+                                >
+                                    Next
+                                    <ChevronRight size={18} />
+                                </button>
                             </div>
                         )}
                     </div>

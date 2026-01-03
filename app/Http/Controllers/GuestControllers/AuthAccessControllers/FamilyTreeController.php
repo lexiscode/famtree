@@ -240,7 +240,8 @@ class FamilyTreeController extends Controller
 
         // Get tree admins and members
         $admins = $this->adminRepository->getTreeAdmins($familyTree->id);
-        $members = $this->treeRepository->getTreeMembers($familyTree->id);
+        $membersPaginated = $this->treeRepository->getTreeMembersPaginated($familyTree->id, 12);
+        $members = $this->treeRepository->getTreeMembers($familyTree->id); // Keep for available members check
 
         // Get pending tree connection requests if admin
         $pendingRequests = $isAdmin ? $this->connectionRepository->getPendingRequests($familyTree->id) : collect();
@@ -293,14 +294,20 @@ class FamilyTreeController extends Controller
                 'role' => $admin->role,
                 'granted_at' => $admin->granted_at,
             ]),
-            'members' => $members->map(fn($member) => [
-                'id' => $member->user->id,
-                'name' => trim($member->user->first_name . ' ' . $member->user->last_name),
-                'profile_image_url' => $member->user->profile_image_url,
-                'nuclear_family_role' => $member->nuclear_family_role,
-                'can_add_members' => $member->can_add_members,
-                'added_at' => $member->added_at,
-            ]),
+            'members' => [
+                'data' => $membersPaginated->map(fn($member) => [
+                    'id' => $member->user->id,
+                    'name' => trim($member->user->first_name . ' ' . $member->user->last_name),
+                    'profile_image_url' => $member->user->profile_image_url,
+                    'nuclear_family_role' => $member->nuclear_family_role,
+                    'can_add_members' => $member->can_add_members,
+                    'added_at' => $member->added_at,
+                ]),
+                'current_page' => $membersPaginated->currentPage(),
+                'last_page' => $membersPaginated->lastPage(),
+                'per_page' => $membersPaginated->perPage(),
+                'total' => $membersPaginated->total(),
+            ],
             'pendingRequests' => $pendingRequests,
             'sentRequests' => $sentRequests,
             'availableMembers' => $availableMembers,
