@@ -385,7 +385,7 @@ class FamilyTreeController extends Controller
         $user = auth()->user();
 
         if (!$user) {
-            return response()->json(['error' => 'Unauthorized'], 401);
+            return redirect()->route('home');
         }
 
         $validated = $request->validate([
@@ -395,10 +395,11 @@ class FamilyTreeController extends Controller
         $result = $this->treeService->addNuclearFamilyMember($familyTree->id, $validated['user_id'], $user->id);
 
         if (!$result['success']) {
-            return response()->json(['error' => $result['error']], 400);
+            return redirect()->back()->with('error', $result['error']);
         }
 
-        return response()->json(['message' => $result['message']]);
+        return redirect()->route('family-tree.show', $familyTree->uuid)
+            ->with('success', $result['message']);
     }
 
     /**
@@ -409,16 +410,17 @@ class FamilyTreeController extends Controller
         $user = auth()->user();
 
         if (!$user) {
-            return response()->json(['error' => 'Unauthorized'], 401);
+            return redirect()->route('home');
         }
 
         if (!$this->adminRepository->isAdmin($familyTree->id, $user->id)) {
-            return response()->json(['error' => 'Unauthorized to modify this family tree'], 403);
+            abort(403, 'Unauthorized to modify this family tree');
         }
 
         $this->treeRepository->removeMember($familyTree->id, $userId);
 
-        return response()->json(['message' => 'Member removed successfully']);
+        return redirect()->route('family-tree.show', $familyTree->uuid)
+            ->with('success', 'Member removed successfully');
     }
 
     /**
