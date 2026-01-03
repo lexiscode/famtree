@@ -75,7 +75,7 @@ export default function MyFamilyTree({ tree, admins, members, pendingRequests, s
             if (confirm(`Are you sure you want to remove ${memberName} from the tree?`)) {
                 setLoading(true);
                 router.delete(
-                    route('family-tree.remove-member', { treeId: tree.id, userId: memberId }),
+                    route('family-tree.remove-member', { familyTree: tree.id, userId: memberId }),
                     {
                         onSuccess: () => {
                             setLoading(false);
@@ -93,7 +93,7 @@ export default function MyFamilyTree({ tree, admins, members, pendingRequests, s
     const handleDeleteTree = useCallback(() => {
         if (confirm('Are you sure you want to delete this entire family tree? This action cannot be undone.')) {
             setLoading(true);
-            router.delete(route('family-tree.destroy', { treeId: tree.id }), {
+            router.delete(route('family-tree.destroy', tree.id), {
                 onSuccess: () => {
                     setLoading(false);
                 },
@@ -162,7 +162,7 @@ export default function MyFamilyTree({ tree, admins, members, pendingRequests, s
                         {/* Action Buttons */}
                         {isAdmin && (
                             <div className="tree-actions">
-                                <Link href={route('family-tree.edit', { treeId: tree.id })} className="action-btn secondary">
+                                <Link href={route('family-tree.edit', tree.id)} className="action-btn secondary">
                                     <Edit size={18} />
                                     Edit Tree
                                 </Link>

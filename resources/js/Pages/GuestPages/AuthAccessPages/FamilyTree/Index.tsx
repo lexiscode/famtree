@@ -37,7 +37,7 @@ export default function Index({ adminTrees, memberTrees }: Props) {
 
         return (
             <Link
-                href={route('family-tree.show', { treeId: tree.id })}
+                href={route('family-tree.show', tree.id)}
                 className="modern-tree-card"
             >
                 <div className="card-glow"></div>

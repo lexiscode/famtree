@@ -49,7 +49,7 @@ export default function EditTree({ tree }: Props) {
             setLoading(true);
             setErrors({});
 
-            router.put(route('family-tree.update', { treeId: tree.id }), formData, {
+            router.put(route('family-tree.update', tree.id), formData, {
                 onSuccess: () => {
                     setLoading(false);
                 },
@@ -63,7 +63,7 @@ export default function EditTree({ tree }: Props) {
     );
 
     const handleCancel = useCallback(() => {
-        router.get(route('family-tree.show', { treeId: tree.id }));
+        router.get(route('family-tree.show', tree.id));
     }, [tree.id]);
 
     return (

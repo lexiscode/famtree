@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class FamilyTree extends Model
 {
@@ -14,6 +15,7 @@ class FamilyTree extends Model
     protected $table = 'family_trees';
 
     protected $fillable = [
+        'uuid',
         'root_user_id',
         'tree_name',
         'description',
@@ -33,6 +35,29 @@ class FamilyTree extends Model
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
+
+    /**
+     * Boot the model and auto-generate UUIDs
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            if (empty($model->uuid)) {
+                $model->uuid = Str::uuid()->toString();
+            }
+        });
+    }
+
+    /**
+     * Get the route key name for Laravel route model binding
+     * Use uuid instead of id
+     */
+    public function getRouteKeyName(): string
+    {
+        return 'uuid';
+    }
 
     /**
      * Get the root user of this family tree
