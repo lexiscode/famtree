@@ -1,5 +1,17 @@
 /* Tree Chat Window - Premium Modern Design */
 
+/* Global SVG Icon Styles */
+.tree-chat-window svg {
+    width: 1em;
+    height: 1em;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: none;
+    flex-shrink: 0;
+}
+
 .tree-chat-window {
     position: fixed;
     bottom: 2rem;

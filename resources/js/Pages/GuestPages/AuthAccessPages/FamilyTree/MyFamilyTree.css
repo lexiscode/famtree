@@ -1277,6 +1277,16 @@
     animation: floatIn 0.5s ease-out;
 }
 
+.floating-chat-btn svg {
+    width: 24px;
+    height: 24px;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: none;
+}
+
 .floating-chat-btn:hover {
     transform: translateY(-4px) scale(1.05);
     box-shadow: 0 12px 32px rgba(139, 92, 246, 0.5),
