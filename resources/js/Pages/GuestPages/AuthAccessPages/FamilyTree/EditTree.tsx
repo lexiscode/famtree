@@ -83,7 +83,8 @@ export default function EditTree({
 
     return (
         <AuthAccessLayout>
-            <div className="connections-grid-layout">
+            <div className="connections-page">
+                <div className="connections-grid-layout">
                 {/* Left Sidebar - Profile */}
                 {user && (
                     <div className="connections-left-sidebar">
@@ -256,6 +257,7 @@ export default function EditTree({
                 </div>
             </div>
                 </div>
+            </div>
             </div>
         </AuthAccessLayout>
     );
