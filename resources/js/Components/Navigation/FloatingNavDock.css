@@ -114,27 +114,110 @@
     }
 }
 
-/* Responsive */
-@media (max-width: 768px) {
+/* ============================================================================
+   PREMIUM MOBILE RESPONSIVE STYLES
+   ============================================================================ */
+
+/* Tablet (1024px and below) */
+@media (max-width: 1023px) {
     .floating-nav-dock {
-        right: 15px;
+        right: 20px;
     }
 
     .nav-dock-container {
-        padding: 15px 8px;
-        gap: 12px;
-        border-radius: 25px;
+        padding: 18px 10px;
+        gap: 14px;
     }
 
     .nav-dock-icon {
-        width: 45px;
-        height: 45px;
+        width: 48px;
+        height: 48px;
+    }
+
+    .nav-icon {
+        font-size: 21px;
+    }
+}
+
+/* Mobile (768px and below) */
+@media (max-width: 767px) {
+    .floating-nav-dock {
+        right: 12px;
+        top: auto;
+        bottom: 20px;
+        transform: none;
+    }
+
+    .nav-dock-container {
+        flex-direction: row;
+        padding: 12px 16px;
+        gap: 12px;
+        border-radius: 24px;
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .nav-dock-icon {
+        width: 46px;
+        height: 46px;
+        font-size: 20px;
+        border-radius: 14px;
+    }
+
+    .nav-icon {
         font-size: 20px;
     }
 
     .nav-dock-tooltip {
-        right: 60px;
-        padding: 8px 16px;
-        font-size: 13px;
+        display: none;
+    }
+}
+
+/* Small Mobile (480px and below) */
+@media (max-width: 480px) {
+    .floating-nav-dock {
+        right: 10px;
+        bottom: 16px;
+    }
+
+    .nav-dock-container {
+        padding: 10px 14px;
+        gap: 10px;
+        border-radius: 20px;
+    }
+
+    .nav-dock-icon {
+        width: 42px;
+        height: 42px;
+        font-size: 18px;
+        border-radius: 12px;
+    }
+
+    .nav-icon {
+        font-size: 18px;
+    }
+}
+
+/* Extra Small Mobile (375px and below) */
+@media (max-width: 375px) {
+    .floating-nav-dock {
+        right: 8px;
+        bottom: 14px;
+        left: 8px;
+        width: auto;
+    }
+
+    .nav-dock-container {
+        padding: 10px 12px;
+        gap: 8px;
+        justify-content: space-around;
+    }
+
+    .nav-dock-icon {
+        width: 40px;
+        height: 40px;
+    }
+
+    .nav-icon {
+        font-size: 17px;
     }
 }

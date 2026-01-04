@@ -113,21 +113,52 @@
     }
 }
 
-/* Responsive */
-@media (max-width: 768px) {
+/* ============================================================================
+   PREMIUM MOBILE RESPONSIVE STYLES
+   ============================================================================ */
+
+/* Tablet (1024px and below) */
+@media (max-width: 1023px) {
     .floating-social-dock {
-        left: 15px;
+        left: 20px;
     }
 
     .social-dock-container {
-        padding: 15px 8px;
-        gap: 12px;
-        border-radius: 25px;
+        padding: 18px 10px;
+        gap: 14px;
     }
 
     .social-dock-icon {
-        width: 45px;
-        height: 45px;
+        width: 48px;
+        height: 48px;
+    }
+
+    .social-icon {
+        font-size: 21px;
+    }
+}
+
+/* Mobile (768px and below) */
+@media (max-width: 767px) {
+    .floating-social-dock {
+        left: 12px;
+        bottom: 100px;
+        top: auto;
+        transform: none;
+    }
+
+    .social-dock-container {
+        flex-direction: row;
+        padding: 12px 16px;
+        gap: 12px;
+        border-radius: 24px;
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .social-dock-icon {
+        width: 46px;
+        height: 46px;
+        border-radius: 14px;
     }
 
     .social-icon {
@@ -135,15 +166,38 @@
     }
 
     .social-dock-tooltip {
-        left: 60px;
-        padding: 8px 16px;
-        font-size: 13px;
+        display: none;
     }
 }
 
-/* Hide on very small screens to avoid clutter */
+/* Small Mobile (480px and below) - Hide to reduce clutter */
 @media (max-width: 480px) {
     .floating-social-dock {
         display: none;
     }
 }
+
+/* Alternative: Keep visible but make smaller on very small screens */
+/* Uncomment this section if you want to keep social dock on small screens
+@media (max-width: 480px) {
+    .floating-social-dock {
+        left: 10px;
+        bottom: 80px;
+    }
+
+    .social-dock-container {
+        padding: 10px 12px;
+        gap: 8px;
+        border-radius: 20px;
+    }
+
+    .social-dock-icon {
+        width: 40px;
+        height: 40px;
+    }
+
+    .social-icon {
+        font-size: 18px;
+    }
+}
+*/
