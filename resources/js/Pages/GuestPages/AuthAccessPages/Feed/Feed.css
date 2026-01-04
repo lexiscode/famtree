@@ -401,20 +401,77 @@
 }
 
 /* ===================================
-   POSTS FEED - ENHANCED
+   POSTS FEED - ENHANCED & MORE VISIBLE
    =================================== */
 .posts-feed .card {
     border: none;
     border-radius: 20px;
     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     overflow: hidden;
+    background: #ffffff !important;
+    border: 2px solid rgba(102, 126, 234, 0.1) !important;
+    box-shadow:
+        0 8px 24px rgba(0, 0, 0, 0.08),
+        0 0 0 1px rgba(255, 255, 255, 0.5) inset !important;
 }
 
 .posts-feed .card:hover {
     transform: translateY(-6px) scale(1.01);
     box-shadow:
         0 16px 48px rgba(102, 126, 234, 0.25),
-        0 0 0 1px rgba(255, 255, 255, 0.3) inset !important;
+        0 0 0 2px rgba(102, 126, 234, 0.2) inset !important;
+    border-color: rgba(102, 126, 234, 0.3) !important;
+}
+
+/* Post Card Content */
+.posts-feed .card-body {
+    padding: 1.5rem !important;
+    background: #ffffff;
+}
+
+/* Post Text Content */
+.posts-feed .card-text,
+.posts-feed .card-title,
+.posts-feed p,
+.posts-feed h1, .posts-feed h2, .posts-feed h3,
+.posts-feed h4, .posts-feed h5, .posts-feed h6 {
+    color: #1f2937 !important;
+}
+
+.posts-feed .text-muted {
+    color: #6b7280 !important;
+}
+
+/* Post Images - Make them visible */
+.posts-feed img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 12px;
+    background: #f3f4f6;
+}
+
+.posts-feed .gallery-image {
+    width: 100%;
+    height: auto;
+    max-height: 500px;
+    object-fit: cover;
+    border-radius: 12px;
+}
+
+/* Post Actions */
+.posts-feed .btn {
+    font-weight: 600;
+}
+
+.posts-feed .btn-outline-primary {
+    border-color: #667eea;
+    color: #667eea;
+}
+
+.posts-feed .btn-outline-primary:hover {
+    background: #667eea;
+    color: white;
 }
 
 .empty-state-icon {
