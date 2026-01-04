@@ -67,9 +67,33 @@
 
 .profile-card:hover {
     transform: translateY(-8px) scale(1.02);
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.95), rgba(118, 75, 162, 0.9)) !important;
     box-shadow:
-        0 20px 60px rgba(102, 126, 234, 0.4),
-        0 0 0 1px rgba(255, 255, 255, 0.2) inset !important;
+        0 20px 60px rgba(102, 126, 234, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.3) inset,
+        0 0 40px rgba(102, 126, 234, 0.4) !important;
+    backdrop-filter: blur(20px);
+}
+
+/* Change text colors to white on profile card hover */
+.profile-card:hover h5,
+.profile-card:hover .text-muted,
+.profile-card:hover .bio-text,
+.profile-card:hover .stat-value,
+.profile-card:hover .stat-label {
+    color: #ffffff !important;
+}
+
+/* Stats grid on hover */
+.profile-card:hover .stats-grid {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* List items on profile card hover */
+.profile-card:hover .list-group-item {
+    color: rgba(255, 255, 255, 0.9) !important;
+    border-bottom-color: rgba(255, 255, 255, 0.1) !important;
 }
 
 .profile-card .card-body {
@@ -191,19 +215,21 @@
 }
 
 /* Quick Actions - Premium */
-.list-group-item {
+.profile-card .list-group-item {
     border: none;
     border-bottom: 1px solid rgba(0, 0, 0, 0.05);
     padding: 14px 20px;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     color: #374151;
     font-weight: 500;
+    background: transparent;
 }
 
-.list-group-item:hover {
-    background: linear-gradient(90deg, rgba(102, 126, 234, 0.95), rgba(118, 75, 162, 0.85));
+.profile-card .list-group-item:hover,
+.profile-card .list-group-item-action:hover {
+    background: linear-gradient(90deg, rgba(102, 126, 234, 0.95), rgba(118, 75, 162, 0.85)) !important;
     padding-left: 28px;
-    color: #ffffff;
+    color: #ffffff !important;
     box-shadow:
         0 4px 12px rgba(102, 126, 234, 0.3),
         inset 0 1px 0 rgba(255, 255, 255, 0.2);
@@ -211,12 +237,14 @@
     margin: 2px 8px;
 }
 
-.list-group-item svg {
+.profile-card .list-group-item svg {
     transition: transform 0.3s ease;
+    color: inherit;
 }
 
-.list-group-item:hover svg {
+.profile-card .list-group-item:hover svg {
     transform: scale(1.2) rotate(5deg);
+    color: #ffffff;
 }
 
 .list-group-item:last-child {
