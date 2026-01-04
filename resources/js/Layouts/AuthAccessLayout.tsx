@@ -10,17 +10,10 @@ export default function AuthAccessLayout({ children }: PropsWithChildren) {
     return (
         <ModalProvider>
             <div className="auth-access-layout">
-                {/* Fixed Header with Logo */}
-                <header className="auth-access-header">
-                    <div className="auth-access-header-container">
-                        <Link href="/" className="auth-access-logo">
-                            <div className="auth-access-logo-icon">
-                                <TreePine size={28} />
-                            </div>
-                            <span className="auth-access-logo-text">FamTree</span>
-                        </Link>
-                    </div>
-                </header>
+                {/* Floating Home Logo - Top Left */}
+                <Link href="/" className="auth-floating-home-logo" title="Go to Home">
+                    <TreePine size={24} />
+                </Link>
 
                 <main className="auth-access-content">
                     {children}
