@@ -33,7 +33,6 @@ interface Props {
     treeId: string;
     treeName: string;
     currentUserId: number;
-    currentUserName: string;
     onClose: () => void;
     isMinimized: boolean;
     onToggleMinimize: () => void;
@@ -43,7 +42,6 @@ export default function TreeChatWindow({
     treeId,
     treeName,
     currentUserId,
-    currentUserName,
     onClose,
     isMinimized,
     onToggleMinimize,
@@ -98,32 +96,9 @@ export default function TreeChatWindow({
             .leaving((user: OnlineUser) => {
                 setOnlineUsers((prev) => prev.filter((u) => u.id !== user.id));
             })
-            .listen('TreeMessageSent', (e: { message: Message }) => {
+            .listen('.TreeMessageSent', (e: { message: Message }) => {
                 setMessages((prev) => [...prev, e.message]);
                 setTimeout(scrollToBottom, 100);
-            })
-            .listen('TreeUserTyping', (e: { user_id: number; first_name: string; last_name: string; is_typing: boolean }) => {
-                if (e.is_typing) {
-                    setTypingUsers((prev) => {
-                        const exists = prev.find((u) => u.user_id === e.user_id);
-                        if (!exists) {
-                            return [...prev, {
-                                user_id: e.user_id,
-                                first_name: e.first_name,
-                                last_name: e.last_name,
-                            }];
-                        }
-                        return prev;
-                    });
-
-                    // Remove typing indicator after 3 seconds
-                    setTimeout(() => {
-                        setTypingUsers((prev) => prev.filter((u) => u.user_id !== e.user_id));
-                    }, 3000);
-                } else {
-                    // User stopped typing
-                    setTypingUsers((prev) => prev.filter((u) => u.user_id !== e.user_id));
-                }
             });
 
         // Store channel reference for whispers
@@ -135,34 +110,10 @@ export default function TreeChatWindow({
         };
     }, [treeId, scrollToBottom]);
 
-    // Handle typing indicator - use server-side broadcast instead of whispers
+    // Handle typing indicator - DISABLED
     const handleTyping = useCallback(() => {
-        if (!isTypingRef.current) {
-            isTypingRef.current = true;
-
-            // Send typing=true to server
-            axios.post(route('family-tree.chat.typing', treeId), {
-                is_typing: true,
-            }).catch((error) => {
-                console.error('Error sending typing indicator:', error);
-            });
-        }
-
-        if (typingTimeoutRef.current) {
-            clearTimeout(typingTimeoutRef.current);
-        }
-
-        typingTimeoutRef.current = setTimeout(() => {
-            isTypingRef.current = false;
-
-            // Send typing=false to server
-            axios.post(route('family-tree.chat.typing', treeId), {
-                is_typing: false,
-            }).catch((error) => {
-                console.error('Error stopping typing indicator:', error);
-            });
-        }, 1000);
-    }, [treeId]);
+        // Typing indicator disabled
+    }, []);
 
     // Send message
     const handleSendMessage = useCallback(async (e: React.FormEvent) => {
@@ -294,26 +245,7 @@ export default function TreeChatWindow({
                             </>
                         )}
 
-                        {/* Typing Indicators */}
-                        {typingUsers.filter((u) => u.user_id !== currentUserId).length > 0 && (
-                            <div className="typing-indicator">
-                                <div className="typing-dots">
-                                    <span></span>
-                                    <span></span>
-                                    <span></span>
-                                </div>
-                                <span className="typing-text">
-                                    {typingUsers
-                                        .filter((u) => u.user_id !== currentUserId)
-                                        .map((u) => u.first_name)
-                                        .join(', ')}{' '}
-                                    {typingUsers.filter((u) => u.user_id !== currentUserId).length === 1
-                                        ? 'is'
-                                        : 'are'}{' '}
-                                    typing...
-                                </span>
-                            </div>
-                        )}
+                        {/* Typing Indicators - DISABLED */}
                     </div>
 
                     {/* Input Form */}
