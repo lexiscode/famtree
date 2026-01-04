@@ -250,11 +250,17 @@ class PostService
             'comments_count' => $post->comments_count,
             'reactions_count' => $post->reactions_count,
             'user_reaction' => $userReaction,
-            'images' => $post->images->map(fn($img) => [
-                'id' => $img->id,
-                'url' => $img->image_url,
-                'order' => $img->order,
-            ]),
+            'images' => $post->images->map(function($img) {
+                // Fix double storage path issue: /storage/storage/ -> /storage/
+                $rawUrl = $img->getAttributes()['image_url'] ?? '';
+                $fixedUrl = str_replace('/storage/storage/', '/storage/', $rawUrl);
+
+                return [
+                    'id' => $img->id,
+                    'url' => $fixedUrl,
+                    'order' => $img->order,
+                ];
+            }),
             'comments' => $post->comments->map(fn($comment) => $this->formatComment($comment)),
             'user' => [
                 'id' => $post->user->id,

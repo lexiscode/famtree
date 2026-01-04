@@ -166,11 +166,17 @@ class FeedController extends Controller
             'comments_count' => $post->comments_count,
             'reactions_count' => $post->reactions_count,
             'user_reaction' => $userReaction,
-            'images' => $post->images->map(fn($img) => [
-                'id' => $img->id,
-                'url' => $img->image_url,
-                'order' => $img->order,
-            ])->toArray(),
+            'images' => $post->images->map(function($img) {
+                // Fix double storage path issue: /storage/storage/ -> /storage/
+                $rawUrl = $img->getAttributes()['image_url'] ?? '';
+                $fixedUrl = str_replace('/storage/storage/', '/storage/', $rawUrl);
+
+                return [
+                    'id' => $img->id,
+                    'url' => $fixedUrl,
+                    'order' => $img->order,
+                ];
+            })->toArray(),
             'comments' => $post->comments->map(fn($comment) => [
                 'id' => $comment->id,
                 'content' => $comment->content,

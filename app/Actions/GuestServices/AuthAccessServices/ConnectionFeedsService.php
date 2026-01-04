@@ -109,9 +109,13 @@ class ConnectionFeedsService
                 'profile_image_url' => $post->user->profile_image_url,
             ],
             'images' => $post->images->map(function ($image) {
+                // Fix double storage path issue: /storage/storage/ -> /storage/
+                $rawUrl = $image->getAttributes()['image_url'] ?? '';
+                $fixedUrl = str_replace('/storage/storage/', '/storage/', $rawUrl);
+
                 return [
                     'id' => $image->id,
-                    'image_url' => $image->image_url,
+                    'url' => $fixedUrl,
                     'order' => $image->order,
                 ];
             })->toArray(),
