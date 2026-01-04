@@ -94,8 +94,8 @@ class FeedController extends Controller
         // Get profile completion data
         $profileCompletion = $this->profileCompletionService->getProfileCompletion($user);
 
-        // Get user's family trees for chat
-        $userTrees = $this->familyTreeRepository->getUserAdminTrees($user->id);
+        // Get user's family trees for chat (trees where user is a member)
+        $userTrees = $this->familyTreeRepository->getUserMemberTrees($user->id);
         $firstTree = $userTrees->first();
         $treeForChat = $firstTree ? [
             'id' => $firstTree->id,
