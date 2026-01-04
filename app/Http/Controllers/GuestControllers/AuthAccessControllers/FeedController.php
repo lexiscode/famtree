@@ -8,6 +8,7 @@ use App\Actions\GuestServices\PostService;
 use App\Actions\GuestServices\NotificationService;
 use App\Actions\GuestServices\UserFollowService;
 use App\Actions\GuestServices\AuthAccessServices\ConnectionFeedsService;
+use App\Actions\GuestServices\AuthAccessServices\ProfileCompletionService;
 use App\Repositories\GuestRepositories\UserConnectionRepository;
 use App\Repositories\GuestRepositories\PostRepository;
 
@@ -20,6 +21,7 @@ class FeedController extends Controller
         private UserConnectionRepository $connectionRepository,
         private UserFollowService $followService,
         private PostRepository $postRepository,
+        private ProfileCompletionService $profileCompletionService,
     ) {}
 
     /**
@@ -87,6 +89,9 @@ class FeedController extends Controller
             'posts' => $this->postRepository->getUserPostsCount($user->id),
         ];
 
+        // Get profile completion data
+        $profileCompletion = $this->profileCompletionService->getProfileCompletion($user);
+
         return Inertia::render('GuestPages/AuthAccessPages/Feed/Index', [
             'user' => $userData,
             'stats' => $stats,
@@ -100,6 +105,7 @@ class FeedController extends Controller
             'pendingRequestCount' => count($pendingRequests),
             'sentRequestCount' => count($sentRequests),
             'unreadNotificationCount' => $unreadNotificationCount,
+            'profileCompletion' => $profileCompletion,
         ]);
     }
 
