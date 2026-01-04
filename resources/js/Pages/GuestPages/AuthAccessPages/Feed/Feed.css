@@ -1,16 +1,40 @@
 /* ===================================
-   PREMIUM FEED PAGE STYLING
+   ULTRA PREMIUM FEED PAGE STYLING
    =================================== */
 
-/* Page Background */
+/* Page Background with Animated Gradient - Ultra Saturated */
 .feed-page {
     min-height: 100vh;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    background-attachment: fixed;
+    background: linear-gradient(-45deg, #4455ff, #7c2bad, #ff4dff, #0080ff);
+    background-size: 400% 400%;
+    animation: gradientShift 15s ease infinite;
+    position: relative;
+}
+
+.feed-page::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background:
+        radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+@keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
 }
 
 .feed-page .container-fluid {
     max-width: 1400px;
+    position: relative;
+    z-index: 1;
 }
 
 /* Sticky Sidebars */
@@ -20,90 +44,207 @@
 }
 
 /* ===================================
-   PROFILE CARD
+   GLASS MORPHISM CARDS
+   =================================== */
+.feed-page .card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow:
+        0 8px 32px 0 rgba(31, 38, 135, 0.15),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+}
+
+/* ===================================
+   PROFILE CARD - ULTRA PREMIUM
    =================================== */
 .profile-card {
     border: none;
-    border-radius: 20px;
-    overflow: hidden;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border-radius: 24px;
+    overflow: visible;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .profile-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15) !important;
+    transform: translateY(-8px) scale(1.02);
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.95), rgba(118, 75, 162, 0.9)) !important;
+    box-shadow:
+        0 20px 60px rgba(102, 126, 234, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.3) inset,
+        0 0 40px rgba(102, 126, 234, 0.4) !important;
+    backdrop-filter: blur(20px);
+}
+
+/* Change text colors to white on profile card hover */
+.profile-card:hover h5,
+.profile-card:hover .text-muted,
+.profile-card:hover .bio-text,
+.profile-card:hover .stat-value,
+.profile-card:hover .stat-label {
+    color: #ffffff !important;
+}
+
+/* Stats grid on hover */
+.profile-card:hover .stats-grid {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* List items on profile card hover */
+.profile-card:hover .list-group-item {
+    color: rgba(255, 255, 255, 0.9) !important;
+    border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.profile-card .card-body {
+    padding: 2rem 1.5rem 1.5rem;
 }
 
 .profile-avatar {
-    width: 80px;
-    height: 80px;
+    width: 90px;
+    height: 90px;
     object-fit: cover;
-    border: 4px solid #fff;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border: 5px solid #fff;
+    box-shadow:
+        0 8px 24px rgba(0, 0, 0, 0.15),
+        0 0 0 2px rgba(102, 126, 234, 0.3);
+    transition: all 0.3s ease;
+}
+
+.profile-avatar:hover {
+    box-shadow:
+        0 12px 32px rgba(102, 126, 234, 0.4),
+        0 0 0 3px rgba(102, 126, 234, 0.5);
+    transform: scale(1.05);
 }
 
 .profile-avatar-fallback {
-    width: 80px;
-    height: 80px;
+    width: 90px;
+    height: 90px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
-    font-size: 32px;
-    font-weight: bold;
+    font-size: 36px;
+    font-weight: 700;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 4px solid #fff;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border: 5px solid #fff;
+    box-shadow:
+        0 8px 24px rgba(102, 126, 234, 0.3),
+        0 0 20px rgba(102, 126, 234, 0.2);
+    transition: all 0.3s ease;
+}
+
+.profile-avatar-fallback:hover {
+    box-shadow:
+        0 12px 32px rgba(102, 126, 234, 0.5),
+        0 0 30px rgba(102, 126, 234, 0.3);
+    transform: scale(1.05);
 }
 
 .online-badge {
     position: absolute;
-    bottom: 8px;
-    right: 8px;
-    width: 16px;
-    height: 16px;
-    background: #10b981;
-    border: 3px solid #fff;
+    bottom: 10px;
+    right: 10px;
+    width: 18px;
+    height: 18px;
+    background: linear-gradient(135deg, #10b981, #059669);
+    border: 4px solid #fff;
     border-radius: 50%;
-    animation: pulse 2s infinite;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
+    animation: pulse-glow 2s infinite;
 }
 
-@keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+@keyframes pulse-glow {
+    0%, 100% {
+        opacity: 1;
+        box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
+    }
+    50% {
+        opacity: 0.8;
+        box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.5);
+    }
+}
+
+.profile-card h5 {
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 0.25rem;
 }
 
 .bio-text {
-    line-height: 1.5;
+    line-height: 1.6;
     overflow: hidden;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
+    color: #6b7280;
 }
 
-/* Stats Grid */
+/* Stats Grid - Enhanced */
+.stats-grid {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+    border-radius: 16px;
+    margin: 1rem -0.5rem 0;
+    padding: 0.5rem !important;
+}
+
 .stats-grid .stat-value {
-    font-size: 24px;
+    font-size: 28px;
+    font-weight: 800;
     margin-bottom: 4px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .stats-grid .stat-label {
-    font-size: 11px;
+    font-size: 10px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 1px;
+    font-weight: 600;
+    opacity: 0.8;
 }
 
-/* Quick Actions */
-.list-group-item {
+.stats-grid .col-6 {
+    transition: all 0.3s ease;
+    border-radius: 12px;
+}
+
+.stats-grid .col-6:hover {
+    background: rgba(255, 255, 255, 0.5);
+    transform: scale(1.05);
+}
+
+/* Quick Actions - Premium */
+.profile-card .list-group-item {
     border: none;
-    border-bottom: 1px solid #f0f0f0;
-    padding: 12px 20px;
-    transition: all 0.2s ease;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    padding: 14px 20px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    color: #374151;
+    font-weight: 500;
+    background: transparent;
 }
 
-.list-group-item:hover {
-    background: linear-gradient(to right, #f8f9fa, #e9ecef);
-    padding-left: 25px;
+.profile-card .list-group-item:hover,
+.profile-card .list-group-item-action:hover {
+    background: linear-gradient(90deg, rgba(102, 126, 234, 0.95), rgba(118, 75, 162, 0.85)) !important;
+    padding-left: 28px;
+    color: #ffffff !important;
+    box-shadow:
+        0 4px 12px rgba(102, 126, 234, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    margin: 2px 8px;
+}
+
+.profile-card .list-group-item svg {
+    transition: transform 0.3s ease;
+    color: inherit;
+}
+
+.profile-card .list-group-item:hover svg {
+    transform: scale(1.2) rotate(5deg);
+    color: #ffffff;
 }
 
 .list-group-item:last-child {
@@ -111,133 +252,351 @@
 }
 
 /* ===================================
-   CREATE POST CARD
+   CREATE POST CARD - PREMIUM
    =================================== */
 .create-post-card {
     border: none;
-    border-radius: 20px;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border-radius: 24px;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.95));
 }
 
 .create-post-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12) !important;
+    transform: translateY(-4px);
+    box-shadow:
+        0 12px 40px rgba(102, 126, 234, 0.2),
+        0 0 0 1px rgba(255, 255, 255, 0.3) inset !important;
+}
+
+.create-post-card .card-body {
+    padding: 1.5rem;
 }
 
 .create-post-avatar,
 .create-post-avatar-fallback {
-    width: 48px;
-    height: 48px;
+    width: 50px;
+    height: 50px;
     object-fit: cover;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .create-post-avatar-fallback {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
-    font-weight: bold;
-    font-size: 20px;
+    font-weight: 700;
+    font-size: 22px;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
 .create-post-card .btn-light {
-    background: #f8f9fa;
-    border: 2px solid #e9ecef;
-    padding: 12px 20px;
-    transition: all 0.2s ease;
+    background: linear-gradient(135deg, #f9fafb, #f3f4f6);
+    border: 2px solid #e5e7eb;
+    padding: 14px 20px;
+    font-weight: 500;
+    color: #6b7280;
+    transition: all 0.3s ease;
 }
 
 .create-post-card .btn-light:hover {
-    background: #e9ecef;
-    border-color: #dee2e6;
+    background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+    border-color: #d1d5db;
+    color: #374151;
+    transform: translateX(4px);
 }
 
 .create-post-btn {
-    width: 48px;
-    height: 48px;
+    width: 50px;
+    height: 50px;
     padding: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border: none;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
 }
 
 .create-post-btn:hover {
-    transform: scale(1.1);
-    box-shadow: 0 5px 15px rgba(13, 110, 253, 0.4);
+    transform: scale(1.15) rotate(90deg);
+    box-shadow:
+        0 8px 25px rgba(102, 126, 234, 0.6),
+        0 0 20px rgba(102, 126, 234, 0.3);
+    background: linear-gradient(135deg, #764ba2, #667eea);
 }
 
 /* ===================================
-   FEED TABS
+   FEED TABS - ULTRA MODERN
    =================================== */
 .feed-tabs-card {
     border: none;
-    border-radius: 20px;
+    border-radius: 24px;
     overflow: hidden;
+    background: rgba(255, 255, 255, 0.98);
+}
+
+.feed-tabs {
+    background: linear-gradient(to bottom, rgba(249, 250, 251, 0.5), transparent);
 }
 
 .feed-tabs .nav-link {
     border: none;
-    padding: 16px 20px;
-    color: #6c757d;
+    padding: 18px 24px;
+    color: #6b7280;
     font-weight: 600;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     background: transparent;
     display: flex;
     align-items: center;
     justify-content: center;
     border-bottom: 3px solid transparent;
+    position: relative;
+}
+
+.feed-tabs .nav-link::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%) scaleX(0);
+    width: 80%;
+    height: 3px;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    border-radius: 3px 3px 0 0;
+    transition: transform 0.3s ease;
 }
 
 .feed-tabs .nav-link:hover {
-    background: rgba(13, 110, 253, 0.05);
-    color: #0d6efd;
+    background: linear-gradient(to top, rgba(102, 126, 234, 0.08), transparent);
+    color: #667eea;
+}
+
+.feed-tabs .nav-link:hover::before {
+    transform: translateX(-50%) scaleX(0.5);
 }
 
 .feed-tabs .nav-link.active {
-    background: linear-gradient(to top, rgba(13, 110, 253, 0.1), transparent);
-    color: #0d6efd;
-    border-bottom-color: #0d6efd;
+    background: linear-gradient(to top, rgba(102, 126, 234, 0.12), transparent);
+    color: #667eea;
+    font-weight: 700;
+}
+
+.feed-tabs .nav-link.active::before {
+    transform: translateX(-50%) scaleX(1);
 }
 
 .feed-tabs .badge {
-    font-size: 10px;
-    padding: 4px 8px;
-    font-weight: 600;
+    font-size: 11px;
+    padding: 4px 10px;
+    font-weight: 700;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.feed-tabs .nav-link svg {
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 }
 
 /* ===================================
-   POSTS FEED
+   POSTS FEED - ENHANCED & MORE VISIBLE
    =================================== */
 .posts-feed .card {
     border: none;
-    border-radius: 16px;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border-radius: 24px;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    overflow: hidden;
+    background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%) !important;
+    border: 3px solid rgba(102, 126, 234, 0.2) !important;
+    box-shadow:
+        0 12px 32px rgba(0, 0, 0, 0.12),
+        0 0 0 1px rgba(255, 255, 255, 0.8) inset,
+        0 4px 16px rgba(102, 126, 234, 0.15) !important;
 }
 
 .posts-feed .card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12) !important;
+    transform: translateY(-8px) scale(1.02);
+    box-shadow:
+        0 20px 60px rgba(102, 126, 234, 0.35),
+        0 0 0 3px rgba(102, 126, 234, 0.3) inset,
+        0 8px 24px rgba(0, 0, 0, 0.15) !important;
+    border-color: rgba(102, 126, 234, 0.5) !important;
+}
+
+/* Post Card Content */
+.posts-feed .card-body {
+    padding: 1.75rem !important;
+    background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
+}
+
+/* Post Text Content - Make it MUCH more visible */
+.posts-feed .card-text,
+.posts-feed .card-title,
+.posts-feed p,
+.posts-feed h1, .posts-feed h2, .posts-feed h3,
+.posts-feed h4, .posts-feed h5, .posts-feed h6 {
+    color: #0f172a !important;
+    font-weight: 500 !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* Post User Name - Make it bold and visible */
+.posts-feed .post-user-name,
+.posts-feed h3,
+.posts-feed h5 {
+    color: #1e293b !important;
+    font-weight: 700 !important;
+    font-size: 1.1rem !important;
+}
+
+.posts-feed .text-muted {
+    color: #475569 !important;
+    font-weight: 500 !important;
+}
+
+/* Post Images - Make them visible */
+.posts-feed img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 12px;
+    background: #f3f4f6;
+}
+
+.posts-feed .gallery-image {
+    width: 100%;
+    height: auto;
+    max-height: 500px;
+    object-fit: cover;
+    border-radius: 12px;
+}
+
+/* Post Actions - Enhanced Visibility */
+.posts-feed .btn {
+    font-weight: 700 !important;
+    font-size: 0.95rem !important;
+    padding: 0.65rem 1.25rem !important;
+    border-radius: 12px !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+.posts-feed .action-btn,
+.posts-feed .btn-outline-primary {
+    border: 2px solid #667eea !important;
+    color: #667eea !important;
+    background: linear-gradient(135deg, #ffffff, #f9fafb) !important;
+}
+
+.posts-feed .action-btn:hover,
+.posts-feed .btn-outline-primary:hover {
+    background: linear-gradient(135deg, #667eea, #764ba2) !important;
+    color: white !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4) !important;
+    border-color: #667eea !important;
+}
+
+/* Action Button Icons - Make them more visible */
+.posts-feed .action-btn svg,
+.posts-feed .btn svg {
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+    stroke-width: 2.5px !important;
+}
+
+/* Like Button when active */
+.posts-feed .action-btn.liked,
+.posts-feed .like-btn.liked {
+    background: linear-gradient(135deg, #ec4899, #f43f5e) !important;
+    color: white !important;
+    border-color: #ec4899 !important;
+    box-shadow: 0 4px 16px rgba(236, 72, 153, 0.4) !important;
 }
 
 .empty-state-icon {
-    opacity: 0.3;
+    opacity: 0.25;
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.1));
+}
+
+.posts-feed .btn-primary {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border: none;
+    padding: 12px 28px;
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    transition: all 0.3s ease;
+}
+
+.posts-feed .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
 }
 
 /* ===================================
-   NOTIFICATIONS LIST
+   SIDEBAR CARDS - GLASS EFFECT
+   =================================== */
+.sticky-sidebar .card {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(16px);
+    border-radius: 20px;
+    transition: all 0.3s ease;
+}
+
+.sticky-sidebar .card:hover {
+    background: rgba(255, 255, 255, 0.98);
+    transform: translateY(-4px);
+}
+
+.card-header {
+    padding: 18px 20px;
+    font-weight: 700;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    background: linear-gradient(to bottom, rgba(249, 250, 251, 0.5), transparent);
+}
+
+.card-header h6 {
+    margin: 0;
+    color: #1f2937;
+}
+
+.card-footer {
+    padding: 14px 20px;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    background: rgba(249, 250, 251, 0.5);
+}
+
+/* ===================================
+   NOTIFICATIONS - PREMIUM
    =================================== */
 .notifications-list {
-    max-height: 300px;
+    max-height: 320px;
     overflow-y: auto;
 }
 
 .notification-item {
-    padding: 12px 16px;
-    border-bottom: 1px solid #f0f0f0;
-    transition: background 0.2s ease;
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+    transition: all 0.2s ease;
     cursor: pointer;
+    position: relative;
+}
+
+.notification-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(to bottom, #667eea, #764ba2);
+    transform: scaleY(0);
+    transition: transform 0.2s ease;
+}
+
+.notification-item:hover::before {
+    transform: scaleY(1);
 }
 
 .notification-item:last-child {
@@ -245,29 +604,59 @@
 }
 
 .notification-item:hover {
-    background: #f8f9fa;
+    background: linear-gradient(90deg, rgba(102, 126, 234, 0.05), transparent);
+    padding-left: 22px;
 }
 
 .notification-item.unread {
-    background: rgba(13, 110, 253, 0.05);
-    border-left: 3px solid #0d6efd;
+    background: linear-gradient(90deg, rgba(59, 130, 246, 0.08), rgba(59, 130, 246, 0.02));
+}
+
+.notification-item.unread::before {
+    transform: scaleY(1);
+    background: linear-gradient(to bottom, #3b82f6, #2563eb);
+}
+
+.badge.bg-danger {
+    background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+    font-weight: 700;
 }
 
 /* ===================================
-   TRENDING LIST
+   TRENDING - ENHANCED
    =================================== */
 .trending-list {
-    max-height: 400px;
+    max-height: 420px;
     overflow-y: auto;
 }
 
 .trending-item {
     display: block;
-    padding: 12px 16px;
-    border-bottom: 1px solid #f0f0f0;
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
     text-decoration: none;
     color: inherit;
-    transition: background 0.2s ease;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.trending-item::after {
+    content: '';
+    position: absolute;
+    right: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 6px;
+    height: 6px;
+    background: #667eea;
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.trending-item:hover::after {
+    opacity: 1;
 }
 
 .trending-item:last-child {
@@ -275,36 +664,47 @@
 }
 
 .trending-item:hover {
-    background: #f8f9fa;
+    background: linear-gradient(90deg, rgba(251, 191, 36, 0.08), transparent);
+    padding-left: 24px;
 }
 
 .trending-number {
-    font-size: 18px;
-    font-weight: bold;
-    color: #dee2e6;
-    min-width: 30px;
+    font-size: 20px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    min-width: 35px;
+    text-shadow: 0 2px 4px rgba(251, 191, 36, 0.2);
 }
 
 .trending-title {
-    line-height: 1.4;
+    line-height: 1.5;
     overflow: hidden;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.trending-item .text-muted {
+    color: #9ca3af !important;
 }
 
 /* ===================================
-   SUGGESTED USERS
+   SUGGESTED USERS - PREMIUM
    =================================== */
 .suggested-users-list {
-    max-height: 350px;
+    max-height: 380px;
     overflow-y: auto;
 }
 
 .suggested-user-item {
-    padding: 12px 16px;
-    border-bottom: 1px solid #f0f0f0;
-    transition: background 0.2s ease;
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+    transition: all 0.2s ease;
 }
 
 .suggested-user-item:last-child {
@@ -312,74 +712,107 @@
 }
 
 .suggested-user-item:hover {
-    background: #f8f9fa;
+    background: linear-gradient(90deg, rgba(16, 185, 129, 0.05), transparent);
+    padding-left: 22px;
 }
 
 .suggested-avatar,
 .suggested-avatar-fallback {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     object-fit: cover;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.suggested-user-item:hover .suggested-avatar,
+.suggested-user-item:hover .suggested-avatar-fallback {
+    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.3);
+    transform: scale(1.1);
 }
 
 .suggested-avatar-fallback {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    background: linear-gradient(135deg, #10b981, #059669);
     color: white;
-    font-weight: bold;
-    font-size: 16px;
+    font-weight: 700;
+    font-size: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
 .suggested-user-item .btn-sm {
-    padding: 4px 12px;
+    padding: 6px 16px;
     font-size: 12px;
-    font-weight: 600;
+    font-weight: 700;
     white-space: nowrap;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.suggested-user-item .btn-sm:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
 }
 
 /* ===================================
-   CARD HEADERS & FOOTERS
-   =================================== */
-.card-header {
-    padding: 16px 20px;
-    font-weight: 600;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-.card-footer {
-    padding: 12px 20px;
-    border-top: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-/* ===================================
-   SCROLLBAR STYLING
+   PREMIUM SCROLLBAR
    =================================== */
 .notifications-list::-webkit-scrollbar,
 .trending-list::-webkit-scrollbar,
 .suggested-users-list::-webkit-scrollbar {
-    width: 6px;
+    width: 8px;
 }
 
 .notifications-list::-webkit-scrollbar-track,
 .trending-list::-webkit-scrollbar-track,
 .suggested-users-list::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: rgba(0, 0, 0, 0.03);
     border-radius: 10px;
+    margin: 4px 0;
 }
 
 .notifications-list::-webkit-scrollbar-thumb,
 .trending-list::-webkit-scrollbar-thumb,
 .suggested-users-list::-webkit-scrollbar-thumb {
-    background: #dee2e6;
+    background: linear-gradient(180deg, #667eea, #764ba2);
     border-radius: 10px;
+    transition: all 0.3s ease;
 }
 
 .notifications-list::-webkit-scrollbar-thumb:hover,
 .trending-list::-webkit-scrollbar-thumb:hover,
 .suggested-users-list::-webkit-scrollbar-thumb:hover {
-    background: #adb5bd;
+    background: linear-gradient(180deg, #764ba2, #667eea);
+}
+
+/* ===================================
+   TEXT & LINK COLORS
+   =================================== */
+.feed-page .text-primary {
+    color: #667eea !important;
+}
+
+.feed-page .text-muted {
+    color: #9ca3af !important;
+}
+
+.feed-page a.text-primary {
+    color: #667eea !important;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.feed-page a.text-primary:hover {
+    color: #764ba2 !important;
+    text-decoration: underline;
+}
+
+.feed-page .fw-semibold,
+.feed-page .fw-bold {
+    font-weight: 700 !important;
 }
 
 /* ===================================
@@ -391,48 +824,45 @@
         top: 0;
     }
 
-    .feed-page {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #667eea 100%);
+    .profile-card:hover {
+        transform: translateY(-4px) scale(1.01);
     }
 }
 
 @media (max-width: 767px) {
     .feed-tabs .nav-link {
         font-size: 13px;
-        padding: 12px 10px;
+        padding: 14px 12px;
     }
 
     .feed-tabs .nav-link svg {
-        display: none;
+        width: 16px;
+        height: 16px;
     }
 
     .profile-avatar,
     .profile-avatar-fallback {
-        width: 60px;
-        height: 60px;
+        width: 70px;
+        height: 70px;
+        font-size: 28px;
     }
 
     .stats-grid .stat-value {
-        font-size: 20px;
+        font-size: 22px;
+    }
+
+    .create-post-card .btn-light {
+        font-size: 14px;
     }
 }
 
 /* ===================================
-   DARK MODE SUPPORT (Optional)
+   PREMIUM ANIMATIONS
    =================================== */
-@media (prefers-color-scheme: dark) {
-    .feed-page {
-        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    }
-}
-
-/* ===================================
-   ANIMATIONS
-   =================================== */
-@keyframes fadeIn {
+@keyframes fadeInUp {
     from {
         opacity: 0;
-        transform: translateY(10px);
+        transform: translateY(30px);
     }
     to {
         opacity: 1;
@@ -440,11 +870,32 @@
     }
 }
 
-.card {
-    animation: fadeIn 0.3s ease-out;
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
-/* Loading Shimmer Effect */
+.card {
+    animation: scaleIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.posts-feed > div {
+    animation: fadeInUp 0.5s ease-out backwards;
+}
+
+.posts-feed > div:nth-child(1) { animation-delay: 0.1s; }
+.posts-feed > div:nth-child(2) { animation-delay: 0.2s; }
+.posts-feed > div:nth-child(3) { animation-delay: 0.3s; }
+.posts-feed > div:nth-child(4) { animation-delay: 0.4s; }
+.posts-feed > div:nth-child(5) { animation-delay: 0.5s; }
+
+/* Shimmer Loading Effect */
 @keyframes shimmer {
     0% {
         background-position: -1000px 0;
@@ -457,5 +908,125 @@
 .loading-shimmer {
     background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
     background-size: 1000px 100%;
-    animation: shimmer 2s infinite;
+    animation: shimmer 2s infinite linear;
+}
+
+/* ===================================
+   FLOATING EFFECTS
+   =================================== */
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+
+.create-post-btn {
+    animation: float 3s ease-in-out infinite;
+}
+
+/* ===================================
+   GLOW EFFECTS
+   =================================== */
+.feed-page .btn-primary:focus,
+.feed-page .btn-primary:active {
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.3) !important;
+}
+
+/* ===================================
+   PREMIUM BADGES
+   =================================== */
+.badge {
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 14px;
+}
+
+.badge.bg-primary {
+    background: linear-gradient(135deg, #667eea, #764ba2) !important;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+}
+
+.badge.bg-info {
+    background: linear-gradient(135deg, #06b6d4, #0891b2) !important;
+    box-shadow: 0 2px 8px rgba(6, 182, 212, 0.4);
+}
+
+.badge.bg-success {
+    background: linear-gradient(135deg, #10b981, #059669) !important;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+}
+
+/* ===================================
+   FLOATING CHAT BUTTON
+   =================================== */
+.floating-chat-btn {
+    position: fixed;
+    bottom: 110px;
+    right: 30px;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+    border: none;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(139, 92, 246, 0.4),
+                0 0 0 4px rgba(139, 92, 246, 0.1);
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 99999;
+    animation: floatIn 0.5s ease-out;
+}
+
+.floating-chat-btn svg {
+    width: 24px;
+    height: 24px;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: none;
+}
+
+.floating-chat-btn:hover {
+    transform: translateY(-4px) scale(1.05);
+    box-shadow: 0 12px 32px rgba(139, 92, 246, 0.5),
+                0 0 0 6px rgba(139, 92, 246, 0.15);
+}
+
+.floating-chat-btn:active {
+    transform: translateY(-2px) scale(1.02);
+}
+
+@keyframes floatIn {
+    from {
+        transform: translateY(100px) scale(0.5);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
+/* Pulse Animation on Chat Button */
+.chat-btn-pulse {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: rgba(139, 92, 246, 0.4);
+    animation: pulse 2s ease-out infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1.5);
+        opacity: 0;
+    }
 }

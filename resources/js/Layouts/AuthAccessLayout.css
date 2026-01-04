@@ -1,0 +1,60 @@
+/* ===================================
+   AUTH ACCESS LAYOUT - MINIMAL
+   =================================== */
+
+.auth-access-layout {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.auth-access-content {
+    flex: 1;
+    min-height: 100vh;
+}
+
+/* ===================================
+   FLOATING HOME LOGO - TOP LEFT
+   =================================== */
+.auth-floating-home-logo {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    text-decoration: none;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 9998;
+    cursor: pointer;
+}
+
+.auth-floating-home-logo:hover {
+    transform: scale(1.1) rotate(5deg);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+}
+
+.auth-floating-home-logo:active {
+    transform: scale(1.05);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .auth-floating-home-logo {
+        width: 44px;
+        height: 44px;
+        top: 16px;
+        left: 16px;
+    }
+
+    .auth-floating-home-logo svg {
+        width: 22px;
+        height: 22px;
+    }
+}

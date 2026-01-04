@@ -255,6 +255,9 @@ export default function PostCard({ post, onPostDeleted, isOwnPost = false }: Pos
                                 src={post.images[currentImageIndex].url}
                                 alt={`Post image ${currentImageIndex + 1}`}
                                 className="gallery-image"
+                                onError={(e) => {
+                                    e.currentTarget.src = 'https://via.placeholder.com/600x400?text=Image+Not+Found';
+                                }}
                             />
                             {post.images.length > 1 && (
                                 <>

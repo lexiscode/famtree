@@ -8,8 +8,10 @@ use App\Actions\GuestServices\PostService;
 use App\Actions\GuestServices\NotificationService;
 use App\Actions\GuestServices\UserFollowService;
 use App\Actions\GuestServices\AuthAccessServices\ConnectionFeedsService;
+use App\Actions\GuestServices\AuthAccessServices\ProfileCompletionService;
 use App\Repositories\GuestRepositories\UserConnectionRepository;
 use App\Repositories\GuestRepositories\PostRepository;
+use App\Repositories\GuestRepositories\FamilyTreeRepository;
 
 class FeedController extends Controller
 {
@@ -20,6 +22,8 @@ class FeedController extends Controller
         private UserConnectionRepository $connectionRepository,
         private UserFollowService $followService,
         private PostRepository $postRepository,
+        private ProfileCompletionService $profileCompletionService,
+        private FamilyTreeRepository $familyTreeRepository,
     ) {}
 
     /**
@@ -87,6 +91,17 @@ class FeedController extends Controller
             'posts' => $this->postRepository->getUserPostsCount($user->id),
         ];
 
+        // Get profile completion data
+        $profileCompletion = $this->profileCompletionService->getProfileCompletion($user);
+
+        // Get user's family trees for chat (trees where user is a member)
+        $userTrees = $this->familyTreeRepository->getUserMemberTrees($user->id);
+        $firstTree = $userTrees->first();
+        $treeForChat = $firstTree ? [
+            'id' => $firstTree->uuid,  // Use UUID instead of numeric ID for route binding
+            'tree_name' => $firstTree->tree_name,
+        ] : null;
+
         return Inertia::render('GuestPages/AuthAccessPages/Feed/Index', [
             'user' => $userData,
             'stats' => $stats,
@@ -100,6 +115,8 @@ class FeedController extends Controller
             'pendingRequestCount' => count($pendingRequests),
             'sentRequestCount' => count($sentRequests),
             'unreadNotificationCount' => $unreadNotificationCount,
+            'profileCompletion' => $profileCompletion,
+            'treeForChat' => $treeForChat,
         ]);
     }
 
@@ -149,11 +166,17 @@ class FeedController extends Controller
             'comments_count' => $post->comments_count,
             'reactions_count' => $post->reactions_count,
             'user_reaction' => $userReaction,
-            'images' => $post->images->map(fn($img) => [
-                'id' => $img->id,
-                'url' => $img->image_url,
-                'order' => $img->order,
-            ])->toArray(),
+            'images' => $post->images->map(function($img) {
+                // Fix double storage path issue: /storage/storage/ -> /storage/
+                $rawUrl = $img->getAttributes()['image_url'] ?? '';
+                $fixedUrl = str_replace('/storage/storage/', '/storage/', $rawUrl);
+
+                return [
+                    'id' => $img->id,
+                    'url' => $fixedUrl,
+                    'order' => $img->order,
+                ];
+            })->toArray(),
             'comments' => $post->comments->map(fn($comment) => [
                 'id' => $comment->id,
                 'content' => $comment->content,
