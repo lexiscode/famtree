@@ -8,6 +8,7 @@ import {
 import CreatePostModal from '../Stories/CreatePostModal';
 import PostCard from '../Stories/PostCard';
 import ProfileCompletionModal from '@/Components/Profile/ProfileCompletionModal';
+import TreeChatWindow from '@/Components/FamilyTree/TreeChatWindow';
 import { ProfileCompletion } from '@/types/inertia';
 import './Feed.css';
 
@@ -62,6 +63,11 @@ interface SuggestedUser {
     mutual_connections_count?: number;
 }
 
+interface TreeForChat {
+    id: string;
+    tree_name: string;
+}
+
 interface FeedProps {
     user: FeedUser;
     stats: {
@@ -81,6 +87,7 @@ interface FeedProps {
     sentRequestCount: number;
     unreadNotificationCount: number;
     profileCompletion: ProfileCompletion;
+    treeForChat: TreeForChat | null;
 }
 
 export default function Feed({
@@ -97,10 +104,13 @@ export default function Feed({
     sentRequestCount,
     unreadNotificationCount,
     profileCompletion,
+    treeForChat,
 }: FeedProps) {
     const [activeTab, setActiveTab] = useState<'following' | 'connections' | 'general'>('following');
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showCompletionModal, setShowCompletionModal] = useState(false);
+    const [showChat, setShowChat] = useState(false);
+    const [isChatMinimized, setIsChatMinimized] = useState(false);
 
     const currentPosts = useMemo(() => {
         switch (activeTab) {
@@ -439,6 +449,30 @@ export default function Feed({
                 <ProfileCompletionModal
                     data={profileCompletion}
                     onClose={() => setShowCompletionModal(false)}
+                />
+            )}
+
+            {/* Floating Chat Button - Show only if user has a family tree */}
+            {treeForChat && !showChat && (
+                <button
+                    onClick={() => setShowChat(true)}
+                    className="floating-chat-btn"
+                    title="Open Family Tree Chat"
+                >
+                    <MessageCircle size={24} />
+                    <span className="chat-btn-pulse"></span>
+                </button>
+            )}
+
+            {/* Tree Chat Window */}
+            {showChat && treeForChat && (
+                <TreeChatWindow
+                    treeId={treeForChat.id}
+                    treeName={treeForChat.tree_name}
+                    currentUserId={user.id}
+                    onClose={() => setShowChat(false)}
+                    isMinimized={isChatMinimized}
+                    onToggleMinimize={() => setIsChatMinimized(!isChatMinimized)}
                 />
             )}
         </AuthAccessLayout>

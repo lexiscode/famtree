@@ -11,6 +11,7 @@ use App\Actions\GuestServices\AuthAccessServices\ConnectionFeedsService;
 use App\Actions\GuestServices\AuthAccessServices\ProfileCompletionService;
 use App\Repositories\GuestRepositories\UserConnectionRepository;
 use App\Repositories\GuestRepositories\PostRepository;
+use App\Repositories\GuestRepositories\FamilyTreeRepository;
 
 class FeedController extends Controller
 {
@@ -22,6 +23,7 @@ class FeedController extends Controller
         private UserFollowService $followService,
         private PostRepository $postRepository,
         private ProfileCompletionService $profileCompletionService,
+        private FamilyTreeRepository $familyTreeRepository,
     ) {}
 
     /**
@@ -92,6 +94,14 @@ class FeedController extends Controller
         // Get profile completion data
         $profileCompletion = $this->profileCompletionService->getProfileCompletion($user);
 
+        // Get user's family trees for chat
+        $userTrees = $this->familyTreeRepository->getUserAdminTrees($user->id);
+        $firstTree = $userTrees->first();
+        $treeForChat = $firstTree ? [
+            'id' => $firstTree->id,
+            'tree_name' => $firstTree->tree_name,
+        ] : null;
+
         return Inertia::render('GuestPages/AuthAccessPages/Feed/Index', [
             'user' => $userData,
             'stats' => $stats,
@@ -106,6 +116,7 @@ class FeedController extends Controller
             'sentRequestCount' => count($sentRequests),
             'unreadNotificationCount' => $unreadNotificationCount,
             'profileCompletion' => $profileCompletion,
+            'treeForChat' => $treeForChat,
         ]);
     }
 
