@@ -28,18 +28,31 @@ class PostImage extends Model
      */
     public function getImageUrlAttribute($value)
     {
+        // Debug: Log what we receive
+        \Log::info('PostImage getImageUrlAttribute called', [
+            'value' => $value,
+            'attributes' => $this->attributes,
+            'image_url_from_db' => $this->attributes['image_url'] ?? 'NOT SET'
+        ]);
+
+        // Get the raw value from database
+        $rawValue = $this->attributes['image_url'] ?? null;
+
         // If it's already a full URL, return as-is
-        if (filter_var($value, FILTER_VALIDATE_URL)) {
-            return $value;
+        if (filter_var($rawValue, FILTER_VALIDATE_URL)) {
+            return $rawValue;
         }
 
         // If empty, return empty
-        if (empty($value)) {
+        if (empty($rawValue)) {
+            \Log::warning('PostImage URL is empty', ['post_id' => $this->post_id]);
             return '';
         }
 
         // Prepend the public storage URL
-        return url('storage/' . ltrim($value, '/'));
+        $fullUrl = url('storage/' . ltrim($rawValue, '/'));
+        \Log::info('PostImage URL generated', ['raw' => $rawValue, 'full' => $fullUrl]);
+        return $fullUrl;
     }
 
     /**
