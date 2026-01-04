@@ -23,6 +23,20 @@ class PostImage extends Model
     ];
 
     /**
+     * Get the full URL for the image
+     */
+    public function getImageUrlAttribute($value)
+    {
+        // If it's already a full URL (starts with http:// or https://), return as-is
+        if (filter_var($value, FILTER_VALIDATE_URL)) {
+            return $value;
+        }
+
+        // If it's a relative path, prepend the storage URL
+        return asset('storage/' . ltrim($value, '/'));
+    }
+
+    /**
      * Get the post this image belongs to
      */
     public function post()
