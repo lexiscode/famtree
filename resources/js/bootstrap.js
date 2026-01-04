@@ -20,6 +20,9 @@ import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
 window.Pusher = Pusher;
 
+// Enable Pusher logging for debugging (set to false in production)
+Pusher.logToConsole = false;
+
 window.Echo = new Echo({
     broadcaster: 'pusher',
     key: import.meta.env.VITE_PUSHER_APP_KEY,

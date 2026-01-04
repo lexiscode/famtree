@@ -13,6 +13,7 @@ use App\Http\Controllers\GuestControllers\HowItWorksController;
 use App\Http\Controllers\GuestControllers\FamilyPreviewController;
 use App\Http\Controllers\GuestControllers\FamilyExplorerController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\LandingPageController;
+use App\Http\Controllers\GuestControllers\AuthAccessControllers\FeedController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\ConnectionRequestController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\ConnectionViewController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\SuggestedConnectionController;
@@ -39,8 +40,8 @@ use Inertia\Inertia;
 // Home / Landing Page - Conditional based on auth status
 Route::get('/', function (Request $request) {
     if (auth()->check()) {
-        // If the user is authenticated, redirect to landing page for logged-in users
-        return app(LandingPageController::class)->index($request);
+        // If the user is authenticated, show social feed
+        return app(FeedController::class)->index($request);
     }
     return app(HomeController::class)->index();
 })->name('home');
@@ -113,7 +114,11 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::get('/count', [SuggestedConnectionController::class, 'count'])->name('suggested-connections.count');
     });
 
-    // Profile routes - only for viewing other users' profiles
+    // Profile routes
+    // View own profile
+    Route::get('/profile', [LandingPageController::class, 'index'])->name('profile');
+
+    // View other users' profiles
     Route::get('/profile/{userId}', [ProfileController::class, 'viewProfile'])->name('profile.view');
 
     // Family Tree routes (using UUID instead of ID)

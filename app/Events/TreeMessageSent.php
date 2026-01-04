@@ -67,4 +67,14 @@ class TreeMessageSent implements ShouldBroadcastNow
             ],
         ];
     }
+
+    /**
+     * The event's broadcast name.
+     *
+     * @return string
+     */
+    public function broadcastAs(): string
+    {
+        return 'TreeMessageSent';
+    }
 }

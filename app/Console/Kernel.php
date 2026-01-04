@@ -20,6 +20,16 @@ class Kernel extends ConsoleKernel
             ->onOneServer()
             ->withoutOverlapping()
             ->name('delete-expired-accounts');
+
+        // Cleanup old chat messages (older than 7 days)
+        // Runs weekly on Sunday at 2:00 AM
+        $schedule->command('chat:cleanup --days=7')
+            ->weekly()
+            ->sundays()
+            ->at('02:00')
+            ->onOneServer()
+            ->withoutOverlapping()
+            ->name('cleanup-old-chat-messages');
     }
 
     /**
