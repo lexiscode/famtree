@@ -98,7 +98,7 @@ class FeedController extends Controller
         $userTrees = $this->familyTreeRepository->getUserMemberTrees($user->id);
         $firstTree = $userTrees->first();
         $treeForChat = $firstTree ? [
-            'id' => $firstTree->id,
+            'id' => $firstTree->uuid,  // Use UUID instead of numeric ID for route binding
             'tree_name' => $firstTree->tree_name,
         ] : null;
 
