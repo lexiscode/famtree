@@ -21,19 +21,12 @@ import Pusher from 'pusher-js';
 window.Pusher = Pusher;
 
 // Enable Pusher logging for debugging (set to false in production)
-Pusher.logToConsole = true;
-
-const pusherKey = import.meta.env.VITE_PUSHER_APP_KEY;
-const pusherCluster = import.meta.env.VITE_PUSHER_APP_CLUSTER || 'mt1';
-
-if (!pusherKey) {
-  console.error('❌ Missing VITE_PUSHER_APP_KEY');
-}
+Pusher.logToConsole = false;
 
 window.Echo = new Echo({
     broadcaster: 'pusher',
-    key: pusherKey,
-    cluster: pusherCluster,
+    key: import.meta.env.VITE_PUSHER_APP_KEY,
+    cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER || 'mt1',
     wsHost: import.meta.env.VITE_PUSHER_HOST ? import.meta.env.VITE_PUSHER_HOST : `ws-${import.meta.env.VITE_PUSHER_APP_CLUSTER}.pusher.com`,
     wsPort: import.meta.env.VITE_PUSHER_PORT ?? 80,
     wssPort: import.meta.env.VITE_PUSHER_PORT ?? 443,
