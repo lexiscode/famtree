@@ -5,7 +5,7 @@ FROM php:8.2-fpm
 RUN apt-get update && apt-get install -y \
     git curl zip unzip nano libzip-dev libpng-dev libonig-dev libxml2-dev \
     libpq-dev nginx nodejs npm supervisor \
-    && docker-php-ext-install pdo pdo_mysql mbstring zip exif pcntl bcmath
+    && docker-php-ext-install pdo pdo_mysql pdo_pgsql mbstring zip exif pcntl bcmath
 
 # Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
