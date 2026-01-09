@@ -10,9 +10,6 @@ export default defineConfig({
         }),
         react(),
     ],
-    define: {
-        'process.env': {}, // <-- IMPORTANT FIX
-    },
     optimizeDeps: {
         exclude: ['js-big-decimal']
     }
