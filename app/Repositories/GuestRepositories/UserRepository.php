@@ -23,6 +23,14 @@ class UserRepository
     }
 
     /**
+     * Find user by phone number
+     */
+    public function findByPhone(string $phone): ?User
+    {
+        return User::where('phone', $phone)->first();
+    }
+
+    /**
      * Find user by ID
      */
     public function findById(int $id): ?User
@@ -52,5 +60,13 @@ class UserRepository
     public function usernameExists(string $username): bool
     {
         return User::where('username', $username)->exists();
+    }
+
+    /**
+     * Check if phone number exists
+     */
+    public function phoneExists(string $phone): bool
+    {
+        return User::where('phone', $phone)->exists();
     }
 }

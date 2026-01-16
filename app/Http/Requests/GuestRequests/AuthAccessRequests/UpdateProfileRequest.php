@@ -21,8 +21,10 @@ class UpdateProfileRequest extends FormRequest
      */
     public function rules(): array
     {
+        $userId = $this->user()->id;
+
         return [
-            'phone' => 'nullable|string|max:20',
+            'phone' => 'nullable|string|max:20|unique:users,phone,' . $userId,
             'address' => 'nullable|string|max:255',
             'bio' => 'nullable|string|max:500',
             'date_of_birth' => 'nullable|date',
@@ -44,6 +46,7 @@ class UpdateProfileRequest extends FormRequest
     {
         return [
             'phone.max' => 'Phone number must not exceed 20 characters.',
+            'phone.unique' => 'This phone number is already registered to another account.',
             'address.max' => 'Address must not exceed 255 characters.',
             'bio.max' => 'Bio must not exceed 500 characters.',
             'gender.in' => 'Please select a valid gender.',

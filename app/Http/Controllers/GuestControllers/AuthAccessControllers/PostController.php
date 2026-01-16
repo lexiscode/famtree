@@ -17,57 +17,7 @@ class PostController extends Controller
         private NotificationService $notificationService,
     ) {}
 
-    /**
-     * Display My Stories page
-     */
-    public function index()
-    {
-        $user = auth()->user()->load('familyInfo');
-
-        if (!$user) {
-            return redirect()->route('home');
-        }
-
-        // Get user's connections and pending requests
-        $connections = $this->connectionRepository->getConnections($user->id);
-        $connectionCount = count($connections);
-        $pendingRequests = $this->connectionRepository->getPendingRequests($user->id);
-        $sentRequests = $this->connectionRepository->getSentRequests($user->id);
-        $unreadNotificationCount = $this->notificationService->getUnreadCount($user->id);
-
-        // Format user data
-        $userData = [
-            'id' => $user->id,
-            'name' => $user->name,
-            'username' => $user->username,
-            'email' => $user->email,
-            'phone' => $user->phone,
-            'address' => $user->address,
-            'bio' => $user->bio,
-            'date_of_birth' => $user->date_of_birth,
-            'profile_image_url' => $user->profile_image_url,
-            'status' => $user->status,
-            'job_title' => $user->familyInfo?->current_occupation ?? null,
-            'education' => $user->familyInfo?->education_level ?? null,
-            'created_at' => $user->created_at,
-        ];
-
-        $posts = $this->postService->getUserPosts($user->id, 20);
-        $stats = $this->postService->getEngagementStats($user->id);
-        $topPosts = $this->postService->getTopEngagedPosts($user->id, 5);
-
-        return Inertia::render('GuestPages/AuthAccessPages/Stories/MyStories', [
-            'user' => $userData,
-            'posts' => $posts,
-            'postCount' => count($posts),
-            'stats' => $stats,
-            'topPosts' => $topPosts,
-            'connectionCount' => $connectionCount,
-            'pendingRequestCount' => count($pendingRequests),
-            'sentRequestCount' => count($sentRequests),
-            'unreadNotificationCount' => $unreadNotificationCount,
-        ]);
-    }
+    // Note: index() method removed - "My Stories" functionality moved to Feed page "My Stories" tab
 
     /**
      * Display another user's stories

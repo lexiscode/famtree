@@ -153,14 +153,6 @@ export default function MyProfile({ user, connections, connectionCount, pendingR
                                     </button>
                                     <button
                                         className="profile-btn profile-btn-secondary"
-                                        onClick={() => router.visit(route('stories.index'))}
-                                        title="View and create your stories"
-                                    >
-                                        <BookMarked size={18} />
-                                        My Stories
-                                    </button>
-                                    <button
-                                        className="profile-btn profile-btn-secondary"
                                         onClick={() => router.visit(route('galleries.index'))}
                                         title="View and manage your galleries"
                                     >
@@ -182,14 +174,6 @@ export default function MyProfile({ user, connections, connectionCount, pendingR
                                     >
                                         <TreePine size={18} />
                                         Family Tree
-                                    </button>
-                                    <button
-                                        className="profile-btn profile-btn-secondary"
-                                        onClick={() => router.visit(route('connection-feeds.index'))}
-                                        title="View posts from your connections"
-                                    >
-                                        <BookMarked size={18} />
-                                        Connection Feeds
                                     </button>
                                     <button
                                         className="profile-btn profile-btn-logout"

@@ -50,17 +50,21 @@ class AuthService
      */
     public function login(string $emailOrUsername, string $password): User
     {
-        // Try to find user by email first, then by username
+        // Try to find user by email first, then by username, then by phone number
         $user = $this->userRepository->findByEmail($emailOrUsername);
 
         if (!$user) {
             $user = $this->userRepository->findByUsername($emailOrUsername);
         }
 
+        if (!$user) {
+            $user = $this->userRepository->findByPhone($emailOrUsername);
+        }
+
         // Check if user exists and password is correct
         if (!$user || !Hash::check($password, $user->password)) {
             throw ValidationException::withMessages([
-                'emailOrUsername' => ['Invalid email/username or password.'],
+                'emailOrUsername' => ['Invalid email/username/phone or password.'],
             ]);
         }
 
