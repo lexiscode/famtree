@@ -40,7 +40,6 @@ export default function CTAModal({
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const modalRef = useRef<HTMLDivElement>(null);
   const firstInputRef = useRef<HTMLInputElement>(null);
 
   // Login form state
@@ -68,48 +67,55 @@ export default function CTAModal({
     }
   }, [isOpen, activeTab]);
 
-  // Close modal on Escape key
+  // Lock body scroll when modal is open and clear messages
   useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
-        onClose();
-      }
-    };
-
     if (isOpen) {
-      window.addEventListener('keydown', handleEscape);
       document.body.style.overflow = 'hidden';
+      // Clear any old messages when modal opens
+      setApiError(null);
+      setSuccessMessage(null);
+      setIsSubmitting(false);
     }
 
     return () => {
-      window.removeEventListener('keydown', handleEscape);
       document.body.style.overflow = 'unset';
     };
-  }, [isOpen, onClose]);
-
-  // Close on backdrop click
-  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === modalRef.current) {
-      onClose();
-    }
-  };
+  }, [isOpen]);
 
   // Handle login submission
   const handleLoginSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
     setApiError(null);
+    setSuccessMessage(null);
 
     router.post(route('auth.login'), loginFormData, {
-      onSuccess: () => {
-        setSuccessMessage('Login successful! Redirecting...');
-        onClose();
+      onSuccess: (page: any) => {
+        // Check if there's a flash error message (login failed)
+        const flashError = page.props?.flash?.error;
+
+        if (flashError) {
+          // Login failed, show error message
+          setApiError(flashError);
+        } else {
+          // Login succeeded - show message and force full page reload
+          setSuccessMessage('Login successful! Redirecting...');
+
+          // Force a full page reload to the home page after a short delay
+          setTimeout(() => {
+            window.location.href = route('home');
+          }, 800);
+        }
       },
       onError: (errors: any) => {
+        // Handle validation errors
         const errorMessage = errors?.emailOrUsername ||
                             errors?.password ||
                             'Login failed. Please try again.';
         setApiError(Array.isArray(errorMessage) ? errorMessage[0] : errorMessage);
+      },
+      onFinish: () => {
+        // Always reset submitting state when request finishes
         setIsSubmitting(false);
       },
     });
@@ -120,30 +126,43 @@ export default function CTAModal({
     e.preventDefault();
     setIsSubmitting(true);
     setApiError(null);
+    setSuccessMessage(null);
 
     router.post(route('auth.register'), registerFormData, {
-      onSuccess: () => {
-        setSuccessMessage('Account created successfully! Logging you in...');
-        setRegisterFormData({
-          firstName: '',
-          lastName: '',
-          username: '',
-          email: '',
-          gender: '',
-          password: '',
-          password_confirmation: '',
-        });
+      onSuccess: (page: any) => {
+        // Check if there's a flash error message (registration failed)
+        const flashError = page.props?.flash?.error;
 
-        setTimeout(() => {
-          setActiveTab('login');
-          setSuccessMessage(null);
-          onClose();
-        }, 1500);
+        if (flashError) {
+          // Registration failed, show error message
+          setApiError(flashError);
+        } else {
+          // Registration succeeded - show message and force full page reload
+          setSuccessMessage('Account created successfully! Logging you in...');
+          setRegisterFormData({
+            firstName: '',
+            lastName: '',
+            username: '',
+            email: '',
+            gender: '',
+            password: '',
+            password_confirmation: '',
+          });
+
+          // Force a full page reload to the home page after a short delay
+          setTimeout(() => {
+            window.location.href = route('home');
+          }, 1200);
+        }
       },
       onError: (errors: any) => {
+        // Handle validation errors
         const errorMessage = Object.values(errors)?.[0] ||
                             'Registration failed. Please try again.';
         setApiError(Array.isArray(errorMessage) ? errorMessage[0] : errorMessage);
+      },
+      onFinish: () => {
+        // Always reset submitting state when request finishes
         setIsSubmitting(false);
       },
     });
@@ -154,8 +173,6 @@ export default function CTAModal({
   return (
     <div
       className="cta-modal-overlay"
-      ref={modalRef}
-      onClick={handleBackdropClick}
       role="presentation"
     >
       <div className="cta-modal">

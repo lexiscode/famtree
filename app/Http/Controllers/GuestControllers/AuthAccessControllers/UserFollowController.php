@@ -22,11 +22,12 @@ class UserFollowController extends Controller
     /**
      * Follow a user
      */
-    public function follow(int $userId)
+    public function follow(string $userUuid)
     {
         try {
             $user = auth()->user();
-            $this->followService->followUser($user, $userId);
+            $targetUser = User::where('uuid', $userUuid)->firstOrFail();
+            $this->followService->followUser($user, $targetUser->id);
 
             return back()->with('success', 'Successfully followed user!');
         } catch (\Exception $e) {
@@ -37,11 +38,12 @@ class UserFollowController extends Controller
     /**
      * Unfollow a user
      */
-    public function unfollow(int $userId)
+    public function unfollow(string $userUuid)
     {
         try {
             $user = auth()->user();
-            $this->followService->unfollowUser($user, $userId);
+            $targetUser = User::where('uuid', $userUuid)->firstOrFail();
+            $this->followService->unfollowUser($user, $targetUser->id);
 
             return back()->with('success', 'Successfully unfollowed user!');
         } catch (\Exception $e) {
@@ -52,10 +54,11 @@ class UserFollowController extends Controller
     /**
      * View followers list for a user
      */
-    public function followers(int $userId)
+    public function followers(string $userUuid)
     {
         $viewer = auth()->user();
-        $targetUser = User::findOrFail($userId);
+        $targetUser = User::where('uuid', $userUuid)->firstOrFail();
+        $userId = $targetUser->id;
 
         // Get followers list
         $followers = $this->followService->getFollowersList($userId, $viewer->id);
@@ -131,10 +134,11 @@ class UserFollowController extends Controller
     /**
      * View following list for a user
      */
-    public function following(int $userId)
+    public function following(string $userUuid)
     {
         $viewer = auth()->user();
-        $targetUser = User::findOrFail($userId);
+        $targetUser = User::where('uuid', $userUuid)->firstOrFail();
+        $userId = $targetUser->id;
 
         // Get following list
         $following = $this->followService->getFollowingList($userId, $viewer->id);

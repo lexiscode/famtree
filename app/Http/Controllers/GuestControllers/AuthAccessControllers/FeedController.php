@@ -60,6 +60,9 @@ class FeedController extends Controller
         // Get general public posts (from everyone) - using connection posts for now
         $generalPosts = $connectionPosts;
 
+        // Get user's own posts for "My Stories" tab
+        $myPosts = $this->postService->getUserPosts($user->id, 50);
+
         // Get trending posts for right sidebar
         $trendingPosts = $this->connectionFeedsService->getTopTrendingPosts($user, 10);
 
@@ -71,9 +74,15 @@ class FeedController extends Controller
         $followersList = $this->followService->getFollowersList($user->id, $user->id);
         $followersCount = collect($followersList)->count();
 
+        // Get non-mutual followers (followers who I'm NOT following back)
+        $followersIds = collect($followersList)->pluck('id')->toArray();
+        $nonMutualFollowerIds = array_diff($followersIds, $followingIds);
+        $followersPosts = !empty($nonMutualFollowerIds) ? $this->getPostsFromFollowedUsers($nonMutualFollowerIds, $user->id) : [];
+
         // Format user data
         $userData = [
             'id' => $user->id,
+            'uuid' => $user->uuid,
             'first_name' => $user->first_name,
             'last_name' => $user->last_name,
             'name' => trim($user->first_name . ' ' . $user->last_name),
@@ -88,11 +97,25 @@ class FeedController extends Controller
             'connections' => $connectionCount,
             'following' => $followingCount,
             'followers' => $followersCount,
-            'posts' => $this->postRepository->getUserPostsCount($user->id),
         ];
 
         // Get profile completion data
         $profileCompletion = $this->profileCompletionService->getProfileCompletion($user);
+
+        // Get all public posts except the logged-in user's own posts
+        $allPublicPosts = \App\Models\GuestModels\Post::where('user_id', '!=', $user->id)
+            ->where(function ($query) {
+                $query->where('privacy', 'public')
+                      ->orWhereNull('privacy'); // Include posts where privacy is not set (default to public)
+            })
+            ->with(['user', 'images', 'comments.user'])
+            ->orderBy('created_at', 'desc')
+            ->limit(20)
+            ->get()
+            ->map(function ($post) use ($user) {
+                return $this->formatPost($post, $user->id);
+            })
+            ->toArray();
 
         // Get user's family trees for chat (trees where user is a member)
         $userTrees = $this->familyTreeRepository->getUserMemberTrees($user->id);
@@ -108,6 +131,9 @@ class FeedController extends Controller
             'followingPosts' => $followingPosts,
             'connectionPosts' => $connectionPosts,
             'generalPosts' => $generalPosts,
+            'followersPosts' => $followersPosts,
+            'allPosts' => $allPublicPosts,
+            'myPosts' => $myPosts,
             'trendingPosts' => $trendingPosts,
             'recentNotifications' => $recentNotifications,
             'suggestedUsers' => $suggestedUsers,
@@ -198,5 +224,201 @@ class FeedController extends Controller
             'created_at' => $post->created_at->format('Y-m-d H:i:s'),
             'created_at_human' => $post->created_at->diffForHumans(),
         ];
+    }
+
+    /**
+     * API: Get paginated posts from followed users
+     */
+    public function getFollowingPosts(\Illuminate\Http\Request $request)
+    {
+        $user = auth()->user();
+        $offset = $request->query('offset', 0);
+        $limit = $request->query('limit', 10);
+
+        // Get following list
+        $followingList = $this->followService->getFollowingList($user->id, $user->id);
+        $followingIds = collect($followingList)->pluck('id')->toArray();
+
+        if (empty($followingIds)) {
+            return response()->json([
+                'posts' => [],
+                'hasMore' => false,
+            ]);
+        }
+
+        // Get posts with pagination
+        $posts = \App\Models\GuestModels\Post::whereIn('user_id', $followingIds)
+            ->with(['user', 'images', 'comments.user'])
+            ->orderBy('created_at', 'desc')
+            ->offset($offset)
+            ->limit($limit + 1) // Fetch one extra to check if there are more
+            ->get();
+
+        $hasMore = $posts->count() > $limit;
+        if ($hasMore) {
+            $posts = $posts->slice(0, $limit);
+        }
+
+        $formattedPosts = $posts->map(function ($post) use ($user) {
+            return $this->formatPost($post, $user->id);
+        })->values()->toArray();
+
+        return response()->json([
+            'posts' => $formattedPosts,
+            'hasMore' => $hasMore,
+        ]);
+    }
+
+    /**
+     * API: Get paginated posts from connections
+     */
+    public function getConnectionPosts(\Illuminate\Http\Request $request)
+    {
+        $user = auth()->user();
+        $offset = $request->query('offset', 0);
+        $limit = $request->query('limit', 10);
+
+        // Get connection posts with pagination
+        $connectionPosts = $this->connectionFeedsService->getConnectionFeeds($user, $limit, $offset);
+
+        // Since connectionFeedsService may already return formatted posts, check if we need more posts
+        $hasMore = count($connectionPosts) >= $limit;
+
+        return response()->json([
+            'posts' => $connectionPosts,
+            'hasMore' => $hasMore,
+        ]);
+    }
+
+    /**
+     * API: Get paginated general posts
+     */
+    public function getGeneralPosts(\Illuminate\Http\Request $request)
+    {
+        $user = auth()->user();
+        $offset = $request->query('offset', 0);
+        $limit = $request->query('limit', 10);
+
+        // For now, use connection posts as general posts
+        return $this->getConnectionPosts($request);
+    }
+
+    /**
+     * API: Get paginated posts from non-mutual followers
+     * (followers who I'm NOT following back)
+     */
+    public function getFollowersPosts(\Illuminate\Http\Request $request)
+    {
+        $user = auth()->user();
+        $offset = $request->query('offset', 0);
+        $limit = $request->query('limit', 10);
+
+        // Get followers list (users who follow me)
+        $followersList = $this->followService->getFollowersList($user->id, $user->id);
+        $followerIds = collect($followersList)->pluck('id')->toArray();
+
+        // Get following list (users I follow)
+        $followingList = $this->followService->getFollowingList($user->id, $user->id);
+        $followingIds = collect($followingList)->pluck('id')->toArray();
+
+        // Get non-mutual followers (followers who I'm NOT following back)
+        $nonMutualFollowerIds = array_diff($followerIds, $followingIds);
+
+        if (empty($nonMutualFollowerIds)) {
+            return response()->json([
+                'posts' => [],
+                'hasMore' => false,
+            ]);
+        }
+
+        // Get posts with pagination from non-mutual followers only
+        $posts = \App\Models\GuestModels\Post::whereIn('user_id', $nonMutualFollowerIds)
+            ->with(['user', 'images', 'comments.user'])
+            ->orderBy('created_at', 'desc')
+            ->offset($offset)
+            ->limit($limit + 1)
+            ->get();
+
+        $hasMore = $posts->count() > $limit;
+        if ($hasMore) {
+            $posts = $posts->slice(0, $limit);
+        }
+
+        $formattedPosts = $posts->map(function ($post) use ($user) {
+            return $this->formatPost($post, $user->id);
+        })->values()->toArray();
+
+        return response()->json([
+            'posts' => $formattedPosts,
+            'hasMore' => $hasMore,
+        ]);
+    }
+
+    /**
+     * API: Get all public posts (excluding logged-in user's own posts)
+     */
+    public function getAllPosts(\Illuminate\Http\Request $request)
+    {
+        $user = auth()->user();
+        $offset = $request->query('offset', 0);
+        $limit = $request->query('limit', 10);
+
+        // Get all public posts from all users except the logged-in user
+        $posts = \App\Models\GuestModels\Post::where('user_id', '!=', $user->id)
+            ->where(function ($query) {
+                $query->where('privacy', 'public')
+                      ->orWhereNull('privacy'); // Include posts where privacy is not set (default to public)
+            })
+            ->with(['user', 'images', 'comments.user'])
+            ->orderBy('created_at', 'desc')
+            ->offset($offset)
+            ->limit($limit + 1)
+            ->get();
+
+        $hasMore = $posts->count() > $limit;
+        if ($hasMore) {
+            $posts = $posts->slice(0, $limit);
+        }
+
+        $formattedPosts = $posts->map(function ($post) use ($user) {
+            return $this->formatPost($post, $user->id);
+        })->values()->toArray();
+
+        return response()->json([
+            'posts' => $formattedPosts,
+            'hasMore' => $hasMore,
+        ]);
+    }
+
+    /**
+     * API: Get paginated user's own posts
+     */
+    public function getMyPosts(\Illuminate\Http\Request $request)
+    {
+        $user = auth()->user();
+        $offset = $request->query('offset', 0);
+        $limit = $request->query('limit', 10);
+
+        // Get user's own posts with pagination
+        $posts = \App\Models\GuestModels\Post::where('user_id', $user->id)
+            ->with(['user', 'images', 'comments.user'])
+            ->orderBy('created_at', 'desc')
+            ->offset($offset)
+            ->limit($limit + 1)
+            ->get();
+
+        $hasMore = $posts->count() > $limit;
+        if ($hasMore) {
+            $posts = $posts->slice(0, $limit);
+        }
+
+        $formattedPosts = $posts->map(function ($post) use ($user) {
+            return $this->formatPost($post, $user->id);
+        })->values()->toArray();
+
+        return response()->json([
+            'posts' => $formattedPosts,
+            'hasMore' => $hasMore,
+        ]);
     }
 }

@@ -2,6 +2,7 @@ import { PageProps } from '@inertiajs/inertia';
 
 export interface AuthUser {
   id: number;
+  uuid: string;
   name: string;
   email: string;
 }

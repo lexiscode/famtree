@@ -16,9 +16,8 @@ class FamilyTreeValidationService
      * Validate if a user can create a family tree
      *
      * Requirements:
-     * 1. Gender must be 'male'
-     * 2. Age must be 18+ years old
-     * 3. Must have accepted connection of type wife/husband OR son/daughter
+     * 1. Age must be 18+ years old
+     * 2. Must have accepted connection of type wife/husband OR son/daughter
      *
      * @param User $user
      * @return array ['can_create' => bool, 'errors' => array]
@@ -27,17 +26,12 @@ class FamilyTreeValidationService
     {
         $errors = [];
 
-        // Requirement 1: Must be male
-        if ($user->gender !== 'male') {
-            $errors[] = 'Only male users can create family trees.';
-        }
-
-        // Requirement 2: Must be at least 18 years old
+        // Requirement 1: Must be at least 18 years old
         if (!$this->isAtLeast18YearsOld($user)) {
             $errors[] = 'You must be at least 18 years old to create a family tree.';
         }
 
-        // Requirement 3: Must have nuclear family connections
+        // Requirement 2: Must have nuclear family connections
         if (!$this->hasNuclearFamilyConnections($user->id)) {
             $errors[] = 'You must have at least one accepted connection with your spouse or child to create a family tree.';
         }

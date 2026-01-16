@@ -210,10 +210,10 @@ Route::middleware(['web', 'auth'])->group(function () {
 
     // Follow/Unfollow routes
     Route::prefix('users')->group(function () {
-        Route::post('/{userId}/follow', [UserFollowController::class, 'follow'])->name('users.follow');
-        Route::post('/{userId}/unfollow', [UserFollowController::class, 'unfollow'])->name('users.unfollow');
-        Route::get('/{userId}/followers', [UserFollowController::class, 'followers'])->name('users.followers');
-        Route::get('/{userId}/following', [UserFollowController::class, 'following'])->name('users.following');
+        Route::post('/{userUuid}/follow', [UserFollowController::class, 'follow'])->name('users.follow');
+        Route::post('/{userUuid}/unfollow', [UserFollowController::class, 'unfollow'])->name('users.unfollow');
+        Route::get('/{userUuid}/followers', [UserFollowController::class, 'followers'])->name('users.followers');
+        Route::get('/{userUuid}/following', [UserFollowController::class, 'following'])->name('users.following');
     });
 
     // Gallery routes
@@ -227,9 +227,19 @@ Route::middleware(['web', 'auth'])->group(function () {
     // Connection Feeds routes
     Route::get('/connection-feeds', [ConnectionFeedsController::class, 'index'])->name('connection-feeds.index');
 
+    // Feed API routes for infinite scroll
+    Route::prefix('api/feed')->group(function () {
+        Route::get('/following', [FeedController::class, 'getFollowingPosts'])->name('api.feed.following');
+        Route::get('/connections', [FeedController::class, 'getConnectionPosts'])->name('api.feed.connections');
+        Route::get('/general', [FeedController::class, 'getGeneralPosts'])->name('api.feed.general');
+        Route::get('/followers', [FeedController::class, 'getFollowersPosts'])->name('api.feed.followers');
+        Route::get('/all', [FeedController::class, 'getAllPosts'])->name('api.feed.all');
+        Route::get('/mystories', [FeedController::class, 'getMyPosts'])->name('api.feed.mystories');
+    });
+
     // Stories / Posts routes
     Route::prefix('stories')->group(function () {
-        Route::get('/', [PostController::class, 'index'])->name('stories.index');
+        // Note: stories.index route removed - use "My Stories" tab in feed instead
         Route::post('/', [PostController::class, 'store'])->name('stories.store');
         Route::get('/search', [PostController::class, 'search'])->name('stories.search');
         Route::get('/filter', [PostController::class, 'filterByType'])->name('stories.filter');

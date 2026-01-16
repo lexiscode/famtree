@@ -55,11 +55,13 @@ class HandleInertiaRequests extends Middleware
 
             $userData = [
                 'id' => $user->id,
+                'uuid' => $user->uuid,
                 'first_name' => $user->first_name,
                 'last_name' => $user->last_name,
                 'username' => $user->username,
                 'email' => $user->email,
                 'date_of_birth' => $user->date_of_birth,
+                'gender' => $user->gender,
                 'phone' => $user->phone,
                 'address' => $user->address,
                 'bio' => $user->bio,
