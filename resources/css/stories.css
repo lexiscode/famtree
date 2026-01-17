@@ -738,7 +738,7 @@
 .modal-title {
     font-size: 1.5rem;
     font-weight: 700;
-    color: var(--text-primary);
+    color: #ffffff !important;
     margin: 0;
 }
 
@@ -750,15 +750,24 @@
     justify-content: center;
     background: none;
     border: none;
-    color: var(--text-secondary);
+    color: #b0b0b0 !important;
     cursor: pointer;
     border-radius: 6px;
     transition: all 0.2s ease;
 }
 
+.modal-close-btn svg {
+    stroke: #b0b0b0 !important;
+    stroke-width: 2.5;
+}
+
 .modal-close-btn:hover {
     background: rgba(255, 255, 255, 0.05);
-    color: var(--text-primary);
+    color: #ffffff !important;
+}
+
+.modal-close-btn:hover svg {
+    stroke: #ffffff !important;
 }
 
 /* Tabs */
@@ -777,7 +786,7 @@
     background: var(--card-bg);
     border: 1px solid var(--border-color);
     border-radius: 8px;
-    color: var(--text-secondary);
+    color: #b0b0b0 !important;
     font-size: 0.95rem;
     font-weight: 500;
     cursor: pointer;
@@ -787,12 +796,13 @@
 .tab-btn:hover {
     border-color: #0052E8;
     background: rgba(0, 82, 232, 0.08);
+    color: #ffffff !important;
 }
 
 .tab-btn.active {
     background: var(--primary-gradient);
     border-color: transparent;
-    color: white;
+    color: #ffffff !important;
 }
 
 /* Form */
@@ -810,8 +820,42 @@
 
 .form-label {
     font-weight: 600;
-    color: var(--text-primary);
+    color: #ffffff !important;
     font-size: 0.95rem;
+}
+
+/* Ensure all labels in the modal are white */
+.create-post-modal label {
+    color: #ffffff !important;
+}
+
+.create-post-form label {
+    color: #ffffff !important;
+}
+
+/* Fix select and small text visibility */
+.create-post-modal select,
+.create-post-form select,
+.form-select {
+    color: #ffffff !important;
+    background: var(--card-bg) !important;
+    border: 1px solid var(--border-color) !important;
+}
+
+.create-post-modal select option {
+    background: #1a1a2e !important;
+    color: #ffffff !important;
+}
+
+.create-post-modal small,
+.create-post-form small,
+.password-hint {
+    color: #b0b0b0 !important;
+}
+
+/* Fix text in upload area */
+.image-upload-area small {
+    color: #b0b0b0 !important;
 }
 
 .form-input,

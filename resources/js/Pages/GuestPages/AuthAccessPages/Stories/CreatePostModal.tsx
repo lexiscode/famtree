@@ -17,8 +17,11 @@ export default function CreatePostModal({ onClose, onPostCreated }: CreatePostMo
                         className="modal-close-btn"
                         onClick={onClose}
                         title="Close"
+                        style={{
+                            color: '#b0b0b0',
+                        }}
                     >
-                        <X size={24} />
+                        <X size={24} style={{ strokeWidth: 2.5 }} />
                     </button>
                 </div>
 
