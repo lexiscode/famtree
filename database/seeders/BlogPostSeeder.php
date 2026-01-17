@@ -128,9 +128,14 @@ class BlogPostSeeder extends Seeder
         ];
 
         foreach ($posts as $post) {
-            $post['slug'] = Str::slug($post['title']);
-            $post['published_at'] = now()->subDays(rand(1, 60));
-            BlogPost::create($post);
+            $slug = Str::slug($post['title']);
+            $post['slug'] = $slug;
+            $post['published_at'] = $post['published_at'] ?? now()->subDays(rand(1, 60));
+
+            BlogPost::updateOrCreate(
+                ['slug' => $slug], // Search by slug (unique identifier)
+                $post // Update or create with this data
+            );
         }
     }
 }

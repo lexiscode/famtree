@@ -3,7 +3,7 @@ import { router, Link } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
 import {
     Home, TrendingUp, Users, Bell, Plus, Heart, MessageCircle,
-    User, Settings, BookOpen, UserPlus, UserCheck, Globe, FileText, Loader
+    User, Settings, UserPlus, UserCheck, Globe, FileText, Loader, Image as ImageIcon, Video, ArrowUp
 } from 'lucide-react';
 import CreatePostModal from '../Stories/CreatePostModal';
 import PostCard from '../Stories/PostCard';
@@ -119,6 +119,7 @@ export default function Feed({
     const [showCompletionModal, setShowCompletionModal] = useState(false);
     const [showChat, setShowChat] = useState(false);
     const [isChatMinimized, setIsChatMinimized] = useState(false);
+    const [showScrollTop, setShowScrollTop] = useState(false);
 
     // Separate state for each tab's posts
     const [tabPosts, setTabPosts] = useState({
@@ -141,7 +142,6 @@ export default function Feed({
         mystories: true,
     });
 
-    const scrollContainerRef = useRef<HTMLDivElement>(null);
     const isLoadingRef = useRef(false);
 
     const currentPosts = useMemo(() => {
@@ -181,20 +181,6 @@ export default function Feed({
         }
     }, [activeTab, tabPosts, hasMore]);
 
-    // Handle scroll event
-    const handleScroll = useCallback(() => {
-        const container = scrollContainerRef.current;
-        if (!container) return;
-
-        const { scrollTop, scrollHeight, clientHeight } = container;
-        const scrollPercentage = (scrollTop + clientHeight) / scrollHeight;
-
-        // Load more when user scrolls to 80% of the page
-        if (scrollPercentage > 0.8 && !isLoadingRef.current && hasMore[activeTab]) {
-            fetchMorePosts();
-        }
-    }, [fetchMorePosts, activeTab, hasMore]);
-
     // Attach scroll listener
     useEffect(() => {
         const handleWindowScroll = () => {
@@ -202,6 +188,9 @@ export default function Feed({
             const scrollHeight = document.documentElement.scrollHeight;
             const clientHeight = window.innerHeight;
             const scrollPercentage = (scrollTop + clientHeight) / scrollHeight;
+
+            // Show scroll to top button after scrolling 500px
+            setShowScrollTop(scrollTop > 500);
 
             // Load more when user scrolls to 80% of the page
             if (scrollPercentage > 0.8 && !isLoadingRef.current && hasMore[activeTab]) {
@@ -213,6 +202,10 @@ export default function Feed({
         return () => window.removeEventListener('scroll', handleWindowScroll);
     }, [fetchMorePosts, activeTab, hasMore]);
 
+    const scrollToTop = useCallback(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, []);
+
     const handlePostCreated = useCallback(() => {
         setShowCreateModal(false);
         router.reload();
@@ -221,6 +214,15 @@ export default function Feed({
     const handlePostDeleted = useCallback(() => {
         router.reload();
     }, []);
+
+    const tabs = [
+        { key: 'following' as TabType, label: 'Following', icon: UserPlus },
+        { key: 'connections' as TabType, label: 'Connections', icon: Users },
+        { key: 'general' as TabType, label: 'Discover', icon: Home },
+        { key: 'followers' as TabType, label: 'Followers', icon: UserCheck },
+        { key: 'all' as TabType, label: 'All', icon: Globe },
+        { key: 'mystories' as TabType, label: 'My Stories', icon: FileText },
+    ];
 
     return (
         <AuthAccessLayout
@@ -233,68 +235,70 @@ export default function Feed({
             <div className="feed-page">
                 <div className="container-fluid py-4">
                     <div className="row g-4">
-                        {/* Left Sidebar */}
+                        {/* LEFT SIDEBAR - Compact Profile & Navigation */}
                         <div className="col-lg-3">
-                            <div className="sticky-sidebar">
-                                <div className="card profile-card shadow-sm mb-4">
-                                    <div className="card-body text-center">
-                                        <div className="position-relative d-inline-block mb-3">
-                                            {user.profile_image_url ? (
-                                                <img
-                                                    src={user.profile_image_url}
-                                                    alt={user.name}
-                                                    className="profile-avatar rounded-circle"
-                                                />
-                                            ) : (
-                                                <div className="profile-avatar-fallback rounded-circle">
-                                                    {user.first_name.charAt(0)}
-                                                </div>
-                                            )}
-                                            <span className="online-badge"></span>
-                                        </div>
-                                        <h5 className="fw-bold mb-1">{user.name}</h5>
-                                        <p className="text-muted small mb-2">@{user.username}</p>
-                                        {user.bio && <p className="text-muted small bio-text">{user.bio}</p>}
+                            <div className="left-sidebar">
+                                {/* Profile Widget */}
+                                <div className="profile-widget">
+                                    <div className="position-relative d-inline-block mb-3 w-100">
+                                        {user.profile_image_url ? (
+                                            <img
+                                                src={user.profile_image_url}
+                                                alt={user.name}
+                                                className="profile-avatar"
+                                            />
+                                        ) : (
+                                            <div className="profile-avatar-fallback">
+                                                {user.first_name.charAt(0)}
+                                            </div>
+                                        )}
+                                        <span className="online-badge"></span>
+                                    </div>
+                                    <h6>{user.name}</h6>
+                                    <p className="username">@{user.username}</p>
+                                    {user.bio && <p className="bio-text">{user.bio}</p>}
+
+                                    {/* Menu Count Cards - 2 per row, 3 rows */}
+                                    <div className="menu-counts-grid">
+                                        <a href="/connections/pending" className="count-card">
+                                            <span className="count-number count-pending">{pendingRequestCount}</span>
+                                            <span className="count-label">PENDING</span>
+                                        </a>
+
+                                        <a href="/connections" className="count-card">
+                                            <span className="count-number count-connections">{connectionCount}</span>
+                                            <span className="count-label">CONNECTIONS</span>
+                                        </a>
+
+                                        <a href={`/users/${user.uuid}/following`} className="count-card">
+                                            <span className="count-number count-following">{stats.following}</span>
+                                            <span className="count-label">FOLLOWING</span>
+                                        </a>
+
+                                        <a href={`/users/${user.uuid}/followers`} className="count-card">
+                                            <span className="count-number count-followers">{stats.followers}</span>
+                                            <span className="count-label">FOLLOWERS</span>
+                                        </a>
+
+                                        <a href="/suggested-connections" className="count-card">
+                                            <span className="count-number count-suggestions">{suggestedUsers.length}</span>
+                                            <span className="count-label">SUGGESTIONS</span>
+                                        </a>
+
+                                        <a href="/my-family-trees" className="count-card">
+                                            <Users size={32} className="count-icon" />
+                                            <span className="count-label">FAMILY TREE</span>
+                                        </a>
                                     </div>
 
-                                    <div className="stats-grid border-top pt-3 pb-2">
-                                        <div className="row g-0">
-                                            <a href="/connections/pending" className="col-6 text-center py-2 text-decoration-none" style={{ cursor: 'pointer' }}>
-                                                <div className="stat-value text-warning fw-bold">{pendingRequestCount}</div>
-                                                <div className="stat-label text-muted small">Pending</div>
-                                            </a>
-                                            <a href="/connections" className="col-6 text-center py-2 border-start text-decoration-none" style={{ cursor: 'pointer' }}>
-                                                <div className="stat-value text-info fw-bold">{stats.connections}</div>
-                                                <div className="stat-label text-muted small">Connections</div>
-                                            </a>
-                                            <a href={`/users/${user.uuid}/following`} className="col-6 text-center py-2 border-top text-decoration-none" style={{ cursor: 'pointer' }}>
-                                                <div className="stat-value text-success fw-bold">{stats.following}</div>
-                                                <div className="stat-label text-muted small">Following</div>
-                                            </a>
-                                            <a href={`/users/${user.uuid}/followers`} className="col-6 text-center py-2 border-start border-top text-decoration-none" style={{ cursor: 'pointer' }}>
-                                                <div className="stat-value text-danger fw-bold">{stats.followers}</div>
-                                                <div className="stat-label text-muted small">Followers</div>
-                                            </a>
-                                            <a href="/suggested-connections" className="col-6 text-center py-2 border-top text-decoration-none" style={{ cursor: 'pointer' }}>
-                                                <div className="stat-value text-secondary fw-bold">{suggestedUsers.length}</div>
-                                                <div className="stat-label text-muted small">Suggestions</div>
-                                            </a>
-                                            <a href="/family-tree" className="col-6 text-center py-2 border-start border-top text-decoration-none" style={{ cursor: 'pointer' }}>
-                                                <div className="stat-value text-primary fw-bold">
-                                                    <Users size={20} />
-                                                </div>
-                                                <div className="stat-label text-muted small">Family Tree</div>
-                                            </a>
-                                        </div>
-                                    </div>
-
-                                    <div className="list-group list-group-flush">
-                                        <a href="/profile" className="list-group-item list-group-item-action d-flex align-items-center gap-2">
-                                            <User size={18} />
+                                    {/* Quick Links */}
+                                    <div className="quick-links">
+                                        <a href="/profile" className="quick-link">
+                                            <User size={20} />
                                             <span>My Profile</span>
                                         </a>
-                                        <a href="/settings/account" className="list-group-item list-group-item-action d-flex align-items-center gap-2">
-                                            <Settings size={18} />
+                                        <a href="/settings/account" className="quick-link">
+                                            <Settings size={20} />
                                             <span>Settings</span>
                                         </a>
                                     </div>
@@ -302,127 +306,57 @@ export default function Feed({
                             </div>
                         </div>
 
-                        {/* Main Feed */}
+                        {/* CENTER FEED - Main Content */}
                         <div className="col-lg-6">
-                            <div className="card create-post-card shadow-sm mb-4">
-                                <div className="card-body">
-                                    <div className="d-flex align-items-center gap-3">
-                                        {user.profile_image_url ? (
-                                            <img src={user.profile_image_url} alt={user.name} className="create-post-avatar rounded-circle" />
-                                        ) : (
-                                            <div className="create-post-avatar-fallback rounded-circle">{user.first_name.charAt(0)}</div>
-                                        )}
-                                        <button onClick={() => setShowCreateModal(true)} className="btn btn-light flex-grow-1 text-start text-muted rounded-pill">
-                                            What's on your mind, {user.first_name}?
-                                        </button>
-                                        <button onClick={() => setShowCreateModal(true)} className="btn btn-primary rounded-circle create-post-btn">
-                                            <Plus size={20} />
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="card feed-tabs-card shadow-sm mb-4">
-                                <div className="card-body p-3">
-                                    <div className="row g-2">
-                                        {/* Row 1 */}
-                                        <div className="col-4">
+                            <div className="center-feed">
+                                {/* Feed Tabs - Horizontal Pills */}
+                                <div className="feed-tabs-container">
+                                    <div className="feed-tabs">
+                                        {tabs.map((tab) => (
                                             <button
-                                                className={`btn w-100 d-flex align-items-center justify-content-center gap-2 py-3 ${activeTab === 'following' ? 'btn-primary' : 'btn-outline-primary'}`}
-                                                onClick={() => setActiveTab('following')}
-                                                style={{ borderRadius: '12px', transition: 'all 0.3s ease', minHeight: '60px' }}
+                                                key={tab.key}
+                                                className={`feed-tab ${activeTab === tab.key ? 'active' : ''}`}
+                                                onClick={() => setActiveTab(tab.key)}
                                             >
-                                                <UserPlus size={20} />
-                                                <span className="fw-semibold" style={{ fontSize: '0.9rem' }}>Following</span>
+                                                <tab.icon size={18} />
+                                                <span>{tab.label}</span>
                                             </button>
-                                        </div>
-                                        <div className="col-4">
-                                            <button
-                                                className={`btn w-100 d-flex align-items-center justify-content-center gap-2 py-3 ${activeTab === 'connections' ? 'btn-info text-white' : 'btn-outline-info'}`}
-                                                onClick={() => setActiveTab('connections')}
-                                                style={{ borderRadius: '12px', transition: 'all 0.3s ease', minHeight: '60px' }}
-                                            >
-                                                <Users size={20} />
-                                                <span className="fw-semibold" style={{ fontSize: '0.9rem' }}>Connections</span>
-                                            </button>
-                                        </div>
-                                        <div className="col-4">
-                                            <button
-                                                className={`btn w-100 d-flex align-items-center justify-content-center gap-2 py-3 ${activeTab === 'general' ? 'btn-success' : 'btn-outline-success'}`}
-                                                onClick={() => setActiveTab('general')}
-                                                style={{ borderRadius: '12px', transition: 'all 0.3s ease', minHeight: '60px' }}
-                                            >
-                                                <Home size={20} />
-                                                <span className="fw-semibold" style={{ fontSize: '0.9rem' }}>Discover</span>
-                                            </button>
-                                        </div>
-                                        {/* Row 2 */}
-                                        <div className="col-4">
-                                            <button
-                                                className={`btn w-100 d-flex align-items-center justify-content-center gap-2 py-3 ${activeTab === 'followers' ? 'btn-warning' : 'btn-outline-warning'}`}
-                                                onClick={() => setActiveTab('followers')}
-                                                style={{ borderRadius: '12px', transition: 'all 0.3s ease', minHeight: '60px' }}
-                                            >
-                                                <UserCheck size={20} />
-                                                <span className="fw-semibold" style={{ fontSize: '0.9rem' }}>Followers</span>
-                                            </button>
-                                        </div>
-                                        <div className="col-4">
-                                            <button
-                                                className={`btn w-100 d-flex align-items-center justify-content-center gap-2 py-3 ${activeTab === 'all' ? 'btn-secondary' : 'btn-outline-secondary'}`}
-                                                onClick={() => setActiveTab('all')}
-                                                style={{ borderRadius: '12px', transition: 'all 0.3s ease', minHeight: '60px' }}
-                                            >
-                                                <Globe size={20} />
-                                                <span className="fw-semibold" style={{ fontSize: '0.9rem' }}>All</span>
-                                            </button>
-                                        </div>
-                                        <div className="col-4">
-                                            <button
-                                                className={`btn w-100 d-flex align-items-center justify-content-center gap-2 py-3 ${activeTab === 'mystories' ? 'btn-danger' : 'btn-outline-danger'}`}
-                                                onClick={() => setActiveTab('mystories')}
-                                                style={{ borderRadius: '12px', transition: 'all 0.3s ease', minHeight: '60px' }}
-                                            >
-                                                <FileText size={20} />
-                                                <span className="fw-semibold" style={{ fontSize: '0.9rem' }}>My Stories</span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="posts-feed">
-                                {currentPosts.length > 0 ? (
-                                    <>
-                                        {currentPosts.map((post) => (
-                                            <div key={post.id} className="mb-4">
-                                                <PostCard post={post} currentUserId={user.id} onPostDeleted={handlePostDeleted} />
-                                            </div>
                                         ))}
+                                    </div>
+                                </div>
 
-                                        {/* Loading Indicator */}
-                                        {isLoading && (
-                                            <div className="text-center py-4">
-                                                <Loader className="spinner-border text-primary" size={32} />
-                                                <p className="text-muted mt-2">Loading more posts...</p>
-                                            </div>
-                                        )}
+                                {/* Posts Container */}
+                                <div className="posts-container">
+                                    {currentPosts.length > 0 ? (
+                                        <>
+                                            {currentPosts.map((post) => (
+                                                <div key={post.id} className="post-card">
+                                                    <PostCard post={post} currentUserId={user.id} onPostDeleted={handlePostDeleted} />
+                                                </div>
+                                            ))}
 
-                                        {/* End of Posts Indicator */}
-                                        {!hasMore[activeTab] && !isLoading && (
-                                            <div className="text-center py-4">
-                                                <p className="text-muted">You've reached the end!</p>
+                                            {/* Loading Indicator */}
+                                            {isLoading && (
+                                                <div className="loading-container">
+                                                    <div className="loading-spinner"></div>
+                                                    <p className="loading-text">Loading more posts...</p>
+                                                </div>
+                                            )}
+
+                                            {/* End of Posts */}
+                                            {!hasMore[activeTab] && !isLoading && (
+                                                <div className="text-center py-4">
+                                                    <p className="text-muted">You've reached the end!</p>
+                                                </div>
+                                            )}
+                                        </>
+                                    ) : (
+                                        <div className="empty-state">
+                                            <div className="empty-state-icon">
+                                                <MessageCircle size={80} />
                                             </div>
-                                        )}
-                                    </>
-                                ) : (
-                                    <div className="card shadow-sm">
-                                        <div className="card-body text-center py-5">
-                                            <div className="empty-state-icon mb-3">
-                                                <MessageCircle size={64} className="text-muted" />
-                                            </div>
-                                            <h5 className="fw-bold mb-2">No posts yet</h5>
-                                            <p className="text-muted mb-4">
+                                            <h5>No posts yet</h5>
+                                            <p>
                                                 {activeTab === 'following' && "Posts from people you follow will appear here"}
                                                 {activeTab === 'connections' && "Posts from your connections will appear here"}
                                                 {activeTab === 'general' && "Discover posts from the community"}
@@ -432,125 +366,127 @@ export default function Feed({
                                             </p>
                                             {activeTab === 'following' && (
                                                 <Link href="/suggested-connections" className="btn btn-primary">
-                                                    <UserPlus size={18} className="me-2" />
+                                                    <UserPlus size={18} style={{ marginRight: '8px' }} />
                                                     Find People to Follow
                                                 </Link>
                                             )}
                                             {activeTab === 'mystories' && (
                                                 <button onClick={() => setShowCreateModal(true)} className="btn btn-primary">
-                                                    <Plus size={18} className="me-2" />
+                                                    <Plus size={18} style={{ marginRight: '8px' }} />
                                                     Create Your First Story
                                                 </button>
                                             )}
                                         </div>
-                                    </div>
-                                )}
+                                    )}
+                                </div>
                             </div>
                         </div>
 
-                        {/* Right Sidebar */}
+                        {/* RIGHT SIDEBAR - Widgets */}
                         <div className="col-lg-3">
-                            <div className="sticky-sidebar">
-                                <div className="card shadow-sm mb-4">
-                                    <div className="card-header bg-white d-flex align-items-center justify-content-between">
-                                        <h6 className="mb-0 fw-bold d-flex align-items-center gap-2">
-                                            <Bell size={18} className="text-primary" />
+                            <div className="right-sidebar">
+                                {/* Notifications Widget */}
+                                <div className="sidebar-widget">
+                                    <div className="widget-header">
+                                        <h6 className="widget-title">
+                                            <Bell size={20} />
                                             Notifications
                                         </h6>
                                         {unreadNotificationCount > 0 && (
-                                            <span className="badge bg-danger rounded-pill">{unreadNotificationCount}</span>
+                                            <span className="badge badge-danger">{unreadNotificationCount}</span>
                                         )}
                                     </div>
-                                    <div className="card-body p-0">
-                                        <div className="notifications-list">
-                                            {recentNotifications.slice(0, 5).map((notification) => (
-                                                <div key={notification.id} className={`notification-item ${!notification.read_at ? 'unread' : ''}`}>
-                                                    <p className="mb-1 small">{notification.data?.message || 'New notification'}</p>
-                                                    <small className="text-muted">{new Date(notification.created_at).toLocaleDateString()}</small>
+                                    <div className="widget-body">
+                                        {recentNotifications.slice(0, 5).map((notification) => (
+                                            <div
+                                                key={notification.id}
+                                                className={`widget-item notification-item ${!notification.read_at ? 'unread' : ''}`}
+                                            >
+                                                <div className="notification-content">
+                                                    <p className="notification-text">{notification.data?.message || 'New notification'}</p>
+                                                    <span className="notification-time">{new Date(notification.created_at).toLocaleDateString()}</span>
                                                 </div>
-                                            ))}
-                                            {recentNotifications.length === 0 && (
-                                                <div className="text-center py-4 text-muted small">No notifications yet</div>
-                                            )}
-                                        </div>
+                                            </div>
+                                        ))}
+                                        {recentNotifications.length === 0 && (
+                                            <div className="widget-item text-center">
+                                                <small className="text-muted">No notifications yet</small>
+                                            </div>
+                                        )}
                                     </div>
-                                    <div className="card-footer bg-white text-center">
-                                        <Link href="/notifications" className="small text-primary fw-semibold">View All Notifications</Link>
+                                    <div className="widget-footer">
+                                        <Link href="/notifications">View All</Link>
                                     </div>
                                 </div>
 
-                                <div className="card shadow-sm mb-4">
-                                    <div className="card-header bg-white">
-                                        <h6 className="mb-0 fw-bold d-flex align-items-center gap-2">
-                                            <TrendingUp size={18} className="text-warning" />
-                                            Trending Posts
+                                {/* Trending Posts Widget */}
+                                <div className="sidebar-widget">
+                                    <div className="widget-header">
+                                        <h6 className="widget-title">
+                                            <TrendingUp size={20} />
+                                            Trending
                                         </h6>
                                     </div>
-                                    <div className="card-body p-0">
-                                        <div className="trending-list">
-                                            {trendingPosts.slice(0, 5).map((post, index) => (
-                                                <Link key={post.id} href={`/stories/${post.id}`} className="trending-item">
-                                                    <div className="d-flex align-items-start gap-2">
-                                                        <span className="trending-number">#{index + 1}</span>
-                                                        <div className="flex-grow-1">
-                                                            <p className="mb-1 small fw-semibold trending-title">{post.title}</p>
-                                                            <div className="d-flex gap-3 text-muted">
-                                                                <small className="d-flex align-items-center gap-1">
-                                                                    <Heart size={12} />
-                                                                    {post.reactions_count}
-                                                                </small>
-                                                                <small className="d-flex align-items-center gap-1">
-                                                                    <MessageCircle size={12} />
-                                                                    {post.comments_count}
-                                                                </small>
-                                                            </div>
-                                                        </div>
+                                    <div className="widget-body">
+                                        {trendingPosts.slice(0, 5).map((post, index) => (
+                                            <Link
+                                                key={post.id}
+                                                href={`/stories/${post.id}`}
+                                                className="widget-item trending-item text-decoration-none"
+                                            >
+                                                <div className="trending-number">#{index + 1}</div>
+                                                <div className="trending-content">
+                                                    <p className="trending-title">{post.title}</p>
+                                                    <div className="trending-stats">
+                                                        <span>{post.reactions_count} likes</span>
+                                                        <span>{post.comments_count} comments</span>
                                                     </div>
+                                                </div>
+                                            </Link>
+                                        ))}
+                                        {trendingPosts.length === 0 && (
+                                            <div className="widget-item text-center">
+                                                <small className="text-muted">No trending posts yet</small>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Suggested Users Widget */}
+                                <div className="sidebar-widget">
+                                    <div className="widget-header">
+                                        <h6 className="widget-title">
+                                            <UserPlus size={20} />
+                                            Suggested
+                                        </h6>
+                                    </div>
+                                    <div className="widget-body">
+                                        {suggestedUsers.slice(0, 5).map((suggestedUser) => (
+                                            <div key={suggestedUser.id} className="widget-item suggestion-item">
+                                                <Link href={`/profile/${suggestedUser.id}`}>
+                                                    {suggestedUser.profile_image_url ? (
+                                                        <img src={suggestedUser.profile_image_url} alt={`${suggestedUser.first_name} ${suggestedUser.last_name}`} className="suggestion-avatar" />
+                                                    ) : (
+                                                        <div className="suggestion-avatar-fallback">{suggestedUser.first_name.charAt(0)}</div>
+                                                    )}
                                                 </Link>
-                                            ))}
-                                            {trendingPosts.length === 0 && (
-                                                <div className="text-center py-4 text-muted small">No trending posts yet</div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="card shadow-sm">
-                                    <div className="card-header bg-white">
-                                        <h6 className="mb-0 fw-bold d-flex align-items-center gap-2">
-                                            <UserPlus size={18} className="text-success" />
-                                            Suggested for You
-                                        </h6>
-                                    </div>
-                                    <div className="card-body p-0">
-                                        <div className="suggested-users-list">
-                                            {suggestedUsers.slice(0, 5).map((suggestedUser) => (
-                                                <div key={suggestedUser.id} className="suggested-user-item">
-                                                    <div className="d-flex align-items-center gap-2">
-                                                        <Link href={`/profile/${suggestedUser.id}`}>
-                                                            {suggestedUser.profile_image_url ? (
-                                                                <img src={suggestedUser.profile_image_url} alt={`${suggestedUser.first_name} ${suggestedUser.last_name}`} className="suggested-avatar rounded-circle" />
-                                                            ) : (
-                                                                <div className="suggested-avatar-fallback rounded-circle">{suggestedUser.first_name.charAt(0)}</div>
-                                                            )}
-                                                        </Link>
-                                                        <div className="flex-grow-1 overflow-hidden">
-                                                            <Link href={`/profile/${suggestedUser.id}`} className="d-block fw-semibold small text-dark text-decoration-none text-truncate">
-                                                                {suggestedUser.first_name} {suggestedUser.last_name}
-                                                            </Link>
-                                                            <small className="text-muted text-truncate d-block">@{suggestedUser.username}</small>
-                                                        </div>
-                                                        <button className="btn btn-sm btn-primary">Follow</button>
-                                                    </div>
+                                                <div className="suggestion-info">
+                                                    <Link href={`/profile/${suggestedUser.id}`} className="suggestion-name text-decoration-none">
+                                                        {suggestedUser.first_name} {suggestedUser.last_name}
+                                                    </Link>
+                                                    <p className="suggestion-username">@{suggestedUser.username}</p>
                                                 </div>
-                                            ))}
-                                            {suggestedUsers.length === 0 && (
-                                                <div className="text-center py-4 text-muted small">No suggestions available</div>
-                                            )}
-                                        </div>
+                                                <button className="suggestion-btn">Follow</button>
+                                            </div>
+                                        ))}
+                                        {suggestedUsers.length === 0 && (
+                                            <div className="widget-item text-center">
+                                                <small className="text-muted">No suggestions available</small>
+                                            </div>
+                                        )}
                                     </div>
-                                    <div className="card-footer bg-white text-center">
-                                        <Link href="/suggested-connections" className="small text-primary fw-semibold">View All Suggestions</Link>
+                                    <div className="widget-footer">
+                                        <Link href="/suggested-connections">View All</Link>
                                     </div>
                                 </div>
                             </div>
@@ -559,26 +495,72 @@ export default function Feed({
                 </div>
             </div>
 
+            {/* Floating Create Post Button */}
+            <button
+                onClick={() => setShowCreateModal(true)}
+                title="Create Post"
+                style={{
+                    position: 'fixed',
+                    bottom: '32px',
+                    right: '32px',
+                    width: '60px',
+                    height: '60px',
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                    color: 'white',
+                    border: 'none',
+                    boxShadow: '0 8px 24px rgba(102, 126, 234, 0.4)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.3s ease',
+                    zIndex: 1001,
+                }}
+                onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'scale(1.1) rotate(90deg)';
+                    e.currentTarget.style.boxShadow = '0 12px 32px rgba(102, 126, 234, 0.5)';
+                }}
+                onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.boxShadow = '0 8px 24px rgba(102, 126, 234, 0.4)';
+                }}
+            >
+                <Plus size={24} />
+            </button>
+
+            {/* Scroll to Top Button */}
+            {showScrollTop && (
+                <button
+                    onClick={scrollToTop}
+                    className="scroll-to-top-btn"
+                    title="Scroll to top"
+                >
+                    <ArrowUp size={24} />
+                </button>
+            )}
+
+            {/* Create Post Modal */}
             {showCreateModal && (
                 <CreatePostModal user={user} onClose={() => setShowCreateModal(false)} onPostCreated={handlePostCreated} />
             )}
 
-            {/* Floating Profile Completion Button - Show only if incomplete */}
+            {/* Profile Completion Modal */}
             {profileCompletion.percentage < 100 && (
                 <button
                     onClick={() => setShowCompletionModal(true)}
                     title="View profile completion status"
                     style={{
                         position: 'fixed',
-                        bottom: '30px',
-                        right: '30px',
-                        width: '65px',
-                        height: '65px',
+                        bottom: '110px',
+                        right: '32px',
+                        width: '60px',
+                        height: '60px',
                         borderRadius: '50%',
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        background: 'linear-gradient(135deg, #10b981, #059669)',
                         border: 'none',
                         color: 'white',
-                        boxShadow: '0 8px 24px rgba(102, 126, 234, 0.4)',
+                        boxShadow: '0 8px 24px rgba(16, 185, 129, 0.4)',
                         cursor: 'pointer',
                         display: 'flex',
                         flexDirection: 'column',
@@ -586,16 +568,16 @@ export default function Feed({
                         justifyContent: 'center',
                         gap: '2px',
                         transition: 'all 0.3s ease',
-                        zIndex: 1000,
+                        zIndex: 999,
                         fontWeight: '700',
                     }}
                     onMouseEnter={(e) => {
                         e.currentTarget.style.transform = 'scale(1.1)';
-                        e.currentTarget.style.boxShadow = '0 12px 32px rgba(102, 126, 234, 0.5)';
+                        e.currentTarget.style.boxShadow = '0 12px 32px rgba(16, 185, 129, 0.5)';
                     }}
                     onMouseLeave={(e) => {
                         e.currentTarget.style.transform = 'scale(1)';
-                        e.currentTarget.style.boxShadow = '0 8px 24px rgba(102, 126, 234, 0.4)';
+                        e.currentTarget.style.boxShadow = '0 8px 24px rgba(16, 185, 129, 0.4)';
                     }}
                 >
                     <TrendingUp size={22} />
@@ -605,24 +587,11 @@ export default function Feed({
                 </button>
             )}
 
-            {/* Profile Completion Modal */}
             {showCompletionModal && (
                 <ProfileCompletionModal
                     data={profileCompletion}
                     onClose={() => setShowCompletionModal(false)}
                 />
-            )}
-
-            {/* Floating Chat Button - Show only if user has a family tree */}
-            {treeForChat && !showChat && (
-                <button
-                    onClick={() => setShowChat(true)}
-                    className="floating-chat-btn"
-                    title="Open Family Tree Chat"
-                >
-                    <MessageCircle size={24} />
-                    <span className="chat-btn-pulse"></span>
-                </button>
             )}
 
             {/* Tree Chat Window */}

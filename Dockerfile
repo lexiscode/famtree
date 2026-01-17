@@ -45,5 +45,7 @@ CMD sh -c "\
     touch /tmp/database.sqlite && \
     chmod 664 /tmp/database.sqlite && \
     php artisan migrate --force || true && \
+    php artisan db:seed --force || true && \
     supervisord -c /etc/supervisor/conf.d/supervisord.conf \
 "
+# NB: Ensure all seeders are indempotent to avoid duplicate entries on container restarts.
