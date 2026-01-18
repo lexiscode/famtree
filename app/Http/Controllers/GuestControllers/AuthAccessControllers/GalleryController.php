@@ -44,7 +44,7 @@ class GalleryController extends Controller
 
         // Check content visibility setting (galleries)
         if (!$this->canViewContent($viewer, $targetUser, 'galleries')) {
-            return redirect()->route('profile.view', ['userId' => $userId])
+            return redirect()->route('profile.view', ['username' => $targetUser->username])
                 ->with('error', 'You do not have permission to view this user\'s galleries.');
         }
 
@@ -57,6 +57,7 @@ class GalleryController extends Controller
             'count' => $galleries['count'],
             'userName' => $userName,
             'userId' => $userId,
+            'username' => $targetUser->username,
         ]);
     }
 

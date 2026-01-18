@@ -65,7 +65,7 @@ export default function Index({ connectionTreeData, owner, isOwnTree }: Props) {
                     {/* Header */}
                     <div style={{ marginBottom: '2rem' }}>
                         <Link
-                            href={route('profile.view', { userId: owner.id })}
+                            href={route('profile.view', { username: owner.username })}
                             style={{
                                 display: 'inline-flex',
                                 alignItems: 'center',
@@ -265,7 +265,7 @@ export default function Index({ connectionTreeData, owner, isOwnTree }: Props) {
                         flexWrap: 'wrap'
                     }}>
                         <Link
-                            href={route('profile.view', { userId: owner.id })}
+                            href={route('profile.view', { username: owner.username })}
                             style={{
                                 display: 'inline-flex',
                                 alignItems: 'center',

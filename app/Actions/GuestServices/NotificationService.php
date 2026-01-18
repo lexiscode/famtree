@@ -176,7 +176,7 @@ class NotificationService
             $userId,
             $userId,
             'user',
-            route('profile.view', ['userId' => $userId])
+            route('profile.view', ['username' => $user->username])
         );
     }
 
@@ -284,7 +284,7 @@ class NotificationService
             $followerId,
             $followerId,
             'user_follow',
-            route('profile.view', ['userId' => $followerId])
+            route('profile.view', ['username' => $follower->username])
         );
     }
 }

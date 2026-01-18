@@ -135,7 +135,7 @@ export default function ViewUserConnections({
                                                     <div className="connection-card-actions">
                                                         <button
                                                             className="connection-action-btn connection-action-view"
-                                                            onClick={() => router.visit(route('profile.view', connection.id))}
+                                                            onClick={() => router.visit(route('profile.view', { username: connection.username }))}
                                                             title="View profile"
                                                         >
                                                             <ExternalLink size={16} style={{ display: 'inline' }} />
@@ -152,7 +152,7 @@ export default function ViewUserConnections({
                             {/* Back Button */}
                             <button
                                 className="connections-btn-back"
-                                onClick={() => router.visit(route('profile.view', userId))}
+                                onClick={() => router.visit(route('profile.view', { username: user.username }))}
                                 title="Back to profile"
                             >
                                 <ArrowLeft size={18} style={{ display: 'inline' }} />

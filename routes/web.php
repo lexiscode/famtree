@@ -119,7 +119,7 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/profile', [LandingPageController::class, 'index'])->name('profile');
 
     // View other users' profiles
-    Route::get('/profile/{userId}', [ProfileController::class, 'viewProfile'])->name('profile.view');
+    Route::get('/profile/{username}', [ProfileController::class, 'viewProfile'])->name('profile.view');
 
     // Family Tree routes (using UUID instead of ID)
     Route::prefix('family-tree')->group(function () {

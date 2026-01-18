@@ -22,7 +22,7 @@ class ProfileController extends Controller
     /**
      * View another user's profile (with privacy filtering)
      */
-    public function viewProfile(int $userId)
+    public function viewProfile(string $username)
     {
         $viewer = auth()->user();
 
@@ -30,7 +30,7 @@ class ProfileController extends Controller
             return redirect()->route('home');
         }
 
-        $owner = User::with('familyInfo')->findOrFail($userId);
+        $owner = User::with('familyInfo')->where('username', $username)->firstOrFail();
 
         // Track if access is denied (for modal display)
         $accessDenied = false;

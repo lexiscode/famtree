@@ -124,7 +124,7 @@ export default function SuggestedMemberCard({ suggestion, onConnectionRequested 
                 <div className="suggested-member-card-actions">
                     <button
                         className="suggested-member-action-btn suggested-member-action-view"
-                        onClick={() => router.visit(route('profile.view', suggestion.id))}
+                        onClick={() => router.visit(route('profile.view', { username: suggestion.username }))}
                         title="View profile"
                     >
                         <ExternalLink size={16} />

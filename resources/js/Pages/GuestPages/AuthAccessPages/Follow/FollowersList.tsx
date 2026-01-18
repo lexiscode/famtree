@@ -157,7 +157,7 @@ export default function FollowersList({
                     }}>
                         {/* Back Button */}
                         <button
-                            onClick={() => router.visit(route('profile.view', profile.id))}
+                            onClick={() => router.visit(route('profile.view', { username: profile.username }))}
                             style={{
                                 display: 'inline-flex',
                                 alignItems: 'center',
@@ -390,7 +390,7 @@ export default function FollowersList({
                                         <div
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                router.visit(route('profile.view', follower.id));
+                                                router.visit(route('profile.view', { username: follower.username }));
                                             }}
                                             style={{ position: 'relative', flexShrink: 0 }}
                                         >
@@ -420,7 +420,7 @@ export default function FollowersList({
                                             style={{ flex: 1, minWidth: 0 }}
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                router.visit(route('profile.view', follower.id));
+                                                router.visit(route('profile.view', { username: follower.username }));
                                             }}
                                         >
                                             <h3 style={{

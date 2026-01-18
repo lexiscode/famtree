@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
+import { router } from '@inertiajs/react';
 import { Users, Maximize2, Minimize2, ZoomIn, ZoomOut, RefreshCw } from 'lucide-react';
 
 interface Node {
@@ -260,6 +261,12 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData }) => {
         };
     }, []);
 
+    // Handle click on node name to navigate to profile
+    const handleNodeClick = useCallback((username: string, shouldBlur: boolean) => {
+        if (shouldBlur) return; // Don't navigate for blurred nodes
+        window.location.href = `/profile/${username}`;
+    }, []);
+
     if (!treeData || treeData.nodes.length === 0) {
         return (
             <div style={{
@@ -463,10 +470,46 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData }) => {
                         transition: isDragging ? 'none' : 'transform 0.3s ease-out'
                     }}
                 >
-                    {/* Draw edges - only show connections to the root user */}
+                    {/* Draw edges - show connections to root user and grandchildren through children */}
                     <g>
                         {treeData.edges
-                            .filter(edge => edge.source === treeData.rootUserId || edge.target === treeData.rootUserId)
+                            .filter(edge => {
+                                // Check if this is a direct root -> grandchild edge (skip these, show through parent instead)
+                                if (edge.source === treeData.rootUserId) {
+                                    const targetNode = treeData.nodes.find(n => n.id === edge.target);
+                                    if (targetNode && ['grandson', 'granddaughter', 'grandchild'].includes(targetNode.relationshipType)) {
+                                        // Check if there's a child who can be the intermediate connection
+                                        const hasChildParent = treeData.edges.some(e =>
+                                            e.target === edge.target &&
+                                            e.source !== treeData.rootUserId &&
+                                            treeData.nodes.find(n => n.id === e.source && ['son', 'daughter', 'child'].includes(n.relationshipType))
+                                        );
+                                        // If there's a proper parent-child chain, skip the direct grandparent edge
+                                        if (hasChildParent) {
+                                            return false;
+                                        }
+                                    }
+                                    return true;
+                                }
+
+                                // Show edges where target is root user
+                                if (edge.target === treeData.rootUserId) {
+                                    return true;
+                                }
+
+                                // Show grandchildren edges (child -> grandchild connections)
+                                // The target node should be a grandchild (from root user's perspective)
+                                const targetNode = treeData.nodes.find(n => n.id === edge.target);
+                                if (targetNode && ['grandson', 'granddaughter', 'grandchild'].includes(targetNode.relationshipType)) {
+                                    // And the source should be a child of the root user
+                                    const sourceNode = treeData.nodes.find(n => n.id === edge.source);
+                                    if (sourceNode && ['son', 'daughter', 'child'].includes(sourceNode.relationshipType)) {
+                                        return true;
+                                    }
+                                }
+
+                                return false;
+                            })
                             .map((edge) => {
                                 const sourcePos = nodePositions[edge.source];
                                 const targetPos = nodePositions[edge.target];
@@ -616,17 +659,24 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData }) => {
                                             {shouldBlur ? '█' : node.name.charAt(0).toUpperCase()}
                                         </text>
                                     )}
-                                    {/* Name label */}
+                                    {/* Name label - clickable */}
                                     <text
                                         x={x}
                                         y={y + radius + 25}
                                         textAnchor="middle"
                                         fontSize="14"
                                         fontWeight="700"
-                                        fill="#FFFFFF"
+                                        fill={shouldBlur ? '#FFFFFF' : '#38BDF8'}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleNodeClick(node.username, shouldBlur);
+                                        }}
                                         style={{
                                             textShadow: '0 2px 8px rgba(0,0,0,0.8)',
-                                            filter: shouldBlur ? 'blur(4px)' : 'none'
+                                            filter: shouldBlur ? 'blur(4px)' : 'none',
+                                            cursor: shouldBlur ? 'not-allowed' : 'pointer',
+                                            textDecoration: shouldBlur ? 'none' : 'underline',
+                                            textUnderlineOffset: '3px'
                                         }}
                                     >
                                         {shouldBlur ? '████████' : node.name.split(' ')[0]}

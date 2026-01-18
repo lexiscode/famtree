@@ -285,7 +285,7 @@ export default function Feed({
                                             <span className="count-label">SUGGESTIONS</span>
                                         </a>
 
-                                        <a href="/my-family-trees" className="count-card">
+                                        <a href="/family-tree" className="count-card">
                                             <Users size={32} className="count-icon" />
                                             <span className="count-label">FAMILY TREE</span>
                                         </a>
@@ -463,7 +463,7 @@ export default function Feed({
                                     <div className="widget-body">
                                         {suggestedUsers.slice(0, 5).map((suggestedUser) => (
                                             <div key={suggestedUser.id} className="widget-item suggestion-item">
-                                                <Link href={`/profile/${suggestedUser.id}`}>
+                                                <Link href={`/profile/${suggestedUser.username}`}>
                                                     {suggestedUser.profile_image_url ? (
                                                         <img src={suggestedUser.profile_image_url} alt={`${suggestedUser.first_name} ${suggestedUser.last_name}`} className="suggestion-avatar" />
                                                     ) : (
@@ -471,7 +471,7 @@ export default function Feed({
                                                     )}
                                                 </Link>
                                                 <div className="suggestion-info">
-                                                    <Link href={`/profile/${suggestedUser.id}`} className="suggestion-name text-decoration-none">
+                                                    <Link href={`/profile/${suggestedUser.username}`} className="suggestion-name text-decoration-none">
                                                         {suggestedUser.first_name} {suggestedUser.last_name}
                                                     </Link>
                                                     <p className="suggestion-username">@{suggestedUser.username}</p>

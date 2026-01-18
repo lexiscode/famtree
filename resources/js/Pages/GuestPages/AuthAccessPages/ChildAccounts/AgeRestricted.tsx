@@ -64,7 +64,7 @@ export default function AgeRestricted({ currentAge, requiredAge }: Props) {
 
                         {/* Back Button */}
                         <button
-                            onClick={() => router.visit(route('home'))}
+                            onClick={() => router.visit(route('profile'))}
                             className="back-to-profile-btn"
                         >
                             <ArrowLeft size={18} />

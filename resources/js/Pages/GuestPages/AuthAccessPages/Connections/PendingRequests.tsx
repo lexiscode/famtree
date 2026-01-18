@@ -522,7 +522,7 @@ export default function PendingRequests({
                     {/* Back to Profile Button */}
                     <button
                         className="connections-btn-back"
-                        onClick={() => router.visit(route('home'))}
+                        onClick={() => router.visit(route('profile'))}
                         title="Back to profile"
                     >
                         <ArrowLeft size={18} className="me-2" style={{ display: 'inline' }} />

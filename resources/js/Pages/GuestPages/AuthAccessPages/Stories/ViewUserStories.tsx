@@ -108,7 +108,7 @@ export default function ViewUserStories({
                         {/* Back Button */}
                         <button
                             className="back-button"
-                            onClick={() => router.visit(route('profile.view', userId))}
+                            onClick={() => router.visit(route('profile.view', { username: user.username }))}
                             title="Back to profile"
                         >
                             <ArrowLeft size={20} />

@@ -326,7 +326,7 @@ export default function SuggestedMembers({
                             {/* Back to Profile Button */}
                             <button
                                 className="suggested-members-btn-back"
-                                onClick={() => router.visit(route('home'))}
+                                onClick={() => router.visit(route('profile'))}
                                 title="Back to profile"
                             >
                                 <ArrowLeft size={18} style={{ display: 'inline', marginRight: '0.5rem' }} />

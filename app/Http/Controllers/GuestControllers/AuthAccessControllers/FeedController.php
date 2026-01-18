@@ -9,6 +9,7 @@ use App\Actions\GuestServices\NotificationService;
 use App\Actions\GuestServices\UserFollowService;
 use App\Actions\GuestServices\AuthAccessServices\ConnectionFeedsService;
 use App\Actions\GuestServices\AuthAccessServices\ProfileCompletionService;
+use App\Actions\GuestServices\AuthAccessServices\SuggestedConnectionService;
 use App\Repositories\GuestRepositories\UserConnectionRepository;
 use App\Repositories\GuestRepositories\PostRepository;
 use App\Repositories\GuestRepositories\FamilyTreeRepository;
@@ -24,6 +25,7 @@ class FeedController extends Controller
         private PostRepository $postRepository,
         private ProfileCompletionService $profileCompletionService,
         private FamilyTreeRepository $familyTreeRepository,
+        private SuggestedConnectionService $suggestedConnectionService,
     ) {}
 
     /**
@@ -66,8 +68,9 @@ class FeedController extends Controller
         // Get trending posts for right sidebar
         $trendingPosts = $this->connectionFeedsService->getTopTrendingPosts($user, 10);
 
-        // Get suggested connections - empty for now
-        $suggestedUsers = [];
+        // Get suggested connections
+        $suggestedData = $this->suggestedConnectionService->getSuggestedMembers($user->id);
+        $suggestedUsers = $suggestedData['suggestions'] ?? [];
 
         // Get following/followers count
         $followingCount = collect($followingList)->count();

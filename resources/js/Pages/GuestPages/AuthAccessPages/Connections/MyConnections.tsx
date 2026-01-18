@@ -158,7 +158,7 @@ export default function MyConnections({
                                             <div className="connection-card-actions pb-2 single-button">
                                                 <button
                                                     className="connection-action-btn connection-action-view"
-                                                    onClick={() => router.visit(route('profile.view', connection.user.id))}
+                                                    onClick={() => router.visit(route('profile.view', { username: connection.user.username }))}
                                                     title="View profile"
                                                 >
                                                     <ExternalLink size={16} className="me-1" style={{ display: 'inline' }} />
@@ -166,7 +166,7 @@ export default function MyConnections({
                                                 </button>
                                             </div>
 
-                                        
+
                                         </div>
                                     ))}
                                 </div>
@@ -175,14 +175,14 @@ export default function MyConnections({
                     )}
 
                     {/* Back to Profile Button */}
-                    <button
+                    <a
+                        href="/profile"
                         className="connections-btn-back"
-                        onClick={() => router.visit(route('home'))}
                         title="Back to profile"
                     >
                         <ArrowLeft size={18} className="me-2" style={{ display: 'inline' }} />
                         Back to Profile
-                    </button>
+                    </a>
                 </div>
                     </div>
                 </div>

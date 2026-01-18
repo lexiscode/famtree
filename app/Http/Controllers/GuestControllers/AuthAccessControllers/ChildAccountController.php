@@ -4,7 +4,9 @@ namespace App\Http\Controllers\GuestControllers\AuthAccessControllers;
 
 use App\Http\Controllers\Controller;
 use App\Actions\GuestServices\ChildAccountService;
+use App\Actions\GuestServices\NotificationService;
 use App\Repositories\GuestRepositories\ChildAccountRepository;
+use App\Repositories\GuestRepositories\UserConnectionRepository;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
 
@@ -13,6 +15,8 @@ class ChildAccountController extends Controller
     public function __construct(
         private ChildAccountService $childAccountService,
         private ChildAccountRepository $childAccountRepository,
+        private UserConnectionRepository $connectionRepository,
+        private NotificationService $notificationService,
     ) {}
 
     /**
@@ -36,9 +40,17 @@ class ChildAccountController extends Controller
 
         $childAccounts = $this->childAccountService->getParentChildAccounts($user->id);
 
+        // Get sidebar data
+        $sidebarData = $this->getSidebarData($user);
+
         return Inertia::render('GuestPages/AuthAccessPages/ChildAccounts/ManageChildren', [
             'childAccounts' => $childAccounts,
             'childCount' => count($childAccounts),
+            'user' => $sidebarData['user'],
+            'connectionCount' => $sidebarData['connectionCount'],
+            'pendingRequestCount' => $sidebarData['pendingRequestCount'],
+            'sentRequestCount' => $sidebarData['sentRequestCount'],
+            'unreadNotificationCount' => $sidebarData['unreadNotificationCount'],
         ]);
     }
 
@@ -61,8 +73,16 @@ class ChildAccountController extends Controller
             ]);
         }
 
+        // Get sidebar data
+        $sidebarData = $this->getSidebarData($user);
+
         return Inertia::render('GuestPages/AuthAccessPages/ChildAccounts/CreateChild', [
             'parentName' => $user->first_name . ' ' . $user->last_name,
+            'user' => $sidebarData['user'],
+            'connectionCount' => $sidebarData['connectionCount'],
+            'pendingRequestCount' => $sidebarData['pendingRequestCount'],
+            'sentRequestCount' => $sidebarData['sentRequestCount'],
+            'unreadNotificationCount' => $sidebarData['unreadNotificationCount'],
         ]);
     }
 
@@ -132,6 +152,9 @@ class ChildAccountController extends Controller
                 ->withErrors(['error' => 'Credentials not found. Please create a new account.']);
         }
 
+        // Get sidebar data
+        $sidebarData = $this->getSidebarData($user);
+
         return Inertia::render('GuestPages/AuthAccessPages/ChildAccounts/ChildCredentials', [
             'child' => [
                 'id' => $child->id,
@@ -141,6 +164,11 @@ class ChildAccountController extends Controller
                 'username' => $child->username,
             ],
             'temporaryPassword' => $temporaryPassword,
+            'user' => $sidebarData['user'],
+            'connectionCount' => $sidebarData['connectionCount'],
+            'pendingRequestCount' => $sidebarData['pendingRequestCount'],
+            'sentRequestCount' => $sidebarData['sentRequestCount'],
+            'unreadNotificationCount' => $sidebarData['unreadNotificationCount'],
         ]);
     }
 
@@ -254,5 +282,34 @@ class ChildAccountController extends Controller
         $date = new \DateTime($dateOfBirth);
         $today = new \DateTime();
         return $today->diff($date)->y;
+    }
+
+    /**
+     * Get sidebar data for ProfileSidebar component
+     */
+    private function getSidebarData($user): array
+    {
+        $connections = $this->connectionRepository->getConnections($user->id);
+        $pendingRequests = $this->connectionRepository->getPendingRequests($user->id);
+        $sentRequests = $this->connectionRepository->getSentRequests($user->id);
+        $unreadNotificationCount = $this->notificationService->getUnreadCount($user->id);
+
+        return [
+            'user' => [
+                'id' => $user->id,
+                'first_name' => $user->first_name,
+                'last_name' => $user->last_name,
+                'name' => trim($user->first_name . ' ' . $user->last_name),
+                'username' => $user->username,
+                'email' => $user->email,
+                'profile_image_url' => $user->profile_image_url,
+                'bio' => $user->bio,
+                'status' => $user->status ?? 'alive',
+            ],
+            'connectionCount' => count($connections),
+            'pendingRequestCount' => count($pendingRequests),
+            'sentRequestCount' => count($sentRequests),
+            'unreadNotificationCount' => $unreadNotificationCount,
+        ];
     }
 }

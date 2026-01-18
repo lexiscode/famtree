@@ -84,9 +84,9 @@ export default function ViewProfile({
         }
     }, [accessDenied, accessDeniedReason]);
 
-    const handleProfileNavigation = (userId: number, userName: string) => {
+    const handleProfileNavigation = (username: string) => {
         // Navigate to the profile
-        router.visit(route('profile.view', userId));
+        router.visit(route('profile.view', { username }));
     };
 
     const handleFollowToggle = async () => {

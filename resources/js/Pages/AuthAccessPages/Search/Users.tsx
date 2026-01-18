@@ -315,7 +315,7 @@ function UserCard({ user, index }: { user: SearchUser; index: number }) {
     };
 
     const handleViewProfile = () => {
-        window.location.href = route('profile.view', { userId: user.id });
+        window.location.href = route('profile.view', { username: user.username });
     };
 
     return (
@@ -457,7 +457,7 @@ function SuggestedUserCard({ user, index }: { user: SuggestedUser; index: number
     };
 
     const handleViewProfile = () => {
-        window.location.href = route('profile.view', { userId: user.id });
+        window.location.href = route('profile.view', { username: user.username });
     };
 
     return (
