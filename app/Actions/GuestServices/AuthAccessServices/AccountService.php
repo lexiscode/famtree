@@ -124,4 +124,51 @@ class AccountService
             $familyInfo->update($familyData);
         }
     }
+
+    /**
+     * Update profile image only
+     */
+    public function updateProfileImage(User $user, UploadedFile $profileImage): void
+    {
+        // Delete old image if it exists
+        if ($user->profile_image && Storage::disk('public')->exists($user->profile_image)) {
+            Storage::disk('public')->delete($user->profile_image);
+        }
+
+        // Store new image
+        $path = $profileImage->store('profile-images', 'public');
+
+        $user->update([
+            'profile_image' => $path,
+            'profile_image_url' => Storage::disk('public')->url($path),
+        ]);
+    }
+
+    /**
+     * Update a single profile field
+     */
+    public function updateSingleField(User $user, string $field, ?string $value): void
+    {
+        // Fields that belong to the users table
+        $userFields = ['phone', 'address', 'bio', 'date_of_birth', 'gender'];
+
+        // Fields that belong to user_family_info table
+        $familyInfoFields = [
+            'job_title' => 'current_occupation',
+            'education' => 'education_level',
+        ];
+
+        if (in_array($field, $userFields)) {
+            $user->update([$field => $value]);
+        } elseif (array_key_exists($field, $familyInfoFields)) {
+            $familyInfo = $user->familyInfo;
+
+            if (!$familyInfo) {
+                $familyInfo = new \App\Models\GuestModels\UserFamilyInfo(['user_id' => $user->id]);
+                $familyInfo->save();
+            }
+
+            $familyInfo->update([$familyInfoFields[$field] => $value]);
+        }
+    }
 }

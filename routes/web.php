@@ -269,6 +269,8 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::post('/account/change-password', [AccountSettingsController::class, 'changePassword'])->name('settings.change-password');
         Route::post('/account/change-email', [AccountSettingsController::class, 'changeEmail'])->name('settings.change-email');
         Route::post('/account/update-profile', [AccountSettingsController::class, 'updateProfile'])->name('settings.update-profile');
+        Route::patch('/account/update-field', [AccountSettingsController::class, 'updateSingleField'])->name('settings.update-field');
+        Route::post('/account/update-profile-image', [AccountSettingsController::class, 'updateProfileImage'])->name('settings.update-profile-image');
         Route::post('/account/delete', [AccountSettingsController::class, 'deleteAccount'])->name('settings.delete-account');
 
         // 2FA routes
