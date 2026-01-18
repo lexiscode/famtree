@@ -512,8 +512,8 @@ export default function Feed({
                     position: 'fixed',
                     bottom: '32px',
                     right: '32px',
-                    width: '60px',
-                    height: '60px',
+                    width: '52px',
+                    height: '52px',
                     borderRadius: '50%',
                     background: 'linear-gradient(135deg, #667eea, #764ba2)',
                     color: 'white',
@@ -535,7 +535,7 @@ export default function Feed({
                     e.currentTarget.style.boxShadow = '0 8px 24px rgba(102, 126, 234, 0.4)';
                 }}
             >
-                <Plus size={24} />
+                <Plus size={22} />
             </button>
 
             {/* Floating Messages Button */}

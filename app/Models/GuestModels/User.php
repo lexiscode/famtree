@@ -66,6 +66,12 @@ class User extends Authenticatable
         'google_id',
         'oauth_provider',
         'oauth_linked_at',
+        'last_active_at',
+        'is_memorial',
+        'memorialized_at',
+        'memorialized_by',
+        'reactivation_token',
+        'reactivation_token_expires_at',
     ];
 
     /**
@@ -95,6 +101,10 @@ class User extends Authenticatable
         'two_fa_enabled' => 'boolean',
         'blur_nuclear_family_for_public' => 'boolean',
         'oauth_linked_at' => 'datetime',
+        'last_active_at' => 'datetime',
+        'is_memorial' => 'boolean',
+        'memorialized_at' => 'datetime',
+        'reactivation_token_expires_at' => 'datetime',
     ];
 
     /**
@@ -184,5 +194,88 @@ class User extends Authenticatable
             return Storage::disk('public')->url($this->profile_image);
         }
         return null;
+    }
+
+    /**
+     * Get the active deceased verification for this user
+     */
+    public function deceasedVerification()
+    {
+        return $this->hasOne(DeceasedVerification::class)->pending();
+    }
+
+    /**
+     * Get all deceased verifications for this user
+     */
+    public function deceasedVerifications()
+    {
+        return $this->hasMany(DeceasedVerification::class);
+    }
+
+    /**
+     * Get memorial messages for this user (if memorialized)
+     */
+    public function memorialMessages()
+    {
+        return $this->hasMany(MemorialMessage::class);
+    }
+
+    /**
+     * Get the user who memorialized this account
+     */
+    public function memorializedByUser()
+    {
+        return $this->belongsTo(User::class, 'memorialized_by');
+    }
+
+    /**
+     * Scope: users inactive for X months
+     */
+    public function scopeInactive($query, int $months)
+    {
+        return $query->where(function ($q) use ($months) {
+            $q->where('last_active_at', '<=', now()->subMonths($months))
+              ->orWhereNull('last_active_at');
+        });
+    }
+
+    /**
+     * Scope: memorialized users
+     */
+    public function scopeMemorialized($query)
+    {
+        return $query->where('is_memorial', true);
+    }
+
+    /**
+     * Scope: active (non-memorialized) users
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('is_memorial', false);
+    }
+
+    /**
+     * Check if user is memorialized
+     */
+    public function isMemorialized(): bool
+    {
+        return $this->is_memorial === true;
+    }
+
+    /**
+     * Check if user has a pending deceased verification
+     */
+    public function hasPendingVerification(): bool
+    {
+        return DeceasedVerification::forUser($this->id)->pending()->exists();
+    }
+
+    /**
+     * Get the pending deceased verification
+     */
+    public function getPendingVerification(): ?DeceasedVerification
+    {
+        return DeceasedVerification::forUser($this->id)->pending()->first();
     }
 }

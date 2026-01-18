@@ -1,0 +1,239 @@
+.reactivation-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #0F1419 0%, #1a2332 50%, #0F1419 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.reactivation-container {
+    background: rgba(26, 35, 50, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 50px 40px;
+    max-width: 550px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+.welcome-icon,
+.error-icon {
+    font-size: 64px;
+    margin-bottom: 20px;
+}
+
+.reactivation-container h1 {
+    color: #ffffff;
+    font-size: 28px;
+    margin: 0 0 24px 0;
+    font-weight: 600;
+}
+
+.message-section {
+    margin-bottom: 30px;
+}
+
+.main-message {
+    color: #cbd5e1;
+    font-size: 17px;
+    line-height: 1.7;
+    margin: 0 0 12px 0;
+}
+
+.sub-message {
+    color: #94a3b8;
+    font-size: 15px;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.info-box {
+    background: rgba(74, 157, 74, 0.1);
+    border: 1px solid rgba(74, 157, 74, 0.3);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 30px;
+    text-align: left;
+}
+
+.info-box h3 {
+    color: #4a9d4a;
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0 0 12px 0;
+}
+
+.info-box ul {
+    margin: 0;
+    padding: 0 0 0 20px;
+}
+
+.info-box li {
+    color: #cbd5e1;
+    font-size: 14px;
+    line-height: 1.7;
+    margin-bottom: 6px;
+}
+
+.info-box li:last-child {
+    margin-bottom: 0;
+}
+
+.action-section {
+    margin-bottom: 20px;
+}
+
+.reactivate-button {
+    background: linear-gradient(135deg, #4a9d4a 0%, #2d5a27 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 16px 40px;
+    font-size: 17px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+    max-width: 300px;
+}
+
+.reactivate-button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(74, 157, 74, 0.3);
+}
+
+.reactivate-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.note {
+    color: #64748b;
+    font-size: 13px;
+    margin: 0;
+}
+
+/* Invalid page styles */
+.reactivation-container.invalid {
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.error-message {
+    color: #f87171;
+    font-size: 16px;
+    margin: 0 0 24px 0;
+}
+
+.help-text {
+    color: #94a3b8;
+    font-size: 15px;
+    line-height: 1.6;
+    margin: 0 0 24px 0;
+}
+
+.request-form {
+    text-align: left;
+}
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    color: #cbd5e1;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 14px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    color: #ffffff;
+    font-size: 15px;
+    transition: all 0.3s ease;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #4a9d4a;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.form-group input::placeholder {
+    color: #64748b;
+}
+
+.request-button {
+    width: 100%;
+    background: linear-gradient(135deg, #4a9d4a 0%, #2d5a27 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 14px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.request-button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(74, 157, 74, 0.3);
+}
+
+.request-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.success-message {
+    background: rgba(74, 157, 74, 0.1);
+    border: 1px solid rgba(74, 157, 74, 0.3);
+    border-radius: 12px;
+    padding: 30px 20px;
+    margin-top: 20px;
+}
+
+.success-icon {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #4a9d4a 0%, #2d5a27 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: white;
+    margin: 0 auto 16px auto;
+}
+
+.success-message p {
+    color: #cbd5e1;
+    font-size: 15px;
+    margin: 0 0 8px 0;
+    line-height: 1.6;
+}
+
+.success-message .check-email {
+    color: #4a9d4a;
+    font-weight: 600;
+    margin: 12px 0 0 0;
+}
+
+@media (max-width: 500px) {
+    .reactivation-container {
+        padding: 30px 24px;
+    }
+
+    .reactivation-container h1 {
+        font-size: 24px;
+    }
+}
