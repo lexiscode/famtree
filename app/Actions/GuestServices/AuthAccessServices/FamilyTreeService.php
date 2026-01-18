@@ -34,7 +34,10 @@ class FamilyTreeService
         $processedUsers[$userId] = true;
 
         // Step 1: Process ALL first-level connections first
+        // But skip grandchildren - they should be added through their parent (son/daughter)
         $firstLevelUsers = [];
+        $grandchildrenToSkip = []; // Track grandchildren to add them later through their parent
+
         foreach ($allConnections as $connection) {
             $connectedUser = $connection->requester_user_id === $userId
                 ? $connection->recipient
@@ -47,30 +50,68 @@ class FamilyTreeService
             );
 
             // Skip nephew/niece relationships (only show direct children, not siblings' children)
-            if (!in_array($relationshipType, ['nephew', 'niece'])) {
-                if (!isset($processedUsers[$connectedUser->id])) {
-                    $nodes[] = $this->formatUserNode($connectedUser, $relationshipType);
-                    $processedUsers[$connectedUser->id] = true;
-                    $firstLevelUsers[] = $connectedUser->id;
-                }
-
-                // Create edge (connection line) between users
-                $edges[] = [
-                    'id' => "edge-{$userId}-{$connectedUser->id}",
-                    'source' => $userId,
-                    'target' => $connectedUser->id,
-                    'relationshipType' => $relationshipType,
-                    'label' => $this->formatRelationshipLabel($relationshipType),
-                    'color' => $this->getRelationshipColor($relationshipType),
-                ];
-            } else {
+            // Also skip grandchildren - they should come through their parent
+            if (in_array($relationshipType, ['nephew', 'niece'])) {
                 // Mark nephew/niece as processed to prevent adding them later in second-level connections
                 $processedUsers[$connectedUser->id] = true;
+                continue;
             }
+
+            // Skip grandchildren at first level - they will be added through their parent
+            if (in_array($relationshipType, ['grandson', 'granddaughter', 'grandchild'])) {
+                $grandchildrenToSkip[$connectedUser->id] = [
+                    'user' => $connectedUser,
+                    'relationshipType' => $relationshipType,
+                ];
+                continue;
+            }
+
+            if (!isset($processedUsers[$connectedUser->id])) {
+                $nodes[] = $this->formatUserNode($connectedUser, $relationshipType);
+                $processedUsers[$connectedUser->id] = true;
+                $firstLevelUsers[] = $connectedUser->id;
+            }
+
+            // Create edge (connection line) between users
+            $edges[] = [
+                'id' => "edge-{$userId}-{$connectedUser->id}",
+                'source' => $userId,
+                'target' => $connectedUser->id,
+                'relationshipType' => $relationshipType,
+                'label' => $this->formatRelationshipLabel($relationshipType),
+                'color' => $this->getRelationshipColor($relationshipType),
+            ];
         }
 
         // Step 2: Now process second-level connections for each first-level user
-        foreach ($firstLevelUsers as $connectedUserId) {
+        // IMPORTANT: Process sons/daughters FIRST so grandchildren are connected through their parent
+        // Sort first level users to process children (son/daughter) before spouse (wife/husband)
+        $sortedFirstLevelUsers = [];
+        $childConnections = [];
+        $otherConnections = [];
+
+        foreach ($allConnections as $connection) {
+            $connectedUser = $connection->requester_user_id === $userId
+                ? $connection->recipient
+                : $connection->requester;
+
+            if (!in_array($connectedUser->id, $firstLevelUsers)) {
+                continue;
+            }
+
+            $relationshipType = $this->getRelationshipFromUserPerspective($connection, $userId);
+
+            if (in_array($relationshipType, ['son', 'daughter', 'child'])) {
+                $childConnections[] = $connectedUser->id;
+            } else {
+                $otherConnections[] = $connectedUser->id;
+            }
+        }
+
+        // Process children first, then others
+        $sortedFirstLevelUsers = array_merge($childConnections, $otherConnections);
+
+        foreach ($sortedFirstLevelUsers as $connectedUserId) {
             $this->addSecondLevelConnections(
                 $connectedUserId,
                 $userId,
@@ -136,10 +177,20 @@ class FamilyTreeService
                 continue;
             }
 
-            $nodes[] = $this->formatUserNode($secondLevelUser, $relationshipType);
+            // Determine the relationship type from ROOT user's perspective for the node label
+            // If first level is son/daughter and second level is their child, it's a grandchild to root
+            $nodeRelationshipType = $relationshipType;
+            if (in_array($firstLevelRelationship, ['son', 'daughter', 'child']) &&
+                in_array($relationshipType, ['son', 'daughter', 'child'])) {
+                // This is a grandchild - determine gender-specific type
+                $nodeRelationshipType = $secondLevelUser->gender === 'male' ? 'grandson' : 'granddaughter';
+            }
+
+            $nodes[] = $this->formatUserNode($secondLevelUser, $nodeRelationshipType);
             $processedUsers[$secondLevelUser->id] = true;
 
             // Create edge between the first level connection and second level user
+            // Edge label shows the relationship from first level user's perspective
             $edges[] = [
                 'id' => "edge-{$connectedUserId}-{$secondLevelUser->id}",
                 'source' => $connectedUserId,

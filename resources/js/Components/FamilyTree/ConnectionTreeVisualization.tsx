@@ -463,10 +463,46 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData }) => {
                         transition: isDragging ? 'none' : 'transform 0.3s ease-out'
                     }}
                 >
-                    {/* Draw edges - only show connections to the root user */}
+                    {/* Draw edges - show connections to root user and grandchildren through children */}
                     <g>
                         {treeData.edges
-                            .filter(edge => edge.source === treeData.rootUserId || edge.target === treeData.rootUserId)
+                            .filter(edge => {
+                                // Check if this is a direct root -> grandchild edge (skip these, show through parent instead)
+                                if (edge.source === treeData.rootUserId) {
+                                    const targetNode = treeData.nodes.find(n => n.id === edge.target);
+                                    if (targetNode && ['grandson', 'granddaughter', 'grandchild'].includes(targetNode.relationshipType)) {
+                                        // Check if there's a child who can be the intermediate connection
+                                        const hasChildParent = treeData.edges.some(e =>
+                                            e.target === edge.target &&
+                                            e.source !== treeData.rootUserId &&
+                                            treeData.nodes.find(n => n.id === e.source && ['son', 'daughter', 'child'].includes(n.relationshipType))
+                                        );
+                                        // If there's a proper parent-child chain, skip the direct grandparent edge
+                                        if (hasChildParent) {
+                                            return false;
+                                        }
+                                    }
+                                    return true;
+                                }
+
+                                // Show edges where target is root user
+                                if (edge.target === treeData.rootUserId) {
+                                    return true;
+                                }
+
+                                // Show grandchildren edges (child -> grandchild connections)
+                                // The target node should be a grandchild (from root user's perspective)
+                                const targetNode = treeData.nodes.find(n => n.id === edge.target);
+                                if (targetNode && ['grandson', 'granddaughter', 'grandchild'].includes(targetNode.relationshipType)) {
+                                    // And the source should be a child of the root user
+                                    const sourceNode = treeData.nodes.find(n => n.id === edge.source);
+                                    if (sourceNode && ['son', 'daughter', 'child'].includes(sourceNode.relationshipType)) {
+                                        return true;
+                                    }
+                                }
+
+                                return false;
+                            })
                             .map((edge) => {
                                 const sourcePos = nodePositions[edge.source];
                                 const targetPos = nodePositions[edge.target];
