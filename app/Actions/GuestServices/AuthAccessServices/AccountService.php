@@ -150,7 +150,7 @@ class AccountService
     public function updateSingleField(User $user, string $field, ?string $value): void
     {
         // Fields that belong to the users table
-        $userFields = ['phone', 'address', 'bio', 'date_of_birth', 'gender'];
+        $userFields = ['phone', 'address', 'bio', 'date_of_birth', 'gender', 'status'];
 
         // Fields that belong to user_family_info table
         $familyInfoFields = [

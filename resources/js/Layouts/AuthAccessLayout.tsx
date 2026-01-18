@@ -1,5 +1,4 @@
 import { PropsWithChildren } from 'react';
-import { Link } from '@inertiajs/react';
 import { TreePine } from 'lucide-react';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -11,9 +10,9 @@ export default function AuthAccessLayout({ children }: PropsWithChildren) {
         <ModalProvider>
             <div className="auth-access-layout">
                 {/* Floating Home Logo - Top Left */}
-                <Link href="/" className="auth-floating-home-logo" title="Go to Home">
+                <a href="/" className="auth-floating-home-logo" title="Go to Home">
                     <TreePine size={24} />
-                </Link>
+                </a>
 
                 <main className="auth-access-content">
                     {children}

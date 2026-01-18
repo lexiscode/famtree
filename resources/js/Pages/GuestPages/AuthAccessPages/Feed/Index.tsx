@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { router, Link } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
 import {
-    Home, TrendingUp, Users, Bell, Plus, Heart, MessageCircle,
+    Home, TrendingUp, Users, Bell, Plus, Heart, MessageCircle, Mail,
     User, Settings, UserPlus, UserCheck, Globe, FileText, Loader, Image as ImageIcon, Video, ArrowUp
 } from 'lucide-react';
 import CreatePostModal from '../Stories/CreatePostModal';
@@ -89,6 +89,7 @@ interface FeedProps {
     pendingRequestCount: number;
     sentRequestCount: number;
     unreadNotificationCount: number;
+    unreadMessagesCount: number;
     profileCompletion: ProfileCompletion;
     treeForChat: TreeForChat | null;
 }
@@ -111,6 +112,7 @@ export default function Feed({
     pendingRequestCount,
     sentRequestCount,
     unreadNotificationCount,
+    unreadMessagesCount = 0,
     profileCompletion,
     treeForChat,
 }: FeedProps) {
@@ -296,6 +298,13 @@ export default function Feed({
                                         <a href="/profile" className="quick-link">
                                             <User size={20} />
                                             <span>My Profile</span>
+                                        </a>
+                                        <a href="/messages" className="quick-link">
+                                            <Mail size={20} />
+                                            <span>Messages</span>
+                                            {unreadMessagesCount > 0 && (
+                                                <span className="quick-link-badge">{unreadMessagesCount}</span>
+                                            )}
                                         </a>
                                         <a href="/settings/account" className="quick-link">
                                             <Settings size={20} />
@@ -529,6 +538,61 @@ export default function Feed({
                 <Plus size={24} />
             </button>
 
+            {/* Floating Messages Button */}
+            <a
+                href="/messages"
+                title="Messages"
+                style={{
+                    position: 'fixed',
+                    bottom: '110px',
+                    right: '32px',
+                    width: '52px',
+                    height: '52px',
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #8b5cf6, #6366f1)',
+                    color: 'white',
+                    border: 'none',
+                    boxShadow: '0 8px 24px rgba(139, 92, 246, 0.4)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.3s ease',
+                    zIndex: 1000,
+                    textDecoration: 'none',
+                }}
+                onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'scale(1.1)';
+                    e.currentTarget.style.boxShadow = '0 12px 32px rgba(139, 92, 246, 0.5)';
+                }}
+                onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.boxShadow = '0 8px 24px rgba(139, 92, 246, 0.4)';
+                }}
+            >
+                <Mail size={22} />
+                {unreadMessagesCount > 0 && (
+                    <span style={{
+                        position: 'absolute',
+                        top: '-4px',
+                        right: '-4px',
+                        background: 'linear-gradient(135deg, #ef4444, #f97316)',
+                        color: 'white',
+                        fontSize: '0.7rem',
+                        fontWeight: '700',
+                        minWidth: '20px',
+                        height: '20px',
+                        borderRadius: '10px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '0 5px',
+                    }}>
+                        {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
+                    </span>
+                )}
+            </a>
+
             {/* Scroll to Top Button */}
             {showScrollTop && (
                 <button
@@ -552,10 +616,10 @@ export default function Feed({
                     title="View profile completion status"
                     style={{
                         position: 'fixed',
-                        bottom: '110px',
+                        bottom: '180px',
                         right: '32px',
-                        width: '60px',
-                        height: '60px',
+                        width: '52px',
+                        height: '52px',
                         borderRadius: '50%',
                         background: 'linear-gradient(135deg, #10b981, #059669)',
                         border: 'none',
@@ -580,8 +644,8 @@ export default function Feed({
                         e.currentTarget.style.boxShadow = '0 8px 24px rgba(16, 185, 129, 0.4)';
                     }}
                 >
-                    <TrendingUp size={22} />
-                    <span style={{ fontSize: '0.75rem', fontWeight: '700' }}>
+                    <TrendingUp size={20} />
+                    <span style={{ fontSize: '0.65rem', fontWeight: '700' }}>
                         {profileCompletion.percentage}%
                     </span>
                 </button>

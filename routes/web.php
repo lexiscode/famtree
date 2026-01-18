@@ -29,6 +29,7 @@ use App\Http\Controllers\GuestControllers\AuthAccessControllers\ConnectionFeedsC
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\UserReportController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\UserBlockController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\UserFollowController;
+use App\Http\Controllers\GuestControllers\AuthAccessControllers\PrivateMessageController;
 use App\Http\Controllers\GuestControllers\OnboardingController;
 use App\Http\Controllers\GuestControllers\StatusController;
 use App\Http\Controllers\GuestControllers\NotificationController;
@@ -307,5 +308,18 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::get('/', [UserBlockController::class, 'index'])->name('blocks.index');
         Route::post('/users', [UserBlockController::class, 'store'])->name('blocks.store');
         Route::delete('/users/{blockedUserId}', [UserBlockController::class, 'destroy'])->name('blocks.destroy');
+    });
+
+    // Private Messages routes
+    Route::prefix('messages')->group(function () {
+        Route::get('/', [PrivateMessageController::class, 'index'])->name('messages.index');
+        Route::post('/start', [PrivateMessageController::class, 'startConversation'])->name('messages.start');
+        Route::get('/api/conversations', [PrivateMessageController::class, 'getConversations'])->name('messages.conversations');
+        Route::get('/api/unread-count', [PrivateMessageController::class, 'getUnreadCount'])->name('messages.unread-count');
+        Route::get('/{conversationUuid}', [PrivateMessageController::class, 'show'])->name('messages.show');
+        Route::get('/{conversationUuid}/messages', [PrivateMessageController::class, 'getMessages'])->name('messages.get-messages');
+        Route::post('/{conversationUuid}/send', [PrivateMessageController::class, 'sendMessage'])->name('messages.send');
+        Route::post('/{conversationUuid}/mark-read', [PrivateMessageController::class, 'markAsRead'])->name('messages.mark-read');
+        Route::post('/{conversationUuid}/typing', [PrivateMessageController::class, 'typing'])->name('messages.typing');
     });
 });

@@ -1,7 +1,7 @@
 import { useMemo, useEffect, useState } from 'react';
 import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { Mail, Phone, MapPin, Cake, FileText, Users, Send, Clock, CheckCircle, Lock, Briefcase, BookOpen, ArrowRight, Image, Newspaper, Plus, ArrowLeft, Undo2, AlertCircle, X, Network } from 'lucide-react';
+import { Mail, Phone, MapPin, Cake, FileText, Users, Send, Clock, CheckCircle, Lock, Briefcase, BookOpen, ArrowRight, Image, Newspaper, Plus, ArrowLeft, Undo2, AlertCircle, X, Network, MessageCircle } from 'lucide-react';
 
 interface Profile {
     id: number;
@@ -367,6 +367,26 @@ export default function ViewProfile({
                                         </>
                                     )}
                                 </button>
+
+                                {/* Message Button - Show if connected OR if they follow you */}
+                                {(connectionStatus === 'connected' || isFollowedBy) && (
+                                    <button
+                                        className="profile-btn"
+                                        onClick={() => router.post(route('messages.start'), { user_id: profile.id })}
+                                        disabled={loading}
+                                        style={{
+                                            width: '100%',
+                                            marginTop: '0.75rem',
+                                            background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
+                                            color: '#FFFFFF',
+                                            border: 'none',
+                                            fontWeight: '600'
+                                        }}
+                                    >
+                                        <MessageCircle size={18} />
+                                        Message
+                                    </button>
+                                )}
 
                                 {/* Gallery, Stories, and Connections Buttons */}
                                 <div className="profile-actions" style={{ marginTop: '2rem', gap: '0.75rem' }}>

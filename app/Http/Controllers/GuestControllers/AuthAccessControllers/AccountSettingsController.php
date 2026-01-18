@@ -109,7 +109,7 @@ class AccountSettingsController extends Controller
         $user = auth()->user();
 
         // Validate the field and value
-        $allowedFields = ['phone', 'address', 'bio', 'date_of_birth', 'gender', 'job_title', 'education'];
+        $allowedFields = ['phone', 'address', 'bio', 'date_of_birth', 'gender', 'job_title', 'education', 'status'];
         $field = $request->input('field');
         $value = $request->input('value');
 
@@ -129,6 +129,7 @@ class AccountSettingsController extends Controller
             'gender' => 'nullable|in:male,female,other',
             'job_title' => 'nullable|string|max:100',
             'education' => 'nullable|string|max:100',
+            'status' => 'required|in:alive,deceased',
         ];
 
         $validator = \Illuminate\Support\Facades\Validator::make(
