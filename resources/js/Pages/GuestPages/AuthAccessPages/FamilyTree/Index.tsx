@@ -1,8 +1,9 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { Link } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { Plus, Globe, Lock, Users, Calendar, Shield, Crown, Sparkles, TreePine, TrendingUp } from 'lucide-react';
+import { Plus, Globe, Lock, Users, Calendar, Shield, Crown, Sparkles, TreePine, TrendingUp, MessageCircle } from 'lucide-react';
 import ProfileSidebar from '../Stories/ProfileSidebar';
+import TreeChatWindow from '@/Components/FamilyTree/TreeChatWindow';
 import { UserProfile } from '@/types';
 import './Index.css';
 import '../../../../../css/connections.css';
@@ -14,7 +15,7 @@ interface Admin {
 }
 
 interface TreeData {
-    id: number;
+    id: string; // This is actually the UUID from the backend
     name: string;
     description?: string;
     is_public: boolean;
@@ -45,10 +46,32 @@ export default function Index({
     adminTrees,
     memberTrees
 }: Props) {
+    const [showChat, setShowChat] = useState(false);
+    const [isChatMinimized, setIsChatMinimized] = useState(false);
+    const [selectedTree, setSelectedTree] = useState<TreeData | null>(null);
+
     const formatDate = useCallback((dateString: string) => {
         const date = new Date(dateString);
         return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
     }, []);
+
+    // Get all trees user is part of (for chat selection)
+    const allUserTrees = [...adminTrees, ...memberTrees];
+    const hasAnyTree = allUserTrees.length > 0;
+
+    // Open chat with a specific tree
+    const openChatWithTree = useCallback((tree: TreeData) => {
+        setSelectedTree(tree);
+        setShowChat(true);
+    }, []);
+
+    // Open chat (use first available tree if none selected)
+    const openChat = useCallback(() => {
+        if (!selectedTree && allUserTrees.length > 0) {
+            setSelectedTree(allUserTrees[0]);
+        }
+        setShowChat(true);
+    }, [selectedTree, allUserTrees]);
 
     const TreeCard = ({ tree, isAdmin = false }: { tree: TreeData; isAdmin?: boolean }) => {
         const creatorAdmin = tree.admins?.find((a) => a.role === 'creator');
@@ -254,6 +277,30 @@ export default function Index({
                 </div>
             </div>
             </div>
+
+            {/* Floating Chat Button */}
+            {hasAnyTree && !showChat && (
+                <button
+                    onClick={openChat}
+                    className="floating-chat-btn"
+                    title="Open Family Tree Chat"
+                >
+                    <MessageCircle size={24} />
+                    <span className="chat-btn-pulse"></span>
+                </button>
+            )}
+
+            {/* Tree Chat Window */}
+            {showChat && selectedTree && user && (
+                <TreeChatWindow
+                    treeId={selectedTree.id}
+                    treeName={selectedTree.name}
+                    currentUserId={user.id}
+                    onClose={() => setShowChat(false)}
+                    isMinimized={isChatMinimized}
+                    onToggleMinimize={() => setIsChatMinimized(!isChatMinimized)}
+                />
+            )}
         </AuthAccessLayout>
     );
 }

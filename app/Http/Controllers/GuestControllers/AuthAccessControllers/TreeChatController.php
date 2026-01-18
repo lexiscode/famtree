@@ -38,6 +38,9 @@ class TreeChatController extends Controller
 
         $messages = $this->chatService->getMessages($familyTree->id, 100);
 
+        // Mark messages as read when user fetches them
+        $this->chatService->markAsRead($familyTree->id, $user->id);
+
         return response()->json([
             'messages' => $messages,
         ]);
@@ -124,11 +127,10 @@ class TreeChatController extends Controller
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
-        $count = $this->chatService->markAsRead($familyTree->id, $user->id);
+        $this->chatService->markAsRead($familyTree->id, $user->id);
 
         return response()->json([
             'success' => true,
-            'marked_count' => $count,
         ]);
     }
 }
