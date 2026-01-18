@@ -14,7 +14,7 @@ class TreeChatRepository
     public function getMessages(int $treeId, int $limit = 50)
     {
         return TreeChatMessage::where('family_tree_id', $treeId)
-            ->with('user:id,first_name,last_name,profile_image_url')
+            ->with('user:id,first_name,last_name,profile_image')
             ->orderBy('created_at', 'desc')
             ->limit($limit)
             ->get()
@@ -28,7 +28,7 @@ class TreeChatRepository
     public function getMessagesPaginated(int $treeId, int $perPage = 50)
     {
         return TreeChatMessage::where('family_tree_id', $treeId)
-            ->with('user:id,first_name,last_name,profile_image_url')
+            ->with('user:id,first_name,last_name,profile_image')
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);
     }
@@ -102,7 +102,7 @@ class TreeChatRepository
     public function getLatestMessage(int $treeId): ?TreeChatMessage
     {
         return TreeChatMessage::where('family_tree_id', $treeId)
-            ->with('user:id,first_name,last_name')
+            ->with('user:id,first_name,last_name,profile_image')
             ->latest()
             ->first();
     }
