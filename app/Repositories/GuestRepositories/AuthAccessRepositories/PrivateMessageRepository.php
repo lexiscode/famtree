@@ -49,8 +49,8 @@ class PrivateMessageRepository
         return Conversation::where('user_one_id', $userId)
             ->orWhere('user_two_id', $userId)
             ->with([
-                'userOne:id,uuid,first_name,last_name,profile_image_url',
-                'userTwo:id,uuid,first_name,last_name,profile_image_url',
+                'userOne:id,uuid,first_name,last_name,username,profile_image',
+                'userTwo:id,uuid,first_name,last_name,username,profile_image',
                 'latestMessage.sender:id,first_name,last_name',
             ])
             ->orderByDesc('last_message_at')
@@ -64,7 +64,7 @@ class PrivateMessageRepository
     public function getMessages(int $conversationId, int $limit = 50): Collection
     {
         return PrivateMessage::where('conversation_id', $conversationId)
-            ->with('sender:id,first_name,last_name,profile_image_url')
+            ->with('sender:id,first_name,last_name,profile_image')
             ->orderByDesc('created_at')
             ->limit($limit)
             ->get()
@@ -78,7 +78,7 @@ class PrivateMessageRepository
     public function getMessagesPaginated(int $conversationId, int $perPage = 50)
     {
         return PrivateMessage::where('conversation_id', $conversationId)
-            ->with('sender:id,first_name,last_name,profile_image_url')
+            ->with('sender:id,first_name,last_name,profile_image')
             ->orderByDesc('created_at')
             ->paginate($perPage);
     }
@@ -157,7 +157,7 @@ class PrivateMessageRepository
     public function getLatestMessage(int $conversationId): ?PrivateMessage
     {
         return PrivateMessage::where('conversation_id', $conversationId)
-            ->with('sender:id,first_name,last_name,profile_image_url')
+            ->with('sender:id,first_name,last_name,profile_image')
             ->latest()
             ->first();
     }
