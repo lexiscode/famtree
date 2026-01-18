@@ -146,7 +146,7 @@ export default function UserProfileCard({
                     </button>
                     <button
                         className="profile-btn profile-btn-secondary"
-                        onClick={() => router.visit(route('profile.view', userId))}
+                        onClick={() => router.visit(route('profile.view', { username: user.username }))}
                         style={{ width: '100%' }}
                     >
                         <ArrowLeft size={18} />

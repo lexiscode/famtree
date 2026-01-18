@@ -65,7 +65,7 @@ class ConnectionTreeController extends Controller
         }
 
         if (!$canView) {
-            return redirect()->route('profile.view', ['userId' => $userId])
+            return redirect()->route('profile.view', ['username' => $owner->username])
                 ->with('error', 'You do not have permission to view this family tree.');
         }
 

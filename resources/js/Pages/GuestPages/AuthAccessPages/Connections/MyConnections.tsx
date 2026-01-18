@@ -158,7 +158,7 @@ export default function MyConnections({
                                             <div className="connection-card-actions pb-2 single-button">
                                                 <button
                                                     className="connection-action-btn connection-action-view"
-                                                    onClick={() => router.visit(route('profile.view', connection.user.id))}
+                                                    onClick={() => router.visit(route('profile.view', { username: connection.user.username }))}
                                                     title="View profile"
                                                 >
                                                     <ExternalLink size={16} className="me-1" style={{ display: 'inline' }} />

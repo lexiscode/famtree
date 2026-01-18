@@ -21,9 +21,10 @@ interface Props {
     count: number;
     userName: string;
     userId: number;
+    username: string;
 }
 
-export default function ViewUserGalleries({ galleries, count, userName, userId }: Props) {
+export default function ViewUserGalleries({ galleries, count, userName, userId, username }: Props) {
     const [selectedGalleryItem, setSelectedGalleryItem] = useState<Gallery | null>(null);
 
     const formatFileSize = (bytes: number) => {
@@ -48,7 +49,7 @@ export default function ViewUserGalleries({ galleries, count, userName, userId }
                     {/* Back Button */}
                     <button
                         className="back-button"
-                        onClick={() => router.visit(route('profile.view', userId))}
+                        onClick={() => router.visit(route('profile.view', { username }))}
                         title="Back to profile"
                     >
                         <ArrowLeft size={20} />

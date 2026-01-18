@@ -298,6 +298,7 @@ class FamilyTreeController extends Controller
                 'data' => $membersPaginated->map(fn($member) => [
                     'id' => $member->user->id,
                     'name' => trim($member->user->first_name . ' ' . $member->user->last_name),
+                    'username' => $member->user->username,
                     'profile_image_url' => $member->user->profile_image_url,
                     'nuclear_family_role' => $member->nuclear_family_role,
                     'can_add_members' => $member->can_add_members,

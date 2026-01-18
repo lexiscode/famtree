@@ -332,7 +332,7 @@ export default function UserProfileSidebar({
                         </button>
                         <button
                             className="profile-btn profile-btn-secondary"
-                            onClick={() => router.visit(route('profile.view', profile.id))}
+                            onClick={() => router.visit(route('profile.view', { username: profile.username }))}
                             style={{ width: '100%' }}
                         >
                             <ArrowLeft size={18} />

@@ -19,6 +19,7 @@ interface Admin {
 interface TreeMember {
     id: number;
     name: string;
+    username: string;
     profile_image_url?: string;
     nuclear_family_role?: 'spouse' | 'child' | 'extended' | 'merged' | null;
     can_add_members: boolean;
@@ -448,7 +449,7 @@ export default function MyFamilyTree({
                                         {member.id !== authUser?.id && (
                                             <div className="member-actions">
                                                 <Link
-                                                    href={route('profile.view', { userId: member.id })}
+                                                    href={route('profile.view', { username: member.username })}
                                                     className="member-action-btn primary"
                                                 >
                                                     View Profile

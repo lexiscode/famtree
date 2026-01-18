@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
+import { router } from '@inertiajs/react';
 import { Users, Maximize2, Minimize2, ZoomIn, ZoomOut, RefreshCw } from 'lucide-react';
 
 interface Node {
@@ -258,6 +259,12 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData }) => {
         return () => {
             document.removeEventListener('fullscreenchange', handleFullscreenChange);
         };
+    }, []);
+
+    // Handle click on node name to navigate to profile
+    const handleNodeClick = useCallback((username: string, shouldBlur: boolean) => {
+        if (shouldBlur) return; // Don't navigate for blurred nodes
+        window.location.href = `/profile/${username}`;
     }, []);
 
     if (!treeData || treeData.nodes.length === 0) {
@@ -652,17 +659,24 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData }) => {
                                             {shouldBlur ? '█' : node.name.charAt(0).toUpperCase()}
                                         </text>
                                     )}
-                                    {/* Name label */}
+                                    {/* Name label - clickable */}
                                     <text
                                         x={x}
                                         y={y + radius + 25}
                                         textAnchor="middle"
                                         fontSize="14"
                                         fontWeight="700"
-                                        fill="#FFFFFF"
+                                        fill={shouldBlur ? '#FFFFFF' : '#38BDF8'}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleNodeClick(node.username, shouldBlur);
+                                        }}
                                         style={{
                                             textShadow: '0 2px 8px rgba(0,0,0,0.8)',
-                                            filter: shouldBlur ? 'blur(4px)' : 'none'
+                                            filter: shouldBlur ? 'blur(4px)' : 'none',
+                                            cursor: shouldBlur ? 'not-allowed' : 'pointer',
+                                            textDecoration: shouldBlur ? 'none' : 'underline',
+                                            textUnderlineOffset: '3px'
                                         }}
                                     >
                                         {shouldBlur ? '████████' : node.name.split(' ')[0]}
