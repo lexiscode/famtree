@@ -80,6 +80,80 @@ class AccountSettingsController extends Controller
     }
 
     /**
+     * Update profile image only
+     */
+    public function updateProfileImage(\Illuminate\Http\Request $request)
+    {
+        $user = auth()->user();
+
+        $request->validate([
+            'profile_image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:5120', // 5MB max
+        ]);
+
+        $profileImage = $request->file('profile_image');
+
+        $this->accountService->updateProfileImage($user, $profileImage);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Profile image updated successfully.',
+            'profile_image_url' => $user->fresh()->profile_image_url,
+        ]);
+    }
+
+    /**
+     * Update a single profile field (PATCH)
+     */
+    public function updateSingleField(\Illuminate\Http\Request $request)
+    {
+        $user = auth()->user();
+
+        // Validate the field and value
+        $allowedFields = ['phone', 'address', 'bio', 'date_of_birth', 'gender', 'job_title', 'education'];
+        $field = $request->input('field');
+        $value = $request->input('value');
+
+        if (!in_array($field, $allowedFields)) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Invalid field specified.',
+            ], 422);
+        }
+
+        // Validate based on field type
+        $rules = [
+            'phone' => 'nullable|string|max:20',
+            'address' => 'nullable|string|max:255',
+            'bio' => 'nullable|string|max:500',
+            'date_of_birth' => 'nullable|date|before:today',
+            'gender' => 'nullable|in:male,female,other',
+            'job_title' => 'nullable|string|max:100',
+            'education' => 'nullable|string|max:100',
+        ];
+
+        $validator = \Illuminate\Support\Facades\Validator::make(
+            ['value' => $value],
+            ['value' => $rules[$field]]
+        );
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'error' => $validator->errors()->first('value'),
+            ], 422);
+        }
+
+        // Update the field
+        $this->accountService->updateSingleField($user, $field, $value);
+
+        return response()->json([
+            'success' => true,
+            'message' => ucfirst(str_replace('_', ' ', $field)) . ' updated successfully.',
+            'value' => $value,
+        ]);
+    }
+
+    /**
      * Generate 2FA secret and QR code
      */
     public function generateTwoFA()
