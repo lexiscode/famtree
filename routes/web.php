@@ -167,6 +167,9 @@ Route::middleware(['web', 'auth'])->group(function () {
     // View Another User's Tree route
     Route::get('/profile/{userId}/tree', [ConnectionTreeController::class, 'viewUserTree'])->name('profile.tree');
 
+    // API endpoint for getting tree data (for inline tree switching)
+    Route::get('/api/tree/{userId}', [ConnectionTreeController::class, 'getTreeData'])->name('api.tree.data');
+
     // Child Account routes
     Route::prefix('child-accounts')->group(function () {
         Route::get('/', [ChildAccountController::class, 'index'])->name('child-accounts.index');
