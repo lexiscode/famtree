@@ -1,13 +1,14 @@
 import { useMemo, useState, useCallback, useRef } from 'react';
 import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { Mail, Phone, MapPin, Cake, FileText, Users, Edit, Settings, Briefcase, BookOpen, ArrowRight, LogOut, X, Bell, BookMarked, User as UserIcon, Lightbulb, Plus, Network, TrendingUp, TreePine, Pencil, Check, Loader2, Camera } from 'lucide-react';
+import { Mail, Phone, MapPin, Cake, FileText, Users, Edit, Settings, Briefcase, BookOpen, ArrowRight, LogOut, X, Bell, BookMarked, User as UserIcon, Lightbulb, Plus, Network, TrendingUp, TreePine, Pencil, Check, Loader2, Camera, UserPlus, Heart } from 'lucide-react';
 import CreatePostModal from '../Stories/CreatePostModal';
 import ProfileCompletionModal from '@/Components/Profile/ProfileCompletionModal';
 import { ProfileCompletion } from '@/types/inertia';
 
 interface User {
     id: number;
+    uuid: string;
     first_name: string;
     last_name: string;
     name: string;
@@ -34,6 +35,8 @@ interface Props {
     unreadNotificationCount: number;
     suggestedConnectionsCount: number;
     profileCompletion: ProfileCompletion;
+    followerCount: number;
+    followingCount: number;
 }
 
 interface EditingField {
@@ -45,7 +48,7 @@ interface EditingField {
     maxLength?: number;
 }
 
-export default function MyProfile({ user, connections, connectionCount, pendingRequestCount, sentRequestCount, unreadNotificationCount, suggestedConnectionsCount, profileCompletion }: Props) {
+export default function MyProfile({ user, connections, connectionCount, pendingRequestCount, sentRequestCount, unreadNotificationCount, suggestedConnectionsCount, profileCompletion, followerCount, followingCount }: Props) {
     const [showImagePopup, setShowImagePopup] = useState(false);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showCompletionModal, setShowCompletionModal] = useState(false);
@@ -99,6 +102,10 @@ export default function MyProfile({ user, connections, connectionCount, pendingR
         bio: { type: 'textarea', maxLength: 500, editable: true },
         job_title: { type: 'text', maxLength: 100, editable: true },
         education: { type: 'text', maxLength: 100, editable: true },
+        status: { type: 'select', options: [
+            { value: 'alive', label: 'Alive' },
+            { value: 'deceased', label: 'Deceased' },
+        ], editable: true },
     };
 
     const fields = useMemo(() => [
@@ -349,9 +356,48 @@ export default function MyProfile({ user, connections, connectionCount, pendingR
                                 </div>
                                 <p className="profile-username">@{user.username}</p>
 
-                                <span className={`profile-status-badge ${user.status === 'alive' ? 'alive' : 'deceased'}`}>
-                                    {user.status === 'alive' ? '✓ Alive' : '🕊️ Deceased'}
-                                </span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <span className={`profile-status-badge ${localUser.status === 'alive' ? 'alive' : 'deceased'}`}>
+                                        {localUser.status === 'alive' ? '✓ Alive' : '🕊️ Deceased'}
+                                    </span>
+                                    <button
+                                        onClick={() => {
+                                            const config = fieldConfigs['status'];
+                                            setEditingField({
+                                                key: 'status',
+                                                label: 'Status',
+                                                value: localUser.status,
+                                                type: config.type,
+                                                options: config.options,
+                                            });
+                                            setEditValue(localUser.status || 'alive');
+                                            setSaveError(null);
+                                        }}
+                                        title="Edit Status"
+                                        style={{
+                                            background: 'transparent',
+                                            border: 'none',
+                                            padding: '0.25rem',
+                                            cursor: 'pointer',
+                                            color: '#667eea',
+                                            opacity: 0.7,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            transition: 'all 0.2s ease',
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.opacity = '1';
+                                            e.currentTarget.style.transform = 'scale(1.1)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.opacity = '0.7';
+                                            e.currentTarget.style.transform = 'scale(1)';
+                                        }}
+                                    >
+                                        <Pencil size={14} />
+                                    </button>
+                                </div>
 
                                 {user.bio && <p className="profile-bio">{user.bio}</p>}
 
@@ -591,6 +637,32 @@ export default function MyProfile({ user, connections, connectionCount, pendingR
                                             <span className="d-flex align-items-center gap-2">
                                                 <Network size={18} />
                                                 Your Tree
+                                            </span>
+                                            <ArrowRight size={18} />
+                                        </button>
+                                    </div>
+                                    <div className="col-md-6">
+                                        <button
+                                            className="btn btn-outline-danger w-100 d-flex align-items-center justify-content-between"
+                                            onClick={() => router.visit(`/users/${user.uuid}/followers`)}
+                                            style={{ padding: '0.85rem 1.25rem' }}
+                                            title="View people who follow you"
+                                        >
+                                            <span>
+                                                <strong>{followerCount}</strong> Followers
+                                            </span>
+                                            <ArrowRight size={18} />
+                                        </button>
+                                    </div>
+                                    <div className="col-md-6">
+                                        <button
+                                            className="btn btn-outline-info w-100 d-flex align-items-center justify-content-between"
+                                            onClick={() => router.visit(`/users/${user.uuid}/following`)}
+                                            style={{ padding: '0.85rem 1.25rem' }}
+                                            title="View people you follow"
+                                        >
+                                            <span>
+                                                <strong>{followingCount}</strong> Following
                                             </span>
                                             <ArrowRight size={18} />
                                         </button>

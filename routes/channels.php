@@ -42,3 +42,8 @@ Broadcast::channel('family-tree.{treeId}', function ($user, $treeId) {
 
     return false;
 });
+
+// Private messages channel - user can only listen to their own channel
+Broadcast::channel('private-messages.{userId}', function ($user, $userId) {
+    return (int) $user->id === (int) $userId;
+});

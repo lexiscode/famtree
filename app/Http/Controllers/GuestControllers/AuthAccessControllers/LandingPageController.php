@@ -7,6 +7,7 @@ use App\Models\GuestModels\User;
 use App\Http\Controllers\Controller;
 use App\Actions\GuestServices\ProfilePrivacyService;
 use App\Actions\GuestServices\NotificationService;
+use App\Actions\GuestServices\UserFollowService;
 use App\Actions\GuestServices\AuthAccessServices\SuggestedConnectionService;
 use App\Actions\GuestServices\AuthAccessServices\ProfileCompletionService;
 use App\Repositories\GuestRepositories\UserConnectionRepository;
@@ -18,6 +19,7 @@ class LandingPageController extends Controller
         private NotificationService $notificationService,
         private SuggestedConnectionService $suggestedConnectionService,
         private ProfileCompletionService $profileCompletionService,
+        private UserFollowService $followService,
     ) {}
 
     /**
@@ -45,6 +47,7 @@ class LandingPageController extends Controller
         // Format user data
         $userData = [
             'id' => $user->id,
+            'uuid' => $user->uuid,
             'first_name' => $user->first_name,
             'last_name' => $user->last_name,
             'name' => $user->first_name . ' ' . $user->last_name,
@@ -71,6 +74,9 @@ class LandingPageController extends Controller
         // Get profile completion data
         $profileCompletion = $this->profileCompletionService->getProfileCompletion($user);
 
+        // Get follower/following counts
+        $followStatus = $this->followService->getFollowStatus($user->id, $user->id);
+
         return Inertia::render('GuestPages/AuthAccessPages/Profile/MyProfile', [
             'user' => $userData,
             'connections' => $connections,
@@ -80,6 +86,8 @@ class LandingPageController extends Controller
             'unreadNotificationCount' => $unreadNotificationCount,
             'suggestedConnectionsCount' => $suggestedConnectionsCount,
             'profileCompletion' => $profileCompletion,
+            'followerCount' => $followStatus['follower_count'],
+            'followingCount' => $followStatus['following_count'],
         ]);
     }
 }

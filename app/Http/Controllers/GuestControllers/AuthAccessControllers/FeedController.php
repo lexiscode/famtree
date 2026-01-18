@@ -10,6 +10,7 @@ use App\Actions\GuestServices\UserFollowService;
 use App\Actions\GuestServices\AuthAccessServices\ConnectionFeedsService;
 use App\Actions\GuestServices\AuthAccessServices\ProfileCompletionService;
 use App\Actions\GuestServices\AuthAccessServices\SuggestedConnectionService;
+use App\Actions\GuestServices\AuthAccessServices\PrivateMessageService;
 use App\Repositories\GuestRepositories\UserConnectionRepository;
 use App\Repositories\GuestRepositories\PostRepository;
 use App\Repositories\GuestRepositories\FamilyTreeRepository;
@@ -26,6 +27,7 @@ class FeedController extends Controller
         private ProfileCompletionService $profileCompletionService,
         private FamilyTreeRepository $familyTreeRepository,
         private SuggestedConnectionService $suggestedConnectionService,
+        private PrivateMessageService $messageService,
     ) {}
 
     /**
@@ -144,6 +146,7 @@ class FeedController extends Controller
             'pendingRequestCount' => count($pendingRequests),
             'sentRequestCount' => count($sentRequests),
             'unreadNotificationCount' => $unreadNotificationCount,
+            'unreadMessagesCount' => $this->messageService->getTotalUnreadCount($user->id),
             'profileCompletion' => $profileCompletion,
             'treeForChat' => $treeForChat,
         ]);

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { usePage, router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { Users, UserPlus, Search, Filter, ExternalLink, ArrowLeft } from 'lucide-react';
+import { Users, UserPlus, Search, Filter, ExternalLink, ArrowLeft, MessageCircle } from 'lucide-react';
 import { Connection, MyConnectionsProps } from '@/types';
 import ProfileSidebar from '../Stories/ProfileSidebar';
 
@@ -155,14 +155,33 @@ export default function MyConnections({
                                                 <strong>{connection.relationship_label}</strong>
                                             </div>
 
-                                            <div className="connection-card-actions pb-2 single-button">
+                                            <div className="connection-card-actions pb-2" style={{ display: 'flex', gap: '0.5rem' }}>
                                                 <button
                                                     className="connection-action-btn connection-action-view"
                                                     onClick={() => router.visit(route('profile.view', { username: connection.user.username }))}
                                                     title="View profile"
+                                                    style={{ flex: 1 }}
                                                 >
                                                     <ExternalLink size={16} className="me-1" style={{ display: 'inline' }} />
                                                     View Profile
+                                                </button>
+                                                <button
+                                                    className="connection-action-btn"
+                                                    onClick={() => router.post(route('messages.start'), { user_id: connection.user.id })}
+                                                    title="Send message"
+                                                    style={{
+                                                        background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
+                                                        color: '#ffffff',
+                                                        border: 'none',
+                                                        padding: '0.5rem 0.75rem',
+                                                        borderRadius: '8px',
+                                                        cursor: 'pointer',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center'
+                                                    }}
+                                                >
+                                                    <MessageCircle size={16} />
                                                 </button>
                                             </div>
 
