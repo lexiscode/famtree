@@ -5,13 +5,17 @@ namespace App\Http\Controllers\GuestControllers\AuthAccessControllers;
 use App\Actions\GuestServices\AuthAccessServices\PrivateMessageService;
 use App\Http\Controllers\Controller;
 use App\Models\GuestModels\Conversation;
+use App\Repositories\GuestRepositories\FamilyTreeRepository;
+use App\Repositories\GuestRepositories\AuthAccessRepositories\TreeChatRepository;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class PrivateMessageController extends Controller
 {
     public function __construct(
-        private PrivateMessageService $messageService
+        private PrivateMessageService $messageService,
+        private FamilyTreeRepository $familyTreeRepository,
+        private TreeChatRepository $treeChatRepository
     ) {}
 
     /**
@@ -21,10 +25,18 @@ class PrivateMessageController extends Controller
     {
         $user = auth()->user();
         $conversations = $this->messageService->getConversations($user->id);
-        $totalUnread = $this->messageService->getTotalUnreadCount($user->id);
+
+        // Get family tree group chats
+        $groupChats = $this->getGroupChats($user->id);
+
+        // Calculate total unread (DM + group chats)
+        $dmUnread = $this->messageService->getTotalUnreadCount($user->id);
+        $groupChatUnread = array_sum(array_column($groupChats, 'unread_count'));
+        $totalUnread = $dmUnread + $groupChatUnread;
 
         return Inertia::render('GuestPages/AuthAccessPages/Messages/Index', [
             'conversations' => $conversations->map(fn($c) => $this->formatConversation($c, $user->id)),
+            'groupChats' => $groupChats,
             'activeConversation' => null,
             'totalUnread' => $totalUnread,
             'currentUserId' => $user->id,
@@ -51,8 +63,17 @@ class PrivateMessageController extends Controller
         // Mark messages as read
         $this->messageService->markAsRead($conversation->id, $user->id);
 
+        // Get family tree group chats
+        $groupChats = $this->getGroupChats($user->id);
+
+        // Calculate total unread (DM + group chats)
+        $dmUnread = $this->messageService->getTotalUnreadCount($user->id);
+        $groupChatUnread = array_sum(array_column($groupChats, 'unread_count'));
+        $totalUnread = $dmUnread + $groupChatUnread;
+
         return Inertia::render('GuestPages/AuthAccessPages/Messages/Index', [
             'conversations' => $conversations->map(fn($c) => $this->formatConversation($c, $user->id)),
+            'groupChats' => $groupChats,
             'activeConversation' => [
                 'uuid' => $conversation->uuid,
                 'otherUser' => [
@@ -64,7 +85,7 @@ class PrivateMessageController extends Controller
                 ],
                 'messages' => $messages->map(fn($m) => $this->formatMessage($m)),
             ],
-            'totalUnread' => $this->messageService->getTotalUnreadCount($user->id),
+            'totalUnread' => $totalUnread,
             'currentUserId' => $user->id,
         ]);
     }
@@ -193,8 +214,13 @@ class PrivateMessageController extends Controller
     {
         $user = auth()->user();
 
+        // Calculate total unread (DM + group chats)
+        $dmUnread = $this->messageService->getTotalUnreadCount($user->id);
+        $groupChats = $this->getGroupChats($user->id);
+        $groupChatUnread = array_sum(array_column($groupChats, 'unread_count'));
+
         return response()->json([
-            'count' => $this->messageService->getTotalUnreadCount($user->id),
+            'count' => $dmUnread + $groupChatUnread,
         ]);
     }
 
@@ -248,5 +274,34 @@ class PrivateMessageController extends Controller
                 'profile_image_url' => $message->sender->profile_image_url,
             ] : null,
         ];
+    }
+
+    /**
+     * Helper: Get family tree group chats for user
+     */
+    private function getGroupChats(int $userId): array
+    {
+        $trees = $this->familyTreeRepository->getUserMemberTrees($userId);
+
+        return $trees->map(function ($tree) use ($userId) {
+            $latestMessage = $this->treeChatRepository->getLatestMessage($tree->id);
+            $unreadCount = $this->treeChatRepository->getUnreadCount($tree->id, $userId);
+            $memberCount = $tree->members->count();
+
+            return [
+                'uuid' => $tree->uuid,
+                'type' => 'group',
+                'name' => $tree->tree_name,
+                'member_count' => $memberCount,
+                'unread_count' => $unreadCount,
+                'lastMessage' => $latestMessage ? [
+                    'message' => $latestMessage->message,
+                    'sender_id' => $latestMessage->user_id,
+                    'sender_name' => $latestMessage->user ? trim($latestMessage->user->first_name . ' ' . $latestMessage->user->last_name) : 'Unknown',
+                    'created_at' => $latestMessage->created_at->toISOString(),
+                ] : null,
+                'last_message_at' => $latestMessage ? $latestMessage->created_at->toISOString() : $tree->created_at->toISOString(),
+            ];
+        })->toArray();
     }
 }

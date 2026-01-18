@@ -60,11 +60,11 @@ class TreeChatService
     }
 
     /**
-     * Mark messages as read
+     * Mark messages as read for a user
      */
-    public function markAsRead(int $treeId, int $userId): int
+    public function markAsRead(int $treeId, int $userId): void
     {
-        return $this->chatRepository->markAsRead($treeId, $userId);
+        $this->chatRepository->markAsRead($treeId, $userId);
     }
 
     /**
