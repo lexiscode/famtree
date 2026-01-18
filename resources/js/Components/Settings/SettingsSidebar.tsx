@@ -49,12 +49,12 @@ export default function SettingsSidebar({ active }: SettingsSidebarProps) {
             {/* Back to Profile Button */}
             <div className="settings-sidebar-footer">
                 <a
-                    href={route('home')}
+                    href={route('profile')}
                     className="settings-nav-link settings-nav-back"
                     title="Back to your profile"
                 >
-                    <ArrowLeft size={18} style={{ display: 'inline' }} />
-                    Back to Profile
+                    <i className="bi bi-person"></i>
+                    Go to Profile
                 </a>
             </div>
         </div>

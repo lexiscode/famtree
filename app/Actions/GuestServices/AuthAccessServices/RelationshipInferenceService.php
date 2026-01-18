@@ -156,11 +156,33 @@ class RelationshipInferenceService
             'sister_mother' => 'mother',
             'sister_father' => 'father',
 
-            // Children viewing their other parent (spousal inference)
-            'son_mother' => 'wife',
-            'son_father' => 'husband',
-            'daughter_mother' => 'wife',
-            'daughter_father' => 'husband',
+            // Child viewing parent's parent (grandparent inference)
+            // If I am X's son/daughter, and X's mother/father is Y, then Y is my grandmother/grandfather
+            'son_mother' => 'grandmother',
+            'son_father' => 'grandfather',
+            'daughter_mother' => 'grandmother',
+            'daughter_father' => 'grandfather',
+
+            // Child viewing parent's spouse (other parent inference)
+            // If I am X's son/daughter, and X's wife/husband is Y, then Y is my mother/father
+            'son_wife' => 'mother',
+            'son_husband' => 'father',
+            'daughter_wife' => 'mother',
+            'daughter_husband' => 'father',
+            'child_wife' => 'mother',
+            'child_husband' => 'father',
+
+            // Viewing parent's spouse (other parent inference)
+            // If X is my father/mother, and X's wife/husband is Y, then Y is my mother/father
+            'father_wife' => 'mother',
+            'mother_husband' => 'father',
+
+            // Spouse viewing spouse's children (my spouse's children are my children)
+            // If X is my husband/wife, and X's son/daughter is Y, then Y is my son/daughter
+            'husband_son' => 'son',
+            'husband_daughter' => 'daughter',
+            'wife_son' => 'son',
+            'wife_daughter' => 'daughter',
 
             // Parent with child through siblings (parent viewing their children)
             'son_brother' => 'son',

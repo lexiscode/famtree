@@ -5,6 +5,7 @@ namespace App\Actions\GuestServices;
 use App\Models\GuestModels\User;
 use App\Repositories\GuestRepositories\ChildAccountRepository;
 use App\Repositories\GuestRepositories\UserConnectionRepository;
+use App\Helpers\RelationshipInferenceHelper;
 use Illuminate\Support\Str;
 
 class ChildAccountService
@@ -60,12 +61,137 @@ class ChildAccountService
             'accepted_at' => now(),
         ]);
 
+        // Auto-connect child with all of parent's existing connections
+        $this->autoConnectChildWithParentConnections($parent, $childAccount);
+
         return [
             'child_account' => $childAccount,
             'temporary_password' => $temporaryPassword,
             'username' => $childAccount->username,
             'message' => 'Child account created successfully. Share the temporary password with your child to log in.',
         ];
+    }
+
+    /**
+     * Auto-connect a new child with all of the parent's existing connections
+     *
+     * This creates appropriate family relationships based on the parent's relationships:
+     * - Parent's parents → grandparents of child (child is grandchild)
+     * - Parent's siblings → aunts/uncles of child (child is niece/nephew)
+     * - Parent's spouse → parent of child (child is son/daughter)
+     * - Parent's other children → siblings of child (child is brother/sister)
+     * - Parent's nieces/nephews → cousins of child
+     */
+    private function autoConnectChildWithParentConnections(User $parent, User $child): void
+    {
+        // Get all accepted connections of the parent
+        $parentConnections = $this->connectionRepository->getConnections($parent->id);
+
+        foreach ($parentConnections as $connection) {
+            // Determine who the connected person is
+            $connectedUserId = $connection->requester_user_id === $parent->id
+                ? $connection->recipient_user_id
+                : $connection->requester_user_id;
+
+            // Skip if this is the child itself (shouldn't happen, but safety check)
+            if ($connectedUserId === $child->id) {
+                continue;
+            }
+
+            // Get the relationship type from the parent's perspective
+            $parentRelationshipType = $connection->requester_user_id === $parent->id
+                ? $connection->relationship_type
+                : $this->getInverseRelationshipType($connection->relationship_type, $connection->requester, $connection->recipient);
+
+            // Check if this relationship type should trigger auto-connection
+            if (!RelationshipInferenceHelper::shouldAutoConnect($parentRelationshipType)) {
+                continue;
+            }
+
+            // Get the connected user for gender context
+            $connectedUser = User::find($connectedUserId);
+            if (!$connectedUser) {
+                continue;
+            }
+
+            // Infer what relationship the child has with this person
+            $childRelationshipType = RelationshipInferenceHelper::inferChildRelationship(
+                $parentRelationshipType,
+                $child->gender,
+                $connectedUser->gender
+            );
+
+            // Skip if no relationship could be inferred
+            if (!$childRelationshipType) {
+                continue;
+            }
+
+            // Check if connection already exists (shouldn't happen for new child, but safety check)
+            if ($this->connectionRepository->connectionExists($connectedUserId, $child->id, $childRelationshipType)) {
+                continue;
+            }
+
+            // Create the connection (from the connected person's perspective to the child)
+            // The connected person is the "requester" and the child is the "recipient"
+            // This way, the relationship_type represents what the child is TO the connected person
+            $this->connectionRepository->createConnection([
+                'requester_user_id' => $connectedUserId,
+                'recipient_user_id' => $child->id,
+                'relationship_type' => $childRelationshipType,
+                'status' => 'accepted',
+                'requested_at' => now(),
+                'accepted_at' => now(),
+            ]);
+        }
+    }
+
+    /**
+     * Get inverse relationship type for determining parent's perspective
+     */
+    private function getInverseRelationshipType(string $relationshipType, ?User $requester, ?User $recipient): string
+    {
+        $requesterGender = $requester?->gender;
+        $recipientGender = $recipient?->gender;
+
+        // Handle parent-child relationships
+        if ($relationshipType === 'son' || $relationshipType === 'daughter') {
+            return $requesterGender === 'male' ? 'father' : 'mother';
+        }
+        if ($relationshipType === 'father' || $relationshipType === 'mother') {
+            return $requesterGender === 'male' ? 'son' : 'daughter';
+        }
+
+        // Handle sibling relationships
+        if ($relationshipType === 'brother' || $relationshipType === 'sister') {
+            return $requesterGender === 'male' ? 'brother' : 'sister';
+        }
+
+        // Handle spouse relationships
+        if ($relationshipType === 'husband') return 'wife';
+        if ($relationshipType === 'wife') return 'husband';
+        if ($relationshipType === 'partner') return 'partner';
+
+        // Handle grandparent-grandchild
+        if ($relationshipType === 'grandson' || $relationshipType === 'granddaughter') {
+            return $requesterGender === 'male' ? 'grandfather' : 'grandmother';
+        }
+        if ($relationshipType === 'grandfather' || $relationshipType === 'grandmother') {
+            return $requesterGender === 'male' ? 'grandson' : 'granddaughter';
+        }
+
+        // Handle aunt/uncle - niece/nephew
+        if ($relationshipType === 'nephew' || $relationshipType === 'niece') {
+            return $requesterGender === 'male' ? 'uncle' : 'aunt';
+        }
+        if ($relationshipType === 'uncle' || $relationshipType === 'aunt') {
+            return $requesterGender === 'male' ? 'nephew' : 'niece';
+        }
+
+        // Handle cousin (symmetric)
+        if ($relationshipType === 'cousin') return 'cousin';
+
+        // Default: return the same type
+        return $relationshipType;
     }
 
     /**

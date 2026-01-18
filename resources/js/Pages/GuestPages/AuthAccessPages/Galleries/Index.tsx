@@ -184,7 +184,7 @@ export default function GalleriesIndex({ galleries, total, count }: Props) {
                     {/* Back Button */}
                     <button
                         className="back-button"
-                        onClick={() => router.visit(route('home'))}
+                        onClick={() => router.visit(route('profile'))}
                         title="Back to profile"
                     >
                         <ArrowLeft size={20} />

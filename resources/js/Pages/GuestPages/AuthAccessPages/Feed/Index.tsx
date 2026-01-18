@@ -285,7 +285,7 @@ export default function Feed({
                                             <span className="count-label">SUGGESTIONS</span>
                                         </a>
 
-                                        <a href="/my-family-trees" className="count-card">
+                                        <a href="/family-tree" className="count-card">
                                             <Users size={32} className="count-icon" />
                                             <span className="count-label">FAMILY TREE</span>
                                         </a>

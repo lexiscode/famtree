@@ -120,7 +120,7 @@ export default function ConnectionFeedsIndex({
                         {/* Back Button */}
                         <button
                             className="back-button"
-                            onClick={() => router.visit(route('home'))}
+                            onClick={() => router.visit(route('profile'))}
                             title="Back to profile"
                         >
                             <ArrowLeft size={20} />

@@ -1,12 +1,13 @@
 import { useCallback, useState } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
-import { Plus, Calendar, Lock, Shield, Eye, Trash2, ArrowLeft } from 'lucide-react';
+import { Plus, Calendar, Lock, Shield, Eye, Trash2, ArrowLeft, TreePine } from 'lucide-react';
 import { PropsWithChildren } from 'react';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { ModalProvider } from '@/Context/ModalContext';
 import CTAModal from '@/Components/Modal/CTAModal';
 import { useModal } from '@/Context/ModalContext';
+import ProfileSidebar from '../Stories/ProfileSidebar';
 
 interface ChildAccount {
     id: number;
@@ -22,9 +23,26 @@ interface ChildAccount {
     created_at: string;
 }
 
+interface UserProfile {
+    id: number;
+    first_name: string;
+    last_name: string;
+    name: string;
+    username: string;
+    email: string;
+    profile_image_url?: string;
+    bio?: string;
+    status?: string;
+}
+
 interface Props {
     childAccounts: ChildAccount[];
     childCount: number;
+    user: UserProfile;
+    connectionCount: number;
+    pendingRequestCount: number;
+    sentRequestCount: number;
+    unreadNotificationCount: number;
 }
 
 // Child Accounts Layout (no header/footer)
@@ -33,6 +51,11 @@ function ChildAccountsLayout({ children }: PropsWithChildren) {
 
     return (
         <div className="child-accounts-layout">
+            {/* Floating Home Logo - Top Left */}
+            <Link href="/" className="auth-floating-home-logo" title="Go to Home">
+                <TreePine size={24} />
+            </Link>
+
             <main className="child-accounts-main-content">
                 {children}
             </main>
@@ -56,11 +79,15 @@ function ChildAccountsLayout({ children }: PropsWithChildren) {
     );
 }
 
-export default function ManageChildren({ childAccounts, childCount }: Props) {
-    const { props } = usePage();
-    const { auth } = props;
-    const user = auth?.user;
-
+export default function ManageChildren({
+    childAccounts,
+    childCount,
+    user,
+    connectionCount,
+    pendingRequestCount,
+    sentRequestCount,
+    unreadNotificationCount,
+}: Props) {
     const [loading, setLoading] = useState(false);
 
     const handleDeleteChild = useCallback((childId: number, childName: string) => {
@@ -85,150 +112,168 @@ export default function ManageChildren({ childAccounts, childCount }: Props) {
         <ModalProvider>
             <ChildAccountsLayout>
                 <div className="child-accounts-page">
-                    <div className="child-accounts-container">
-                        {/* Back Button */}
-                        <Link
-                            href={route('home')}
-                            className="child-back-button"
-                        >
-                            <ArrowLeft size={20} />
-                            Back to Profile
-                        </Link>
-
-                        {/* Header */}
-                        <div className="child-header-section">
-                            <div className="child-header-content">
-                                <div>
-                                    <h1 className="child-page-title">Child Accounts</h1>
-                                    <p className="child-page-subtitle">Create and manage child accounts for family members</p>
-                                </div>
-                                <Link href={route('child-accounts.create')} className="child-create-btn">
-                                    <Plus size={18} />
-                                    Create Child Account
-                                </Link>
+                    <div className="connections-grid-layout">
+                        {/* Left Sidebar - Profile */}
+                        {user && (
+                            <div className="connections-left-sidebar">
+                                <ProfileSidebar
+                                    user={user}
+                                    connectionCount={connectionCount}
+                                    pendingRequestCount={pendingRequestCount}
+                                    sentRequestCount={sentRequestCount}
+                                    unreadNotificationCount={unreadNotificationCount}
+                                />
                             </div>
+                        )}
 
-                            {/* Stats */}
-                            <div className="child-stats-grid">
-                                <div className="child-stat-box">
-                                    <div className="child-stat-value">{childCount}</div>
-                                    <div className="child-stat-label">Total Children</div>
-                                </div>
-                                <div className="child-stat-box">
-                                    <div className="child-stat-value">{comingOfAgeCount}</div>
-                                    <div className="child-stat-label">Coming of Age</div>
-                                </div>
-                                <div className="child-stat-box">
-                                    <div className="child-stat-value">{awaitingEmailCount}</div>
-                                    <div className="child-stat-label">Awaiting Email</div>
-                                </div>
-                            </div>
-                        </div>
+                        {/* Center Content */}
+                        <div className="connections-center-content">
+                            <div className="child-accounts-container">
+                                {/* Back Button */}
+                                <a
+                                    href="/profile"
+                                    className="child-back-button"
+                                >
+                                    <ArrowLeft size={20} />
+                                    Back to Profile
+                                </a>
 
-                        {/* Child Accounts Section */}
-                        <div className="child-content-section">
-                            <h2 className="child-section-heading">
-                                <Shield size={24} />
-                                Your Child Accounts
-                            </h2>
-
-                            {childAccounts.length === 0 ? (
-                                <div className="child-empty-container">
-                                    <div className="child-empty-icon">👶</div>
-                                    <h3 className="child-empty-heading">No child accounts yet</h3>
-                                    <p className="child-empty-description">
-                                        Create child accounts for family members under 18. They can be upgraded when they come of age.
-                                    </p>
-                                    <Link href={route('child-accounts.create')} className="child-empty-btn">
-                                        <Plus size={18} />
-                                        Create Your First Child Account
-                                    </Link>
-                                </div>
-                            ) : (
-                                <div className="child-cards-grid">
-                                    {childAccounts.map((child) => (
-                                        <div key={child.id} className="child-card-item">
-                                            {/* Profile Image */}
-                                            <div className="child-card-avatar">
-                                                {child.profile_image_url ? (
-                                                    <img
-                                                        src={child.profile_image_url}
-                                                        alt={child.full_name}
-                                                        className="child-card-image"
-                                                    />
-                                                ) : (
-                                                    <div className="child-card-avatar-fallback">
-                                                        {child.first_name.charAt(0)}{child.last_name.charAt(0)}
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {/* Child Info */}
-                                            <div className="child-card-details">
-                                                <h3 className="child-card-title">{child.full_name}</h3>
-                                                <p className="child-card-username">@{child.username}</p>
-                                            </div>
-
-                                            {/* Age & Status Badges */}
-                                            <div className="child-card-badges">
-                                                {child.age !== undefined && (
-                                                    <span className="child-badge-item">
-                                                        {child.age} years old
-                                                    </span>
-                                                )}
-                                                {child.email ? (
-                                                    <span className="child-badge-item child-badge-success">
-                                                        Email Set
-                                                    </span>
-                                                ) : (
-                                                    <span className="child-badge-item child-badge-warning">
-                                                        <Lock size={12} />
-                                                        No Email
-                                                    </span>
-                                                )}
-                                            </div>
-
-                                            {/* Date of Birth */}
-                                            <div className="child-card-date">
-                                                <Calendar size={16} />
-                                                {formatDate(child.date_of_birth)}
-                                            </div>
-
-                                            {/* Actions */}
-                                            <div className="child-card-footer">
-                                                <Link
-                                                    href={route('child-accounts.show', { childId: child.id })}
-                                                    className="child-btn-view"
-                                                >
-                                                    <Eye size={16} />
-                                                    View
-                                                </Link>
-                                                <button
-                                                    onClick={() => handleDeleteChild(child.id, child.full_name)}
-                                                    disabled={loading}
-                                                    className="child-btn-delete"
-                                                >
-                                                    <Trash2 size={16} />
-                                                    Delete
-                                                </button>
-                                            </div>
+                                {/* Header */}
+                                <div className="child-header-section">
+                                    <div className="child-header-content">
+                                        <div>
+                                            <h1 className="child-page-title">Child Accounts</h1>
+                                            <p className="child-page-subtitle">Create and manage child accounts for family members</p>
                                         </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
+                                        <Link href={route('child-accounts.create')} className="child-create-btn">
+                                            <Plus size={18} />
+                                            Create Child Account
+                                        </Link>
+                                    </div>
 
-                        {/* Info Box */}
-                        <div className="child-info-box">
-                            <Shield size={20} />
-                            <div>
-                                <div className="child-info-title">About Child Accounts:</div>
-                                <ul className="child-info-list">
-                                    <li>Child accounts are for family members under 18 years old</li>
-                                    <li>You control the account until your child turns 18</li>
-                                    <li>At 18, they can set their own email and change password</li>
-                                    <li>Child accounts are automatically connected as family relationships</li>
-                                </ul>
+                                    {/* Stats */}
+                                    <div className="child-stats-grid">
+                                        <div className="child-stat-box">
+                                            <div className="child-stat-value">{childCount}</div>
+                                            <div className="child-stat-label">Total Children</div>
+                                        </div>
+                                        <div className="child-stat-box">
+                                            <div className="child-stat-value">{comingOfAgeCount}</div>
+                                            <div className="child-stat-label">Coming of Age</div>
+                                        </div>
+                                        <div className="child-stat-box">
+                                            <div className="child-stat-value">{awaitingEmailCount}</div>
+                                            <div className="child-stat-label">Awaiting Email</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Child Accounts Section */}
+                                <div className="child-content-section">
+                                    <h2 className="child-section-heading">
+                                        <Shield size={24} />
+                                        Your Child Accounts
+                                    </h2>
+
+                                    {childAccounts.length === 0 ? (
+                                        <div className="child-empty-container">
+                                            <div className="child-empty-icon">👶</div>
+                                            <h3 className="child-empty-heading">No child accounts yet</h3>
+                                            <p className="child-empty-description">
+                                                Create child accounts for family members under 18. They can be upgraded when they come of age.
+                                            </p>
+                                            <Link href={route('child-accounts.create')} className="child-empty-btn">
+                                                <Plus size={18} />
+                                                Create Your First Child Account
+                                            </Link>
+                                        </div>
+                                    ) : (
+                                        <div className="child-cards-grid">
+                                            {childAccounts.map((child) => (
+                                                <div key={child.id} className="child-card-item">
+                                                    {/* Profile Image */}
+                                                    <div className="child-card-avatar">
+                                                        {child.profile_image_url ? (
+                                                            <img
+                                                                src={child.profile_image_url}
+                                                                alt={child.full_name}
+                                                                className="child-card-image"
+                                                            />
+                                                        ) : (
+                                                            <div className="child-card-avatar-fallback">
+                                                                {child.first_name.charAt(0)}{child.last_name.charAt(0)}
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Child Info */}
+                                                    <div className="child-card-details">
+                                                        <h3 className="child-card-title">{child.full_name}</h3>
+                                                        <p className="child-card-username">@{child.username}</p>
+                                                    </div>
+
+                                                    {/* Age & Status Badges */}
+                                                    <div className="child-card-badges">
+                                                        {child.age !== undefined && (
+                                                            <span className="child-badge-item">
+                                                                {child.age} years old
+                                                            </span>
+                                                        )}
+                                                        {child.email ? (
+                                                            <span className="child-badge-item child-badge-success">
+                                                                Email Set
+                                                            </span>
+                                                        ) : (
+                                                            <span className="child-badge-item child-badge-warning">
+                                                                <Lock size={12} />
+                                                                No Email
+                                                            </span>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Date of Birth */}
+                                                    <div className="child-card-date">
+                                                        <Calendar size={16} />
+                                                        {formatDate(child.date_of_birth)}
+                                                    </div>
+
+                                                    {/* Actions */}
+                                                    <div className="child-card-footer">
+                                                        <Link
+                                                            href={route('child-accounts.show', { childId: child.id })}
+                                                            className="child-btn-view"
+                                                        >
+                                                            <Eye size={16} />
+                                                            View
+                                                        </Link>
+                                                        <button
+                                                            onClick={() => handleDeleteChild(child.id, child.full_name)}
+                                                            disabled={loading}
+                                                            className="child-btn-delete"
+                                                        >
+                                                            <Trash2 size={16} />
+                                                            Delete
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Info Box */}
+                                <div className="child-info-box">
+                                    <Shield size={20} />
+                                    <div>
+                                        <div className="child-info-title">About Child Accounts:</div>
+                                        <ul className="child-info-list">
+                                            <li>Child accounts are for family members under 18 years old</li>
+                                            <li>You control the account until your child turns 18</li>
+                                            <li>At 18, they can set their own email and change password</li>
+                                            <li>Child accounts are automatically connected as family relationships</li>
+                                        </ul>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

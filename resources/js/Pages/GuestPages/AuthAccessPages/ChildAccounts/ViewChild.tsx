@@ -1,6 +1,6 @@
 import { useCallback, PropsWithChildren } from 'react';
-import { router } from '@inertiajs/react';
-import { ArrowLeft, Calendar, Mail, Shield, User } from 'lucide-react';
+import { router, Link } from '@inertiajs/react';
+import { ArrowLeft, Calendar, Mail, Shield, User, TreePine } from 'lucide-react';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { ModalProvider } from '@/Context/ModalContext';
@@ -31,6 +31,11 @@ function ChildAccountsLayout({ children }: PropsWithChildren) {
 
     return (
         <div className="child-accounts-layout">
+            {/* Floating Home Logo - Top Left */}
+            <Link href="/" className="auth-floating-home-logo" title="Go to Home">
+                <TreePine size={24} />
+            </Link>
+
             <main className="child-accounts-main-content">
                 {children}
             </main>

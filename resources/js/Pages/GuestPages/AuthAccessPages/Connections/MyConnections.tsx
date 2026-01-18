@@ -166,7 +166,7 @@ export default function MyConnections({
                                                 </button>
                                             </div>
 
-                                        
+
                                         </div>
                                     ))}
                                 </div>
@@ -175,14 +175,14 @@ export default function MyConnections({
                     )}
 
                     {/* Back to Profile Button */}
-                    <button
+                    <a
+                        href="/profile"
                         className="connections-btn-back"
-                        onClick={() => router.visit(route('home'))}
                         title="Back to profile"
                     >
                         <ArrowLeft size={18} className="me-2" style={{ display: 'inline' }} />
                         Back to Profile
-                    </button>
+                    </a>
                 </div>
                     </div>
                 </div>

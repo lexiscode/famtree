@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { usePage, router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { Send, Trash2, ArrowLeft, AlertCircle, X } from 'lucide-react';
+import { Send, Trash2, ArrowLeft, AlertCircle, X, Users } from 'lucide-react';
 import { SentRequest, RequestSentProps } from '@/types';
 import ProfileSidebar from '../Stories/ProfileSidebar';
 
@@ -169,15 +169,25 @@ export default function RequestSent({
                         <strong>💡 Tip:</strong> Requests will automatically be removed if declined. You can also unsend requests that haven't been responded to yet.
                     </div>
 
-                    {/* Back to Profile Button */}
-                    <button
-                        className="connections-btn-back"
-                        onClick={() => router.visit(route('home'))}
-                        title="Back to profile"
-                    >
-                        <ArrowLeft size={18} className="me-2" style={{ display: 'inline' }} />
-                        Back to Profile
-                    </button>
+                    {/* Back Buttons */}
+                    <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                        <button
+                            className="connections-btn-back"
+                            onClick={() => router.visit(route('connections.index'))}
+                            title="Back to connections"
+                        >
+                            <Users size={18} className="me-2" style={{ display: 'inline' }} />
+                            Back to Connections
+                        </button>
+                        <button
+                            className="connections-btn-back"
+                            onClick={() => router.visit(route('profile'))}
+                            title="Back to profile"
+                        >
+                            <ArrowLeft size={18} className="me-2" style={{ display: 'inline' }} />
+                            Back to Profile
+                        </button>
+                    </div>
                 </div>
                     </div>
                 </div>
