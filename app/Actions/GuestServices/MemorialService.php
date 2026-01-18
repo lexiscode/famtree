@@ -12,17 +12,35 @@ use Illuminate\Support\Str;
 class MemorialService
 {
     /**
-     * Close family relationship types that can add memorial messages.
+     * Tier 1: Nuclear family relationship types.
      */
-    protected array $closeFamilyTypes;
+    protected array $nuclearFamilyTypes;
+
+    /**
+     * Tier 2: Extended family relationship types.
+     */
+    protected array $extendedFamilyTypes;
 
     public function __construct(
         protected MemorialMessageRepository $repository
     ) {
-        $this->closeFamilyTypes = config('memorial.close_family_types', [
+        $this->nuclearFamilyTypes = config('memorial.nuclear_family_types', [
             'wife', 'husband', 'father', 'mother',
             'son', 'daughter', 'brother', 'sister'
         ]);
+
+        $this->extendedFamilyTypes = config('memorial.extended_family_types', [
+            'grandfather', 'grandmother', 'grandson', 'granddaughter',
+            'uncle', 'aunt', 'nephew', 'niece', 'cousin'
+        ]);
+    }
+
+    /**
+     * Get all eligible family types (both tiers combined).
+     */
+    public function getAllFamilyTypes(): array
+    {
+        return array_merge($this->nuclearFamilyTypes, $this->extendedFamilyTypes);
     }
 
     /**
@@ -115,6 +133,7 @@ class MemorialService
 
     /**
      * Check if a user can add a memorial message to a deceased user's profile.
+     * Both nuclear and extended family members can add messages.
      */
     public function canAddMemorialMessage(User $author, User $deceased): bool
     {
@@ -123,7 +142,9 @@ class MemorialService
             return false;
         }
 
-        // Check if author has a close family connection
+        $allFamilyTypes = $this->getAllFamilyTypes();
+
+        // Check if author has a family connection (nuclear or extended)
         return UserConnection::where('status', 'accepted')
             ->where(function ($query) use ($deceased, $author) {
                 $query->where(function ($q) use ($deceased, $author) {
@@ -134,7 +155,7 @@ class MemorialService
                       ->where('recipient_user_id', $deceased->id);
                 });
             })
-            ->whereIn('relationship_type', $this->closeFamilyTypes)
+            ->whereIn('relationship_type', $allFamilyTypes)
             ->exists();
     }
 
@@ -226,23 +247,83 @@ class MemorialService
     }
 
     /**
-     * Get close family members of a deceased user.
+     * Get family members of a deceased user using tiered approach.
+     * Returns nuclear family if available, otherwise extended family.
      */
     public function getCloseFamilyMembers(User $deceased): Collection
+    {
+        // Try nuclear family first
+        $nuclearFamily = $this->getFamilyMembersByTypes($deceased, $this->nuclearFamilyTypes);
+
+        // Filter to active (non-memorial) members
+        $activeNuclearFamily = $nuclearFamily->filter(fn($member) => !$member->is_memorial);
+
+        if ($activeNuclearFamily->isNotEmpty()) {
+            return $activeNuclearFamily;
+        }
+
+        // Fallback to extended family
+        $extendedFamily = $this->getFamilyMembersByTypes($deceased, $this->extendedFamilyTypes);
+
+        return $extendedFamily->filter(fn($member) => !$member->is_memorial);
+    }
+
+    /**
+     * Get all family members (both tiers) for a deceased user.
+     * Used for memorial messages where all family can participate.
+     */
+    public function getAllFamilyMembers(User $deceased): Collection
+    {
+        $allFamilyTypes = $this->getAllFamilyTypes();
+
+        return UserConnection::where('status', 'accepted')
+            ->where(function ($query) use ($deceased) {
+                $query->where('requester_user_id', $deceased->id)
+                      ->orWhere('recipient_user_id', $deceased->id);
+            })
+            ->whereIn('relationship_type', $allFamilyTypes)
+            ->with(['requester:id,uuid,first_name,last_name,email,profile_image,is_memorial',
+                    'recipient:id,uuid,first_name,last_name,email,profile_image,is_memorial'])
+            ->get()
+            ->map(function ($connection) use ($deceased) {
+                $member = $connection->requester_user_id === $deceased->id
+                    ? $connection->recipient
+                    : $connection->requester;
+
+                if ($member) {
+                    $member->relationship_type = $connection->relationship_type;
+                }
+
+                return $member;
+            })
+            ->filter()
+            ->unique('id');
+    }
+
+    /**
+     * Get family members by specific relationship types.
+     */
+    protected function getFamilyMembersByTypes(User $deceased, array $relationshipTypes): Collection
     {
         return UserConnection::where('status', 'accepted')
             ->where(function ($query) use ($deceased) {
                 $query->where('requester_user_id', $deceased->id)
                       ->orWhere('recipient_user_id', $deceased->id);
             })
-            ->whereIn('relationship_type', $this->closeFamilyTypes)
-            ->with(['requester:id,uuid,first_name,last_name,email,profile_image',
-                    'recipient:id,uuid,first_name,last_name,email,profile_image'])
+            ->whereIn('relationship_type', $relationshipTypes)
+            ->with(['requester:id,uuid,first_name,last_name,email,profile_image,is_memorial',
+                    'recipient:id,uuid,first_name,last_name,email,profile_image,is_memorial'])
             ->get()
             ->map(function ($connection) use ($deceased) {
-                return $connection->requester_user_id === $deceased->id
+                $member = $connection->requester_user_id === $deceased->id
                     ? $connection->recipient
                     : $connection->requester;
+
+                if ($member) {
+                    $member->relationship_type = $connection->relationship_type;
+                }
+
+                return $member;
             })
             ->filter()
             ->unique('id');
