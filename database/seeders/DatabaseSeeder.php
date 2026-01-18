@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             RelationshipTypeSeeder::class,
             FamilySeeder::class,
             BlogPostSeeder::class,
+            TwoFamiliesUserSeeder::class,
         ]);
     }
 }
