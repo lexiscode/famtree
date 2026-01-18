@@ -397,13 +397,16 @@ class ConnectionRequestController extends Controller
      */
     public function relationshipTypes()
     {
-        $types = \App\Models\GuestModels\RelationshipType::orderBy('sort_order')->get()->map(function ($type) {
-            return [
-                'key' => $type->type_key,
-                'label' => $type->label,
-                'description' => $type->description,
-            ];
-        });
+        $types = \App\Models\GuestModels\RelationshipType::whereNotIn('type_key', ['child', 'partner'])
+            ->orderBy('sort_order')
+            ->get()
+            ->map(function ($type) {
+                return [
+                    'key' => $type->type_key,
+                    'label' => $type->label,
+                    'description' => $type->description,
+                ];
+            });
 
         return response()->json([
             'types' => $types,

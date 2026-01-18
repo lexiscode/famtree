@@ -20,6 +20,7 @@ export default function PendingRequests({
     const [showDeclineModal, setShowDeclineModal] = useState(false);
     const [selectedRequestId, setSelectedRequestId] = useState<number | null>(null);
     const [expandedRequestId, setExpandedRequestId] = useState<number | null>(null);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     const openAcceptModal = (connectionId: number) => {
         setSelectedRequestId(connectionId);
@@ -49,6 +50,7 @@ export default function PendingRequests({
         if (selectedRequestId === null) return;
 
         setLoading(selectedRequestId);
+        setErrorMessage(null);
         closeAcceptModal();
 
         try {
@@ -60,11 +62,16 @@ export default function PendingRequests({
                 },
             });
 
+            const data = await response.json();
+
             if (response.ok) {
                 setRequests(requests.filter(r => r.id !== selectedRequestId));
+            } else {
+                setErrorMessage(data.error || 'Failed to accept the connection request');
             }
         } catch (error) {
             console.error('Error accepting request:', error);
+            setErrorMessage('An unexpected error occurred. Please try again.');
         } finally {
             setLoading(null);
         }
@@ -74,6 +81,7 @@ export default function PendingRequests({
         if (selectedRequestId === null) return;
 
         setLoading(selectedRequestId);
+        setErrorMessage(null);
         closeDeclineModal();
 
         try {
@@ -85,11 +93,16 @@ export default function PendingRequests({
                 },
             });
 
+            const data = await response.json();
+
             if (response.ok) {
                 setRequests(requests.filter(r => r.id !== selectedRequestId));
+            } else {
+                setErrorMessage(data.error || 'Failed to decline the connection request');
             }
         } catch (error) {
             console.error('Error declining request:', error);
+            setErrorMessage('An unexpected error occurred. Please try again.');
         } finally {
             setLoading(null);
         }
@@ -482,6 +495,27 @@ export default function PendingRequests({
                                     </div>
                                 );
                             })}
+                        </div>
+                    )}
+
+                    {/* Error Message */}
+                    {errorMessage && (
+                        <div style={{
+                            textAlign: 'center',
+                            padding: '12px 16px',
+                            marginBottom: '20px',
+                            backgroundColor: '#fef2f2',
+                            border: '1px solid #fecaca',
+                            borderRadius: '8px',
+                            color: '#dc2626',
+                            fontSize: '0.9rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px'
+                        }}>
+                            <AlertCircle size={18} />
+                            {errorMessage}
                         </div>
                     )}
 
