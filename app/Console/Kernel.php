@@ -30,6 +30,43 @@ class Kernel extends ConsoleKernel
             ->onOneServer()
             ->withoutOverlapping()
             ->name('cleanup-old-chat-messages');
+
+        // Deceased Verification System Commands
+        // Check for inactive users (6+ months) and initiate reengagement
+        // Runs daily at 2:00 AM
+        $schedule->command('deceased:check-inactive')
+            ->daily()
+            ->at('02:00')
+            ->onOneServer()
+            ->withoutOverlapping()
+            ->name('deceased-check-inactive');
+
+        // Process reengagement stage to family check (12+ months inactive)
+        // Runs daily at 3:00 AM
+        $schedule->command('deceased:process-reengagement')
+            ->daily()
+            ->at('03:00')
+            ->onOneServer()
+            ->withoutOverlapping()
+            ->name('deceased-process-reengagement');
+
+        // Process family responses and determine next steps
+        // Runs daily at 4:00 AM
+        $schedule->command('deceased:process-family-responses')
+            ->daily()
+            ->at('04:00')
+            ->onOneServer()
+            ->withoutOverlapping()
+            ->name('deceased-process-family-responses');
+
+        // Execute pending status changes (30-day waiting period passed)
+        // Runs daily at 5:00 AM
+        $schedule->command('deceased:execute-pending-changes')
+            ->daily()
+            ->at('05:00')
+            ->onOneServer()
+            ->withoutOverlapping()
+            ->name('deceased-execute-pending-changes');
     }
 
     /**

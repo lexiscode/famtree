@@ -34,6 +34,9 @@ use App\Http\Controllers\GuestControllers\OnboardingController;
 use App\Http\Controllers\GuestControllers\StatusController;
 use App\Http\Controllers\GuestControllers\NotificationController;
 use App\Http\Controllers\GuestControllers\SearchController;
+use App\Http\Controllers\GuestControllers\AccountReactivationController;
+use App\Http\Controllers\GuestControllers\AuthAccessControllers\DeceasedVerificationController;
+use App\Http\Controllers\GuestControllers\AuthAccessControllers\MemorialController;
 use Inertia\Inertia;
 
 
@@ -79,6 +82,13 @@ Route::middleware(['web', 'guest'])->group(function () {
 Route::middleware(['web'])->group(function () {
     Route::get('/auth/2fa-verify', [AuthController::class, 'show2FAVerify'])->name('auth.2fa-verify');
     Route::post('/auth/verify-2fa', [AuthController::class, 'verify2FA'])->name('auth.verify-2fa');
+});
+
+// Account Reactivation routes (for memorialized users)
+Route::middleware(['web'])->group(function () {
+    Route::get('/reactivate/{token}', [AccountReactivationController::class, 'showReactivationForm'])->name('account.reactivate');
+    Route::post('/reactivate/{token}', [AccountReactivationController::class, 'confirmReactivation'])->name('account.reactivate.confirm');
+    Route::post('/request-reactivation', [AccountReactivationController::class, 'requestReactivation'])->name('account.request-reactivation');
 });
 
 /*
@@ -321,5 +331,22 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::post('/{conversationUuid}/send', [PrivateMessageController::class, 'sendMessage'])->name('messages.send');
         Route::post('/{conversationUuid}/mark-read', [PrivateMessageController::class, 'markAsRead'])->name('messages.mark-read');
         Route::post('/{conversationUuid}/typing', [PrivateMessageController::class, 'typing'])->name('messages.typing');
+    });
+
+    // Status Check routes (for family members to respond to deceased verification)
+    Route::prefix('status-check')->group(function () {
+        Route::get('/{verificationUuid}', [DeceasedVerificationController::class, 'showFamilyCheckForm'])->name('status-check.show');
+        Route::post('/{verificationUuid}', [DeceasedVerificationController::class, 'submitFamilyResponse'])->name('status-check.submit');
+    });
+
+    // Cancel pending status change (for the inactive user)
+    Route::post('/cancel-status-change', [DeceasedVerificationController::class, 'cancelPendingChange'])->name('status-check.cancel');
+
+    // Memorial Messages routes
+    Route::prefix('memorial')->group(function () {
+        Route::get('/{userUuid}/messages', [MemorialController::class, 'getMessages'])->name('memorial.messages');
+        Route::post('/{userUuid}/messages', [MemorialController::class, 'addMessage'])->name('memorial.add-message');
+        Route::put('/messages/{messageId}', [MemorialController::class, 'updateMessage'])->name('memorial.update-message');
+        Route::delete('/messages/{messageId}', [MemorialController::class, 'deleteMessage'])->name('memorial.delete-message');
     });
 });
