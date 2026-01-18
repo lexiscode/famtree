@@ -31,6 +31,7 @@ interface TreeData {
 
 interface Props {
     treeData: TreeData;
+    onAvatarClick?: (userId: number, shouldBlur: boolean) => void;
 }
 
 interface NodePosition {
@@ -39,7 +40,7 @@ interface NodePosition {
     level: number;
 }
 
-const ConnectionTreeVisualization: React.FC<Props> = ({ treeData }) => {
+const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick }) => {
     const svgRef = useRef<SVGSVGElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const [zoom, setZoom] = useState(1);
@@ -266,6 +267,15 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData }) => {
         if (shouldBlur) return; // Don't navigate for blurred nodes
         window.location.href = `/profile/${username}`;
     }, []);
+
+    // Handle click on avatar to switch tree view
+    const handleAvatarClick = useCallback((userId: number, shouldBlur: boolean, e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (shouldBlur) return; // Don't switch for blurred nodes
+        if (onAvatarClick) {
+            onAvatarClick(userId, shouldBlur);
+        }
+    }, [onAvatarClick]);
 
     if (!treeData || treeData.nodes.length === 0) {
         return (
@@ -658,6 +668,21 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData }) => {
                                         >
                                             {shouldBlur ? '█' : node.name.charAt(0).toUpperCase()}
                                         </text>
+                                    )}
+                                    {/* Clickable overlay for avatar - switches to this user's tree */}
+                                    {onAvatarClick && (
+                                        <circle
+                                            cx={x}
+                                            cy={y}
+                                            r={radius}
+                                            fill="transparent"
+                                            onClick={(e) => handleAvatarClick(node.id, shouldBlur, e)}
+                                            style={{
+                                                cursor: shouldBlur ? 'not-allowed' : 'pointer'
+                                            }}
+                                        >
+                                            <title>{shouldBlur ? 'This user has hidden their tree' : `Click to view ${node.name.split(' ')[0]}'s tree`}</title>
+                                        </circle>
                                     )}
                                     {/* Name label - clickable */}
                                     <text

@@ -104,6 +104,69 @@ class ConnectionTreeController extends Controller
     }
 
     /**
+     * Get tree data for a user via API (for inline tree switching)
+     */
+    public function getTreeData(int $userId)
+    {
+        $viewer = auth()->user();
+
+        if (!$viewer) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $owner = User::find($userId);
+
+        if (!$owner) {
+            return response()->json(['error' => 'User not found'], 404);
+        }
+
+        // Users can always view their own tree
+        if ($viewer->id === $userId) {
+            $canView = true;
+        } else {
+            // Check tree visibility based on profile visibility settings
+            $canView = $this->canViewTree($viewer, $owner);
+        }
+
+        if (!$canView) {
+            return response()->json(['error' => 'You do not have permission to view this family tree.'], 403);
+        }
+
+        // Get connection tree data for the specified user
+        $connectionTreeData = $this->connectionTreeService->buildFamilyTree($userId);
+
+        // Apply nuclear family blur if needed
+        $shouldBlurNuclearFamily = $owner->blur_nuclear_family_for_public && !$this->isConnectedDirect($viewer, $owner) && $viewer->id !== $userId;
+
+        if ($shouldBlurNuclearFamily) {
+            // Add shouldBlur flag to nuclear family nodes
+            $connectionTreeData['nodes'] = array_map(function ($node) use ($owner) {
+                $isNuclearFamily = $this->privacyService->getRelationshipContext($node['id'], $owner->id) === 'nuclear_family';
+                $node['shouldBlur'] = $isNuclearFamily;
+                return $node;
+            }, $connectionTreeData['nodes']);
+        } else {
+            // Ensure all nodes have shouldBlur set to false
+            $connectionTreeData['nodes'] = array_map(function ($node) {
+                $node['shouldBlur'] = false;
+                return $node;
+            }, $connectionTreeData['nodes']);
+        }
+
+        return response()->json([
+            'success' => true,
+            'connectionTreeData' => $connectionTreeData,
+            'owner' => [
+                'id' => $owner->id,
+                'name' => trim(($owner->first_name ?? '') . ' ' . ($owner->last_name ?? '')),
+                'username' => $owner->username,
+                'profile_image_url' => $owner->profile_image_url,
+                'status' => $owner->status,
+            ],
+        ]);
+    }
+
+    /**
      * Check if a viewer can view the owner's tree based on visibility setting
      * Tree visibility follows the same rules as profile visibility
      */

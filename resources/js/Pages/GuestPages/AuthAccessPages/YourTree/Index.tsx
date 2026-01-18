@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { Link } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { ArrowLeft, Users, Network, Info } from 'lucide-react';
+import { ArrowLeft, Users, Network, Info, RotateCcw, Loader2 } from 'lucide-react';
 import ConnectionTreeVisualization from '@/Components/FamilyTree/ConnectionTreeVisualization';
 
 interface Node {
@@ -44,17 +44,93 @@ interface Props {
 }
 
 export default function Index({ connectionTreeData, user }: Props) {
+    // State for current tree data (can switch to view other users' trees)
+    const [currentTreeData, setCurrentTreeData] = useState<ConnectionTreeData>(connectionTreeData);
+    const [currentOwner, setCurrentOwner] = useState<User>(user);
+    const [isLoading, setIsLoading] = useState(false);
+    const [viewHistory, setViewHistory] = useState<Array<{ treeData: ConnectionTreeData; owner: User }>>([]);
+
+    // Check if viewing own tree
+    const isOwnTree = currentOwner.id === user.id;
+
     // Count unique relationship types
     const relationshipStats = useMemo(() => {
         const types: Record<string, number> = {};
-        connectionTreeData.edges.forEach(edge => {
+        currentTreeData.edges.forEach(edge => {
             types[edge.relationshipType] = (types[edge.relationshipType] || 0) + 1;
         });
         return Object.entries(types).sort((a, b) => b[1] - a[1]);
-    }, [connectionTreeData]);
+    }, [currentTreeData]);
+
+    // Handle avatar click to switch to another user's tree
+    const handleAvatarClick = useCallback(async (userId: number, shouldBlur: boolean) => {
+        if (shouldBlur || isLoading) return;
+
+        // Don't reload if clicking on current root user
+        if (userId === currentTreeData.rootUserId) return;
+
+        setIsLoading(true);
+
+        try {
+            const response = await fetch(`/api/tree/${userId}`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                alert(errorData.error || 'Failed to load tree data');
+                setIsLoading(false);
+                return;
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Save current state to history for back navigation
+                setViewHistory(prev => [...prev, { treeData: currentTreeData, owner: currentOwner }]);
+
+                // Update to new tree
+                setCurrentTreeData(data.connectionTreeData);
+                setCurrentOwner(data.owner);
+            }
+        } catch (error) {
+            console.error('Error fetching tree data:', error);
+            alert('Failed to load tree data. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    }, [currentTreeData, currentOwner, isLoading]);
+
+    // Handle going back to previous tree view
+    const handleGoBack = useCallback(() => {
+        if (viewHistory.length === 0) return;
+
+        const previousState = viewHistory[viewHistory.length - 1];
+        setCurrentTreeData(previousState.treeData);
+        setCurrentOwner(previousState.owner);
+        setViewHistory(prev => prev.slice(0, -1));
+    }, [viewHistory]);
+
+    // Handle resetting to own tree
+    const handleResetToOwnTree = useCallback(() => {
+        setCurrentTreeData(connectionTreeData);
+        setCurrentOwner(user);
+        setViewHistory([]);
+    }, [connectionTreeData, user]);
 
     return (
         <AuthAccessLayout>
+            {/* Add keyframes for spinner */}
+            <style>{`
+                @keyframes spin {
+                    from { transform: rotate(0deg); }
+                    to { transform: rotate(360deg); }
+                }
+            `}</style>
             <div style={{
                 minHeight: '100vh',
                 background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #0F172A 100%)',
@@ -102,7 +178,7 @@ export default function Index({ connectionTreeData, user }: Props) {
                                     backgroundClip: 'text',
                                     letterSpacing: '-0.5px'
                                 }}>
-                                    Your Connection Tree
+                                    {isOwnTree ? 'Your Connection Tree' : `${currentOwner.name}'s Connection Tree`}
                                 </h1>
                                 <p style={{
                                     margin: 0,
@@ -110,7 +186,10 @@ export default function Index({ connectionTreeData, user }: Props) {
                                     fontSize: '1.1rem',
                                     lineHeight: 1.6
                                 }}>
-                                    Visualize your family connections in an interactive tree format
+                                    {isOwnTree
+                                        ? 'Visualize your family connections in an interactive tree format'
+                                        : `Viewing ${currentOwner.name}'s family connections from their perspective`
+                                    }
                                 </p>
                             </div>
 
@@ -119,6 +198,55 @@ export default function Index({ connectionTreeData, user }: Props) {
                                 gap: '1rem',
                                 alignItems: 'center'
                             }}>
+                                {/* Back/Reset buttons when viewing another user's tree */}
+                                {!isOwnTree && (
+                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                        {viewHistory.length > 0 && (
+                                            <button
+                                                onClick={handleGoBack}
+                                                disabled={isLoading}
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '0.5rem',
+                                                    padding: '0.5rem 1rem',
+                                                    background: 'rgba(148, 163, 184, 0.2)',
+                                                    border: '1px solid rgba(148, 163, 184, 0.3)',
+                                                    borderRadius: '8px',
+                                                    color: '#94A3B8',
+                                                    cursor: isLoading ? 'not-allowed' : 'pointer',
+                                                    fontSize: '0.85rem',
+                                                    fontWeight: 500,
+                                                    transition: 'all 0.2s'
+                                                }}
+                                            >
+                                                <ArrowLeft size={16} />
+                                                Back
+                                            </button>
+                                        )}
+                                        <button
+                                            onClick={handleResetToOwnTree}
+                                            disabled={isLoading}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '0.5rem',
+                                                padding: '0.5rem 1rem',
+                                                background: 'rgba(102, 126, 234, 0.2)',
+                                                border: '1px solid rgba(102, 126, 234, 0.3)',
+                                                borderRadius: '8px',
+                                                color: '#667eea',
+                                                cursor: isLoading ? 'not-allowed' : 'pointer',
+                                                fontSize: '0.85rem',
+                                                fontWeight: 500,
+                                                transition: 'all 0.2s'
+                                            }}
+                                        >
+                                            <RotateCcw size={16} />
+                                            My Tree
+                                        </button>
+                                    </div>
+                                )}
                                 <div style={{
                                     background: 'rgba(102, 126, 234, 0.1)',
                                     border: '2px solid rgba(102, 126, 234, 0.3)',
@@ -136,7 +264,7 @@ export default function Index({ connectionTreeData, user }: Props) {
                                             color: '#FFFFFF',
                                             lineHeight: 1
                                         }}>
-                                            {connectionTreeData.nodes.length}
+                                            {currentTreeData.nodes.length}
                                         </div>
                                         <div style={{
                                             fontSize: '0.75rem',
@@ -167,14 +295,46 @@ export default function Index({ connectionTreeData, user }: Props) {
                                 fontSize: '0.9rem',
                                 lineHeight: 1.5
                             }}>
-                                <strong>Interactive Tree:</strong> Use your mouse to drag and pan around the tree. Zoom in/out with the controls, and hover over nodes to see details. Click fullscreen for a better view.
+                                <strong>Interactive Tree:</strong> Use your mouse to drag and pan around the tree. Zoom in/out with the controls, and hover over nodes to see details. <strong>Click on a name</strong> to view their profile, or <strong>click on an avatar</strong> to switch to their tree view.
                             </p>
                         </div>
                     </div>
 
+                    {/* Loading Overlay */}
+                    {isLoading && (
+                        <div style={{
+                            position: 'fixed',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            background: 'rgba(15, 23, 42, 0.8)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 1000,
+                            backdropFilter: 'blur(4px)'
+                        }}>
+                            <div style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                gap: '1rem'
+                            }}>
+                                <Loader2 size={48} style={{ color: '#667eea', animation: 'spin 1s linear infinite' }} />
+                                <p style={{ color: '#E2E8F0', fontSize: '1.1rem', margin: 0 }}>
+                                    Loading tree...
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Main Visualization */}
                     <div style={{ marginBottom: '2rem' }}>
-                        <ConnectionTreeVisualization treeData={connectionTreeData} />
+                        <ConnectionTreeVisualization
+                            treeData={currentTreeData}
+                            onAvatarClick={handleAvatarClick}
+                        />
                     </div>
 
                     {/* Stats Section */}
