@@ -11,16 +11,26 @@ use Illuminate\Database\Eloquent\Collection;
 class DeceasedVerificationService
 {
     /**
-     * Close family relationship types that can respond to status checks.
+     * Tier 1: Nuclear family relationship types (contacted first).
      */
-    protected array $closeFamilyTypes;
+    protected array $nuclearFamilyTypes;
+
+    /**
+     * Tier 2: Extended family relationship types (fallback when no nuclear family available).
+     */
+    protected array $extendedFamilyTypes;
 
     public function __construct(
         protected DeceasedVerificationRepository $repository
     ) {
-        $this->closeFamilyTypes = config('memorial.close_family_types', [
+        $this->nuclearFamilyTypes = config('memorial.nuclear_family_types', [
             'wife', 'husband', 'father', 'mother',
             'son', 'daughter', 'brother', 'sister'
+        ]);
+
+        $this->extendedFamilyTypes = config('memorial.extended_family_types', [
+            'grandfather', 'grandmother', 'grandson', 'granddaughter',
+            'uncle', 'aunt', 'nephew', 'niece', 'cousin'
         ]);
     }
 
@@ -63,19 +73,49 @@ class DeceasedVerificationService
     }
 
     /**
-     * Get close family connections for a user.
-     * Only returns connections with relationship types defined as "close family".
+     * Get family connections for a user using tiered approach.
+     * Tier 1: Nuclear family (contacted first)
+     * Tier 2: Extended family (fallback when no active nuclear family available)
+     *
+     * Returns the appropriate tier based on availability of active family members.
      */
     public function getCloseFamilyConnections(int $userId): Collection
+    {
+        // Try Tier 1 (Nuclear family) first
+        $nuclearFamily = $this->getFamilyConnectionsByTypes($userId, $this->nuclearFamilyTypes);
+
+        // Filter to only include active (non-memorial) family members
+        $activeNuclearFamily = $nuclearFamily->filter(function ($member) {
+            return !$member->is_memorial;
+        });
+
+        // If we have active nuclear family members, use them
+        if ($activeNuclearFamily->isNotEmpty()) {
+            return $activeNuclearFamily;
+        }
+
+        // Fallback to Tier 2 (Extended family) if no active nuclear family
+        $extendedFamily = $this->getFamilyConnectionsByTypes($userId, $this->extendedFamilyTypes);
+
+        // Filter to only include active (non-memorial) extended family members
+        return $extendedFamily->filter(function ($member) {
+            return !$member->is_memorial;
+        });
+    }
+
+    /**
+     * Get family connections by specific relationship types.
+     */
+    protected function getFamilyConnectionsByTypes(int $userId, array $relationshipTypes): Collection
     {
         return UserConnection::where('status', 'accepted')
             ->where(function ($query) use ($userId) {
                 $query->where('requester_user_id', $userId)
                       ->orWhere('recipient_user_id', $userId);
             })
-            ->whereIn('relationship_type', $this->closeFamilyTypes)
-            ->with(['requester:id,uuid,first_name,last_name,email,profile_image',
-                    'recipient:id,uuid,first_name,last_name,email,profile_image'])
+            ->whereIn('relationship_type', $relationshipTypes)
+            ->with(['requester:id,uuid,first_name,last_name,email,profile_image,is_memorial',
+                    'recipient:id,uuid,first_name,last_name,email,profile_image,is_memorial'])
             ->get()
             ->map(function ($connection) use ($userId) {
                 // Return the OTHER user in the connection (the family member)
@@ -84,12 +124,22 @@ class DeceasedVerificationService
                     : $connection->requester;
 
                 // Attach relationship type for context
-                $familyMember->relationship_to_inactive_user = $connection->relationship_type;
+                if ($familyMember) {
+                    $familyMember->relationship_to_inactive_user = $connection->relationship_type;
+                }
 
                 return $familyMember;
             })
             ->filter() // Remove any null values
             ->unique('id');
+    }
+
+    /**
+     * Get all eligible family types (both tiers combined).
+     */
+    public function getAllFamilyTypes(): array
+    {
+        return array_merge($this->nuclearFamilyTypes, $this->extendedFamilyTypes);
     }
 
     /**
@@ -211,6 +261,8 @@ class DeceasedVerificationService
      */
     public function getResponderRelationship(int $inactiveUserId, int $responderId): ?string
     {
+        $allFamilyTypes = $this->getAllFamilyTypes();
+
         $connection = UserConnection::where('status', 'accepted')
             ->where(function ($query) use ($inactiveUserId, $responderId) {
                 $query->where(function ($q) use ($inactiveUserId, $responderId) {
@@ -221,7 +273,7 @@ class DeceasedVerificationService
                       ->where('recipient_user_id', $inactiveUserId);
                 });
             })
-            ->whereIn('relationship_type', $this->closeFamilyTypes)
+            ->whereIn('relationship_type', $allFamilyTypes)
             ->first();
 
         return $connection?->relationship_type;

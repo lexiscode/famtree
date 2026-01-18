@@ -50,15 +50,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Close Family Relationship Types
+    | Tiered Family Relationship Types
     |--------------------------------------------------------------------------
     |
-    | Only these relationship types are considered "close family" and
-    | will be contacted during the family check stage. These are the
-    | users who can respond to status check requests.
+    | Family members are organized into tiers for the verification process.
+    |
+    | Tier 1 (Nuclear Family): Primary contacts for status verification.
+    | These are contacted first during the family check stage.
+    |
+    | Tier 2 (Extended Family): Fallback contacts used when no Tier 1
+    | family members are available (e.g., entire nuclear family deceased).
+    | Blood relatives only - no in-laws.
     |
     */
-    'close_family_types' => [
+    'nuclear_family_types' => [
         'wife',
         'husband',
         'father',
@@ -67,6 +72,18 @@ return [
         'daughter',
         'brother',
         'sister',
+    ],
+
+    'extended_family_types' => [
+        'grandfather',
+        'grandmother',
+        'grandson',
+        'granddaughter',
+        'uncle',
+        'aunt',
+        'nephew',
+        'niece',
+        'cousin',
     ],
 
     /*

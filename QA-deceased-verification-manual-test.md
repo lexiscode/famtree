@@ -53,7 +53,7 @@ $userC = User::create([
     'gender' => 'male',
 ]);
 
-// User D - Friend (NOT close family)
+// User D - Friend (NOT family at all)
 $userD = User::create([
     'first_name' => 'Bob',
     'last_name' => 'Friend',
@@ -83,11 +83,11 @@ UserConnection::create([
     'accepted_at' => now(),
 ]);
 
-// Friend connection (cousin - not close family)
+// Friend connection (friend - not family)
 UserConnection::create([
     'requester_user_id' => $userA->id,
     'recipient_user_id' => $userD->id,
-    'relationship_type' => 'cousin',
+    'relationship_type' => 'friend',
     'status' => 'accepted',
     'requested_at' => now(),
     'accepted_at' => now(),
@@ -546,9 +546,370 @@ echo 'Cleanup complete!';
 | User | Email | Password | Role |
 |------|-------|----------|------|
 | John Doe | johndoe@test.com | Test1234 | Inactive/Deceased User |
-| Jane Doe | janedoe@test.com | Test1234 | Wife (Close Family) |
-| Mike Doe | mikedoe@test.com | Test1234 | Son (Close Family) |
-| Bob Friend | bobfriend@test.com | Test1234 | Cousin (NOT Close Family) |
+| Jane Doe | janedoe@test.com | Test1234 | Wife (Nuclear Family) |
+| Mike Doe | mikedoe@test.com | Test1234 | Son (Nuclear Family) |
+| Bob Friend | bobfriend@test.com | Test1234 | Friend (NOT Family) |
+
+---
+
+---
+
+## Test 7: Tiered Family Verification (Nuclear vs Extended Family)
+
+This tests the fallback mechanism when nuclear family is unavailable (e.g., entire nuclear family deceased).
+
+### Setup: Create Extended Family Test Users
+
+```bash
+docker-compose exec -T famtree php artisan tinker
+```
+
+Paste this code:
+
+```php
+use App\Models\GuestModels\User;
+use App\Models\GuestModels\UserConnection;
+
+// User E - The inactive user for tiered test
+$userE = User::create([
+    'first_name' => 'Tom',
+    'last_name' => 'Smith',
+    'username' => 'tomsmith_test',
+    'email' => 'tomsmith@test.com',
+    'password' => bcrypt('Test1234'),
+    'status' => 'alive',
+    'gender' => 'male',
+]);
+
+// User F - Wife (Nuclear Family - will be marked deceased)
+$userF = User::create([
+    'first_name' => 'Mary',
+    'last_name' => 'Smith',
+    'username' => 'marysmith_test',
+    'email' => 'marysmith@test.com',
+    'password' => bcrypt('Test1234'),
+    'status' => 'deceased',
+    'gender' => 'female',
+    'is_memorial' => true,
+    'memorialized_at' => now(),
+]);
+
+// User G - Son (Nuclear Family - will be marked deceased)
+$userG = User::create([
+    'first_name' => 'Tim',
+    'last_name' => 'Smith',
+    'username' => 'timsmith_test',
+    'email' => 'timsmith@test.com',
+    'password' => bcrypt('Test1234'),
+    'status' => 'deceased',
+    'gender' => 'male',
+    'is_memorial' => true,
+    'memorialized_at' => now(),
+]);
+
+// User H - Uncle (Extended Family - ALIVE, should be fallback)
+$userH = User::create([
+    'first_name' => 'George',
+    'last_name' => 'Smith',
+    'username' => 'georgesmith_test',
+    'email' => 'georgesmith@test.com',
+    'password' => bcrypt('Test1234'),
+    'status' => 'alive',
+    'gender' => 'male',
+]);
+
+// User I - Cousin (Extended Family - ALIVE, should be fallback)
+$userI = User::create([
+    'first_name' => 'Sarah',
+    'last_name' => 'Smith',
+    'username' => 'sarahsmith_test',
+    'email' => 'sarahsmith@test.com',
+    'password' => bcrypt('Test1234'),
+    'status' => 'alive',
+    'gender' => 'female',
+]);
+
+// User J - Grandfather (Extended Family - ALIVE)
+$userJ = User::create([
+    'first_name' => 'William',
+    'last_name' => 'Smith',
+    'username' => 'williamsmith_test',
+    'email' => 'williamsmith@test.com',
+    'password' => bcrypt('Test1234'),
+    'status' => 'alive',
+    'gender' => 'male',
+]);
+
+// Create family connections
+// Nuclear family (all deceased)
+UserConnection::create([
+    'requester_user_id' => $userE->id,
+    'recipient_user_id' => $userF->id,
+    'relationship_type' => 'wife',
+    'status' => 'accepted',
+    'requested_at' => now(),
+    'accepted_at' => now(),
+]);
+
+UserConnection::create([
+    'requester_user_id' => $userE->id,
+    'recipient_user_id' => $userG->id,
+    'relationship_type' => 'son',
+    'status' => 'accepted',
+    'requested_at' => now(),
+    'accepted_at' => now(),
+]);
+
+// Extended family (alive - fallback)
+UserConnection::create([
+    'requester_user_id' => $userE->id,
+    'recipient_user_id' => $userH->id,
+    'relationship_type' => 'uncle',
+    'status' => 'accepted',
+    'requested_at' => now(),
+    'accepted_at' => now(),
+]);
+
+UserConnection::create([
+    'requester_user_id' => $userE->id,
+    'recipient_user_id' => $userI->id,
+    'relationship_type' => 'cousin',
+    'status' => 'accepted',
+    'requested_at' => now(),
+    'accepted_at' => now(),
+]);
+
+UserConnection::create([
+    'requester_user_id' => $userE->id,
+    'recipient_user_id' => $userJ->id,
+    'relationship_type' => 'grandfather',
+    'status' => 'accepted',
+    'requested_at' => now(),
+    'accepted_at' => now(),
+]);
+
+echo "Tiered family test users created!\n";
+echo "User E (Inactive): tomsmith@test.com / Test1234\n";
+echo "User F (Wife - DECEASED): marysmith@test.com / Test1234\n";
+echo "User G (Son - DECEASED): timsmith@test.com / Test1234\n";
+echo "User H (Uncle - ALIVE): georgesmith@test.com / Test1234\n";
+echo "User I (Cousin - ALIVE): sarahsmith@test.com / Test1234\n";
+echo "User J (Grandfather - ALIVE): williamsmith@test.com / Test1234\n";
+```
+
+### Create Verification Record for Tom Smith
+
+```php
+use App\Models\GuestModels\User;
+use App\Models\GuestModels\DeceasedVerification;
+
+$userE = User::where('email', 'tomsmith@test.com')->first();
+
+$verification = DeceasedVerification::create([
+    'user_id' => $userE->id,
+    'stage' => 'family_check',
+    'reengagement_sent_at' => now()->subMonths(6),
+    'family_check_sent_at' => now(),
+]);
+
+echo "Verification UUID: " . $verification->uuid . "\n";
+echo "Save this UUID for testing!\n";
+```
+
+**Write down the UUID!**
+
+---
+
+### Test 7.1: Nuclear Family Cannot Access (They're Deceased)
+
+| Step | Action | Expected Result |
+|------|--------|-----------------|
+| 1 | Try to login as `marysmith@test.com` (deceased wife) | May fail or redirect (user is memorialized) |
+| 2 | If login succeeds, go to `http://localhost/status-check/{UUID}` | Should NOT allow response (user is memorialized) |
+
+---
+
+### Test 7.2: Extended Family CAN Access Status Check
+
+| Step | Action | Expected Result |
+|------|--------|-----------------|
+| 1 | Login as `georgesmith@test.com` / `Test1234` (Uncle) | Successfully logged in |
+| 2 | Go to `http://localhost/status-check/{UUID}` | Status check page loads |
+| 3 | Verify page shows "About Tom Smith" | Name visible |
+| 4 | Verify 3 response options visible | All options shown |
+| 5 | This confirms extended family can respond when nuclear family is unavailable | Fallback working |
+
+---
+
+### Test 7.3: Submit Response as Extended Family (Uncle)
+
+| Step | Action | Expected Result |
+|------|--------|-----------------|
+| 1 | Click "They have passed away" option | Option highlights |
+| 2 | Click "Submit Response" | Form submits |
+| 3 | Verify redirect to Thank You page | Thank you message shown |
+| 4 | This proves extended family responses are accepted | Response recorded |
+
+---
+
+### Test 7.4: Another Extended Family Member Can Also Respond
+
+| Step | Action | Expected Result |
+|------|--------|-----------------|
+| 1 | Logout and login as `sarahsmith@test.com` / `Test1234` (Cousin) | Logged in |
+| 2 | Go to `http://localhost/status-check/{UUID}` | Page loads (NOT already responded) |
+| 3 | Click "They have passed away" | Option selected |
+| 4 | Click "Submit Response" | Thank you page appears |
+| 5 | Two extended family members have now confirmed | Majority reached |
+
+---
+
+### Test 7.5: Grandfather Can Also Respond (Extended Family)
+
+| Step | Action | Expected Result |
+|------|--------|-----------------|
+| 1 | Logout and login as `williamsmith@test.com` / `Test1234` (Grandfather) | Logged in |
+| 2 | Go to `http://localhost/status-check/{UUID}` | Page loads |
+| 3 | Click "They are alive and well" (different vote) | Option selected |
+| 4 | Click "Submit Response" | Response recorded |
+
+---
+
+### Test 7.6: Extended Family Can Add Memorial Messages
+
+First, memorialize Tom:
+
+```bash
+docker-compose exec -T famtree php artisan tinker --execute="
+use App\Models\GuestModels\User;
+\$user = User::where('email', 'tomsmith@test.com')->first();
+\$user->update([
+    'is_memorial' => true,
+    'memorialized_at' => now(),
+    'status' => 'deceased',
+    'death_date' => now()->subDays(3),
+]);
+echo 'Tom Smith memorialized.';
+"
+```
+
+| Step | Action | Expected Result |
+|------|--------|-----------------|
+| 1 | Login as `georgesmith@test.com` / `Test1234` (Uncle) | Logged in |
+| 2 | Go to `http://localhost/profile/tomsmith_test` | Memorial profile loads |
+| 3 | Verify Memorial Banner visible | Banner with candles shown |
+| 4 | Scroll to "Tributes & Memories" section | Section visible |
+| 5 | Verify textarea IS visible (extended family can add messages) | Input field shown |
+| 6 | Type: "Rest in peace, nephew. We'll miss you at family gatherings." | Text entered |
+| 7 | Click "Share Tribute" | Message submits |
+| 8 | Verify message appears with "George Smith" and "Uncle" | Author and relationship shown |
+
+---
+
+### Test 7.7: Cousin Can Also Add Memorial Message
+
+| Step | Action | Expected Result |
+|------|--------|-----------------|
+| 1 | Logout and login as `sarahsmith@test.com` / `Test1234` (Cousin) | Logged in |
+| 2 | Go to `http://localhost/profile/tomsmith_test` | Memorial profile loads |
+| 3 | Verify textarea IS visible | Input field shown |
+| 4 | Type: "Cousin Tom, thank you for all the memories we shared." | Text entered |
+| 5 | Click "Share Tribute" | Message submits |
+| 6 | Verify message shows "Sarah Smith" and "Cousin" | Correct display |
+
+---
+
+### Test 7.8: Verify Both Nuclear and Extended Family Types in Config
+
+This is a backend verification. Run:
+
+```bash
+docker-compose exec -T famtree php artisan tinker --execute="
+echo 'Nuclear Family Types (Tier 1):' . PHP_EOL;
+print_r(config('memorial.nuclear_family_types'));
+
+echo PHP_EOL . 'Extended Family Types (Tier 2):' . PHP_EOL;
+print_r(config('memorial.extended_family_types'));
+"
+```
+
+| Expected Nuclear (Tier 1) | Expected Extended (Tier 2) |
+|---------------------------|----------------------------|
+| wife | grandfather |
+| husband | grandmother |
+| father | grandson |
+| mother | granddaughter |
+| son | uncle |
+| daughter | aunt |
+| brother | nephew |
+| sister | niece |
+| | cousin |
+
+**Note: NO in-laws in extended family (not blood relatives)**
+
+---
+
+### Cleanup Tiered Test Users
+
+```bash
+docker-compose exec -T famtree php artisan tinker --execute="
+use App\Models\GuestModels\User;
+use App\Models\GuestModels\DeceasedVerification;
+use App\Models\GuestModels\DeceasedVerificationResponse;
+use App\Models\GuestModels\MemorialMessage;
+use App\Models\GuestModels\UserConnection;
+
+\$emails = [
+    'tomsmith@test.com',
+    'marysmith@test.com',
+    'timsmith@test.com',
+    'georgesmith@test.com',
+    'sarahsmith@test.com',
+    'williamsmith@test.com'
+];
+
+foreach (\$emails as \$email) {
+    \$user = User::where('email', \$email)->first();
+    if (\$user) {
+        DeceasedVerificationResponse::whereHas('verification', fn(\$q) => \$q->where('user_id', \$user->id))->delete();
+        DeceasedVerification::where('user_id', \$user->id)->delete();
+        MemorialMessage::where('user_id', \$user->id)->orWhere('author_id', \$user->id)->delete();
+        UserConnection::where('requester_user_id', \$user->id)->orWhere('recipient_user_id', \$user->id)->delete();
+        \$user->forceDelete();
+        echo 'Deleted: ' . \$email . PHP_EOL;
+    }
+}
+echo 'Tiered test cleanup complete!';
+"
+```
+
+---
+
+## Test 7 Summary Checklist
+
+| Test | Description | Pass/Fail |
+|------|-------------|-----------|
+| 7.1 | Deceased nuclear family cannot respond | ⬜ |
+| 7.2 | Extended family (Uncle) CAN access status check | ⬜ |
+| 7.3 | Extended family can submit response | ⬜ |
+| 7.4 | Multiple extended family can respond | ⬜ |
+| 7.5 | Grandfather (extended) can respond | ⬜ |
+| 7.6 | Extended family can add memorial messages | ⬜ |
+| 7.7 | Cousin can add memorial message | ⬜ |
+| 7.8 | Config shows correct family types (no in-laws) | ⬜ |
+
+---
+
+## Tiered Test Credentials Quick Reference
+
+| User | Email | Password | Role | Status |
+|------|-------|----------|------|--------|
+| Tom Smith | tomsmith@test.com | Test1234 | Inactive User | Alive/Memorial |
+| Mary Smith | marysmith@test.com | Test1234 | Wife (Nuclear) | DECEASED |
+| Tim Smith | timsmith@test.com | Test1234 | Son (Nuclear) | DECEASED |
+| George Smith | georgesmith@test.com | Test1234 | Uncle (Extended) | Alive |
+| Sarah Smith | sarahsmith@test.com | Test1234 | Cousin (Extended) | Alive |
+| William Smith | williamsmith@test.com | Test1234 | Grandfather (Extended) | Alive |
 
 ---
 
