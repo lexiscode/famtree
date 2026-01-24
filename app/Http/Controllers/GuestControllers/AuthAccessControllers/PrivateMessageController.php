@@ -288,10 +288,13 @@ class PrivateMessageController extends Controller
             $unreadCount = $this->treeChatRepository->getUnreadCount($tree->id, $userId);
             $memberCount = $tree->members->count();
 
+            // Use merged group name if set, otherwise use tree name
+            $displayName = $tree->getMergedGroupDisplayName();
+
             return [
                 'uuid' => $tree->uuid,
                 'type' => 'group',
-                'name' => $tree->tree_name,
+                'name' => $displayName,
                 'member_count' => $memberCount,
                 'unread_count' => $unreadCount,
                 'lastMessage' => $latestMessage ? [
