@@ -416,7 +416,7 @@ export default function ViewProfile({
                                     </button>
                                     <button
                                         className="profile-btn profile-btn-secondary"
-                                        onClick={() => router.visit(route('profile.tree', { userId: profile.id }))}
+                                        onClick={() => router.visit(route('profile.tree', { username: profile.username }))}
                                         style={{ width: '100%', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', border: 'none' }}
                                         title="View their interactive family tree"
                                     >

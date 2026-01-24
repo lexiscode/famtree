@@ -1,7 +1,7 @@
 import { useCallback, useState, useEffect } from 'react';
 import { usePage, router, Link } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { Users, Edit, Trash2, Lock, Globe, CheckCircle, Shield, Crown, TreePine, ArrowLeft, Copy, Check, X, AlertTriangle, UserPlus, CheckCircle2, XCircle, ChevronLeft, ChevronRight, MessageCircle } from 'lucide-react';
+import { Users, Edit, Trash2, Lock, Globe, CheckCircle, Shield, Crown, TreePine, ArrowLeft, Copy, Check, X, AlertTriangle, UserPlus, CheckCircle2, XCircle, ChevronLeft, ChevronRight, MessageCircle, GitBranch, Edit3, Save, GitMerge } from 'lucide-react';
 import TreeConnectionManager from '@/Components/FamilyTree/TreeConnectionManager';
 import TreeChatWindow from '@/Components/FamilyTree/TreeChatWindow';
 import ProfileSidebar from '../Stories/ProfileSidebar';
@@ -57,8 +57,11 @@ interface TreeConnection {
 }
 
 interface TreeData {
-    id: number;
+    id: string;
     name: string;
+    merged_group_name?: string;
+    has_merged_trees: boolean;
+    display_name: string;
     description?: string;
     is_public: boolean;
     is_nuclear_family: boolean;
@@ -118,6 +121,9 @@ export default function MyFamilyTree({
     const [flashMessage, setFlashMessage] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
     const [showChat, setShowChat] = useState(false);
     const [isChatMinimized, setIsChatMinimized] = useState(false);
+    const [isEditingGroupName, setIsEditingGroupName] = useState(false);
+    const [mergedGroupName, setMergedGroupName] = useState(tree.merged_group_name || '');
+    const [savingGroupName, setSavingGroupName] = useState(false);
 
     // Check for flash messages
     useEffect(() => {
@@ -220,6 +226,48 @@ export default function MyFamilyTree({
         return new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
     };
 
+    const handleSaveMergedGroupName = useCallback(async () => {
+        if (!mergedGroupName.trim()) {
+            setFlashMessage({ type: 'error', message: 'Please enter a group name' });
+            setShowFlashMessage(true);
+            setTimeout(() => setShowFlashMessage(false), 3000);
+            return;
+        }
+
+        setSavingGroupName(true);
+        try {
+            const response = await fetch(route('family-tree.update-merged-group-name', tree.id), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+                body: JSON.stringify({ merged_group_name: mergedGroupName.trim() }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                setFlashMessage({ type: 'success', message: 'Merged group name updated successfully!' });
+                setShowFlashMessage(true);
+                setIsEditingGroupName(false);
+                setTimeout(() => setShowFlashMessage(false), 3000);
+                // Refresh the page to show updated name
+                router.reload({ only: ['tree'] });
+            } else {
+                setFlashMessage({ type: 'error', message: data.error || 'Failed to update group name' });
+                setShowFlashMessage(true);
+                setTimeout(() => setShowFlashMessage(false), 3000);
+            }
+        } catch (error) {
+            setFlashMessage({ type: 'error', message: 'An error occurred. Please try again.' });
+            setShowFlashMessage(true);
+            setTimeout(() => setShowFlashMessage(false), 3000);
+        } finally {
+            setSavingGroupName(false);
+        }
+    }, [tree.id, mergedGroupName]);
+
     const creatorAdmin = admins.find((a) => a.role === 'creator');
 
     return (
@@ -289,18 +337,24 @@ export default function MyFamilyTree({
                         </div>
 
                         {/* Action Buttons */}
-                        {isAdmin && (
-                            <div className="tree-actions">
-                                <Link href={route('family-tree.edit', tree.id)} className="action-btn secondary">
-                                    <Edit size={18} />
-                                    Edit Tree
-                                </Link>
-                                <button className="action-btn danger" onClick={handleDeleteTree} disabled={loading}>
-                                    <Trash2 size={18} />
-                                    Delete Tree
-                                </button>
-                            </div>
-                        )}
+                        <div className="tree-actions">
+                            <Link href={route('family-tree.tree', tree.id)} className="action-btn primary">
+                                <GitBranch size={18} />
+                                View Family Tree
+                            </Link>
+                            {isAdmin && (
+                                <>
+                                    <Link href={route('family-tree.edit', tree.id)} className="action-btn secondary">
+                                        <Edit size={18} />
+                                        Edit Tree
+                                    </Link>
+                                    <button className="action-btn danger" onClick={handleDeleteTree} disabled={loading}>
+                                        <Trash2 size={18} />
+                                        Delete Tree
+                                    </button>
+                                </>
+                            )}
+                        </div>
 
                         {/* Stats Grid */}
                         <div className="tree-stats-grid">
@@ -321,6 +375,106 @@ export default function MyFamilyTree({
                                 <div className="stat-label">Creator</div>
                             </div>
                         </div>
+
+                        {/* Merged Group Name Card - Only show for merged trees */}
+                        {tree.has_merged_trees && (
+                            <div className="tree-uuid-card" style={{ borderColor: '#F59E0B', background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.05) 100%)' }}>
+                                <div className="uuid-header">
+                                    <div className="uuid-icon" style={{ background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)' }}>
+                                        <GitMerge size={20} />
+                                    </div>
+                                    <div className="uuid-content">
+                                        <h4 className="uuid-title">Merged Family Group Name</h4>
+                                        <p className="uuid-subtitle">Set a unified name for your merged family group</p>
+                                    </div>
+                                </div>
+                                <div className="uuid-display-wrapper">
+                                    {isEditingGroupName ? (
+                                        <div style={{ display: 'flex', gap: '0.5rem', width: '100%', alignItems: 'center' }}>
+                                            <input
+                                                type="text"
+                                                value={mergedGroupName}
+                                                onChange={(e) => setMergedGroupName(e.target.value)}
+                                                placeholder="Enter group name (e.g., The Smith-Johnson Family)"
+                                                style={{
+                                                    flex: 1,
+                                                    padding: '0.75rem 1rem',
+                                                    borderRadius: '8px',
+                                                    border: '2px solid #F59E0B',
+                                                    background: 'rgba(255, 255, 255, 0.9)',
+                                                    fontSize: '0.95rem',
+                                                    fontWeight: 500,
+                                                    color: '#1F2937',
+                                                }}
+                                                autoFocus
+                                            />
+                                            <button
+                                                onClick={handleSaveMergedGroupName}
+                                                disabled={savingGroupName}
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '0.5rem',
+                                                    padding: '0.75rem 1.25rem',
+                                                    borderRadius: '8px',
+                                                    border: 'none',
+                                                    background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                                                    color: 'white',
+                                                    fontWeight: 600,
+                                                    cursor: savingGroupName ? 'not-allowed' : 'pointer',
+                                                    opacity: savingGroupName ? 0.7 : 1,
+                                                }}
+                                            >
+                                                <Save size={18} />
+                                                {savingGroupName ? 'Saving...' : 'Save'}
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setIsEditingGroupName(false);
+                                                    setMergedGroupName(tree.merged_group_name || '');
+                                                }}
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    padding: '0.75rem',
+                                                    borderRadius: '8px',
+                                                    border: '1px solid #D1D5DB',
+                                                    background: 'white',
+                                                    color: '#6B7280',
+                                                    cursor: 'pointer',
+                                                }}
+                                            >
+                                                <X size={18} />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <div className="uuid-display" style={{ borderColor: '#F59E0B' }}>
+                                                <code className="uuid-code" style={{ color: '#B45309', fontWeight: 600 }}>
+                                                    {tree.merged_group_name || 'No group name set'}
+                                                </code>
+                                            </div>
+                                            {isAdmin && (
+                                                <button
+                                                    onClick={() => setIsEditingGroupName(true)}
+                                                    className="uuid-copy-btn"
+                                                    style={{ background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)' }}
+                                                    title="Edit group name"
+                                                >
+                                                    <Edit3 size={18} />
+                                                    <span>Edit</span>
+                                                </button>
+                                            )}
+                                        </>
+                                    )}
+                                </div>
+                                {!tree.merged_group_name && !isEditingGroupName && (
+                                    <p style={{ marginTop: '0.75rem', fontSize: '0.85rem', color: '#92400E', fontStyle: 'italic' }}>
+                                        This name will be displayed as the unified name for your merged family groups.
+                                    </p>
+                                )}
+                            </div>
+                        )}
 
                         {/* Tree UUID Card */}
                         <div className="tree-uuid-card">

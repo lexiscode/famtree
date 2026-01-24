@@ -238,6 +238,9 @@ class FamilyTreeController extends Controller
             abort(403, 'Unauthorized to view this family tree');
         }
 
+        // Get the user's original tree (for personalized name/description)
+        $userOriginalTree = $this->treeRepository->getUserOriginalTree($familyTree, $user->id);
+
         // Get tree admins and members
         $admins = $this->adminRepository->getTreeAdmins($familyTree->id);
         $membersPaginated = $this->treeRepository->getTreeMembersPaginated($familyTree->id, 12);
@@ -282,11 +285,15 @@ class FamilyTreeController extends Controller
             'unreadNotificationCount' => 0,
             'tree' => [
                 'id' => $familyTree->uuid,
-                'name' => $familyTree->tree_name,
-                'description' => $familyTree->description,
+                'name' => $userOriginalTree->tree_name, // User's own tree name
+                'description' => $userOriginalTree->description, // User's own tree description
+                'merged_group_name' => $familyTree->merged_group_name,
+                'has_merged_trees' => $familyTree->hasMergedTrees(),
+                'display_name' => $familyTree->getMergedGroupDisplayName(),
                 'is_public' => $familyTree->is_public,
                 'is_nuclear_family' => $familyTree->is_nuclear_family,
                 'created_at' => $familyTree->created_at,
+                'user_original_tree_id' => $userOriginalTree->id, // For edit operations
             ],
             'admins' => $admins->map(fn($admin) => [
                 'id' => $admin->user->id,
@@ -333,6 +340,9 @@ class FamilyTreeController extends Controller
             abort(403, 'Unauthorized to edit this family tree');
         }
 
+        // Get the user's original tree (for personalized editing)
+        $userOriginalTree = $this->treeRepository->getUserOriginalTree($familyTree, $user->id);
+
         // Get user profile data and connection counts for sidebar
         $userProfile = $this->getUserProfileData($user);
         $connectionCount = $this->userConnectionRepository->getConnectionCount($user->id);
@@ -347,9 +357,10 @@ class FamilyTreeController extends Controller
             'unreadNotificationCount' => 0,
             'tree' => [
                 'id' => $familyTree->uuid,
-                'name' => $familyTree->tree_name,
-                'description' => $familyTree->description,
+                'name' => $userOriginalTree->tree_name, // User's own tree name
+                'description' => $userOriginalTree->description, // User's own tree description
                 'is_public' => $familyTree->is_public,
+                'user_original_tree_id' => $userOriginalTree->id, // For update operation
             ],
         ]);
     }
@@ -375,9 +386,18 @@ class FamilyTreeController extends Controller
             'is_public' => 'boolean',
         ]);
 
-        $this->treeRepository->update($familyTree->id, [
+        // Get the user's original tree to update
+        $userOriginalTree = $this->treeRepository->getUserOriginalTree($familyTree, $user->id);
+
+        // Update the user's original tree name and description
+        // Use withTrashed to update soft-deleted merged trees
+        FamilyTree::withTrashed()->where('id', $userOriginalTree->id)->update([
             'tree_name' => $validated['tree_name'],
             'description' => $validated['description'] ?? null,
+        ]);
+
+        // Update is_public on the main tree (this affects the whole merged group)
+        $this->treeRepository->update($familyTree->id, [
             'is_public' => $validated['is_public'] ?? false,
         ]);
 
@@ -610,6 +630,58 @@ class FamilyTreeController extends Controller
     }
 
     /**
+     * View family group tree visualization
+     */
+    public function viewTree(FamilyTree $familyTree)
+    {
+        $user = auth()->user();
+
+        if (!$user) {
+            return redirect()->route('home');
+        }
+
+        // Check access (admin or member)
+        $isAdmin = $this->adminRepository->isAdmin($familyTree->id, $user->id);
+        $isMember = $this->treeRepository->isMember($familyTree->id, $user->id);
+
+        if (!$isAdmin && !$isMember && !$familyTree->is_public) {
+            abort(403, 'Unauthorized to view this family tree');
+        }
+
+        // Get the user's original tree (for personalized name/description)
+        $userOriginalTree = $this->treeRepository->getUserOriginalTree($familyTree, $user->id);
+
+        // Build the family group tree data
+        $treeData = $this->treeService->buildFamilyGroupTree($familyTree->id);
+
+        // Get user profile data and connection counts for sidebar
+        $userProfile = $this->getUserProfileData($user);
+        $connectionCount = $this->userConnectionRepository->getConnectionCount($user->id);
+        $pendingRequestCount = $this->userConnectionRepository->getPendingRequestCount($user->id);
+        $sentRequestCount = $this->userConnectionRepository->getSentRequestCount($user->id);
+
+        return Inertia::render('GuestPages/AuthAccessPages/FamilyTree/FamilyGroupTree', [
+            'user' => $userProfile,
+            'connectionCount' => $connectionCount,
+            'pendingRequestCount' => $pendingRequestCount,
+            'sentRequestCount' => $sentRequestCount,
+            'unreadNotificationCount' => 0,
+            'tree' => [
+                'id' => $familyTree->uuid,
+                'name' => $userOriginalTree->tree_name, // User's own tree name
+                'description' => $userOriginalTree->description, // User's own tree description
+                'merged_group_name' => $familyTree->merged_group_name,
+                'has_merged_trees' => $familyTree->hasMergedTrees(),
+                'display_name' => $familyTree->getMergedGroupDisplayName(),
+                'is_public' => $familyTree->is_public,
+            ],
+            'treeData' => $treeData,
+            'isAdmin' => $isAdmin,
+            'isMember' => $isMember,
+        ]);
+    }
+
+    /**
      * Get all admins for a tree
      */
     public function getAdmins(FamilyTree $familyTree)
@@ -631,5 +703,39 @@ class FamilyTreeController extends Controller
         $admins = $this->adminRepository->getTreeAdmins($familyTree->id);
 
         return response()->json(['admins' => $admins]);
+    }
+
+    /**
+     * Update the merged group name for a family tree
+     */
+    public function updateMergedGroupName(Request $request, FamilyTree $familyTree)
+    {
+        $user = auth()->user();
+
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        // Verify user is admin of the tree
+        if (!$this->adminRepository->isAdmin($familyTree->id, $user->id)) {
+            return response()->json(['error' => 'You must be an admin to update the group name'], 403);
+        }
+
+        // Verify the tree has merged trees
+        if (!$familyTree->hasMergedTrees()) {
+            return response()->json(['error' => 'This tree has no merged families'], 400);
+        }
+
+        $validated = $request->validate([
+            'merged_group_name' => 'required|string|max:255',
+        ]);
+
+        $this->treeRepository->updateMergedGroupName($familyTree->id, $validated['merged_group_name']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Merged group name updated successfully',
+            'merged_group_name' => $validated['merged_group_name'],
+        ]);
     }
 }

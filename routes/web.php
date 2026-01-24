@@ -144,6 +144,9 @@ Route::middleware(['web', 'auth'])->group(function () {
         // View tree (UUID route model binding)
         Route::get('/{familyTree}', [FamilyTreeController::class, 'show'])->name('family-tree.show');
 
+        // View family group tree visualization
+        Route::get('/{familyTree}/tree', [FamilyTreeController::class, 'viewTree'])->name('family-tree.tree');
+
         // Edit/update/delete (admin-only, UUID route model binding)
         Route::get('/{familyTree}/edit', [FamilyTreeController::class, 'edit'])->name('family-tree.edit');
         Route::put('/{familyTree}', [FamilyTreeController::class, 'update'])->name('family-tree.update');
@@ -165,6 +168,9 @@ Route::middleware(['web', 'auth'])->group(function () {
         // Admin management (UUID route model binding)
         Route::get('/{familyTree}/admins', [FamilyTreeController::class, 'getAdmins'])->name('family-tree.admins');
 
+        // Merged group name management (UUID route model binding)
+        Route::post('/{familyTree}/merged-group-name', [FamilyTreeController::class, 'updateMergedGroupName'])->name('family-tree.update-merged-group-name');
+
         // Tree Chat routes (UUID route model binding)
         Route::get('/{familyTree}/chat/messages', [\App\Http\Controllers\GuestControllers\AuthAccessControllers\TreeChatController::class, 'getMessages'])->name('family-tree.chat.messages');
         Route::post('/{familyTree}/chat/send', [\App\Http\Controllers\GuestControllers\AuthAccessControllers\TreeChatController::class, 'sendMessage'])->name('family-tree.chat.send');
@@ -176,7 +182,7 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/your-tree', [ConnectionTreeController::class, 'index'])->name('your-tree.index');
 
     // View Another User's Tree route
-    Route::get('/profile/{userId}/tree', [ConnectionTreeController::class, 'viewUserTree'])->name('profile.tree');
+    Route::get('/profile/{username}/tree', [ConnectionTreeController::class, 'viewUserTree'])->name('profile.tree');
 
     // API endpoint for getting tree data (for inline tree switching)
     Route::get('/api/tree/{userId}', [ConnectionTreeController::class, 'getTreeData'])->name('api.tree.data');

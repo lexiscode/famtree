@@ -18,6 +18,7 @@ class FamilyTree extends Model
         'uuid',
         'root_user_id',
         'tree_name',
+        'merged_group_name',
         'description',
         'is_public',
         'created_by_user_id',
@@ -158,5 +159,29 @@ class FamilyTree extends Model
     public function getCreatorAdmin()
     {
         return $this->admins()->where('role', 'creator')->first();
+    }
+
+    /**
+     * Check if this tree has merged other trees into it
+     *
+     * @return bool
+     */
+    public function hasMergedTrees(): bool
+    {
+        return !empty($this->merged_tree_ids);
+    }
+
+    /**
+     * Get the display name for the merged group
+     * Returns merged_group_name if set, otherwise tree_name
+     *
+     * @return string
+     */
+    public function getMergedGroupDisplayName(): string
+    {
+        if ($this->hasMergedTrees() && !empty($this->merged_group_name)) {
+            return $this->merged_group_name;
+        }
+        return $this->tree_name;
     }
 }
