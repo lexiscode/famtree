@@ -321,4 +321,74 @@ class FamilyTreeRepository
         $tree->update(['merged_group_name' => $mergedGroupName]);
         return $tree->fresh();
     }
+
+    /**
+     * Find the user's original tree within a merged family tree
+     * Returns the tree the user originally belonged to (before merge)
+     *
+     * @param FamilyTree $parentTree The main merged tree
+     * @param int $userId
+     * @return FamilyTree|null The user's original tree (could be parent or a merged tree)
+     */
+    public function getUserOriginalTree(FamilyTree $parentTree, int $userId): ?FamilyTree
+    {
+        // First check if user is in the parent tree with a non-merged role
+        $memberEntry = FamilyTreeMember::where('family_tree_id', $parentTree->id)
+            ->where('user_id', $userId)
+            ->first();
+
+        if ($memberEntry) {
+            // If the user's role is not 'merged', they belong to the parent tree
+            if ($memberEntry->nuclear_family_role !== 'merged') {
+                return $parentTree;
+            }
+
+            // User has 'merged' role - they came from a merged tree
+            // Check which merged tree they originally belonged to
+            $mergedTreeIds = $parentTree->merged_tree_ids ?? [];
+
+            foreach ($mergedTreeIds as $mergedTreeId) {
+                $mergedTree = FamilyTree::withTrashed()->find($mergedTreeId);
+                if ($mergedTree) {
+                    // Check if user was the root user or creator of this merged tree
+                    if ($mergedTree->root_user_id === $userId || $mergedTree->created_by_user_id === $userId) {
+                        return $mergedTree;
+                    }
+
+                    // Check if user was a member of this tree before it was merged
+                    // We can check by looking at the original member entries
+                    $wasMember = FamilyTreeMember::withTrashed()
+                        ->where('family_tree_id', $mergedTreeId)
+                        ->where('user_id', $userId)
+                        ->exists();
+
+                    if ($wasMember) {
+                        return $mergedTree;
+                    }
+                }
+            }
+        }
+
+        // Check if user is an admin of the parent tree
+        $isAdmin = $parentTree->admins()->where('user_id', $userId)->exists();
+        if ($isAdmin) {
+            // Check if they're a co_admin (came from merged tree) or creator
+            $adminEntry = $parentTree->admins()->where('user_id', $userId)->first();
+            if ($adminEntry && $adminEntry->role === 'creator') {
+                return $parentTree;
+            }
+
+            // Co-admin - find their original tree
+            $mergedTreeIds = $parentTree->merged_tree_ids ?? [];
+            foreach ($mergedTreeIds as $mergedTreeId) {
+                $mergedTree = FamilyTree::withTrashed()->find($mergedTreeId);
+                if ($mergedTree && ($mergedTree->root_user_id === $userId || $mergedTree->created_by_user_id === $userId)) {
+                    return $mergedTree;
+                }
+            }
+        }
+
+        // Default to parent tree if we can't determine
+        return $parentTree;
+    }
 }

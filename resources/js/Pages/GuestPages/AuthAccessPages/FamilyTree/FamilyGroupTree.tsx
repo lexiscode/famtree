@@ -136,10 +136,10 @@ export default function FamilyGroupTree({
                                             <div className="tree-icon-wrapper">
                                                 <TreePine size={32} strokeWidth={2.5} />
                                             </div>
-                                            <h1>{tree.display_name} - Family Tree</h1>
+                                            <h1>{tree.name} - Family Tree</h1>
                                             {tree.has_merged_trees && tree.merged_group_name && (
                                                 <p className="tree-description" style={{ color: '#F59E0B', fontWeight: 500 }}>
-                                                    Unified Group: {tree.merged_group_name}
+                                                    Unified Group Name: {tree.merged_group_name}
                                                 </p>
                                             )}
                                             {tree.description && <p className="tree-description">{tree.description}</p>}
