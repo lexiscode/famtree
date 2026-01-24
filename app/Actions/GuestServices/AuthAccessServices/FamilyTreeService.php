@@ -524,6 +524,101 @@ class FamilyTreeService
     }
 
     /**
+     * Build a family group tree structure for visualization
+     * Handles both single families and merged families (with containers)
+     *
+     * @param int $familyTreeId
+     * @return array
+     */
+    public function buildFamilyGroupTree(int $familyTreeId): array
+    {
+        $familyTree = $this->familyTreeRepository->getTree($familyTreeId);
+
+        if (!$familyTree) {
+            return [
+                'familyTreeId' => $familyTreeId,
+                'familyTreeUuid' => null,
+                'familyName' => 'Unknown',
+                'isMerged' => false,
+                'containers' => [],
+                'containerConnections' => [],
+            ];
+        }
+
+        $containers = [];
+        $containerConnections = [];
+
+        // Build the main family container (the root tree)
+        $mainContainer = $this->buildFamilyContainer(
+            $familyTree->id,
+            $familyTree->tree_name,
+            $familyTree->root_user_id
+        );
+        $containers[] = $mainContainer;
+
+        // Check if there are merged trees
+        $mergedTreeIds = $familyTree->merged_tree_ids ?? [];
+        $isMerged = !empty($mergedTreeIds);
+
+        if ($isMerged) {
+            // Get the merged trees (including soft-deleted)
+            $mergedTrees = $this->familyTreeRepository->getMergedTrees($mergedTreeIds);
+
+            foreach ($mergedTrees as $mergedTree) {
+                // Build container for each merged family
+                $mergedContainer = $this->buildFamilyContainer(
+                    $mergedTree->id,
+                    $mergedTree->tree_name,
+                    $mergedTree->root_user_id
+                );
+                $containers[] = $mergedContainer;
+
+                // Create connection between main tree and merged tree
+                $containerConnections[] = [
+                    'id' => "connection-{$familyTree->id}-{$mergedTree->id}",
+                    'sourceContainerId' => $familyTree->id,
+                    'targetContainerId' => $mergedTree->id,
+                    'connectionType' => 'merged',
+                    'label' => 'Merged Family',
+                ];
+            }
+        }
+
+        return [
+            'familyTreeId' => $familyTree->id,
+            'familyTreeUuid' => $familyTree->uuid,
+            'familyName' => $familyTree->tree_name,
+            'mergedGroupName' => $familyTree->merged_group_name,
+            'displayName' => $familyTree->getMergedGroupDisplayName(),
+            'isMerged' => $isMerged,
+            'containers' => $containers,
+            'containerConnections' => $containerConnections,
+        ];
+    }
+
+    /**
+     * Build a single family container with tree structure
+     *
+     * @param int $containerId
+     * @param string $containerName
+     * @param int $rootUserId
+     * @return array
+     */
+    private function buildFamilyContainer(int $containerId, string $containerName, int $rootUserId): array
+    {
+        // Use the existing buildFamilyTree method to get nodes and edges
+        $treeData = $this->buildFamilyTree($rootUserId);
+
+        return [
+            'id' => $containerId,
+            'name' => $containerName,
+            'rootUserId' => $rootUserId,
+            'nodes' => $treeData['nodes'],
+            'edges' => $treeData['edges'],
+        ];
+    }
+
+    /**
      * Add a nuclear family member to a tree
      *
      * @param int $treeId

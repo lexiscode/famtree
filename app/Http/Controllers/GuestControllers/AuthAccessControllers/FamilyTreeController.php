@@ -283,6 +283,9 @@ class FamilyTreeController extends Controller
             'tree' => [
                 'id' => $familyTree->uuid,
                 'name' => $familyTree->tree_name,
+                'merged_group_name' => $familyTree->merged_group_name,
+                'has_merged_trees' => $familyTree->hasMergedTrees(),
+                'display_name' => $familyTree->getMergedGroupDisplayName(),
                 'description' => $familyTree->description,
                 'is_public' => $familyTree->is_public,
                 'is_nuclear_family' => $familyTree->is_nuclear_family,
@@ -610,6 +613,55 @@ class FamilyTreeController extends Controller
     }
 
     /**
+     * View family group tree visualization
+     */
+    public function viewTree(FamilyTree $familyTree)
+    {
+        $user = auth()->user();
+
+        if (!$user) {
+            return redirect()->route('home');
+        }
+
+        // Check access (admin or member)
+        $isAdmin = $this->adminRepository->isAdmin($familyTree->id, $user->id);
+        $isMember = $this->treeRepository->isMember($familyTree->id, $user->id);
+
+        if (!$isAdmin && !$isMember && !$familyTree->is_public) {
+            abort(403, 'Unauthorized to view this family tree');
+        }
+
+        // Build the family group tree data
+        $treeData = $this->treeService->buildFamilyGroupTree($familyTree->id);
+
+        // Get user profile data and connection counts for sidebar
+        $userProfile = $this->getUserProfileData($user);
+        $connectionCount = $this->userConnectionRepository->getConnectionCount($user->id);
+        $pendingRequestCount = $this->userConnectionRepository->getPendingRequestCount($user->id);
+        $sentRequestCount = $this->userConnectionRepository->getSentRequestCount($user->id);
+
+        return Inertia::render('GuestPages/AuthAccessPages/FamilyTree/FamilyGroupTree', [
+            'user' => $userProfile,
+            'connectionCount' => $connectionCount,
+            'pendingRequestCount' => $pendingRequestCount,
+            'sentRequestCount' => $sentRequestCount,
+            'unreadNotificationCount' => 0,
+            'tree' => [
+                'id' => $familyTree->uuid,
+                'name' => $familyTree->tree_name,
+                'merged_group_name' => $familyTree->merged_group_name,
+                'has_merged_trees' => $familyTree->hasMergedTrees(),
+                'display_name' => $familyTree->getMergedGroupDisplayName(),
+                'description' => $familyTree->description,
+                'is_public' => $familyTree->is_public,
+            ],
+            'treeData' => $treeData,
+            'isAdmin' => $isAdmin,
+            'isMember' => $isMember,
+        ]);
+    }
+
+    /**
      * Get all admins for a tree
      */
     public function getAdmins(FamilyTree $familyTree)
@@ -631,5 +683,39 @@ class FamilyTreeController extends Controller
         $admins = $this->adminRepository->getTreeAdmins($familyTree->id);
 
         return response()->json(['admins' => $admins]);
+    }
+
+    /**
+     * Update the merged group name for a family tree
+     */
+    public function updateMergedGroupName(Request $request, FamilyTree $familyTree)
+    {
+        $user = auth()->user();
+
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        // Verify user is admin of the tree
+        if (!$this->adminRepository->isAdmin($familyTree->id, $user->id)) {
+            return response()->json(['error' => 'You must be an admin to update the group name'], 403);
+        }
+
+        // Verify the tree has merged trees
+        if (!$familyTree->hasMergedTrees()) {
+            return response()->json(['error' => 'This tree has no merged families'], 400);
+        }
+
+        $validated = $request->validate([
+            'merged_group_name' => 'required|string|max:255',
+        ]);
+
+        $this->treeRepository->updateMergedGroupName($familyTree->id, $validated['merged_group_name']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Merged group name updated successfully',
+            'merged_group_name' => $validated['merged_group_name'],
+        ]);
     }
 }

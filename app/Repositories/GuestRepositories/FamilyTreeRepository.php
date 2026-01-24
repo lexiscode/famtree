@@ -280,4 +280,45 @@ class FamilyTreeRepository
             ->orderBy('created_at', 'desc')
             ->get();
     }
+
+    /**
+     * Get a family tree by ID including soft-deleted (merged) trees
+     *
+     * @param int $treeId
+     * @return FamilyTree|null
+     */
+    public function getTreeWithTrashed(int $treeId): ?FamilyTree
+    {
+        return FamilyTree::withTrashed()
+            ->with('rootUser', 'createdBy')
+            ->find($treeId);
+    }
+
+    /**
+     * Get merged trees for a parent tree
+     *
+     * @param array $mergedTreeIds
+     * @return Collection
+     */
+    public function getMergedTrees(array $mergedTreeIds): Collection
+    {
+        return FamilyTree::withTrashed()
+            ->whereIn('id', $mergedTreeIds)
+            ->with('rootUser', 'createdBy')
+            ->get();
+    }
+
+    /**
+     * Update the merged group name for a family tree
+     *
+     * @param int $treeId
+     * @param string $mergedGroupName
+     * @return FamilyTree
+     */
+    public function updateMergedGroupName(int $treeId, string $mergedGroupName): FamilyTree
+    {
+        $tree = FamilyTree::findOrFail($treeId);
+        $tree->update(['merged_group_name' => $mergedGroupName]);
+        return $tree->fresh();
+    }
 }

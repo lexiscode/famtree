@@ -46,7 +46,7 @@ class ConnectionTreeController extends Controller
     /**
      * Display another user's connection tree visualization
      */
-    public function viewUserTree(int $userId)
+    public function viewUserTree(string $username)
     {
         $viewer = auth()->user();
 
@@ -54,10 +54,10 @@ class ConnectionTreeController extends Controller
             return redirect()->route('home');
         }
 
-        $owner = User::findOrFail($userId);
+        $owner = User::where('username', $username)->firstOrFail();
 
         // Users can always view their own tree
-        if ($viewer->id === $userId) {
+        if ($viewer->id === $owner->id) {
             $canView = true;
         } else {
             // Check tree visibility based on profile visibility settings
@@ -70,10 +70,10 @@ class ConnectionTreeController extends Controller
         }
 
         // Get connection tree data for the specified user
-        $connectionTreeData = $this->connectionTreeService->buildFamilyTree($userId);
+        $connectionTreeData = $this->connectionTreeService->buildFamilyTree($owner->id);
 
         // Apply nuclear family blur if needed
-        $shouldBlurNuclearFamily = $owner->blur_nuclear_family_for_public && !$this->isConnectedDirect($viewer, $owner) && $viewer->id !== $userId;
+        $shouldBlurNuclearFamily = $owner->blur_nuclear_family_for_public && !$this->isConnectedDirect($viewer, $owner) && $viewer->id !== $owner->id;
 
         if ($shouldBlurNuclearFamily) {
             // Add shouldBlur flag to nuclear family nodes
@@ -99,7 +99,7 @@ class ConnectionTreeController extends Controller
                 'profile_image_url' => $owner->profile_image_url,
                 'status' => $owner->status,
             ],
-            'isOwnTree' => $viewer->id === $userId,
+            'isOwnTree' => $viewer->id === $owner->id,
         ]);
     }
 
