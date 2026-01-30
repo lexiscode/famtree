@@ -644,8 +644,8 @@ export default function Feed({
                         e.currentTarget.style.boxShadow = '0 8px 24px rgba(16, 185, 129, 0.4)';
                     }}
                 >
-                    <TrendingUp size={20} />
-                    <span style={{ fontSize: '0.65rem', fontWeight: '700' }}>
+                    <TrendingUp size={18} />
+                    <span style={{ fontSize: '0.8rem', fontWeight: '700' }}>
                         {profileCompletion.percentage}%
                     </span>
                 </button>
