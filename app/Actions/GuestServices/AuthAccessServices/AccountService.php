@@ -113,15 +113,11 @@ class AccountService
         }
 
         if (!empty($familyData)) {
-            // Get the existing familyInfo or create a new instance
-            $familyInfo = $user->familyInfo;
-
-            if (!$familyInfo) {
-                // If no familyInfo exists, create a new one
-                $familyInfo = new \App\Models\GuestModels\UserFamilyInfo(['user_id' => $user->id]);
-            }
-
-            $familyInfo->update($familyData);
+            // Use updateOrCreate to handle both new and existing records
+            \App\Models\GuestModels\UserFamilyInfo::updateOrCreate(
+                ['user_id' => $user->id],
+                $familyData
+            );
         }
     }
 
@@ -161,14 +157,10 @@ class AccountService
         if (in_array($field, $userFields)) {
             $user->update([$field => $value]);
         } elseif (array_key_exists($field, $familyInfoFields)) {
-            $familyInfo = $user->familyInfo;
-
-            if (!$familyInfo) {
-                $familyInfo = new \App\Models\GuestModels\UserFamilyInfo(['user_id' => $user->id]);
-                $familyInfo->save();
-            }
-
-            $familyInfo->update([$familyInfoFields[$field] => $value]);
+            \App\Models\GuestModels\UserFamilyInfo::updateOrCreate(
+                ['user_id' => $user->id],
+                [$familyInfoFields[$field] => $value]
+            );
         }
     }
 }

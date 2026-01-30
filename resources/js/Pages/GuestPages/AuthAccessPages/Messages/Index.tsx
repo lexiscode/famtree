@@ -1,7 +1,67 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { MessageCircle, Search, Send, ArrowLeft, Check, CheckCheck, Users } from 'lucide-react';
+import { MessageCircle, Search, ArrowLeft, Users } from 'lucide-react';
+
+// Custom Leaf Indicator Components for message status
+const LeafOutline = ({ size = 14, className = '' }: { size?: number; className?: string }) => (
+    <svg
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={className}
+    >
+        <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z" />
+        <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12" />
+    </svg>
+);
+
+const LeafFilled = ({ size = 14, className = '' }: { size?: number; className?: string }) => (
+    <svg
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        stroke="currentColor"
+        strokeWidth="1"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={className}
+    >
+        <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z" />
+        <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12" fill="none" strokeWidth="2" />
+    </svg>
+);
+
+const DoubleLeafFilled = ({ size = 14, className = '' }: { size?: number; className?: string }) => (
+    <svg
+        width={size + 6}
+        height={size}
+        viewBox="0 0 30 24"
+        fill="currentColor"
+        stroke="currentColor"
+        strokeWidth="1"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={className}
+    >
+        {/* First leaf */}
+        <g transform="translate(0, 0) scale(0.85)">
+            <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z" />
+            <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12" fill="none" strokeWidth="2" />
+        </g>
+        {/* Second leaf - slightly offset */}
+        <g transform="translate(10, 0) scale(0.85)">
+            <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z" />
+            <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12" fill="none" strokeWidth="2" />
+        </g>
+    </svg>
+);
 import axios from 'axios';
 import './Messages.css';
 
@@ -18,6 +78,7 @@ interface Message {
     conversation_id: number;
     sender_id: number;
     message: string;
+    is_delivered: boolean;
     is_read: boolean;
     created_at: string;
     sender: {
@@ -150,6 +211,9 @@ export default function MessagesIndex({
 
                     // Mark as read immediately if viewing this conversation
                     axios.post(route('messages.mark-read', e.conversation_uuid));
+                } else {
+                    // User is online but not viewing this conversation - mark as delivered
+                    axios.post(route('messages.mark-delivered', e.conversation_uuid));
                 }
 
                 // Update conversations list
@@ -194,12 +258,22 @@ export default function MessagesIndex({
                     }));
                 }
             })
-            .listen('.MessageRead', (e: { conversation_uuid: string; reader_id: number }) => {
+            .listen('.MessageRead', (e: { conversation_uuid: string; read_by_user_id: number }) => {
                 // Update message read status
                 if (activeConversation && e.conversation_uuid === activeConversation.uuid) {
                     setMessages(prev => prev.map(msg => ({
                         ...msg,
                         is_read: msg.sender_id === currentUserId ? true : msg.is_read,
+                        is_delivered: msg.sender_id === currentUserId ? true : msg.is_delivered,
+                    })));
+                }
+            })
+            .listen('.MessageDelivered', (e: { conversation_uuid: string; delivered_to_user_id: number }) => {
+                // Update message delivered status
+                if (activeConversation && e.conversation_uuid === activeConversation.uuid) {
+                    setMessages(prev => prev.map(msg => ({
+                        ...msg,
+                        is_delivered: msg.sender_id === currentUserId ? true : msg.is_delivered,
                     })));
                 }
             });
@@ -657,7 +731,7 @@ export default function MessagesIndex({
                                         {isSending ? (
                                             <div className="spinner-small"></div>
                                         ) : (
-                                            <Send size={20} />
+                                            <span style={{ fontSize: '20px', color: '#ffffff' }}>➤</span>
                                         )}
                                     </button>
                                 </form>
@@ -743,9 +817,11 @@ export default function MessagesIndex({
                                                                 {isOwnMessage && (
                                                                     <span className="message-status">
                                                                         {message.is_read ? (
-                                                                            <CheckCheck size={14} className="read-icon" />
+                                                                            <DoubleLeafFilled size={14} className="read-icon" />
+                                                                        ) : message.is_delivered ? (
+                                                                            <LeafFilled size={14} className="delivered-icon" />
                                                                         ) : (
-                                                                            <Check size={14} />
+                                                                            <LeafOutline size={14} className="sent-icon" />
                                                                         )}
                                                                     </span>
                                                                 )}
@@ -795,7 +871,7 @@ export default function MessagesIndex({
                                         {isSending ? (
                                             <div className="spinner-small"></div>
                                         ) : (
-                                            <Send size={20} />
+                                            <span style={{ fontSize: '20px', color: '#ffffff' }}>➤</span>
                                         )}
                                     </button>
                                 </form>

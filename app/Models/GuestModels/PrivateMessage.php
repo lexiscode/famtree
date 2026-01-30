@@ -11,11 +11,15 @@ class PrivateMessage extends Model
         'conversation_id',
         'sender_id',
         'message',
+        'is_delivered',
+        'delivered_at',
         'is_read',
         'read_at',
     ];
 
     protected $casts = [
+        'is_delivered' => 'boolean',
+        'delivered_at' => 'datetime',
         'is_read' => 'boolean',
         'read_at' => 'datetime',
         'created_at' => 'datetime',
@@ -39,12 +43,27 @@ class PrivateMessage extends Model
     }
 
     /**
+     * Mark this message as delivered
+     */
+    public function markAsDelivered(): void
+    {
+        if (!$this->is_delivered) {
+            $this->update([
+                'is_delivered' => true,
+                'delivered_at' => now(),
+            ]);
+        }
+    }
+
+    /**
      * Mark this message as read
      */
     public function markAsRead(): void
     {
         if (!$this->is_read) {
             $this->update([
+                'is_delivered' => true,
+                'delivered_at' => $this->delivered_at ?? now(),
                 'is_read' => true,
                 'read_at' => now(),
             ]);

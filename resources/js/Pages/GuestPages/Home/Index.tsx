@@ -3,7 +3,6 @@ import { Head } from '@inertiajs/react';
 import HeroSection from './sections/HeroSection';
 import HomeHeader from '@/Components/Navigation/HomeHeader';
 import FloatingNavDock from '@/Components/Navigation/FloatingNavDock';
-import FloatingSocialDock from '@/Components/Navigation/FloatingSocialDock';
 
 export default function Home() {
     const organizationSchema = {
@@ -81,7 +80,6 @@ export default function Home() {
             </Head>
             <HomeHeader />
             <FloatingNavDock />
-            <FloatingSocialDock />
             <HeroSection />
         </GuestLayout>
     );

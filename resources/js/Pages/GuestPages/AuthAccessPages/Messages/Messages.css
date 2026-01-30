@@ -635,6 +635,17 @@
     color: rgba(255, 255, 255, 0.4);
 }
 
+/* Sent - outline leaf (gray) */
+.message-status .sent-icon {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+/* Delivered - filled leaf (light green) */
+.message-status .delivered-icon {
+    color: #6ee7b7;
+}
+
+/* Read - double filled leaves (bright green) */
 .message-status .read-icon {
     color: #10b981;
 }
@@ -741,6 +752,13 @@
     opacity: 0.5;
     cursor: not-allowed;
     transform: none;
+}
+
+.messages-send-btn svg {
+    width: 20px;
+    height: 20px;
+    stroke: #ffffff;
+    fill: none;
 }
 
 .spinner-small {

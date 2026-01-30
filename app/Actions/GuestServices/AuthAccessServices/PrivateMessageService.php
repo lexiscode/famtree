@@ -4,6 +4,7 @@ namespace App\Actions\GuestServices\AuthAccessServices;
 
 use App\Events\PrivateMessageSent;
 use App\Events\PrivateUserTyping;
+use App\Events\MessageDelivered;
 use App\Events\MessageRead;
 use App\Models\GuestModels\Conversation;
 use App\Models\GuestModels\PrivateMessage;
@@ -132,9 +133,20 @@ class PrivateMessageService
 
     /**
      * Get messages for a conversation
+     * Also marks messages as delivered when recipient fetches them
      */
     public function getMessages(int $conversationId, int $userId, int $limit = 50): Collection
     {
+        // Mark messages from others as delivered when fetched
+        $deliveredCount = $this->messageRepository->markAsDelivered($conversationId, $userId);
+
+        if ($deliveredCount > 0) {
+            $conversation = $this->messageRepository->findConversationById($conversationId);
+            if ($conversation) {
+                broadcast(new MessageDelivered($conversation, $userId))->toOthers();
+            }
+        }
+
         return $this->messageRepository->getMessages($conversationId, $limit);
     }
 
@@ -153,6 +165,39 @@ class PrivateMessageService
         }
 
         return $count;
+    }
+
+    /**
+     * Mark all undelivered messages across all conversations as delivered
+     * Called when user comes online / loads messages page
+     */
+    public function markAllAsDelivered(int $userId): void
+    {
+        $affectedConversationIds = $this->messageRepository->markAllAsDelivered($userId);
+
+        // Broadcast delivery status to each conversation's sender
+        foreach ($affectedConversationIds as $conversationId) {
+            $conversation = $this->messageRepository->findConversationById($conversationId);
+            if ($conversation) {
+                broadcast(new MessageDelivered($conversation, $userId))->toOthers();
+            }
+        }
+    }
+
+    /**
+     * Mark messages in a specific conversation as delivered
+     * Called when user receives message via broadcast
+     */
+    public function markConversationAsDelivered(int $conversationId, int $userId): void
+    {
+        $count = $this->messageRepository->markAsDelivered($conversationId, $userId);
+
+        if ($count > 0) {
+            $conversation = $this->messageRepository->findConversationById($conversationId);
+            if ($conversation) {
+                broadcast(new MessageDelivered($conversation, $userId))->toOthers();
+            }
+        }
     }
 
     /**

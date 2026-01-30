@@ -24,6 +24,10 @@ class PrivateMessageController extends Controller
     public function index()
     {
         $user = auth()->user();
+
+        // Mark all undelivered messages as delivered when user comes online
+        $this->messageService->markAllAsDelivered($user->id);
+
         $conversations = $this->messageService->getConversations($user->id);
 
         // Get family tree group chats
@@ -180,6 +184,39 @@ class PrivateMessageController extends Controller
     }
 
     /**
+     * API: Mark messages as delivered (called when user receives message via broadcast)
+     */
+    public function markAsDelivered(string $conversationUuid)
+    {
+        $user = auth()->user();
+        $conversation = Conversation::where('uuid', $conversationUuid)->firstOrFail();
+
+        if (!$conversation->hasParticipant($user->id)) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $this->messageService->markConversationAsDelivered($conversation->id, $user->id);
+
+        return response()->json([
+            'success' => true,
+        ]);
+    }
+
+    /**
+     * API: Mark all messages across all conversations as delivered
+     * Called when user comes online (loads any authenticated page)
+     */
+    public function markAllAsDelivered()
+    {
+        $user = auth()->user();
+        $this->messageService->markAllAsDelivered($user->id);
+
+        return response()->json([
+            'success' => true,
+        ]);
+    }
+
+    /**
      * API: Typing indicator
      */
     public function typing(Request $request, string $conversationUuid)
@@ -265,6 +302,7 @@ class PrivateMessageController extends Controller
             'conversation_id' => $message->conversation_id,
             'sender_id' => $message->sender_id,
             'message' => $message->message,
+            'is_delivered' => $message->is_delivered,
             'is_read' => $message->is_read,
             'created_at' => $message->created_at->toISOString(),
             'sender' => $message->sender ? [

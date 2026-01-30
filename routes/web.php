@@ -329,6 +329,7 @@ Route::middleware(['web', 'auth'])->group(function () {
     // Private Messages routes
     Route::prefix('messages')->group(function () {
         Route::get('/', [PrivateMessageController::class, 'index'])->name('messages.index');
+        Route::post('/mark-all-delivered', [PrivateMessageController::class, 'markAllAsDelivered'])->name('messages.mark-all-delivered');
         Route::post('/start', [PrivateMessageController::class, 'startConversation'])->name('messages.start');
         Route::get('/api/conversations', [PrivateMessageController::class, 'getConversations'])->name('messages.conversations');
         Route::get('/api/unread-count', [PrivateMessageController::class, 'getUnreadCount'])->name('messages.unread-count');
@@ -336,6 +337,7 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::get('/{conversationUuid}/messages', [PrivateMessageController::class, 'getMessages'])->name('messages.get-messages');
         Route::post('/{conversationUuid}/send', [PrivateMessageController::class, 'sendMessage'])->name('messages.send');
         Route::post('/{conversationUuid}/mark-read', [PrivateMessageController::class, 'markAsRead'])->name('messages.mark-read');
+        Route::post('/{conversationUuid}/mark-delivered', [PrivateMessageController::class, 'markAsDelivered'])->name('messages.mark-delivered');
         Route::post('/{conversationUuid}/typing', [PrivateMessageController::class, 'typing'])->name('messages.typing');
     });
 
