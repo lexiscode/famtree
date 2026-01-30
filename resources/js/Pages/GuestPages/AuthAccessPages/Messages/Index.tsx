@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { MessageCircle, Search, ArrowLeft, Users } from 'lucide-react';
+import { MessageCircle, Search, ArrowLeft, Users, GraduationCap } from 'lucide-react';
 
 // Custom Leaf Indicator Components for message status
 const LeafOutline = ({ size = 14, className = '' }: { size?: number; className?: string }) => (
@@ -112,7 +112,7 @@ interface ActiveConversation {
 
 interface GroupChat {
     uuid: string;
-    type: 'group';
+    type: 'family_tree' | 'class_set';
     name: string;
     member_count: number;
     unread_count: number;
@@ -291,7 +291,16 @@ export default function MessagesIndex({
     useEffect(() => {
         if (!activeGroupChat || !window.Echo) return;
 
-        const channel = window.Echo.join(`family-tree.${activeGroupChat.uuid}`)
+        // Determine channel name based on group type
+        const channelName = activeGroupChat.type === 'class_set'
+            ? `class-set.${activeGroupChat.uuid}`
+            : `family-tree.${activeGroupChat.uuid}`;
+
+        const eventName = activeGroupChat.type === 'class_set'
+            ? '.ClassSetMessageSent'
+            : '.TreeMessageSent';
+
+        const channel = window.Echo.join(channelName)
             .here((users: OnlineUser[]) => {
                 setOnlineUsers(users);
             })
@@ -301,7 +310,7 @@ export default function MessagesIndex({
             .leaving((user: OnlineUser) => {
                 setOnlineUsers(prev => prev.filter(u => u.id !== user.id));
             })
-            .listen('.TreeMessageSent', (e: { message: GroupMessage }) => {
+            .listen(eventName, (e: { message: GroupMessage }) => {
                 setGroupMessages(prev => [...prev, e.message]);
                 setTimeout(scrollToBottom, 100);
             });
@@ -310,7 +319,7 @@ export default function MessagesIndex({
 
         return () => {
             if (activeGroupChat) {
-                window.Echo.leave(`family-tree.${activeGroupChat.uuid}`);
+                window.Echo.leave(channelName);
             }
             groupChannelRef.current = null;
         };
@@ -332,8 +341,29 @@ export default function MessagesIndex({
         setGroupMessages([]);
 
         try {
-            const response = await axios.get(route('family-tree.chat.messages', group.uuid));
-            setGroupMessages(response.data.messages);
+            // Use different route based on group type
+            const routeName = group.type === 'class_set'
+                ? 'class-sets.messages'
+                : 'family-tree.chat.messages';
+            const response = await axios.get(route(routeName, group.uuid));
+
+            // Handle different response formats
+            const messages = group.type === 'class_set'
+                ? response.data.messages.map((m: any) => ({
+                    id: m.id,
+                    user_id: m.sender?.id || m.sender_id,
+                    message: m.message,
+                    created_at: m.created_at,
+                    user: m.sender ? {
+                        id: m.sender.id,
+                        first_name: m.sender.first_name,
+                        last_name: m.sender.last_name,
+                        profile_image_url: m.sender.profile_image,
+                    } : null,
+                }))
+                : response.data.messages;
+
+            setGroupMessages(messages);
             setTimeout(scrollToBottom, 100);
         } catch (error) {
             console.error('Error fetching group messages:', error);
@@ -351,11 +381,31 @@ export default function MessagesIndex({
         setIsSending(true);
 
         try {
-            const response = await axios.post(route('family-tree.chat.send', activeGroupChat.uuid), {
+            // Use different route based on group type
+            const routeName = activeGroupChat.type === 'class_set'
+                ? 'class-sets.send-message'
+                : 'family-tree.chat.send';
+            const response = await axios.post(route(routeName, activeGroupChat.uuid), {
                 message: newMessage.trim(),
             });
 
-            setGroupMessages(prev => [...prev, response.data.message]);
+            // Handle different response formats
+            const newMsg = activeGroupChat.type === 'class_set'
+                ? {
+                    id: response.data.message.id,
+                    user_id: response.data.message.sender?.id || response.data.message.sender_id,
+                    message: response.data.message.message,
+                    created_at: response.data.message.created_at,
+                    user: response.data.message.sender ? {
+                        id: response.data.message.sender.id,
+                        first_name: response.data.message.sender.first_name,
+                        last_name: response.data.message.sender.last_name,
+                        profile_image_url: response.data.message.sender.profile_image,
+                    } : null,
+                }
+                : response.data.message;
+
+            setGroupMessages(prev => [...prev, newMsg]);
             setNewMessage('');
             setTimeout(scrollToBottom, 100);
         } catch (error) {
@@ -502,7 +552,7 @@ export default function MessagesIndex({
                                 <>
                                     <div className="messages-section-header">
                                         <Users size={16} />
-                                        <span>Family Tree Chats</span>
+                                        <span>Group Chats</span>
                                     </div>
                                     {filteredGroupChats.map(group => (
                                         <div
@@ -511,8 +561,12 @@ export default function MessagesIndex({
                                             className={`messages-conversation-item group-chat ${activeGroupChat?.uuid === group.uuid ? 'active' : ''} ${group.unread_count > 0 ? 'unread' : ''}`}
                                         >
                                             <div className="conversation-avatar group-avatar">
-                                                <div className="avatar-fallback group-fallback">
-                                                    <Users size={20} />
+                                                <div className={`avatar-fallback group-fallback ${group.type === 'class_set' ? 'class-set-fallback' : ''}`}>
+                                                    {group.type === 'class_set' ? (
+                                                        <GraduationCap size={20} />
+                                                    ) : (
+                                                        <Users size={20} />
+                                                    )}
                                                 </div>
                                                 {group.unread_count > 0 && (
                                                     <span className="conversation-unread-dot"></span>
@@ -636,14 +690,22 @@ export default function MessagesIndex({
                                     </button>
                                     <div className="chat-user-info">
                                         <div className="chat-user-avatar group-avatar">
-                                            <div className="avatar-fallback group-fallback">
-                                                <Users size={20} />
+                                            <div className={`avatar-fallback group-fallback ${activeGroupChat.type === 'class_set' ? 'class-set-fallback' : ''}`}>
+                                                {activeGroupChat.type === 'class_set' ? (
+                                                    <GraduationCap size={20} />
+                                                ) : (
+                                                    <Users size={20} />
+                                                )}
                                             </div>
                                         </div>
                                         <div className="chat-user-details">
                                             <h3 className="chat-user-name">{activeGroupChat.name}</h3>
                                             <span className="chat-user-username">
-                                                <Users size={12} style={{ marginRight: '4px', display: 'inline' }} />
+                                                {activeGroupChat.type === 'class_set' ? (
+                                                    <GraduationCap size={12} style={{ marginRight: '4px', display: 'inline' }} />
+                                                ) : (
+                                                    <Users size={12} style={{ marginRight: '4px', display: 'inline' }} />
+                                                )}
                                                 {onlineUsers.length} online · {activeGroupChat.member_count} members
                                             </span>
                                         </div>

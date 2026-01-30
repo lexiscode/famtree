@@ -15,6 +15,8 @@ use App\Repositories\GuestRepositories\UserConnectionRepository;
 use App\Repositories\GuestRepositories\PostRepository;
 use App\Repositories\GuestRepositories\FamilyTreeRepository;
 use App\Repositories\GuestRepositories\AuthAccessRepositories\TreeChatRepository;
+use App\Repositories\GuestRepositories\AuthAccessRepositories\ClassSetRepository;
+use App\Repositories\GuestRepositories\AuthAccessRepositories\ClassSetMessageRepository;
 
 class FeedController extends Controller
 {
@@ -30,6 +32,8 @@ class FeedController extends Controller
         private SuggestedConnectionService $suggestedConnectionService,
         private PrivateMessageService $messageService,
         private TreeChatRepository $treeChatRepository,
+        private ClassSetRepository $classSetRepository,
+        private ClassSetMessageRepository $classSetMessageRepository,
     ) {}
 
     /**
@@ -132,11 +136,17 @@ class FeedController extends Controller
             'tree_name' => $firstTree->tree_name,
         ] : null;
 
-        // Calculate total unread messages (DM + group chats)
+        // Calculate total unread messages (DM + family tree chats + class set chats)
         $dmUnreadCount = $this->messageService->getTotalUnreadCount($user->id);
         $treeIds = $userTrees->pluck('id')->toArray();
         $groupChatUnreadCount = $this->treeChatRepository->getTotalUnreadCount($user->id, $treeIds);
-        $totalUnreadMessagesCount = $dmUnreadCount + $groupChatUnreadCount;
+
+        // Get unread counts for class set (organization) group chats
+        $userClassSets = $this->classSetRepository->getUserClassSets($user->id);
+        $classSetIds = $userClassSets->pluck('id')->toArray();
+        $classSetUnreadCount = $this->classSetMessageRepository->getTotalUnreadCount($user->id, $classSetIds);
+
+        $totalUnreadMessagesCount = $dmUnreadCount + $groupChatUnreadCount + $classSetUnreadCount;
 
         return Inertia::render('GuestPages/AuthAccessPages/Feed/Index', [
             'user' => $userData,

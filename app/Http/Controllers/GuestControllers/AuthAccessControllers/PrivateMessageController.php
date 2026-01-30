@@ -3,10 +3,13 @@
 namespace App\Http\Controllers\GuestControllers\AuthAccessControllers;
 
 use App\Actions\GuestServices\AuthAccessServices\PrivateMessageService;
+use App\Actions\GuestServices\AuthAccessServices\ClassSetService;
 use App\Http\Controllers\Controller;
 use App\Models\GuestModels\Conversation;
 use App\Repositories\GuestRepositories\FamilyTreeRepository;
 use App\Repositories\GuestRepositories\AuthAccessRepositories\TreeChatRepository;
+use App\Repositories\GuestRepositories\AuthAccessRepositories\ClassSetRepository;
+use App\Repositories\GuestRepositories\AuthAccessRepositories\ClassSetMessageRepository;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -15,7 +18,10 @@ class PrivateMessageController extends Controller
     public function __construct(
         private PrivateMessageService $messageService,
         private FamilyTreeRepository $familyTreeRepository,
-        private TreeChatRepository $treeChatRepository
+        private TreeChatRepository $treeChatRepository,
+        private ClassSetService $classSetService,
+        private ClassSetRepository $classSetRepository,
+        private ClassSetMessageRepository $classSetMessageRepository
     ) {}
 
     /**
@@ -319,19 +325,19 @@ class PrivateMessageController extends Controller
      */
     private function getGroupChats(int $userId): array
     {
-        $trees = $this->familyTreeRepository->getUserMemberTrees($userId);
+        $groupChats = [];
 
-        return $trees->map(function ($tree) use ($userId) {
+        // Get family tree chats
+        $trees = $this->familyTreeRepository->getUserMemberTrees($userId);
+        foreach ($trees as $tree) {
             $latestMessage = $this->treeChatRepository->getLatestMessage($tree->id);
             $unreadCount = $this->treeChatRepository->getUnreadCount($tree->id, $userId);
             $memberCount = $tree->members->count();
-
-            // Use merged group name if set, otherwise use tree name
             $displayName = $tree->getMergedGroupDisplayName();
 
-            return [
+            $groupChats[] = [
                 'uuid' => $tree->uuid,
-                'type' => 'group',
+                'type' => 'family_tree',
                 'name' => $displayName,
                 'member_count' => $memberCount,
                 'unread_count' => $unreadCount,
@@ -343,6 +349,41 @@ class PrivateMessageController extends Controller
                 ] : null,
                 'last_message_at' => $latestMessage ? $latestMessage->created_at->toISOString() : $tree->created_at->toISOString(),
             ];
-        })->toArray();
+        }
+
+        // Get class set chats
+        $classSets = $this->classSetRepository->getUserClassSets($userId);
+        foreach ($classSets as $classSet) {
+            $latestMessage = $this->classSetMessageRepository->getLatestMessage($classSet->id);
+            $memberCount = $this->classSetRepository->getMemberCount($classSet->id);
+            $unreadCount = $this->classSetMessageRepository->getUnreadCount($classSet->id, $userId);
+
+            // Build display name with organization short name
+            $orgName = $classSet->department->faculty->organization->short_name
+                ?? $classSet->department->faculty->organization->name;
+            $displayName = "{$classSet->name} - {$orgName}";
+
+            $groupChats[] = [
+                'uuid' => $classSet->uuid,
+                'type' => 'class_set',
+                'name' => $displayName,
+                'member_count' => $memberCount,
+                'unread_count' => $unreadCount,
+                'lastMessage' => $latestMessage ? [
+                    'message' => $latestMessage->message,
+                    'sender_id' => $latestMessage->sender_id,
+                    'sender_name' => $latestMessage->sender ? trim($latestMessage->sender->first_name . ' ' . $latestMessage->sender->last_name) : 'Unknown',
+                    'created_at' => $latestMessage->created_at->toISOString(),
+                ] : null,
+                'last_message_at' => $latestMessage ? $latestMessage->created_at->toISOString() : $classSet->created_at->toISOString(),
+            ];
+        }
+
+        // Sort by last_message_at descending
+        usort($groupChats, function ($a, $b) {
+            return strtotime($b['last_message_at']) - strtotime($a['last_message_at']);
+        });
+
+        return $groupChats;
     }
 }
