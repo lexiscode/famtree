@@ -193,15 +193,6 @@ class ConnectionRequestController extends Controller
         $userId = $request->user()->id;
         $user = $request->user();
 
-        // Check if user has a phone number
-        if (empty($user->phone)) {
-            return response()->json([
-                'success' => false,
-                'error' => 'You must add your phone number before sending connection requests. Please update your profile in settings.',
-                'redirect_url' => route('settings.account'),
-            ], 403);
-        }
-
         $validated = $request->validate([
             'recipient_id' => 'required|integer|exists:users,id',
             'relationship_type' => 'required|string',
@@ -252,16 +243,6 @@ class ConnectionRequestController extends Controller
     public function accept(Request $request, int $connectionId)
     {
         $userId = $request->user()->id;
-        $user = $request->user();
-
-        // Check if user has a phone number
-        if (empty($user->phone)) {
-            return response()->json([
-                'success' => false,
-                'error' => 'You must add your phone number before accepting connection requests. Please update your profile in settings.',
-                'redirect_url' => route('settings.account'),
-            ], 403);
-        }
 
         try {
             $result = $this->connectionService->acceptConnection($connectionId, $userId);

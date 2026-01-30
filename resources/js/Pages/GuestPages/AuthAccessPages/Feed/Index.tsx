@@ -535,7 +535,7 @@ export default function Feed({
                     e.currentTarget.style.boxShadow = '0 8px 24px rgba(102, 126, 234, 0.4)';
                 }}
             >
-                <Plus size={22} />
+                <span style={{ fontSize: '28px', fontWeight: '300', color: '#ffffff', lineHeight: 0, marginTop: '-2px' }}>+</span>
             </button>
 
             {/* Floating Messages Button */}
@@ -570,7 +570,7 @@ export default function Feed({
                     e.currentTarget.style.boxShadow = '0 8px 24px rgba(139, 92, 246, 0.4)';
                 }}
             >
-                <Mail size={22} />
+                <MessageCircle size={22} />
                 {unreadMessagesCount > 0 && (
                     <span style={{
                         position: 'absolute',

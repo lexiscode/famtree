@@ -103,6 +103,52 @@ class PrivateMessageRepository
     }
 
     /**
+     * Mark all messages in a conversation as delivered for a user
+     * Only marks messages sent by others (not own messages)
+     */
+    public function markAsDelivered(int $conversationId, int $userId): int
+    {
+        return PrivateMessage::where('conversation_id', $conversationId)
+            ->where('sender_id', '!=', $userId)
+            ->where('is_delivered', false)
+            ->update([
+                'is_delivered' => true,
+                'delivered_at' => now(),
+            ]);
+    }
+
+    /**
+     * Mark all undelivered messages across all conversations as delivered for a user
+     * Returns array of conversation IDs that had messages marked as delivered
+     */
+    public function markAllAsDelivered(int $userId): array
+    {
+        $conversationIds = Conversation::where('user_one_id', $userId)
+            ->orWhere('user_two_id', $userId)
+            ->pluck('id');
+
+        // Get conversations that have undelivered messages
+        $affectedConversationIds = PrivateMessage::whereIn('conversation_id', $conversationIds)
+            ->where('sender_id', '!=', $userId)
+            ->where('is_delivered', false)
+            ->distinct()
+            ->pluck('conversation_id')
+            ->toArray();
+
+        if (!empty($affectedConversationIds)) {
+            PrivateMessage::whereIn('conversation_id', $conversationIds)
+                ->where('sender_id', '!=', $userId)
+                ->where('is_delivered', false)
+                ->update([
+                    'is_delivered' => true,
+                    'delivered_at' => now(),
+                ]);
+        }
+
+        return $affectedConversationIds;
+    }
+
+    /**
      * Mark all messages in a conversation as read for a user
      * Only marks messages sent by others (not own messages)
      */
@@ -112,6 +158,8 @@ class PrivateMessageRepository
             ->where('sender_id', '!=', $userId)
             ->where('is_read', false)
             ->update([
+                'is_delivered' => true,
+                'delivered_at' => now(),
                 'is_read' => true,
                 'read_at' => now(),
             ]);
