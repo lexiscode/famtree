@@ -37,6 +37,9 @@ use App\Http\Controllers\GuestControllers\SearchController;
 use App\Http\Controllers\GuestControllers\AccountReactivationController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\DeceasedVerificationController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\MemorialController;
+use App\Http\Controllers\GuestControllers\AuthAccessControllers\OrganizationController;
+use App\Http\Controllers\GuestControllers\AuthAccessControllers\ClassSetController;
+use App\Http\Controllers\GuestControllers\AuthAccessControllers\ClassSetChatController;
 use Inertia\Inertia;
 
 
@@ -356,5 +359,26 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::post('/{userUuid}/messages', [MemorialController::class, 'addMessage'])->name('memorial.add-message');
         Route::put('/messages/{messageId}', [MemorialController::class, 'updateMessage'])->name('memorial.update-message');
         Route::delete('/messages/{messageId}', [MemorialController::class, 'deleteMessage'])->name('memorial.delete-message');
+    });
+
+    // Organization Groups routes
+    Route::prefix('organizations')->group(function () {
+        Route::get('/', [OrganizationController::class, 'categories'])->name('organizations.categories');
+        Route::get('/category/{slug}', [OrganizationController::class, 'showCategory'])->name('organizations.category');
+        Route::get('/{slug}', [OrganizationController::class, 'showOrganization'])->name('organizations.show');
+        Route::get('/{organizationSlug}/faculties', [OrganizationController::class, 'faculties'])->name('organizations.faculties');
+        Route::get('/{organizationSlug}/channels', [OrganizationController::class, 'channels'])->name('organizations.channels');
+        Route::get('/faculty/{facultySlug}/departments', [OrganizationController::class, 'departments'])->name('organizations.departments');
+        Route::get('/department/{departmentSlug}/class-sets', [OrganizationController::class, 'classSets'])->name('organizations.class-sets');
+    });
+
+    // Class Set Actions routes
+    Route::prefix('class-sets')->group(function () {
+        Route::post('/{classSetUuid}/join', [ClassSetController::class, 'join'])->name('class-sets.join');
+        Route::post('/{classSetUuid}/leave', [ClassSetController::class, 'leave'])->name('class-sets.leave');
+        Route::get('/{classSetUuid}/members', [ClassSetController::class, 'members'])->name('class-sets.members');
+        Route::get('/{classSetUuid}/messages', [ClassSetChatController::class, 'getMessages'])->name('class-sets.messages');
+        Route::post('/{classSetUuid}/messages', [ClassSetChatController::class, 'sendMessage'])->name('class-sets.send-message');
+        Route::post('/{classSetUuid}/typing', [ClassSetChatController::class, 'typing'])->name('class-sets.typing');
     });
 });

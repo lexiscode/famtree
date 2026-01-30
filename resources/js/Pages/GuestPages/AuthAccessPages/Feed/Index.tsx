@@ -3,7 +3,8 @@ import { router, Link } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
 import {
     Home, TrendingUp, Users, Bell, Plus, Heart, MessageCircle, Mail,
-    User, Settings, UserPlus, UserCheck, Globe, FileText, Loader, Image as ImageIcon, Video, ArrowUp
+    User, Settings, UserPlus, UserCheck, Globe, FileText, Loader, Image as ImageIcon, Video, ArrowUp,
+    GraduationCap
 } from 'lucide-react';
 import CreatePostModal from '../Stories/CreatePostModal';
 import PostCard from '../Stories/PostCard';
@@ -305,6 +306,10 @@ export default function Feed({
                                             {unreadMessagesCount > 0 && (
                                                 <span className="quick-link-badge">{unreadMessagesCount}</span>
                                             )}
+                                        </a>
+                                        <a href="/organizations" className="quick-link">
+                                            <GraduationCap size={20} />
+                                            <span>Organizations</span>
                                         </a>
                                         <a href="/settings/account" className="quick-link">
                                             <Settings size={20} />

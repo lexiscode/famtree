@@ -249,6 +249,15 @@
     color: #ffffff;
 }
 
+/* Class Set Chat Styling */
+.group-avatar .class-set-fallback {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
+}
+
+.group-avatar .class-set-fallback svg {
+    color: #ffffff;
+}
+
 /* Group Chat Header Styling */
 .group-chat-header {
     background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.15) 100%) !important;
@@ -256,6 +265,11 @@
 
 .group-chat-header .chat-user-avatar .group-fallback {
     background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+/* Class Set Chat Header Styling */
+.group-chat-header .chat-user-avatar .class-set-fallback {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
 }
 
 .conversation-info {
