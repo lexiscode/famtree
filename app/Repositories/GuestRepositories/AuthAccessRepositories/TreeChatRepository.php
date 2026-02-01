@@ -89,11 +89,45 @@ class TreeChatRepository
     }
 
     /**
+     * Find a message by ID
+     */
+    public function findMessage(int $messageId): ?TreeChatMessage
+    {
+        return TreeChatMessage::find($messageId);
+    }
+
+    /**
+     * Update a message's content
+     */
+    public function updateMessage(int $messageId, string $newMessage): ?TreeChatMessage
+    {
+        $message = TreeChatMessage::find($messageId);
+
+        if ($message) {
+            $message->update([
+                'message' => $newMessage,
+                'is_edited' => true,
+                'edited_at' => now(),
+            ]);
+        }
+
+        return $message;
+    }
+
+    /**
      * Delete a message
      */
     public function deleteMessage(int $messageId): bool
     {
         return TreeChatMessage::destroy($messageId) > 0;
+    }
+
+    /**
+     * Bulk delete messages
+     */
+    public function bulkDeleteMessages(array $messageIds): int
+    {
+        return TreeChatMessage::whereIn('id', $messageIds)->delete();
     }
 
     /**

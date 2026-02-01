@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { MessageCircle, Search, ArrowLeft, Users, GraduationCap } from 'lucide-react';
+import { MessageCircle, Search, ArrowLeft, Users, GraduationCap, Pencil, Trash2, X, Check, CheckSquare, Square } from 'lucide-react';
 
 // Custom Leaf Indicator Components for message status
 const LeafOutline = ({ size = 14, className = '' }: { size?: number; className?: string }) => (
@@ -80,6 +80,8 @@ interface Message {
     message: string;
     is_delivered: boolean;
     is_read: boolean;
+    is_edited: boolean;
+    edited_at: string | null;
     created_at: string;
     sender: {
         id: number;
@@ -129,6 +131,8 @@ interface GroupMessage {
     id: number;
     user_id: number;
     message: string;
+    is_edited?: boolean;
+    edited_at?: string | null;
     created_at: string;
     user: {
         id: number;
@@ -175,6 +179,19 @@ export default function MessagesIndex({
     const [groupMessages, setGroupMessages] = useState<GroupMessage[]>([]);
     const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
     const [isGroupLoading, setIsGroupLoading] = useState(false);
+
+    // Edit/Delete state
+    const [editingMessageId, setEditingMessageId] = useState<number | null>(null);
+    const [editingText, setEditingText] = useState('');
+    const [deletingMessageId, setDeletingMessageId] = useState<number | null>(null);
+    const [isEditSaving, setIsEditSaving] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    // Bulk selection state
+    const [isBulkSelectMode, setIsBulkSelectMode] = useState(false);
+    const [selectedMessageIds, setSelectedMessageIds] = useState<number[]>([]);
+    const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+    const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -475,6 +492,186 @@ export default function MessagesIndex({
         }, 2000);
     }, [activeConversation]);
 
+    // Start editing a message
+    const handleStartEdit = useCallback((message: Message) => {
+        setEditingMessageId(message.id);
+        setEditingText(message.message);
+    }, []);
+
+    // Cancel editing
+    const handleCancelEdit = useCallback(() => {
+        setEditingMessageId(null);
+        setEditingText('');
+    }, []);
+
+    // Save edited message
+    const handleSaveEdit = useCallback(async () => {
+        if (!editingMessageId || !editingText.trim()) return;
+
+        setIsEditSaving(true);
+        try {
+            const response = await axios.put(route('messages.edit', editingMessageId), {
+                message: editingText.trim(),
+            });
+
+            if (response.data.success) {
+                setMessages(prev => prev.map(msg =>
+                    msg.id === editingMessageId ? response.data.message : msg
+                ));
+                setEditingMessageId(null);
+                setEditingText('');
+            }
+        } catch (error) {
+            console.error('Error editing message:', error);
+        } finally {
+            setIsEditSaving(false);
+        }
+    }, [editingMessageId, editingText]);
+
+    // Show delete confirmation
+    const handleShowDeleteConfirm = useCallback((messageId: number) => {
+        setDeletingMessageId(messageId);
+    }, []);
+
+    // Cancel delete
+    const handleCancelDelete = useCallback(() => {
+        setDeletingMessageId(null);
+    }, []);
+
+    // Confirm delete
+    const handleConfirmDelete = useCallback(async () => {
+        if (!deletingMessageId) return;
+
+        setIsDeleting(true);
+        try {
+            const response = await axios.delete(route('messages.delete', deletingMessageId));
+
+            if (response.data.success) {
+                setMessages(prev => prev.filter(msg => msg.id !== deletingMessageId));
+                setDeletingMessageId(null);
+            }
+        } catch (error) {
+            console.error('Error deleting message:', error);
+        } finally {
+            setIsDeleting(false);
+        }
+    }, [deletingMessageId]);
+
+    // Toggle bulk select mode
+    const handleToggleBulkSelect = useCallback(() => {
+        setIsBulkSelectMode(prev => !prev);
+        setSelectedMessageIds([]);
+        setShowBulkDeleteConfirm(false);
+    }, []);
+
+    // Toggle message selection
+    const handleToggleMessageSelect = useCallback((messageId: number) => {
+        setSelectedMessageIds(prev =>
+            prev.includes(messageId)
+                ? prev.filter(id => id !== messageId)
+                : [...prev, messageId]
+        );
+    }, []);
+
+    // Show bulk delete confirmation
+    const handleShowBulkDeleteConfirm = useCallback(() => {
+        if (selectedMessageIds.length === 0) return;
+        setShowBulkDeleteConfirm(true);
+    }, [selectedMessageIds]);
+
+    // Cancel bulk delete
+    const handleCancelBulkDelete = useCallback(() => {
+        setShowBulkDeleteConfirm(false);
+    }, []);
+
+    // Bulk delete selected messages
+    const handleBulkDelete = useCallback(async () => {
+        if (selectedMessageIds.length === 0) return;
+
+        setIsBulkDeleting(true);
+        try {
+            // Use different route based on whether it's DM or group chat
+            const routeName = activeGroupChat
+                ? (activeGroupChat.type === 'class_set' ? 'class-sets.bulk-delete' : 'family-tree.chat.bulk-delete')
+                : 'messages.bulk-delete';
+            const response = await axios.post(route(routeName), {
+                message_ids: selectedMessageIds,
+            });
+
+            if (response.data.success) {
+                if (activeGroupChat) {
+                    setGroupMessages(prev => prev.filter(msg => !selectedMessageIds.includes(msg.id)));
+                } else {
+                    setMessages(prev => prev.filter(msg => !selectedMessageIds.includes(msg.id)));
+                }
+                setSelectedMessageIds([]);
+                setIsBulkSelectMode(false);
+                setShowBulkDeleteConfirm(false);
+            }
+        } catch (error) {
+            console.error('Error bulk deleting messages:', error);
+        } finally {
+            setIsBulkDeleting(false);
+        }
+    }, [selectedMessageIds, activeGroupChat]);
+
+    // Start editing a group message
+    const handleStartGroupEdit = useCallback((message: GroupMessage) => {
+        setEditingMessageId(message.id);
+        setEditingText(message.message);
+    }, []);
+
+    // Save edited group message
+    const handleSaveGroupEdit = useCallback(async () => {
+        if (!editingMessageId || !editingText.trim() || !activeGroupChat) return;
+
+        setIsEditSaving(true);
+        try {
+            const routeName = activeGroupChat.type === 'class_set'
+                ? 'class-sets.edit-message'
+                : 'family-tree.chat.edit';
+            const response = await axios.put(route(routeName, editingMessageId), {
+                message: editingText.trim(),
+            });
+
+            if (response.data.success) {
+                setGroupMessages(prev => prev.map(msg =>
+                    msg.id === editingMessageId
+                        ? { ...msg, message: editingText.trim(), is_edited: true, edited_at: new Date().toISOString() }
+                        : msg
+                ));
+                setEditingMessageId(null);
+                setEditingText('');
+            }
+        } catch (error) {
+            console.error('Error editing group message:', error);
+        } finally {
+            setIsEditSaving(false);
+        }
+    }, [editingMessageId, editingText, activeGroupChat]);
+
+    // Confirm delete group message
+    const handleConfirmGroupDelete = useCallback(async () => {
+        if (!deletingMessageId || !activeGroupChat) return;
+
+        setIsDeleting(true);
+        try {
+            const routeName = activeGroupChat.type === 'class_set'
+                ? 'class-sets.delete-message'
+                : 'family-tree.chat.delete';
+            const response = await axios.delete(route(routeName, deletingMessageId));
+
+            if (response.data.success) {
+                setGroupMessages(prev => prev.filter(msg => msg.id !== deletingMessageId));
+                setDeletingMessageId(null);
+            }
+        } catch (error) {
+            console.error('Error deleting group message:', error);
+        } finally {
+            setIsDeleting(false);
+        }
+    }, [deletingMessageId, activeGroupChat]);
+
     // Format timestamp
     const formatTime = (timestamp: string) => {
         const date = new Date(timestamp);
@@ -710,6 +907,52 @@ export default function MessagesIndex({
                                             </span>
                                         </div>
                                     </div>
+                                    <div className="chat-header-actions">
+                                        {isBulkSelectMode && selectedMessageIds.length > 0 && (
+                                            <div className="bulk-delete-wrapper">
+                                                {showBulkDeleteConfirm && (
+                                                    <div className="delete-confirm-popup bulk-delete-confirm">
+                                                        <span className="delete-confirm-text">Delete {selectedMessageIds.length}?</span>
+                                                        <button
+                                                            className="delete-confirm-yes"
+                                                            onClick={handleBulkDelete}
+                                                            disabled={isBulkDeleting}
+                                                        >
+                                                            {isBulkDeleting ? '...' : 'Yes'}
+                                                        </button>
+                                                        <button
+                                                            className="delete-confirm-no"
+                                                            onClick={handleCancelBulkDelete}
+                                                            disabled={isBulkDeleting}
+                                                        >
+                                                            No
+                                                        </button>
+                                                    </div>
+                                                )}
+                                                <button
+                                                    className="bulk-delete-btn"
+                                                    onClick={handleShowBulkDeleteConfirm}
+                                                    disabled={isBulkDeleting || showBulkDeleteConfirm}
+                                                >
+                                                    {isBulkDeleting ? (
+                                                        <div className="spinner-small"></div>
+                                                    ) : (
+                                                        <>
+                                                            <Trash2 size={10} />
+                                                            <span>Delete ({selectedMessageIds.length})</span>
+                                                        </>
+                                                    )}
+                                                </button>
+                                            </div>
+                                        )}
+                                        <button
+                                            className={`bulk-select-toggle ${isBulkSelectMode ? 'active' : ''}`}
+                                            onClick={handleToggleBulkSelect}
+                                            title={isBulkSelectMode ? 'Cancel selection' : 'Select messages'}
+                                        >
+                                            {isBulkSelectMode ? <X size={12} /> : <CheckSquare size={12} />}
+                                        </button>
+                                    </div>
                                 </div>
 
                                 {/* Group Messages Container */}
@@ -733,12 +976,29 @@ export default function MessagesIndex({
                                                     (index === 0 || groupMessages[index - 1].user_id !== message.user_id);
                                                 const showName = !isOwnMessage &&
                                                     (index === 0 || groupMessages[index - 1].user_id !== message.user_id);
+                                                const isEditing = editingMessageId === message.id;
+                                                const isShowingDeleteConfirm = deletingMessageId === message.id;
+                                                const isSelected = selectedMessageIds.includes(message.id);
 
                                                 return (
                                                     <div
                                                         key={message.id}
-                                                        className={`message-item ${isOwnMessage ? 'own-message' : 'other-message'}`}
+                                                        className={`message-item ${isOwnMessage ? 'own-message' : 'other-message'} ${isSelected ? 'selected' : ''}`}
                                                     >
+                                                        {/* Bulk select checkbox */}
+                                                        {isBulkSelectMode && isOwnMessage && (
+                                                            <button
+                                                                className="message-select-checkbox"
+                                                                onClick={() => handleToggleMessageSelect(message.id)}
+                                                            >
+                                                                {isSelected ? (
+                                                                    <CheckSquare size={20} className="checkbox-checked" />
+                                                                ) : (
+                                                                    <Square size={20} className="checkbox-unchecked" />
+                                                                )}
+                                                            </button>
+                                                        )}
+
                                                         {!isOwnMessage && (
                                                             <div className={`message-avatar ${showAvatar ? '' : 'invisible'}`}>
                                                                 {message.user?.profile_image_url ? (
@@ -759,10 +1019,83 @@ export default function MessagesIndex({
                                                                     {message.user?.first_name} {message.user?.last_name}
                                                                 </span>
                                                             )}
-                                                            <div className="message-bubble">
-                                                                <p className="message-text">{message.message}</p>
+
+                                                            {/* Delete confirmation popup */}
+                                                            {isShowingDeleteConfirm && (
+                                                                <div className="delete-confirm-popup">
+                                                                    <span className="delete-confirm-text">Delete?</span>
+                                                                    <button
+                                                                        className="delete-confirm-yes"
+                                                                        onClick={handleConfirmGroupDelete}
+                                                                        disabled={isDeleting}
+                                                                    >
+                                                                        {isDeleting ? '...' : 'Yes'}
+                                                                    </button>
+                                                                    <button
+                                                                        className="delete-confirm-no"
+                                                                        onClick={handleCancelDelete}
+                                                                        disabled={isDeleting}
+                                                                    >
+                                                                        No
+                                                                    </button>
+                                                                </div>
+                                                            )}
+
+                                                            <div className={`message-bubble ${isEditing ? 'editing' : ''}`}>
+                                                                {isEditing ? (
+                                                                    <>
+                                                                        <textarea
+                                                                            className="message-edit-input"
+                                                                            value={editingText}
+                                                                            onChange={(e) => setEditingText(e.target.value)}
+                                                                            autoFocus
+                                                                            maxLength={5000}
+                                                                        />
+                                                                        <div className="message-edit-actions">
+                                                                            <button
+                                                                                className="edit-cancel-btn"
+                                                                                onClick={handleCancelEdit}
+                                                                                disabled={isEditSaving}
+                                                                            >
+                                                                                Cancel
+                                                                            </button>
+                                                                            <button
+                                                                                className="edit-save-btn"
+                                                                                onClick={handleSaveGroupEdit}
+                                                                                disabled={isEditSaving || !editingText.trim()}
+                                                                            >
+                                                                                {isEditSaving ? '...' : 'Save'}
+                                                                            </button>
+                                                                        </div>
+                                                                    </>
+                                                                ) : (
+                                                                    <p className="message-text">{message.message}</p>
+                                                                )}
+
+                                                                {/* Edit/Delete action icons */}
+                                                                {isOwnMessage && !isEditing && !isBulkSelectMode && (
+                                                                    <div className="message-actions">
+                                                                        <button
+                                                                            className="message-action-btn edit-btn"
+                                                                            onClick={() => handleStartGroupEdit(message)}
+                                                                            title="Edit message"
+                                                                        >
+                                                                            <Pencil size={11} />
+                                                                        </button>
+                                                                        <button
+                                                                            className="message-action-btn delete-btn"
+                                                                            onClick={() => handleShowDeleteConfirm(message.id)}
+                                                                            title="Delete message"
+                                                                        >
+                                                                            <Trash2 size={11} />
+                                                                        </button>
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                             <div className="message-meta">
+                                                                {message.is_edited && (
+                                                                    <span className="message-edited">edited</span>
+                                                                )}
                                                                 <span className="message-time">{formatTime(message.created_at)}</span>
                                                             </div>
                                                         </div>
@@ -829,6 +1162,52 @@ export default function MessagesIndex({
                                             <span className="chat-user-username">@{activeConversation.otherUser.username}</span>
                                         </div>
                                     </div>
+                                    <div className="chat-header-actions">
+                                        {isBulkSelectMode && selectedMessageIds.length > 0 && (
+                                            <div className="bulk-delete-wrapper">
+                                                {showBulkDeleteConfirm && (
+                                                    <div className="delete-confirm-popup bulk-delete-confirm">
+                                                        <span className="delete-confirm-text">Delete {selectedMessageIds.length}?</span>
+                                                        <button
+                                                            className="delete-confirm-yes"
+                                                            onClick={handleBulkDelete}
+                                                            disabled={isBulkDeleting}
+                                                        >
+                                                            {isBulkDeleting ? '...' : 'Yes'}
+                                                        </button>
+                                                        <button
+                                                            className="delete-confirm-no"
+                                                            onClick={handleCancelBulkDelete}
+                                                            disabled={isBulkDeleting}
+                                                        >
+                                                            No
+                                                        </button>
+                                                    </div>
+                                                )}
+                                                <button
+                                                    className="bulk-delete-btn"
+                                                    onClick={handleShowBulkDeleteConfirm}
+                                                    disabled={isBulkDeleting || showBulkDeleteConfirm}
+                                                >
+                                                    {isBulkDeleting ? (
+                                                        <div className="spinner-small"></div>
+                                                    ) : (
+                                                        <>
+                                                            <Trash2 size={10} />
+                                                            <span>Delete ({selectedMessageIds.length})</span>
+                                                        </>
+                                                    )}
+                                                </button>
+                                            </div>
+                                        )}
+                                        <button
+                                            className={`bulk-select-toggle ${isBulkSelectMode ? 'active' : ''}`}
+                                            onClick={handleToggleBulkSelect}
+                                            title={isBulkSelectMode ? 'Cancel selection' : 'Select messages'}
+                                        >
+                                            {isBulkSelectMode ? <X size={12} /> : <CheckSquare size={12} />}
+                                        </button>
+                                    </div>
                                 </div>
 
                                 {/* Messages Container */}
@@ -850,12 +1229,29 @@ export default function MessagesIndex({
                                                 const isOwnMessage = message.sender_id === currentUserId;
                                                 const showAvatar = !isOwnMessage &&
                                                     (index === 0 || messages[index - 1].sender_id !== message.sender_id);
+                                                const isEditing = editingMessageId === message.id;
+                                                const isShowingDeleteConfirm = deletingMessageId === message.id;
+                                                const isSelected = selectedMessageIds.includes(message.id);
 
                                                 return (
                                                     <div
                                                         key={message.id}
-                                                        className={`message-item ${isOwnMessage ? 'own-message' : 'other-message'}`}
+                                                        className={`message-item ${isOwnMessage ? 'own-message' : 'other-message'} ${isSelected ? 'selected' : ''}`}
                                                     >
+                                                        {/* Bulk select checkbox */}
+                                                        {isBulkSelectMode && isOwnMessage && (
+                                                            <button
+                                                                className="message-select-checkbox"
+                                                                onClick={() => handleToggleMessageSelect(message.id)}
+                                                            >
+                                                                {isSelected ? (
+                                                                    <CheckSquare size={20} className="checkbox-checked" />
+                                                                ) : (
+                                                                    <Square size={20} className="checkbox-unchecked" />
+                                                                )}
+                                                            </button>
+                                                        )}
+
                                                         {!isOwnMessage && (
                                                             <div className={`message-avatar ${showAvatar ? '' : 'invisible'}`}>
                                                                 {message.sender?.profile_image_url ? (
@@ -871,10 +1267,82 @@ export default function MessagesIndex({
                                                             </div>
                                                         )}
                                                         <div className="message-content">
-                                                            <div className="message-bubble">
-                                                                <p className="message-text">{message.message}</p>
+                                                            {/* Delete confirmation popup */}
+                                                            {isShowingDeleteConfirm && (
+                                                                <div className="delete-confirm-popup">
+                                                                    <span className="delete-confirm-text">Delete?</span>
+                                                                    <button
+                                                                        className="delete-confirm-yes"
+                                                                        onClick={handleConfirmDelete}
+                                                                        disabled={isDeleting}
+                                                                    >
+                                                                        {isDeleting ? '...' : 'Yes'}
+                                                                    </button>
+                                                                    <button
+                                                                        className="delete-confirm-no"
+                                                                        onClick={handleCancelDelete}
+                                                                        disabled={isDeleting}
+                                                                    >
+                                                                        No
+                                                                    </button>
+                                                                </div>
+                                                            )}
+
+                                                            <div className={`message-bubble ${isEditing ? 'editing' : ''}`}>
+                                                                {isEditing ? (
+                                                                    <>
+                                                                        <textarea
+                                                                            className="message-edit-input"
+                                                                            value={editingText}
+                                                                            onChange={(e) => setEditingText(e.target.value)}
+                                                                            autoFocus
+                                                                            maxLength={5000}
+                                                                        />
+                                                                        <div className="message-edit-actions">
+                                                                            <button
+                                                                                className="edit-cancel-btn"
+                                                                                onClick={handleCancelEdit}
+                                                                                disabled={isEditSaving}
+                                                                            >
+                                                                                Cancel
+                                                                            </button>
+                                                                            <button
+                                                                                className="edit-save-btn"
+                                                                                onClick={handleSaveEdit}
+                                                                                disabled={isEditSaving || !editingText.trim()}
+                                                                            >
+                                                                                {isEditSaving ? '...' : 'Save'}
+                                                                            </button>
+                                                                        </div>
+                                                                    </>
+                                                                ) : (
+                                                                    <p className="message-text">{message.message}</p>
+                                                                )}
+
+                                                                {/* Edit/Delete action icons */}
+                                                                {isOwnMessage && !isEditing && !isBulkSelectMode && (
+                                                                    <div className="message-actions">
+                                                                        <button
+                                                                            className="message-action-btn edit-btn"
+                                                                            onClick={() => handleStartEdit(message)}
+                                                                            title="Edit message"
+                                                                        >
+                                                                            <Pencil size={11} />
+                                                                        </button>
+                                                                        <button
+                                                                            className="message-action-btn delete-btn"
+                                                                            onClick={() => handleShowDeleteConfirm(message.id)}
+                                                                            title="Delete message"
+                                                                        >
+                                                                            <Trash2 size={11} />
+                                                                        </button>
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                             <div className="message-meta">
+                                                                {message.is_edited && (
+                                                                    <span className="message-edited">edited</span>
+                                                                )}
                                                                 <span className="message-time">{formatTime(message.created_at)}</span>
                                                                 {isOwnMessage && (
                                                                     <span className="message-status">

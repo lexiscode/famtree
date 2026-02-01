@@ -15,6 +15,15 @@ class ClassSetMessage extends Model
         'class_set_id',
         'sender_id',
         'message',
+        'is_edited',
+        'edited_at',
+    ];
+
+    protected $casts = [
+        'is_edited' => 'boolean',
+        'edited_at' => 'datetime',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
     protected static function boot()

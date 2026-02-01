@@ -238,6 +238,76 @@ class PrivateMessageController extends Controller
     }
 
     /**
+     * API: Edit a message
+     */
+    public function editMessage(Request $request, int $messageId)
+    {
+        $user = auth()->user();
+        $validated = $request->validate([
+            'message' => 'required|string|max:5000',
+        ]);
+
+        $result = $this->messageService->editMessage(
+            $messageId,
+            $user->id,
+            $validated['message']
+        );
+
+        if (!$result['success']) {
+            return response()->json(['error' => $result['error']], 422);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => $this->formatMessage($result['message']),
+        ]);
+    }
+
+    /**
+     * API: Delete a message
+     */
+    public function deleteMessage(int $messageId)
+    {
+        $user = auth()->user();
+
+        $result = $this->messageService->deleteMessage($messageId, $user->id);
+
+        if (!$result['success']) {
+            return response()->json(['error' => $result['error']], 422);
+        }
+
+        return response()->json([
+            'success' => true,
+        ]);
+    }
+
+    /**
+     * API: Bulk delete messages
+     */
+    public function bulkDeleteMessages(Request $request)
+    {
+        $user = auth()->user();
+        $validated = $request->validate([
+            'message_ids' => 'required|array',
+            'message_ids.*' => 'integer',
+        ]);
+
+        $result = $this->messageService->bulkDeleteMessages(
+            $validated['message_ids'],
+            $user->id
+        );
+
+        if (!$result['success']) {
+            return response()->json(['error' => $result['error']], 422);
+        }
+
+        return response()->json([
+            'success' => true,
+            'deleted_count' => $result['deleted_count'],
+        ]);
+    }
+
+    /**
      * API: Get conversations list
      */
     public function getConversations()
@@ -310,6 +380,8 @@ class PrivateMessageController extends Controller
             'message' => $message->message,
             'is_delivered' => $message->is_delivered,
             'is_read' => $message->is_read,
+            'is_edited' => $message->is_edited,
+            'edited_at' => $message->edited_at?->toISOString(),
             'created_at' => $message->created_at->toISOString(),
             'sender' => $message->sender ? [
                 'id' => $message->sender->id,

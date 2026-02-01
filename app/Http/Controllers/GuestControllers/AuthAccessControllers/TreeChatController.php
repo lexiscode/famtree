@@ -133,4 +133,79 @@ class TreeChatController extends Controller
             'success' => true,
         ]);
     }
+
+    /**
+     * Edit a message
+     */
+    public function editMessage(Request $request, int $messageId)
+    {
+        $user = auth()->user();
+
+        if (!$user) {
+            return response()->json(['error' => 'Unauthenticated'], 401);
+        }
+
+        $validated = $request->validate([
+            'message' => 'required|string|max:5000',
+        ]);
+
+        $result = $this->chatService->editMessage($messageId, $user->id, $validated['message']);
+
+        if (!$result['success']) {
+            return response()->json(['error' => $result['error']], 422);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => $result['message'],
+        ]);
+    }
+
+    /**
+     * Delete a message
+     */
+    public function deleteMessage(int $messageId)
+    {
+        $user = auth()->user();
+
+        if (!$user) {
+            return response()->json(['error' => 'Unauthenticated'], 401);
+        }
+
+        $result = $this->chatService->deleteMessage($messageId, $user->id);
+
+        if (!$result['success']) {
+            return response()->json(['error' => $result['error']], 422);
+        }
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * Bulk delete messages
+     */
+    public function bulkDeleteMessages(Request $request)
+    {
+        $user = auth()->user();
+
+        if (!$user) {
+            return response()->json(['error' => 'Unauthenticated'], 401);
+        }
+
+        $validated = $request->validate([
+            'message_ids' => 'required|array',
+            'message_ids.*' => 'integer',
+        ]);
+
+        $result = $this->chatService->bulkDeleteMessages($validated['message_ids'], $user->id);
+
+        if (!$result['success']) {
+            return response()->json(['error' => $result['error']], 422);
+        }
+
+        return response()->json([
+            'success' => true,
+            'deleted_count' => $result['deleted_count'],
+        ]);
+    }
 }

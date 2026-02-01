@@ -179,6 +179,9 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::post('/{familyTree}/chat/send', [\App\Http\Controllers\GuestControllers\AuthAccessControllers\TreeChatController::class, 'sendMessage'])->name('family-tree.chat.send');
         Route::post('/{familyTree}/chat/typing', [\App\Http\Controllers\GuestControllers\AuthAccessControllers\TreeChatController::class, 'typing'])->name('family-tree.chat.typing');
         Route::post('/{familyTree}/chat/mark-read', [\App\Http\Controllers\GuestControllers\AuthAccessControllers\TreeChatController::class, 'markAsRead'])->name('family-tree.chat.mark-read');
+        Route::put('/chat/message/{messageId}', [\App\Http\Controllers\GuestControllers\AuthAccessControllers\TreeChatController::class, 'editMessage'])->name('family-tree.chat.edit');
+        Route::delete('/chat/message/{messageId}', [\App\Http\Controllers\GuestControllers\AuthAccessControllers\TreeChatController::class, 'deleteMessage'])->name('family-tree.chat.delete');
+        Route::post('/chat/bulk-delete', [\App\Http\Controllers\GuestControllers\AuthAccessControllers\TreeChatController::class, 'bulkDeleteMessages'])->name('family-tree.chat.bulk-delete');
     });
 
     // Your Tree (Connection Tree Visualization) route
@@ -336,6 +339,9 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::post('/start', [PrivateMessageController::class, 'startConversation'])->name('messages.start');
         Route::get('/api/conversations', [PrivateMessageController::class, 'getConversations'])->name('messages.conversations');
         Route::get('/api/unread-count', [PrivateMessageController::class, 'getUnreadCount'])->name('messages.unread-count');
+        Route::post('/bulk-delete', [PrivateMessageController::class, 'bulkDeleteMessages'])->name('messages.bulk-delete');
+        Route::put('/message/{messageId}', [PrivateMessageController::class, 'editMessage'])->name('messages.edit');
+        Route::delete('/message/{messageId}', [PrivateMessageController::class, 'deleteMessage'])->name('messages.delete');
         Route::get('/{conversationUuid}', [PrivateMessageController::class, 'show'])->name('messages.show');
         Route::get('/{conversationUuid}/messages', [PrivateMessageController::class, 'getMessages'])->name('messages.get-messages');
         Route::post('/{conversationUuid}/send', [PrivateMessageController::class, 'sendMessage'])->name('messages.send');
@@ -380,5 +386,8 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::get('/{classSetUuid}/messages', [ClassSetChatController::class, 'getMessages'])->name('class-sets.messages');
         Route::post('/{classSetUuid}/messages', [ClassSetChatController::class, 'sendMessage'])->name('class-sets.send-message');
         Route::post('/{classSetUuid}/typing', [ClassSetChatController::class, 'typing'])->name('class-sets.typing');
+        Route::put('/message/{messageId}', [ClassSetChatController::class, 'editMessage'])->name('class-sets.edit-message');
+        Route::delete('/message/{messageId}', [ClassSetChatController::class, 'deleteMessage'])->name('class-sets.delete-message');
+        Route::post('/bulk-delete', [ClassSetChatController::class, 'bulkDeleteMessages'])->name('class-sets.bulk-delete');
     });
 });

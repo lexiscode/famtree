@@ -60,11 +60,45 @@ class ClassSetMessageRepository
     }
 
     /**
+     * Find a message by ID
+     */
+    public function findMessage(int $messageId): ?ClassSetMessage
+    {
+        return ClassSetMessage::find($messageId);
+    }
+
+    /**
+     * Update a message's content
+     */
+    public function updateMessage(int $messageId, string $newMessage): ?ClassSetMessage
+    {
+        $message = ClassSetMessage::find($messageId);
+
+        if ($message) {
+            $message->update([
+                'message' => $newMessage,
+                'is_edited' => true,
+                'edited_at' => now(),
+            ]);
+        }
+
+        return $message;
+    }
+
+    /**
      * Delete a message
      */
     public function delete(int $messageId): bool
     {
         return ClassSetMessage::destroy($messageId) > 0;
+    }
+
+    /**
+     * Bulk delete messages
+     */
+    public function bulkDeleteMessages(array $messageIds): int
+    {
+        return ClassSetMessage::whereIn('id', $messageIds)->delete();
     }
 
     /**

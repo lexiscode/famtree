@@ -15,10 +15,14 @@ class TreeChatMessage extends Model
         'user_id',
         'message',
         'is_read',
+        'is_edited',
+        'edited_at',
     ];
 
     protected $casts = [
         'is_read' => 'boolean',
+        'is_edited' => 'boolean',
+        'edited_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
