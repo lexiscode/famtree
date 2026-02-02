@@ -148,6 +148,10 @@ class FeedController extends Controller
 
         $totalUnreadMessagesCount = $dmUnreadCount + $groupChatUnreadCount + $classSetUnreadCount;
 
+        // Get groups joined count and my stories count
+        $groupsJoinedCount = count($userClassSets);
+        $myStoriesCount = count($myPosts);
+
         return Inertia::render('GuestPages/AuthAccessPages/Feed/Index', [
             'user' => $userData,
             'stats' => $stats,
@@ -167,6 +171,8 @@ class FeedController extends Controller
             'unreadMessagesCount' => $totalUnreadMessagesCount,
             'profileCompletion' => $profileCompletion,
             'treeForChat' => $treeForChat,
+            'groupsJoinedCount' => $groupsJoinedCount,
+            'myStoriesCount' => $myStoriesCount,
         ]);
     }
 

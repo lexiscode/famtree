@@ -1,6 +1,6 @@
 import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { Building2, GraduationCap, Users, Briefcase } from 'lucide-react';
+import { Building2, GraduationCap, Users, Briefcase, Church } from 'lucide-react';
 import '../Organizations.css';
 
 interface Category {
@@ -22,6 +22,7 @@ const categoryIcons: Record<string, React.ReactNode> = {
     'higher-institutions': <GraduationCap size={40} />,
     'high-schools': <Building2 size={40} />,
     'football-fans': <Users size={40} />,
+    'religious-organizations': <Church size={40} />,
     'default': <Briefcase size={40} />,
 };
 

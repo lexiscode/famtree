@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { ArrowLeft, Users, LogIn, LogOut, MessageCircle, Loader2, Globe, Trophy } from 'lucide-react';
+import { ArrowLeft, Users, LogIn, LogOut, MessageCircle, Loader2, Globe, Trophy, Church, CheckCircle } from 'lucide-react';
 import '../Organizations.css';
 
 interface Organization {
@@ -35,6 +35,9 @@ interface Props {
 
 export default function ChannelsIndex({ organization, channels }: Props) {
     const [loadingId, setLoadingId] = useState<string | null>(null);
+
+    const isReligiousOrg = organization.category.slug === 'religious-organizations';
+    const isFootballClub = organization.category.slug === 'football-fans';
 
     const handleJoin = (channelUuid: string) => {
         setLoadingId(channelUuid);
@@ -96,21 +99,32 @@ export default function ChannelsIndex({ organization, channels }: Props) {
                     {/* Header */}
                     <div className="org-header">
                         <div className="org-header-icon">
-                            <Trophy />
+                            {isReligiousOrg ? <Church /> : <Trophy />}
                         </div>
-                        <h1>Fan Channels</h1>
-                        <p>Join a fan community for {organization.short_name || organization.name} and connect with supporters from around the world.</p>
+                        <h1>{isReligiousOrg ? 'Fellowship Channels' : 'Fan Channels'}</h1>
+                        <p>
+                            {isReligiousOrg
+                                ? `Join a fellowship channel for ${organization.short_name || organization.name} and connect with brethren from around the world.`
+                                : `Join a fan community for ${organization.short_name || organization.name} and connect with supporters from around the world.`
+                            }
+                        </p>
                     </div>
 
                     {/* Channels Grid */}
                     {channels.length > 0 ? (
                         <div className="class-sets-grid">
                             {channels.map((channel) => (
-                                <div key={channel.id} className="class-set-card">
+                                <div key={channel.id} className={`class-set-card ${channel.is_member ? 'is-joined' : ''}`}>
+                                    {channel.is_member && (
+                                        <div className="joined-badge">
+                                            <CheckCircle size={12} />
+                                            Joined
+                                        </div>
+                                    )}
                                     <h4>{channel.name}</h4>
                                     <div className="class-set-year">
                                         <Globe size={16} />
-                                        Fan Community
+                                        {isReligiousOrg ? 'Fellowship Community' : 'Fan Community'}
                                     </div>
                                     <div className="class-set-members">
                                         <Users size={16} />
@@ -168,7 +182,12 @@ export default function ChannelsIndex({ organization, channels }: Props) {
                         <div className="empty-state">
                             <Users size={64} />
                             <h3>No channels available</h3>
-                            <p>Fan channels for this club have not been added yet.</p>
+                            <p>
+                                {isReligiousOrg
+                                    ? 'Fellowship channels for this organization have not been added yet.'
+                                    : 'Fan channels for this club have not been added yet.'
+                                }
+                            </p>
                         </div>
                     )}
                 </div>

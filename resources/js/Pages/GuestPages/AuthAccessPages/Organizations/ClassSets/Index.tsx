@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { ArrowLeft, Users, LogIn, LogOut, Check, MessageCircle, Loader2, GraduationCap } from 'lucide-react';
+import { ArrowLeft, Users, LogIn, LogOut, CheckCircle, MessageCircle, Loader2, GraduationCap } from 'lucide-react';
 import '../Organizations.css';
 
 interface Organization {
@@ -116,7 +116,13 @@ export default function ClassSetsIndex({ department, faculty, organization, clas
                     {classSets.length > 0 ? (
                         <div className="class-sets-grid">
                             {classSets.map((classSet) => (
-                                <div key={classSet.id} className="class-set-card">
+                                <div key={classSet.id} className={`class-set-card ${classSet.is_member ? 'is-joined' : ''}`}>
+                                    {classSet.is_member && (
+                                        <div className="joined-badge">
+                                            <CheckCircle size={12} />
+                                            Joined
+                                        </div>
+                                    )}
                                     <h4>{classSet.name}</h4>
                                     <div className="class-set-year">Class of {classSet.year}</div>
                                     <div className="class-set-members">

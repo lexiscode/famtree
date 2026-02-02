@@ -267,6 +267,14 @@
     color: #6b7280;
 }
 
+.count-groups {
+    color: #8b5cf6;
+}
+
+.count-stories {
+    color: #ec4899;
+}
+
 .count-icon {
     color: var(--color-primary);
 }

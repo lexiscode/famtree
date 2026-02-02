@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { ArrowLeft, MapPin, Search, Building2, GraduationCap, School, Trophy } from 'lucide-react';
+import { ArrowLeft, MapPin, Search, Building2, GraduationCap, School, Trophy, Church } from 'lucide-react';
 import '../Organizations.css';
 
 const categoryIcons: Record<string, React.ReactNode> = {
     'higher-institutions': <GraduationCap />,
     'high-schools': <School />,
     'football-fans': <Trophy />,
+    'religious-organizations': <Church />,
     'default': <Building2 />,
 };
 

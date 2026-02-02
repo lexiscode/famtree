@@ -93,6 +93,8 @@ interface FeedProps {
     unreadMessagesCount: number;
     profileCompletion: ProfileCompletion;
     treeForChat: TreeForChat | null;
+    groupsJoinedCount: number;
+    myStoriesCount: number;
 }
 
 type TabType = 'following' | 'connections' | 'general' | 'followers' | 'all' | 'mystories';
@@ -116,6 +118,8 @@ export default function Feed({
     unreadMessagesCount = 0,
     profileCompletion,
     treeForChat,
+    groupsJoinedCount = 0,
+    myStoriesCount = 0,
 }: FeedProps) {
     const [activeTab, setActiveTab] = useState<TabType>('following');
     const [showCreateModal, setShowCreateModal] = useState(false);
@@ -273,6 +277,16 @@ export default function Feed({
                                             <span className="count-label">CONNECTIONS</span>
                                         </a>
 
+                                        <a href="/suggested-connections" className="count-card">
+                                            <span className="count-number count-suggestions">{suggestedUsers.length}</span>
+                                            <span className="count-label">SUGGESTIONS</span>
+                                        </a>
+
+                                        <a href="/family-tree" className="count-card">
+                                            <Users size={32} className="count-icon" />
+                                            <span className="count-label">FAMILY TREE</span>
+                                        </a>
+
                                         <a href={`/users/${user.uuid}/following`} className="count-card">
                                             <span className="count-number count-following">{stats.following}</span>
                                             <span className="count-label">FOLLOWING</span>
@@ -283,14 +297,14 @@ export default function Feed({
                                             <span className="count-label">FOLLOWERS</span>
                                         </a>
 
-                                        <a href="/suggested-connections" className="count-card">
-                                            <span className="count-number count-suggestions">{suggestedUsers.length}</span>
-                                            <span className="count-label">SUGGESTIONS</span>
+                                        <a href="/organizations" className="count-card">
+                                            <span className="count-number count-groups">{groupsJoinedCount}</span>
+                                            <span className="count-label">GROUPS</span>
                                         </a>
 
-                                        <a href="/family-tree" className="count-card">
-                                            <Users size={32} className="count-icon" />
-                                            <span className="count-label">FAMILY TREE</span>
+                                        <a href={`/stories/user/${user.id}`} className="count-card">
+                                            <span className="count-number count-stories">{myStoriesCount}</span>
+                                            <span className="count-label">MY STORIES</span>
                                         </a>
                                     </div>
 
