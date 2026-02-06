@@ -83,6 +83,23 @@ const containerColors = [
     { bg: 'rgba(236, 72, 153, 0.1)', border: '#EC4899', label: '#EC4899' },
 ];
 
+// Abbreviation mapping for relationship labels
+const getAbbreviation = (label: string): string => {
+    const map: Record<string, string> = {
+        'wife': 'W', 'husband': 'H', 'son': 'S', 'daughter': 'D',
+        'mother': 'M', 'father': 'F', 'brother': 'Br', 'sister': 'Si',
+        'grandson': 'GS', 'granddaughter': 'GD', 'grandmother': 'GM', 'grandfather': 'GF',
+        'aunt': 'Au', 'uncle': 'Un', 'nephew': 'Ne', 'niece': 'Ni',
+        'cousin': 'Co', 'partner': 'P', 'parent': 'Pa', 'child': 'Ch',
+        'sibling': 'Sb', 'grandparent': 'GP', 'grandchild': 'GC',
+    };
+    return map[label.toLowerCase()] || label.charAt(0).toUpperCase();
+};
+
+const capitalizeLabel = (label: string): string => {
+    return label.charAt(0).toUpperCase() + label.slice(1).toLowerCase();
+};
+
 const FamilyGroupTreeVisualization: React.FC<Props> = ({ treeData }) => {
     const svgRef = useRef<SVGSVGElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -92,6 +109,7 @@ const FamilyGroupTreeVisualization: React.FC<Props> = ({ treeData }) => {
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [hoveredNode, setHoveredNode] = useState<number | null>(null);
+    const [hoveredEdge, setHoveredEdge] = useState<string | null>(null);
 
     // Calculate node positions within a container with inverted triangle for parents
     // Only shows parents and their direct children (no grandchildren)
@@ -414,6 +432,14 @@ const FamilyGroupTreeVisualization: React.FC<Props> = ({ treeData }) => {
                     const childEdge = container.edges.find(e => e.target === child.id);
                     const childColor = childEdge?.color || connectionColor;
                     const childLabel = childNode?.relationshipType || '';
+                    const abbr = getAbbreviation(childLabel);
+                    const fullLabel = capitalizeLabel(childLabel);
+                    const labelCx = (junctionX + child.x) / 2;
+                    const labelCy = (junctionY + 30 + child.y - nodeRadius) / 2;
+                    const badgeW = abbr.length > 1 ? 32 : 24;
+                    const hoverKey = `child-${child.id}`;
+                    const isChildHovered = hoveredEdge === hoverKey;
+                    const tooltipW = Math.max(fullLabel.length * 7 + 20, 60);
 
                     return (
                         <g key={`child-connection-${child.id}`}>
@@ -426,29 +452,88 @@ const FamilyGroupTreeVisualization: React.FC<Props> = ({ treeData }) => {
                                 opacity="0.7"
                             />
 
-                            {/* Label for relationship */}
-                            <g>
+                            {/* Abbreviated relationship label with hover tooltip */}
+                            <g
+                                onMouseEnter={() => setHoveredEdge(hoverKey)}
+                                onMouseLeave={() => setHoveredEdge(null)}
+                                style={{ cursor: 'pointer' }}
+                            >
+                                {/* Badge glow on hover */}
+                                {isChildHovered && (
+                                    <circle
+                                        cx={labelCx}
+                                        cy={labelCy}
+                                        r="16"
+                                        fill={childColor}
+                                        opacity="0.2"
+                                        filter="blur(6px)"
+                                    />
+                                )}
+                                {/* Badge pill */}
                                 <rect
-                                    x={(junctionX + child.x) / 2 - 30}
-                                    y={(junctionY + 30 + child.y - nodeRadius) / 2 - 10}
-                                    width="60"
-                                    height="20"
-                                    fill="rgba(15, 23, 42, 0.9)"
+                                    x={labelCx - badgeW / 2}
+                                    y={labelCy - 10}
+                                    width={badgeW}
+                                    height={20}
+                                    fill="rgba(15, 23, 42, 0.95)"
                                     stroke={childColor}
-                                    strokeWidth="1"
+                                    strokeWidth={isChildHovered ? '1.5' : '1'}
                                     rx="10"
+                                    ry="10"
                                 />
+                                {/* Abbreviation text */}
                                 <text
-                                    x={(junctionX + child.x) / 2}
-                                    y={(junctionY + 30 + child.y - nodeRadius) / 2 + 4}
+                                    x={labelCx}
+                                    y={labelCy + 4}
                                     textAnchor="middle"
                                     fontSize="9"
-                                    fontWeight="600"
+                                    fontWeight="700"
                                     fill={childColor}
-                                    style={{ textTransform: 'capitalize' }}
+                                    style={{ letterSpacing: '0.5px' }}
                                 >
-                                    {childLabel}
+                                    {abbr}
                                 </text>
+                                {/* Hover tooltip showing full label */}
+                                {isChildHovered && (
+                                    <g>
+                                        {/* Tooltip glow */}
+                                        <rect
+                                            x={labelCx - tooltipW / 2}
+                                            y={labelCy - 37}
+                                            width={tooltipW}
+                                            height={22}
+                                            fill={childColor}
+                                            rx="11"
+                                            ry="11"
+                                            opacity="0.12"
+                                            filter="blur(5px)"
+                                        />
+                                        {/* Tooltip background */}
+                                        <rect
+                                            x={labelCx - tooltipW / 2}
+                                            y={labelCy - 37}
+                                            width={tooltipW}
+                                            height={22}
+                                            fill="rgba(15, 23, 42, 0.98)"
+                                            stroke={childColor}
+                                            strokeWidth="1"
+                                            rx="11"
+                                            ry="11"
+                                        />
+                                        {/* Tooltip text */}
+                                        <text
+                                            x={labelCx}
+                                            y={labelCy - 22}
+                                            textAnchor="middle"
+                                            fontSize="9"
+                                            fontWeight="600"
+                                            fill={childColor}
+                                            style={{ letterSpacing: '0.3px' }}
+                                        >
+                                            {fullLabel}
+                                        </text>
+                                    </g>
+                                )}
                             </g>
                         </g>
                     );
