@@ -171,6 +171,8 @@ export interface Connection {
     accepted_at: string;
     can_undo: boolean;
     undo_expires_at: string;
+    is_divorced: boolean;
+    divorced_at: string | null;
 }
 
 export interface SentRequest {

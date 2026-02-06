@@ -49,6 +49,12 @@ class FamilyTreeService
                 $userId
             );
 
+            // Check if this is a divorced spouse - update relationship type
+            $isDivorced = $connection->isDivorced();
+            if ($isDivorced && in_array($relationshipType, ['wife', 'husband', 'partner'])) {
+                $relationshipType = 'ex_' . $relationshipType;
+            }
+
             // Skip nephew/niece relationships (only show direct children, not siblings' children)
             // Also skip grandchildren - they should come through their parent
             if (in_array($relationshipType, ['nephew', 'niece'])) {
@@ -80,6 +86,7 @@ class FamilyTreeService
                 'relationshipType' => $relationshipType,
                 'label' => $this->formatRelationshipLabel($relationshipType),
                 'color' => $this->getRelationshipColor($relationshipType),
+                'isDivorced' => $isDivorced,
             ];
         }
 
@@ -121,10 +128,47 @@ class FamilyTreeService
             );
         }
 
+        // Build spouse groups for child-to-spouse mapping
+        $spouseGroups = [];
+        $spouseIds = [];
+        foreach ($allConnections as $connection) {
+            $connectedUser = $connection->requester_user_id === $userId
+                ? $connection->recipient
+                : $connection->requester;
+            $relType = $this->getRelationshipFromUserPerspective($connection, $userId);
+            if (in_array($relType, ['wife', 'husband', 'partner', 'ex_wife', 'ex_husband', 'ex_partner'])) {
+                $spouseIds[$connectedUser->id] = $connection->isDivorced();
+            }
+        }
+
+        foreach ($spouseIds as $spouseId => $isDivorced) {
+            $groupChildIds = [];
+            foreach ($childConnections as $childId) {
+                $childToSpouse = $this->connectionRepository->getConnectionBetween($childId, $spouseId);
+                if ($childToSpouse) {
+                    $groupChildIds[] = $childId;
+                    // Tag the child node with spouseGroupId
+                    foreach ($nodes as &$node) {
+                        if ($node['id'] === $childId) {
+                            $node['spouseGroupId'] = $spouseId;
+                            break;
+                        }
+                    }
+                    unset($node);
+                }
+            }
+            $spouseGroups[] = [
+                'spouseId' => $spouseId,
+                'isDivorced' => $isDivorced,
+                'childIds' => $groupChildIds,
+            ];
+        }
+
         return [
             'nodes' => $nodes,
             'edges' => $edges,
             'rootUserId' => $userId,
+            'spouseGroups' => $spouseGroups,
         ];
     }
 
@@ -198,6 +242,7 @@ class FamilyTreeService
                 'relationshipType' => $relationshipType,
                 'label' => $this->formatRelationshipLabel($relationshipType),
                 'color' => $this->getRelationshipColor($relationshipType),
+                'isDivorced' => false,
             ];
         }
     }
@@ -347,6 +392,9 @@ class FamilyTreeService
             'child' => 'Child',
             'grandparent' => 'Grandparent',
             'grandchild' => 'Grandchild',
+            'ex_wife' => 'Ex Wife',
+            'ex_husband' => 'Ex Husband',
+            'ex_partner' => 'Ex Partner',
         ];
 
         if (isset($labelMap[$relationshipType])) {
@@ -387,6 +435,9 @@ class FamilyTreeService
             'uncle_aunt' => '#F59E0B',  // Amber
             'nephew_niece' => '#0891B2', // Cyan
             'root' => '#667eea',        // Purple gradient start
+            'ex_wife' => '#9CA3AF',     // Gray
+            'ex_husband' => '#9CA3AF',  // Gray
+            'ex_partner' => '#9CA3AF',  // Gray
         ];
 
         return $colorMap[$relationshipType] ?? '#64748B'; // Default gray
@@ -415,6 +466,9 @@ class FamilyTreeService
             'sibling' => '#EDE9FE',     // Light purple
             'grandparent' => '#DDD6FE', // Light violet
             'grandchild' => '#D1FAE5',  // Light emerald
+            'ex_wife' => '#F3F4F6',     // Light gray
+            'ex_husband' => '#F3F4F6',  // Light gray
+            'ex_partner' => '#F3F4F6',  // Light gray
         ];
 
         return $colorMap[$relationshipType] ?? '#F1F5F9'; // Default light gray
@@ -615,6 +669,7 @@ class FamilyTreeService
             'rootUserId' => $rootUserId,
             'nodes' => $treeData['nodes'],
             'edges' => $treeData['edges'],
+            'spouseGroups' => $treeData['spouseGroups'] ?? [],
         ];
     }
 

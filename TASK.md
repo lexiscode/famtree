@@ -19,6 +19,62 @@ Now lets assume, some years down the line, Mr A and Mrs A divorces. Then Mr B ma
 
 
 
+UI Testing Workflow
+
+  1. Set Up: You need two users with a spousal connection
+
+  - Log in as User A, go to /connections/create
+  - Search for User B and send a connection request with relationship type Wife, Husband, or Partner
+  - Log in as User B, go to /connections/pending and accept the request
+
+  2. Test the Divorce Button on MyConnections Page
+
+  - Log in as either user, go to /connections
+  - Find the spousal connection card — it should show "✓ Connected" badge
+  - You should see a "Mark as Divorced" button (red outline) at the bottom of that card
+  - Non-spousal connections (brother, mother, etc.) should NOT have this button
+  - Click "Mark as Divorced" — a confirmation prompt appears: "Are you sure?" with Confirm / Cancel
+  - Click Cancel — nothing happens
+  - Click Confirm — the connection card now shows a "Divorced" badge (red background) instead of "✓ Connected", and the divorce
+  button disappears
+
+  3. Test the Connection Tree (/your-tree)
+
+  - Log in as the root user who has both a divorced spouse and (ideally) a current spouse
+  - Go to /your-tree
+  - Divorced spouse should appear to the LEFT of you with:
+    - A dashed gray line (not solid colored)
+    - Label abbreviation XW / XH / XP on hover
+  - Active spouse should appear to the RIGHT with a solid colored line (unchanged behavior)
+  - The legend at the bottom-left should show a dashed line entry labeled "Divorced"
+
+  4. Test the Family Group Tree (/family-tree/{uuid}/tree)
+
+  - Go to your family tree page and click into the tree visualization
+  - Divorced spouse should appear with:
+    - Gray dashed line connecting to you
+    - A ✕ symbol instead of the ♥ heart
+    - Gray-toned node styling
+    - Role label showing "ex wife" / "ex husband" / "ex partner" above the node
+
+  5. Test Child Grouping (requires children)
+
+  - If User A has children connected to both the divorced and current spouse:
+    - On /your-tree, children should be grouped under their respective parent pair
+    - Children connected to the divorced spouse cluster toward the left
+    - Children connected to the active spouse cluster toward the right
+
+  Ideal Test Scenario
+
+  For the fullest test, set up:
+  - Root user (you)
+  - Ex-spouse (connected as wife/husband, then divorced)
+  - Current spouse (new spousal connection)
+  - Child 1 connected to both root and ex-spouse
+  - Child 2 connected to both root and current spouse
+
+  This lets you verify all the visual grouping and layout behavior.
+
 
 
 

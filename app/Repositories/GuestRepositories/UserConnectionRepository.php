@@ -74,6 +74,19 @@ class UserConnectionRepository
     }
 
     /**
+     * Mark a spousal connection as divorced
+     */
+    public function divorceConnection(int $connectionId): UserConnection
+    {
+        $connection = UserConnection::findOrFail($connectionId);
+        $connection->update([
+            'divorced_at' => now(),
+        ]);
+
+        return $connection;
+    }
+
+    /**
      * Undo a connection acceptance at any time
      */
     public function undoConnection(int $connectionId): UserConnection

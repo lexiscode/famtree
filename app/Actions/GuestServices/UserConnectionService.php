@@ -170,6 +170,35 @@ class UserConnectionService
     }
 
     /**
+     * Divorce a spousal connection
+     */
+    public function divorceConnection(int $connectionId, int $userId): array
+    {
+        $connection = \App\Models\GuestModels\UserConnection::findOrFail($connectionId);
+
+        // Verify user is one of the parties
+        if ($connection->requester_user_id !== $userId && $connection->recipient_user_id !== $userId) {
+            throw ValidationException::withMessages([
+                'authorization' => ['You are not authorized to divorce this connection'],
+            ]);
+        }
+
+        // Verify connection can be divorced
+        if (!$connection->canDivorce()) {
+            throw ValidationException::withMessages([
+                'divorce' => ['This connection cannot be divorced. It must be an active spousal connection.'],
+            ]);
+        }
+
+        $this->connectionRepository->divorceConnection($connectionId);
+
+        return [
+            'success' => true,
+            'message' => 'Connection has been marked as divorced',
+        ];
+    }
+
+    /**
      * Undo connection acceptance at any time
      */
     public function undoConnection(int $connectionId, int $userId): array
@@ -325,6 +354,8 @@ class UserConnectionService
             'accepted_at' => $connection->accepted_at,
             'can_undo' => $connection->canUndo(),
             'undo_expires_at' => $connection->expires_at,
+            'is_divorced' => $connection->isDivorced(),
+            'divorced_at' => $connection->divorced_at,
         ];
     }
 

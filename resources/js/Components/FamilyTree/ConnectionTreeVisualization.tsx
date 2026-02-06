@@ -12,6 +12,7 @@ interface Node {
     relationshipLabel: string;
     nodeColor: string;
     shouldBlur?: boolean;
+    spouseGroupId?: number | null;
 }
 
 interface Edge {
@@ -21,12 +22,20 @@ interface Edge {
     relationshipType: string;
     label: string;
     color: string;
+    isDivorced?: boolean;
+}
+
+interface SpouseGroup {
+    spouseId: number;
+    isDivorced: boolean;
+    childIds: number[];
 }
 
 interface TreeData {
     nodes: Node[];
     edges: Edge[];
     rootUserId: number;
+    spouseGroups?: SpouseGroup[];
 }
 
 interface Props {
@@ -49,6 +58,8 @@ const getAbbreviation = (label: string): string => {
         'aunt': 'Au', 'uncle': 'Un', 'nephew': 'Ne', 'niece': 'Ni',
         'cousin': 'Co', 'partner': 'P', 'parent': 'Pa', 'child': 'Ch',
         'sibling': 'Sb', 'grandparent': 'GP', 'grandchild': 'GC',
+        'ex_wife': 'XW', 'ex_husband': 'XH', 'ex_partner': 'XP',
+        'ex wife': 'XW', 'ex husband': 'XH', 'ex partner': 'XP',
     };
     return map[label.toLowerCase()] || label.charAt(0).toUpperCase();
 };
@@ -100,6 +111,11 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                 'husband': 0,
                 'wife': 0,
                 'partner': 0,
+
+                // Ex-spouse (same level as root)
+                'ex_wife': 0,
+                'ex_husband': 0,
+                'ex_partner': 0,
 
                 // Children (1 level below)
                 'son': 1,
@@ -161,9 +177,21 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                     return node?.relationshipType === 'sister';
                 });
 
+                // Active spouses go to the right
+                const activeSpouses = nodesInLevel.filter(id => {
+                    const node = nodes.find(n => n.id === id);
+                    return node && ['wife', 'husband', 'partner'].includes(node.relationshipType);
+                });
+
+                // Divorced spouses go to the left
+                const divorcedSpouses = nodesInLevel.filter(id => {
+                    const node = nodes.find(n => n.id === id);
+                    return node && ['ex_wife', 'ex_husband', 'ex_partner'].includes(node.relationshipType);
+                });
+
                 const others = nodesInLevel.filter(id => {
                     const node = nodes.find(n => n.id === id);
-                    return node && !['root', 'brother', 'sister'].includes(node.relationshipType);
+                    return node && !['root', 'brother', 'sister', 'wife', 'husband', 'partner', 'ex_wife', 'ex_husband', 'ex_partner'].includes(node.relationshipType);
                 });
 
                 // Position root user at center (x = 0)
@@ -171,24 +199,119 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                     positions[rootNode] = { x: 0, y, level };
                 }
 
-                // Position sisters on the LEFT (negative x)
-                sisters.forEach((nodeId, index) => {
-                    const x = -(index + 1) * nodeWidth;
-                    positions[nodeId] = { x, y, level };
-                });
-
-                // Position brothers on the RIGHT (positive x)
-                brothers.forEach((nodeId, index) => {
+                // Position active spouses to the RIGHT of root (closest)
+                activeSpouses.forEach((nodeId, index) => {
                     const x = (index + 1) * nodeWidth;
                     positions[nodeId] = { x, y, level };
                 });
 
-                // Position other level 0 relatives (spouse, cousin, etc.)
-                // Place them after brothers on the right
-                others.forEach((nodeId, index) => {
-                    const x = (brothers.length + index + 1) * nodeWidth;
+                // Position brothers further right after active spouses
+                brothers.forEach((nodeId, index) => {
+                    const x = (activeSpouses.length + index + 1) * nodeWidth;
                     positions[nodeId] = { x, y, level };
                 });
+
+                // Position divorced spouses to the LEFT of root
+                divorcedSpouses.forEach((nodeId, index) => {
+                    const x = -(index + 1) * nodeWidth;
+                    positions[nodeId] = { x, y, level };
+                });
+
+                // Position sisters further left after divorced spouses
+                sisters.forEach((nodeId, index) => {
+                    const x = -(divorcedSpouses.length + index + 1) * nodeWidth;
+                    positions[nodeId] = { x, y, level };
+                });
+
+                // Position other level 0 relatives (cousin, etc.)
+                others.forEach((nodeId, index) => {
+                    const x = (activeSpouses.length + brothers.length + index + 1) * nodeWidth;
+                    positions[nodeId] = { x, y, level };
+                });
+            } else if (level === 1 && treeData.spouseGroups && treeData.spouseGroups.length > 0) {
+                // Group children by spouseGroupId and center each group under midpoint of root + spouse
+                const rootPos = positions[rootUserId];
+                const childSpacing = 160; // spacing between children within a group
+                const groupGap = 80; // minimum gap between separate groups
+                const rowDropOffset = 200; // vertical offset when pushing a group to a lower row
+
+                if (rootPos) {
+                    const grouped: Record<number, number[]> = {};
+                    const ungrouped: number[] = [];
+
+                    nodesInLevel.forEach(nodeId => {
+                        const node = nodes.find(n => n.id === nodeId);
+                        if (node?.spouseGroupId) {
+                            if (!grouped[node.spouseGroupId]) {
+                                grouped[node.spouseGroupId] = [];
+                            }
+                            grouped[node.spouseGroupId].push(nodeId);
+                        } else {
+                            ungrouped.push(nodeId);
+                        }
+                    });
+
+                    // First pass: position each group biased toward the spouse's side (slanted outward)
+                    const groupBounds: { spouseId: number; childIds: number[]; minX: number; maxX: number; centerX: number; rowY: number }[] = [];
+
+                    Object.entries(grouped).forEach(([spouseIdStr, childIds]) => {
+                        const spouseId = Number(spouseIdStr);
+                        const spousePos = positions[spouseId];
+                        // Center children directly under the spouse so groups fan fully outward
+                        const centerX = spousePos ? spousePos.x : rootPos.x;
+                        const groupWidth = (childIds.length - 1) * childSpacing;
+
+                        childIds.forEach((childId, index) => {
+                            const x = centerX + (index * childSpacing) - (groupWidth / 2);
+                            positions[childId] = { x, y, level };
+                        });
+
+                        const xs = childIds.map(id => positions[id].x);
+                        groupBounds.push({
+                            spouseId,
+                            childIds,
+                            minX: Math.min(...xs),
+                            maxX: Math.max(...xs),
+                            centerX,
+                            rowY: y,
+                        });
+                    });
+
+                    // Second pass: resolve overlaps by pushing groups to lower rows
+                    // Sort groups by center position (left to right)
+                    groupBounds.sort((a, b) => a.centerX - b.centerX);
+
+                    for (let i = 1; i < groupBounds.length; i++) {
+                        const prev = groupBounds[i - 1];
+                        const curr = groupBounds[i];
+                        const overlap = (prev.maxX + groupGap) - curr.minX;
+
+                        if (overlap > 0) {
+                            // Push the current group down to a lower row instead of shifting horizontally
+                            const newY = prev.rowY + rowDropOffset;
+                            curr.rowY = newY;
+                            curr.childIds.forEach(childId => {
+                                positions[childId].y = newY;
+                            });
+                        }
+                    }
+
+                    // Position ungrouped children centered under root
+                    if (ungrouped.length > 0) {
+                        const groupWidth = (ungrouped.length - 1) * childSpacing;
+                        ungrouped.forEach((childId, index) => {
+                            const x = rootPos.x + (index * childSpacing) - (groupWidth / 2);
+                            positions[childId] = { x, y, level };
+                        });
+                    }
+                } else {
+                    // Fallback: standard positioning
+                    const levelWidth = nodesInLevel.length * nodeWidth;
+                    nodesInLevel.forEach((nodeId, index) => {
+                        const x = (index * nodeWidth) - (levelWidth / 2) + (nodeWidth / 2);
+                        positions[nodeId] = { x, y, level };
+                    });
+                }
             } else {
                 // Standard positioning for other levels
                 const levelWidth = nodesInLevel.length * nodeWidth;
@@ -500,171 +623,420 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                 >
                     {/* Draw edges - show connections to root user and grandchildren through children */}
                     <g>
-                        {treeData.edges
-                            .filter(edge => {
-                                // Check if this is a direct root -> grandchild edge (skip these, show through parent instead)
-                                if (edge.source === treeData.rootUserId) {
-                                    const targetNode = treeData.nodes.find(n => n.id === edge.target);
-                                    if (targetNode && ['grandson', 'granddaughter', 'grandchild'].includes(targetNode.relationshipType)) {
-                                        // Check if there's a child who can be the intermediate connection
-                                        const hasChildParent = treeData.edges.some(e =>
-                                            e.target === edge.target &&
-                                            e.source !== treeData.rootUserId &&
-                                            treeData.nodes.find(n => n.id === e.source && ['son', 'daughter', 'child'].includes(n.relationshipType))
-                                        );
-                                        // If there's a proper parent-child chain, skip the direct grandparent edge
-                                        if (hasChildParent) {
+                        {(() => {
+                            // Collect child IDs that belong to a spouse group (these get inverted triangle rendering)
+                            const spouseGroupChildIds = new Set<number>();
+                            if (treeData.spouseGroups) {
+                                treeData.spouseGroups.forEach(group => {
+                                    group.childIds.forEach(id => spouseGroupChildIds.add(id));
+                                });
+                            }
+
+                            return treeData.edges
+                                .filter(edge => {
+                                    // Skip root → child edges when child belongs to a spouse group
+                                    // (these are rendered as inverted triangles instead)
+                                    if (edge.source === treeData.rootUserId && spouseGroupChildIds.has(edge.target)) {
+                                        const targetNode = treeData.nodes.find(n => n.id === edge.target);
+                                        if (targetNode && ['son', 'daughter', 'child'].includes(targetNode.relationshipType)) {
                                             return false;
                                         }
                                     }
-                                    return true;
-                                }
 
-                                // Show edges where target is root user
-                                if (edge.target === treeData.rootUserId) {
-                                    return true;
-                                }
-
-                                // Show grandchildren edges (child -> grandchild connections)
-                                // The target node should be a grandchild (from root user's perspective)
-                                const targetNode = treeData.nodes.find(n => n.id === edge.target);
-                                if (targetNode && ['grandson', 'granddaughter', 'grandchild'].includes(targetNode.relationshipType)) {
-                                    // And the source should be a child of the root user
-                                    const sourceNode = treeData.nodes.find(n => n.id === edge.source);
-                                    if (sourceNode && ['son', 'daughter', 'child'].includes(sourceNode.relationshipType)) {
+                                    // Check if this is a direct root -> grandchild edge (skip these, show through parent instead)
+                                    if (edge.source === treeData.rootUserId) {
+                                        const targetNode = treeData.nodes.find(n => n.id === edge.target);
+                                        if (targetNode && ['grandson', 'granddaughter', 'grandchild'].includes(targetNode.relationshipType)) {
+                                            const hasChildParent = treeData.edges.some(e =>
+                                                e.target === edge.target &&
+                                                e.source !== treeData.rootUserId &&
+                                                treeData.nodes.find(n => n.id === e.source && ['son', 'daughter', 'child'].includes(n.relationshipType))
+                                            );
+                                            if (hasChildParent) {
+                                                return false;
+                                            }
+                                        }
                                         return true;
                                     }
-                                }
 
-                                return false;
+                                    // Show edges where target is root user
+                                    if (edge.target === treeData.rootUserId) {
+                                        return true;
+                                    }
+
+                                    // Show grandchildren edges (child -> grandchild connections)
+                                    const targetNode = treeData.nodes.find(n => n.id === edge.target);
+                                    if (targetNode && ['grandson', 'granddaughter', 'grandchild'].includes(targetNode.relationshipType)) {
+                                        const sourceNode = treeData.nodes.find(n => n.id === edge.source);
+                                        if (sourceNode && ['son', 'daughter', 'child'].includes(sourceNode.relationshipType)) {
+                                            return true;
+                                        }
+                                    }
+
+                                    return false;
+                                })
+                                .map((edge) => {
+                                    const sourcePos = nodePositions[edge.source];
+                                    const targetPos = nodePositions[edge.target];
+
+                                    if (!sourcePos || !targetPos) return null;
+
+                                    const x1 = sourcePos.x - (minX || 0) + padding;
+                                    const y1 = sourcePos.y - (minY || 0) + padding;
+                                    const x2 = targetPos.x - (minX || 0) + padding;
+                                    const y2 = targetPos.y - (minY || 0) + padding;
+
+                                    const midY = (y1 + y2) / 2;
+                                    const abbr = getAbbreviation(edge.label);
+                                    const fullLabel = capitalizeLabel(edge.label);
+                                    const cx = (x1 + x2) / 2;
+                                    const badgeW = abbr.length > 1 ? 36 : 26;
+                                    const isEdgeHovered = hoveredEdge === edge.id;
+                                    const tooltipW = Math.max(fullLabel.length * 7.5 + 24, 70);
+
+                                    const edgeIsDivorced = edge.isDivorced || false;
+
+                                    return (
+                                        <g key={edge.id}>
+                                            {/* Glow effect */}
+                                            <path
+                                                d={`M ${x1} ${y1 + 60} C ${x1} ${midY}, ${x2} ${midY}, ${x2} ${y2 - 60}`}
+                                                stroke={edge.color}
+                                                strokeWidth="4"
+                                                fill="none"
+                                                opacity={edgeIsDivorced ? 0.1 : 0.3}
+                                                filter="blur(8px)"
+                                            />
+                                            {/* Main line */}
+                                            <path
+                                                d={`M ${x1} ${y1 + 60} C ${x1} ${midY}, ${x2} ${midY}, ${x2} ${y2 - 60}`}
+                                                stroke={edge.color}
+                                                strokeWidth="3"
+                                                fill="none"
+                                                opacity={edgeIsDivorced ? 0.5 : 0.9}
+                                                strokeLinecap="round"
+                                                strokeDasharray={edgeIsDivorced ? '8,6' : undefined}
+                                            />
+                                            {/* Abbreviated relationship badge with hover tooltip */}
+                                            <g
+                                                onMouseEnter={() => setHoveredEdge(edge.id)}
+                                                onMouseLeave={() => setHoveredEdge(null)}
+                                                style={{ cursor: 'pointer' }}
+                                            >
+                                                {isEdgeHovered && (
+                                                    <circle
+                                                        cx={cx}
+                                                        cy={midY}
+                                                        r="20"
+                                                        fill={edge.color}
+                                                        opacity="0.2"
+                                                        filter="blur(8px)"
+                                                    />
+                                                )}
+                                                <rect
+                                                    x={cx - badgeW / 2}
+                                                    y={midY - 12}
+                                                    width={badgeW}
+                                                    height={24}
+                                                    fill="rgba(15, 23, 42, 0.95)"
+                                                    stroke={edge.color}
+                                                    strokeWidth={isEdgeHovered ? '2' : '1.5'}
+                                                    rx="12"
+                                                    ry="12"
+                                                />
+                                                <text
+                                                    x={cx}
+                                                    y={midY + 4}
+                                                    textAnchor="middle"
+                                                    fontSize="11"
+                                                    fontWeight="700"
+                                                    fill={edge.color}
+                                                    style={{ letterSpacing: '0.5px' }}
+                                                >
+                                                    {abbr}
+                                                </text>
+                                                {isEdgeHovered && (
+                                                    <g>
+                                                        <rect
+                                                            x={cx - tooltipW / 2}
+                                                            y={midY - 44}
+                                                            width={tooltipW}
+                                                            height={26}
+                                                            fill={edge.color}
+                                                            rx="13"
+                                                            ry="13"
+                                                            opacity="0.12"
+                                                            filter="blur(6px)"
+                                                        />
+                                                        <rect
+                                                            x={cx - tooltipW / 2}
+                                                            y={midY - 44}
+                                                            width={tooltipW}
+                                                            height={26}
+                                                            fill="rgba(15, 23, 42, 0.98)"
+                                                            stroke={edge.color}
+                                                            strokeWidth="1"
+                                                            rx="13"
+                                                            ry="13"
+                                                        />
+                                                        <text
+                                                            x={cx}
+                                                            y={midY - 27}
+                                                            textAnchor="middle"
+                                                            fontSize="11"
+                                                            fontWeight="600"
+                                                            fill={edge.color}
+                                                            style={{ letterSpacing: '0.3px' }}
+                                                        >
+                                                            {fullLabel}
+                                                        </text>
+                                                    </g>
+                                                )}
+                                            </g>
+                                        </g>
+                                    );
+                                });
+                        })()}
+                    </g>
+
+                    {/* Inverted triangle connections for spouse groups */}
+                    {treeData.spouseGroups && treeData.spouseGroups.map((group) => {
+                        if (group.childIds.length === 0) return null;
+
+                        const rootPos = nodePositions[treeData.rootUserId];
+                        const spousePos = nodePositions[group.spouseId];
+                        if (!rootPos || !spousePos) return null;
+
+                        // Convert to SVG coordinates
+                        const rootX = rootPos.x - (minX || 0) + padding;
+                        const rootY = rootPos.y - (minY || 0) + padding;
+                        const spouseX = spousePos.x - (minX || 0) + padding;
+                        const spouseY = spousePos.y - (minY || 0) + padding;
+
+                        const parentY = rootY + 60; // bottom of parent nodes
+
+                        // Get child positions
+                        const childPositions = group.childIds
+                            .map(childId => {
+                                const pos = nodePositions[childId];
+                                if (!pos) return null;
+                                return {
+                                    id: childId,
+                                    x: pos.x - (minX || 0) + padding,
+                                    y: pos.y - (minY || 0) + padding,
+                                };
                             })
-                            .map((edge) => {
-                                const sourcePos = nodePositions[edge.source];
-                                const targetPos = nodePositions[edge.target];
+                            .filter(Boolean) as { id: number; x: number; y: number }[];
 
-                                if (!sourcePos || !targetPos) return null;
+                        if (childPositions.length === 0) return null;
 
-                                const x1 = sourcePos.x - (minX || 0) + padding;
-                                const y1 = sourcePos.y - (minY || 0) + padding;
-                                const x2 = targetPos.x - (minX || 0) + padding;
-                                const y2 = targetPos.y - (minY || 0) + padding;
+                        // Junction point: centered horizontally over the children, not the parents
+                        // This creates the slanted triangle effect
+                        const childCenterX = childPositions.reduce((sum, c) => sum + c.x, 0) / childPositions.length;
+                        const midX = childCenterX;
+                        const childTopY = Math.min(...childPositions.map(c => c.y)) - 60;
+                        const junctionY = childTopY - 30;
 
-                                // Use cubic bezier curve for smooth connections
-                                const midY = (y1 + y2) / 2;
-                                const abbr = getAbbreviation(edge.label);
-                                const fullLabel = capitalizeLabel(edge.label);
-                                const cx = (x1 + x2) / 2;
-                                const badgeW = abbr.length > 1 ? 36 : 26;
-                                const isEdgeHovered = hoveredEdge === edge.id;
-                                const tooltipW = Math.max(fullLabel.length * 7.5 + 24, 70);
+                        const lineColor = group.isDivorced ? '#9CA3AF' : '#667eea';
+                        const lineOpacity = group.isDivorced ? 0.5 : 0.85;
+                        const dashArray = group.isDivorced ? '8,6' : undefined;
+                        const glowOpacity = group.isDivorced ? 0.08 : 0.2;
 
-                                return (
-                                    <g key={edge.id}>
-                                        {/* Glow effect */}
-                                        <path
-                                            d={`M ${x1} ${y1 + 60} C ${x1} ${midY}, ${x2} ${midY}, ${x2} ${y2 - 60}`}
-                                            stroke={edge.color}
+                        // Calculate horizontal span of children for the horizontal fan bar
+                        const childXs = childPositions.map(c => c.x);
+                        const minChildX = Math.min(...childXs);
+                        const maxChildX = Math.max(...childXs);
+
+                        return (
+                            <g key={`spouse-group-${group.spouseId}`}>
+                                {/* Inverted triangle: two lines from each parent converging at junction */}
+                                {/* Line from root node down to junction */}
+                                <line
+                                    x1={rootX} y1={parentY}
+                                    x2={midX} y2={junctionY}
+                                    stroke={lineColor}
+                                    strokeWidth="4"
+                                    opacity={glowOpacity}
+                                    filter="blur(6px)"
+                                />
+                                <line
+                                    x1={rootX} y1={parentY}
+                                    x2={midX} y2={junctionY}
+                                    stroke={lineColor}
+                                    strokeWidth="2.5"
+                                    opacity={lineOpacity}
+                                    strokeLinecap="round"
+                                    strokeDasharray={dashArray}
+                                />
+
+                                {/* Line from spouse node down to junction */}
+                                <line
+                                    x1={spouseX} y1={parentY}
+                                    x2={midX} y2={junctionY}
+                                    stroke={lineColor}
+                                    strokeWidth="4"
+                                    opacity={glowOpacity}
+                                    filter="blur(6px)"
+                                />
+                                <line
+                                    x1={spouseX} y1={parentY}
+                                    x2={midX} y2={junctionY}
+                                    stroke={lineColor}
+                                    strokeWidth="2.5"
+                                    opacity={lineOpacity}
+                                    strokeLinecap="round"
+                                    strokeDasharray={dashArray}
+                                />
+
+                                {/* Junction circle at convergence point */}
+                                <circle
+                                    cx={midX}
+                                    cy={junctionY}
+                                    r="5"
+                                    fill={lineColor}
+                                    opacity={lineOpacity}
+                                />
+
+                                {/* Horizontal bar spanning all children (if more than one child) */}
+                                {childPositions.length > 1 && (
+                                    <>
+                                        {/* Glow */}
+                                        <line
+                                            x1={minChildX} y1={junctionY}
+                                            x2={maxChildX} y2={junctionY}
+                                            stroke={lineColor}
                                             strokeWidth="4"
-                                            fill="none"
-                                            opacity="0.3"
-                                            filter="blur(8px)"
+                                            opacity={glowOpacity}
+                                            filter="blur(6px)"
                                         />
                                         {/* Main line */}
-                                        <path
-                                            d={`M ${x1} ${y1 + 60} C ${x1} ${midY}, ${x2} ${midY}, ${x2} ${y2 - 60}`}
-                                            stroke={edge.color}
-                                            strokeWidth="3"
-                                            fill="none"
-                                            opacity="0.9"
+                                        <line
+                                            x1={minChildX} y1={junctionY}
+                                            x2={maxChildX} y2={junctionY}
+                                            stroke={lineColor}
+                                            strokeWidth="2.5"
+                                            opacity={lineOpacity}
                                             strokeLinecap="round"
+                                            strokeDasharray={dashArray}
                                         />
-                                        {/* Abbreviated relationship badge with hover tooltip */}
-                                        <g
-                                            onMouseEnter={() => setHoveredEdge(edge.id)}
-                                            onMouseLeave={() => setHoveredEdge(null)}
-                                            style={{ cursor: 'pointer' }}
-                                        >
-                                            {/* Badge glow on hover */}
-                                            {isEdgeHovered && (
-                                                <circle
-                                                    cx={cx}
-                                                    cy={midY}
-                                                    r="20"
-                                                    fill={edge.color}
-                                                    opacity="0.2"
-                                                    filter="blur(8px)"
-                                                />
-                                            )}
-                                            {/* Badge pill */}
-                                            <rect
-                                                x={cx - badgeW / 2}
-                                                y={midY - 12}
-                                                width={badgeW}
-                                                height={24}
-                                                fill="rgba(15, 23, 42, 0.95)"
-                                                stroke={edge.color}
-                                                strokeWidth={isEdgeHovered ? '2' : '1.5'}
-                                                rx="12"
-                                                ry="12"
+                                    </>
+                                )}
+
+                                {/* Vertical lines from horizontal bar down to each child with abbrev badges */}
+                                {childPositions.map(child => {
+                                    const childNode = treeData.nodes.find(n => n.id === child.id);
+                                    const label = childNode?.relationshipType || '';
+                                    const abbr = getAbbreviation(label);
+                                    const fullLabel = capitalizeLabel(label);
+                                    const badgeW = abbr.length > 1 ? 36 : 26;
+                                    const badgeMidY = (junctionY + (child.y - 60)) / 2;
+                                    const tooltipW = Math.max(fullLabel.length * 7.5 + 24, 70);
+                                    const edgeId = `group-child-${child.id}`;
+                                    const isEdgeHovered = hoveredEdge === edgeId;
+
+                                    return (
+                                        <g key={edgeId}>
+                                            {/* Glow */}
+                                            <line
+                                                x1={child.x} y1={junctionY}
+                                                x2={child.x} y2={child.y - 60}
+                                                stroke={lineColor}
+                                                strokeWidth="4"
+                                                opacity={glowOpacity}
+                                                filter="blur(6px)"
                                             />
-                                            {/* Abbreviation text */}
-                                            <text
-                                                x={cx}
-                                                y={midY + 4}
-                                                textAnchor="middle"
-                                                fontSize="11"
-                                                fontWeight="700"
-                                                fill={edge.color}
-                                                style={{ letterSpacing: '0.5px' }}
+                                            {/* Main line */}
+                                            <line
+                                                x1={child.x} y1={junctionY}
+                                                x2={child.x} y2={child.y - 60}
+                                                stroke={lineColor}
+                                                strokeWidth="2.5"
+                                                opacity={lineOpacity}
+                                                strokeLinecap="round"
+                                                strokeDasharray={dashArray}
+                                            />
+                                            {/* Abbreviation badge */}
+                                            <g
+                                                onMouseEnter={() => setHoveredEdge(edgeId)}
+                                                onMouseLeave={() => setHoveredEdge(null)}
+                                                style={{ cursor: 'pointer' }}
                                             >
-                                                {abbr}
-                                            </text>
-                                            {/* Hover tooltip showing full label */}
-                                            {isEdgeHovered && (
-                                                <g>
-                                                    {/* Tooltip glow */}
-                                                    <rect
-                                                        x={cx - tooltipW / 2}
-                                                        y={midY - 44}
-                                                        width={tooltipW}
-                                                        height={26}
-                                                        fill={edge.color}
-                                                        rx="13"
-                                                        ry="13"
-                                                        opacity="0.12"
-                                                        filter="blur(6px)"
+                                                {isEdgeHovered && (
+                                                    <circle
+                                                        cx={child.x}
+                                                        cy={badgeMidY}
+                                                        r="20"
+                                                        fill={lineColor}
+                                                        opacity="0.2"
+                                                        filter="blur(8px)"
                                                     />
-                                                    {/* Tooltip background */}
-                                                    <rect
-                                                        x={cx - tooltipW / 2}
-                                                        y={midY - 44}
-                                                        width={tooltipW}
-                                                        height={26}
-                                                        fill="rgba(15, 23, 42, 0.98)"
-                                                        stroke={edge.color}
-                                                        strokeWidth="1"
-                                                        rx="13"
-                                                        ry="13"
-                                                    />
-                                                    {/* Tooltip text */}
-                                                    <text
-                                                        x={cx}
-                                                        y={midY - 27}
-                                                        textAnchor="middle"
-                                                        fontSize="11"
-                                                        fontWeight="600"
-                                                        fill={edge.color}
-                                                        style={{ letterSpacing: '0.3px' }}
-                                                    >
-                                                        {fullLabel}
-                                                    </text>
-                                                </g>
-                                            )}
+                                                )}
+                                                <rect
+                                                    x={child.x - badgeW / 2}
+                                                    y={badgeMidY - 12}
+                                                    width={badgeW}
+                                                    height={24}
+                                                    fill="rgba(15, 23, 42, 0.95)"
+                                                    stroke={lineColor}
+                                                    strokeWidth={isEdgeHovered ? '2' : '1.5'}
+                                                    rx="12"
+                                                    ry="12"
+                                                />
+                                                <text
+                                                    x={child.x}
+                                                    y={badgeMidY + 4}
+                                                    textAnchor="middle"
+                                                    fontSize="11"
+                                                    fontWeight="700"
+                                                    fill={lineColor}
+                                                    style={{ letterSpacing: '0.5px' }}
+                                                >
+                                                    {abbr}
+                                                </text>
+                                                {isEdgeHovered && (
+                                                    <g>
+                                                        <rect
+                                                            x={child.x - tooltipW / 2}
+                                                            y={badgeMidY - 44}
+                                                            width={tooltipW}
+                                                            height={26}
+                                                            fill={lineColor}
+                                                            rx="13"
+                                                            ry="13"
+                                                            opacity="0.12"
+                                                            filter="blur(6px)"
+                                                        />
+                                                        <rect
+                                                            x={child.x - tooltipW / 2}
+                                                            y={badgeMidY - 44}
+                                                            width={tooltipW}
+                                                            height={26}
+                                                            fill="rgba(15, 23, 42, 0.98)"
+                                                            stroke={lineColor}
+                                                            strokeWidth="1"
+                                                            rx="13"
+                                                            ry="13"
+                                                        />
+                                                        <text
+                                                            x={child.x}
+                                                            y={badgeMidY - 27}
+                                                            textAnchor="middle"
+                                                            fontSize="11"
+                                                            fontWeight="600"
+                                                            fill={lineColor}
+                                                            style={{ letterSpacing: '0.3px' }}
+                                                        >
+                                                            {fullLabel}
+                                                        </text>
+                                                    </g>
+                                                )}
+                                            </g>
                                         </g>
-                                    </g>
-                                );
-                            })}
-                    </g>
+                                    );
+                                })}
+                            </g>
+                        );
+                    })}
 
                     {/* Draw nodes */}
                     <g>
@@ -826,6 +1198,14 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                 <div style={{ marginBottom: '8px', fontSize: '13px', fontWeight: 700 }}>
                     {treeData.nodes.length} Connection{treeData.nodes.length !== 1 ? 's' : ''}
                 </div>
+                {treeData.edges.some(e => e.isDivorced) && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                        <svg width="30" height="8">
+                            <line x1="0" y1="4" x2="30" y2="4" stroke="#9CA3AF" strokeWidth="2" strokeDasharray="4,3" opacity="0.6" />
+                        </svg>
+                        <span style={{ fontSize: '11px', color: '#9CA3AF' }}>Divorced</span>
+                    </div>
+                )}
                 <div style={{ fontSize: '11px', color: '#94A3B8' }}>
                     Drag to pan • Scroll to zoom
                 </div>

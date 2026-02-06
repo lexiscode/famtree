@@ -23,6 +23,7 @@ class UserConnection extends Model
         'status',
         'requested_at',
         'accepted_at',
+        'divorced_at',
         'expires_at',
     ];
 
@@ -34,6 +35,7 @@ class UserConnection extends Model
     protected $casts = [
         'requested_at' => 'datetime',
         'accepted_at' => 'datetime',
+        'divorced_at' => 'datetime',
         'expires_at' => 'datetime',
     ];
 
@@ -85,5 +87,23 @@ class UserConnection extends Model
     {
         // Allow undo for any accepted connection
         return $this->isActive() && $this->accepted_at !== null;
+    }
+
+    /**
+     * Check if connection is divorced
+     */
+    public function isDivorced(): bool
+    {
+        return $this->divorced_at !== null;
+    }
+
+    /**
+     * Check if connection can be divorced
+     */
+    public function canDivorce(): bool
+    {
+        return $this->isActive()
+            && in_array($this->relationship_type, ['wife', 'husband', 'partner'])
+            && !$this->isDivorced();
     }
 }

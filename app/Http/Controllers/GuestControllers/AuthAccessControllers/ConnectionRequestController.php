@@ -310,6 +310,25 @@ class ConnectionRequestController extends Controller
     }
 
     /**
+     * Divorce a spousal connection
+     */
+    public function divorce(Request $request, int $connectionId)
+    {
+        $userId = $request->user()->id;
+
+        try {
+            $this->connectionService->divorceConnection($connectionId, $userId);
+
+            return redirect()->back()->with('success', 'Connection has been marked as divorced');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $firstError = collect($e->errors())->flatten()->first();
+            return redirect()->back()->with('error', $firstError ?? 'Validation failed');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
      * Undo a connection acceptance (API)
      */
     public function undoAcceptance(Request $request, int $connectionId)

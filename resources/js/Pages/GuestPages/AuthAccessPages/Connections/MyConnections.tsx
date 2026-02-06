@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { usePage, router } from '@inertiajs/react';
+import { useState } from 'react';
+import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
 import { Users, UserPlus, Search, Filter, ExternalLink, ArrowLeft, MessageCircle } from 'lucide-react';
 import { Connection, MyConnectionsProps } from '@/types';
@@ -18,6 +18,18 @@ export default function MyConnections({
     const [connections, setConnections] = useState(initialConnections);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterType, setFilterType] = useState(relationship_filter || '');
+    const [divorceConfirmId, setDivorceConfirmId] = useState<number | null>(null);
+
+    const spousalTypes = ['wife', 'husband', 'partner'];
+
+    const handleDivorce = (connectionId: number) => {
+        router.post(route('connections.divorce', { connection: connectionId }), {}, {
+            preserveScroll: true,
+            onFinish: () => {
+                setDivorceConfirmId(null);
+            }
+        });
+    };
 
     const filteredConnections = connections.filter(conn => {
         const matchesSearch = conn.user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -145,8 +157,8 @@ export default function MyConnections({
                                                     <h4 className="connection-name">{connection.user.name}</h4>
                                                     <p className="connection-username">@{connection.user.username}</p>
                                                 </div>
-                                                <span className="connection-status-badge">
-                                                    ✓ Connected
+                                                <span className="connection-status-badge" style={connection.is_divorced ? { background: '#FEE2E2', color: '#DC2626' } : {}}>
+                                                    {connection.is_divorced ? 'Divorced' : '✓ Connected'}
                                                 </span>
                                             </div>
 
@@ -184,6 +196,64 @@ export default function MyConnections({
                                                     <MessageCircle size={16} />
                                                 </button>
                                             </div>
+
+                                            {/* Divorce button for spousal connections */}
+                                            {spousalTypes.includes(connection.relationship_type) && !connection.is_divorced && (
+                                                <div className="pb-2">
+                                                    {divorceConfirmId === connection.id ? (
+                                                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                                            <span style={{ fontSize: '0.8rem', color: '#DC2626' }}>Are you sure?</span>
+                                                            <button
+                                                                onClick={() => handleDivorce(connection.id)}
+                                                                style={{
+                                                                    background: '#DC2626',
+                                                                    color: '#fff',
+                                                                    border: 'none',
+                                                                    padding: '0.35rem 0.75rem',
+                                                                    borderRadius: '6px',
+                                                                    cursor: 'pointer',
+                                                                    fontSize: '0.8rem',
+                                                                    fontWeight: 600
+                                                                }}
+                                                            >
+                                                                Confirm
+                                                            </button>
+                                                            <button
+                                                                onClick={() => setDivorceConfirmId(null)}
+                                                                style={{
+                                                                    background: '#E5E7EB',
+                                                                    color: '#374151',
+                                                                    border: 'none',
+                                                                    padding: '0.35rem 0.75rem',
+                                                                    borderRadius: '6px',
+                                                                    cursor: 'pointer',
+                                                                    fontSize: '0.8rem',
+                                                                    fontWeight: 600
+                                                                }}
+                                                            >
+                                                                Cancel
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => setDivorceConfirmId(connection.id)}
+                                                            style={{
+                                                                background: 'transparent',
+                                                                color: '#DC2626',
+                                                                border: '1px solid #FCA5A5',
+                                                                padding: '0.35rem 0.75rem',
+                                                                borderRadius: '6px',
+                                                                cursor: 'pointer',
+                                                                fontSize: '0.8rem',
+                                                                fontWeight: 600,
+                                                                width: '100%'
+                                                            }}
+                                                        >
+                                                            Mark as Divorced
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            )}
 
 
                                         </div>

@@ -98,6 +98,11 @@ class ChildAccountService
                 continue;
             }
 
+            // Skip divorced spouses — a new child should not auto-connect with an ex-spouse
+            if ($connection->isDivorced() && in_array($connection->relationship_type, ['wife', 'husband', 'partner'])) {
+                continue;
+            }
+
             // Get the relationship type from the parent's perspective
             $parentRelationshipType = $connection->requester_user_id === $parent->id
                 ? $connection->relationship_type

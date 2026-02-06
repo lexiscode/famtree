@@ -2,8 +2,7 @@ import { PropsWithChildren } from 'react';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { ModalProvider } from '@/Context/ModalContext';
-import NavigationBar from '@/Components/Navigation/NavigationBar';
-import Footer from '@/Components/Footer/Footer';
+import { useFlashToast } from '@/hooks/useFlashToast';
 import GuestLayoutContent from './GuestLayoutContent';
 
 interface GuestLayoutProps extends PropsWithChildren {
@@ -12,6 +11,8 @@ interface GuestLayoutProps extends PropsWithChildren {
 }
 
 export default function Guest({ children, hideFooter = false, hideNavigation = false }: GuestLayoutProps) {
+    useFlashToast();
+
     return (
         <ModalProvider>
             <GuestLayoutContent hideFooter={hideFooter} hideNavigation={hideNavigation}>{children}</GuestLayoutContent>
