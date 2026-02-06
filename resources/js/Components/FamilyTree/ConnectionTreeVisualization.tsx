@@ -40,6 +40,23 @@ interface NodePosition {
     level: number;
 }
 
+// Abbreviation mapping for relationship labels
+const getAbbreviation = (label: string): string => {
+    const map: Record<string, string> = {
+        'wife': 'W', 'husband': 'H', 'son': 'S', 'daughter': 'D',
+        'mother': 'M', 'father': 'F', 'brother': 'Br', 'sister': 'Si',
+        'grandson': 'GS', 'granddaughter': 'GD', 'grandmother': 'GM', 'grandfather': 'GF',
+        'aunt': 'Au', 'uncle': 'Un', 'nephew': 'Ne', 'niece': 'Ni',
+        'cousin': 'Co', 'partner': 'P', 'parent': 'Pa', 'child': 'Ch',
+        'sibling': 'Sb', 'grandparent': 'GP', 'grandchild': 'GC',
+    };
+    return map[label.toLowerCase()] || label.charAt(0).toUpperCase();
+};
+
+const capitalizeLabel = (label: string): string => {
+    return label.charAt(0).toUpperCase() + label.slice(1).toLowerCase();
+};
+
 const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick }) => {
     const svgRef = useRef<SVGSVGElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -49,6 +66,7 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [hoveredNode, setHoveredNode] = useState<number | null>(null);
+    const [hoveredEdge, setHoveredEdge] = useState<string | null>(null);
 
     // Calculate node positions using a hierarchical tree layout
     const { nodePositions, svgDimensions } = useMemo(() => {
@@ -533,6 +551,12 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
 
                                 // Use cubic bezier curve for smooth connections
                                 const midY = (y1 + y2) / 2;
+                                const abbr = getAbbreviation(edge.label);
+                                const fullLabel = capitalizeLabel(edge.label);
+                                const cx = (x1 + x2) / 2;
+                                const badgeW = abbr.length > 1 ? 36 : 26;
+                                const isEdgeHovered = hoveredEdge === edge.id;
+                                const tooltipW = Math.max(fullLabel.length * 7.5 + 24, 70);
 
                                 return (
                                     <g key={edge.id}>
@@ -554,30 +578,88 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                                             opacity="0.9"
                                             strokeLinecap="round"
                                         />
-                                        {/* Relationship label */}
-                                        <g>
+                                        {/* Abbreviated relationship badge with hover tooltip */}
+                                        <g
+                                            onMouseEnter={() => setHoveredEdge(edge.id)}
+                                            onMouseLeave={() => setHoveredEdge(null)}
+                                            style={{ cursor: 'pointer' }}
+                                        >
+                                            {/* Badge glow on hover */}
+                                            {isEdgeHovered && (
+                                                <circle
+                                                    cx={cx}
+                                                    cy={midY}
+                                                    r="20"
+                                                    fill={edge.color}
+                                                    opacity="0.2"
+                                                    filter="blur(8px)"
+                                                />
+                                            )}
+                                            {/* Badge pill */}
                                             <rect
-                                                x={(x1 + x2) / 2 - 50}
-                                                y={midY - 15}
-                                                width="100"
-                                                height="30"
+                                                x={cx - badgeW / 2}
+                                                y={midY - 12}
+                                                width={badgeW}
+                                                height={24}
                                                 fill="rgba(15, 23, 42, 0.95)"
                                                 stroke={edge.color}
-                                                strokeWidth="2"
-                                                rx="15"
-                                                ry="15"
+                                                strokeWidth={isEdgeHovered ? '2' : '1.5'}
+                                                rx="12"
+                                                ry="12"
                                             />
+                                            {/* Abbreviation text */}
                                             <text
-                                                x={(x1 + x2) / 2}
+                                                x={cx}
                                                 y={midY + 4}
                                                 textAnchor="middle"
                                                 fontSize="11"
                                                 fontWeight="700"
                                                 fill={edge.color}
-                                                style={{ textTransform: 'uppercase', letterSpacing: '0.5px' }}
+                                                style={{ letterSpacing: '0.5px' }}
                                             >
-                                                {edge.label}
+                                                {abbr}
                                             </text>
+                                            {/* Hover tooltip showing full label */}
+                                            {isEdgeHovered && (
+                                                <g>
+                                                    {/* Tooltip glow */}
+                                                    <rect
+                                                        x={cx - tooltipW / 2}
+                                                        y={midY - 44}
+                                                        width={tooltipW}
+                                                        height={26}
+                                                        fill={edge.color}
+                                                        rx="13"
+                                                        ry="13"
+                                                        opacity="0.12"
+                                                        filter="blur(6px)"
+                                                    />
+                                                    {/* Tooltip background */}
+                                                    <rect
+                                                        x={cx - tooltipW / 2}
+                                                        y={midY - 44}
+                                                        width={tooltipW}
+                                                        height={26}
+                                                        fill="rgba(15, 23, 42, 0.98)"
+                                                        stroke={edge.color}
+                                                        strokeWidth="1"
+                                                        rx="13"
+                                                        ry="13"
+                                                    />
+                                                    {/* Tooltip text */}
+                                                    <text
+                                                        x={cx}
+                                                        y={midY - 27}
+                                                        textAnchor="middle"
+                                                        fontSize="11"
+                                                        fontWeight="600"
+                                                        fill={edge.color}
+                                                        style={{ letterSpacing: '0.3px' }}
+                                                    >
+                                                        {fullLabel}
+                                                    </text>
+                                                </g>
+                                            )}
                                         </g>
                                     </g>
                                 );
