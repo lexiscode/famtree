@@ -831,10 +831,10 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                         const childTopY = Math.min(...childPositions.map(c => c.y)) - 60;
                         const junctionY = childTopY - 30;
 
+                        // Parent-to-child lines are always solid — divorce only affects the spouse-to-spouse edge
                         const lineColor = group.isDivorced ? '#9CA3AF' : '#667eea';
-                        const lineOpacity = group.isDivorced ? 0.5 : 0.85;
-                        const dashArray = group.isDivorced ? '8,6' : undefined;
-                        const glowOpacity = group.isDivorced ? 0.08 : 0.2;
+                        const lineOpacity = group.isDivorced ? 0.7 : 0.85;
+                        const glowOpacity = group.isDivorced ? 0.12 : 0.2;
 
                         // Calculate horizontal span of children for the horizontal fan bar
                         const childXs = childPositions.map(c => c.x);
@@ -860,7 +860,6 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                                     strokeWidth="2.5"
                                     opacity={lineOpacity}
                                     strokeLinecap="round"
-                                    strokeDasharray={dashArray}
                                 />
 
                                 {/* Line from spouse node down to junction */}
@@ -879,7 +878,6 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                                     strokeWidth="2.5"
                                     opacity={lineOpacity}
                                     strokeLinecap="round"
-                                    strokeDasharray={dashArray}
                                 />
 
                                 {/* Junction circle at convergence point */}
@@ -911,7 +909,6 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                                             strokeWidth="2.5"
                                             opacity={lineOpacity}
                                             strokeLinecap="round"
-                                            strokeDasharray={dashArray}
                                         />
                                     </>
                                 )}
@@ -947,7 +944,6 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                                                 strokeWidth="2.5"
                                                 opacity={lineOpacity}
                                                 strokeLinecap="round"
-                                                strokeDasharray={dashArray}
                                             />
                                             {/* Abbreviation badge */}
                                             <g
