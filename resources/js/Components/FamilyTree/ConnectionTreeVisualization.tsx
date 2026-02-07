@@ -208,15 +208,18 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                     positions[nodeId] = { x, y, level };
                 });
 
-                // Position siblings on their own row, slightly above and to the far right
-                // This keeps the root row clean for root + spouses only
-                const siblingOffsetY = -120; // above root level
-                const siblingStartX = (activeSpouses.length + 1) * nodeWidth + 80;
-                const siblingSpacing = 140;
-                siblings.forEach((nodeId, index) => {
-                    const x = siblingStartX + (index * siblingSpacing);
-                    positions[nodeId] = { x, y: y + siblingOffsetY, level };
-                });
+                // Position siblings on a dedicated row between root and parents
+                // Centered above Michael (x=0), forming a horizontal bar
+                if (siblings.length > 0) {
+                    const siblingRowY = y - 160; // between root (0) and parents
+                    const siblingSpacing = 160;
+                    const totalSiblingWidth = (siblings.length - 1) * siblingSpacing;
+
+                    siblings.forEach((nodeId, index) => {
+                        const x = (index * siblingSpacing) - (totalSiblingWidth / 2);
+                        positions[nodeId] = { x, y: siblingRowY, level };
+                    });
+                }
 
                 // Position other level 0 relatives (cousin, etc.)
                 others.forEach((nodeId, index) => {
@@ -307,6 +310,16 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                         positions[nodeId] = { x, y, level };
                     });
                 }
+            } else if (level === -1) {
+                // Parents level: center above Michael (x=0) with spacing
+                // Push parents higher to avoid overlapping with siblings row
+                const parentSpacing = 180;
+                const parentY = -350; // well above siblings (-160)
+                const totalParentWidth = (nodesInLevel.length - 1) * parentSpacing;
+                nodesInLevel.forEach((nodeId, index) => {
+                    const x = (index * parentSpacing) - (totalParentWidth / 2);
+                    positions[nodeId] = { x, y: parentY, level };
+                });
             } else {
                 // Standard positioning for other levels
                 const levelWidth = nodesInLevel.length * nodeWidth;
@@ -627,8 +640,23 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                                 });
                             }
 
+                            // Collect sibling and parent IDs (rendered by custom family unit section)
+                            const siblingIds = new Set(treeData.nodes.filter(n => ['brother', 'sister', 'sibling'].includes(n.relationshipType)).map(n => n.id));
+                            const parentIds = new Set(treeData.nodes.filter(n => ['father', 'mother', 'parent'].includes(n.relationshipType)).map(n => n.id));
+                            const hasFamilyUnit = siblingIds.size > 0 || parentIds.size > 0;
+
                             return treeData.edges
                                 .filter(edge => {
+                                    // Skip root↔sibling and root↔parent edges (rendered by family unit section)
+                                    if (hasFamilyUnit) {
+                                        if (edge.source === treeData.rootUserId && (siblingIds.has(edge.target) || parentIds.has(edge.target))) {
+                                            return false;
+                                        }
+                                        if (edge.target === treeData.rootUserId && (siblingIds.has(edge.source) || parentIds.has(edge.source))) {
+                                            return false;
+                                        }
+                                    }
+
                                     // Skip root → child edges when child belongs to a spouse group
                                     // (these are rendered as inverted triangles instead)
                                     if (edge.source === treeData.rootUserId && spouseGroupChildIds.has(edge.target)) {
@@ -1028,6 +1056,299 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                             </g>
                         );
                     })}
+
+                    {/* Family unit: Michael → siblings bar → parents inverted triangle */}
+                    {(() => {
+                        const siblingNodes = treeData.nodes.filter(n => ['brother', 'sister', 'sibling'].includes(n.relationshipType));
+                        const parentNodes = treeData.nodes.filter(n => ['father', 'mother', 'parent'].includes(n.relationshipType));
+
+                        // Only render if there are siblings or parents
+                        if (siblingNodes.length === 0 && parentNodes.length === 0) return null;
+
+                        const rootPos = nodePositions[treeData.rootUserId];
+                        if (!rootPos) return null;
+
+                        const rootX = rootPos.x - (minX || 0) + padding;
+                        const rootY = rootPos.y - (minY || 0) + padding;
+                        const rootTopY = rootY - 60; // top of root node
+
+                        // Get sibling positions
+                        const siblingPositions = siblingNodes.map(n => {
+                            const pos = nodePositions[n.id];
+                            if (!pos) return null;
+                            return {
+                                id: n.id,
+                                x: pos.x - (minX || 0) + padding,
+                                y: pos.y - (minY || 0) + padding,
+                                relationshipType: n.relationshipType,
+                            };
+                        }).filter(Boolean) as { id: number; x: number; y: number; relationshipType: string }[];
+
+                        // Get parent positions
+                        const parentPositions = parentNodes.map(n => {
+                            const pos = nodePositions[n.id];
+                            if (!pos) return null;
+                            return {
+                                id: n.id,
+                                x: pos.x - (minX || 0) + padding,
+                                y: pos.y - (minY || 0) + padding,
+                            };
+                        }).filter(Boolean) as { id: number; x: number; y: number }[];
+
+                        const familyUnitColor = '#8B5CF6'; // Purple for family unit
+                        const familyUnitOpacity = 0.85;
+                        const glowOpacity = 0.2;
+
+                        // Calculate the sibling bar bounds and midpoint
+                        let junctionX = rootX; // default: directly above Michael
+                        let junctionY = rootTopY - 40;
+                        let barMinX = junctionX;
+                        let barMaxX = junctionX;
+
+                        if (siblingPositions.length > 0) {
+                            const siblingXs = siblingPositions.map(s => s.x);
+                            barMinX = Math.min(...siblingXs);
+                            barMaxX = Math.max(...siblingXs);
+                            // The bar extends to include Michael's vertical line connection point
+                            // Junction is at the midpoint of all siblings
+                            junctionX = (barMinX + barMaxX) / 2;
+                            junctionY = siblingPositions[0].y; // siblings are all on the same row
+                        }
+
+                        return (
+                            <g>
+                                {/* 1. Vertical line from Michael up to the junction/siblings row */}
+                                <line
+                                    x1={rootX} y1={rootTopY}
+                                    x2={rootX} y2={junctionY}
+                                    stroke={familyUnitColor}
+                                    strokeWidth="4"
+                                    opacity={glowOpacity}
+                                    filter="blur(6px)"
+                                />
+                                <line
+                                    x1={rootX} y1={rootTopY}
+                                    x2={rootX} y2={junctionY}
+                                    stroke={familyUnitColor}
+                                    strokeWidth="2.5"
+                                    opacity={familyUnitOpacity}
+                                    strokeLinecap="round"
+                                />
+                                {/* Sibling badge on Michael's vertical line */}
+                                {(() => {
+                                    const sbMidY = (rootTopY + junctionY) / 2;
+                                    const sbEdgeId = 'family-sibling-link';
+                                    const isSbHovered = hoveredEdge === sbEdgeId;
+                                    const sbTooltipW = 70;
+                                    return (
+                                        <g
+                                            onMouseEnter={() => setHoveredEdge(sbEdgeId)}
+                                            onMouseLeave={() => setHoveredEdge(null)}
+                                            style={{ cursor: 'pointer' }}
+                                        >
+                                            {isSbHovered && (
+                                                <circle cx={rootX} cy={sbMidY} r="20" fill={familyUnitColor} opacity="0.2" filter="blur(8px)" />
+                                            )}
+                                            <rect
+                                                x={rootX - 18} y={sbMidY - 12}
+                                                width={36} height={24}
+                                                fill="rgba(15, 23, 42, 0.95)"
+                                                stroke={familyUnitColor}
+                                                strokeWidth={isSbHovered ? '2' : '1.5'}
+                                                rx="12" ry="12"
+                                            />
+                                            <text x={rootX} y={sbMidY + 4} textAnchor="middle" fontSize="11" fontWeight="700" fill={familyUnitColor} style={{ letterSpacing: '0.5px' }}>
+                                                Sb
+                                            </text>
+                                            {isSbHovered && (
+                                                <g>
+                                                    <rect x={rootX - sbTooltipW / 2} y={sbMidY - 44} width={sbTooltipW} height={26} fill={familyUnitColor} rx="13" ry="13" opacity="0.12" filter="blur(6px)" />
+                                                    <rect x={rootX - sbTooltipW / 2} y={sbMidY - 44} width={sbTooltipW} height={26} fill="rgba(15, 23, 42, 0.98)" stroke={familyUnitColor} strokeWidth="1" rx="13" ry="13" />
+                                                    <text x={rootX} y={sbMidY - 27} textAnchor="middle" fontSize="11" fontWeight="600" fill={familyUnitColor} style={{ letterSpacing: '0.3px' }}>Sibling</text>
+                                                </g>
+                                            )}
+                                        </g>
+                                    );
+                                })()}
+
+                                {/* 2. Horizontal bar connecting all siblings (and passing through junction) */}
+                                {siblingPositions.length > 0 && (
+                                    <>
+                                        {/* Extend bar to include rootX if it's not already within range */}
+                                        <line
+                                            x1={Math.min(barMinX, rootX)} y1={junctionY}
+                                            x2={Math.max(barMaxX, rootX)} y2={junctionY}
+                                            stroke={familyUnitColor}
+                                            strokeWidth="4"
+                                            opacity={glowOpacity}
+                                            filter="blur(6px)"
+                                        />
+                                        <line
+                                            x1={Math.min(barMinX, rootX)} y1={junctionY}
+                                            x2={Math.max(barMaxX, rootX)} y2={junctionY}
+                                            stroke={familyUnitColor}
+                                            strokeWidth="2.5"
+                                            opacity={familyUnitOpacity}
+                                            strokeLinecap="round"
+                                        />
+
+                                        {/* Junction circle where Michael's line meets the bar */}
+                                        <circle
+                                            cx={rootX}
+                                            cy={junctionY}
+                                            r="5"
+                                            fill={familyUnitColor}
+                                            opacity={familyUnitOpacity}
+                                        />
+
+                                        {/* Abbreviation badges on sibling vertical stubs (bar to sibling node) */}
+                                        {siblingPositions.map(sib => {
+                                            const label = sib.relationshipType;
+                                            const abbr = getAbbreviation(label);
+                                            const fullLabel = capitalizeLabel(label);
+                                            const badgeW = abbr.length > 1 ? 36 : 26;
+                                            // Short vertical stub from bar down to sibling node
+                                            const stubTopY = junctionY;
+                                            const stubBottomY = sib.y - 55;
+                                            const badgeMidY = (stubTopY + stubBottomY) / 2;
+                                            const tooltipW = Math.max(fullLabel.length * 7.5 + 24, 70);
+                                            const edgeId = `family-sib-${sib.id}`;
+                                            const isEdgeHovered = hoveredEdge === edgeId;
+
+                                            return (
+                                                <g key={edgeId}>
+                                                    {/* Vertical stub from bar to sibling */}
+                                                    <line
+                                                        x1={sib.x} y1={stubTopY}
+                                                        x2={sib.x} y2={stubBottomY}
+                                                        stroke={familyUnitColor}
+                                                        strokeWidth="4"
+                                                        opacity={glowOpacity}
+                                                        filter="blur(6px)"
+                                                    />
+                                                    <line
+                                                        x1={sib.x} y1={stubTopY}
+                                                        x2={sib.x} y2={stubBottomY}
+                                                        stroke={familyUnitColor}
+                                                        strokeWidth="2.5"
+                                                        opacity={familyUnitOpacity}
+                                                        strokeLinecap="round"
+                                                    />
+                                                    {/* Badge */}
+                                                    <g
+                                                        onMouseEnter={() => setHoveredEdge(edgeId)}
+                                                        onMouseLeave={() => setHoveredEdge(null)}
+                                                        style={{ cursor: 'pointer' }}
+                                                    >
+                                                        {isEdgeHovered && (
+                                                            <circle cx={sib.x} cy={badgeMidY} r="20" fill={familyUnitColor} opacity="0.2" filter="blur(8px)" />
+                                                        )}
+                                                        <rect
+                                                            x={sib.x - badgeW / 2} y={badgeMidY - 12}
+                                                            width={badgeW} height={24}
+                                                            fill="rgba(15, 23, 42, 0.95)"
+                                                            stroke={familyUnitColor}
+                                                            strokeWidth={isEdgeHovered ? '2' : '1.5'}
+                                                            rx="12" ry="12"
+                                                        />
+                                                        <text x={sib.x} y={badgeMidY + 4} textAnchor="middle" fontSize="11" fontWeight="700" fill={familyUnitColor} style={{ letterSpacing: '0.5px' }}>
+                                                            {abbr}
+                                                        </text>
+                                                        {isEdgeHovered && (
+                                                            <g>
+                                                                <rect x={sib.x - tooltipW / 2} y={badgeMidY - 44} width={tooltipW} height={26} fill={familyUnitColor} rx="13" ry="13" opacity="0.12" filter="blur(6px)" />
+                                                                <rect x={sib.x - tooltipW / 2} y={badgeMidY - 44} width={tooltipW} height={26} fill="rgba(15, 23, 42, 0.98)" stroke={familyUnitColor} strokeWidth="1" rx="13" ry="13" />
+                                                                <text x={sib.x} y={badgeMidY - 27} textAnchor="middle" fontSize="11" fontWeight="600" fill={familyUnitColor} style={{ letterSpacing: '0.3px' }}>{fullLabel}</text>
+                                                            </g>
+                                                        )}
+                                                    </g>
+                                                </g>
+                                            );
+                                        })}
+                                    </>
+                                )}
+
+                                {/* 3. Parents inverted triangle down to the SAME junction where Michael meets siblings bar */}
+                                {parentPositions.length > 0 && (() => {
+                                    // Target is the same junction point: where Michael's line meets the siblings bar
+                                    const triangleTargetX = rootX;
+                                    const triangleTargetY = junctionY;
+
+                                    const parentColor = '#3B82F6'; // Blue for parent connections
+
+                                    return (
+                                        <g>
+
+                                            {/* Lines from each parent down to the triangle junction */}
+                                            {parentPositions.map(par => {
+                                                const parBottomY = par.y + 60;
+                                                const label = treeData.nodes.find(n => n.id === par.id)?.relationshipType || '';
+                                                const abbr = getAbbreviation(label);
+                                                const fullLabel = capitalizeLabel(label);
+                                                const badgeW = abbr.length > 1 ? 36 : 26;
+                                                const midLineX = (par.x + triangleTargetX) / 2;
+                                                const midLineY = (parBottomY + triangleTargetY) / 2;
+                                                const tooltipW = Math.max(fullLabel.length * 7.5 + 24, 70);
+                                                const edgeId = `family-par-${par.id}`;
+                                                const isEdgeHovered = hoveredEdge === edgeId;
+
+                                                return (
+                                                    <g key={edgeId}>
+                                                        {/* Glow */}
+                                                        <line
+                                                            x1={par.x} y1={parBottomY}
+                                                            x2={triangleTargetX} y2={triangleTargetY}
+                                                            stroke={parentColor}
+                                                            strokeWidth="4"
+                                                            opacity={0.15}
+                                                            filter="blur(6px)"
+                                                        />
+                                                        {/* Main line */}
+                                                        <line
+                                                            x1={par.x} y1={parBottomY}
+                                                            x2={triangleTargetX} y2={triangleTargetY}
+                                                            stroke={parentColor}
+                                                            strokeWidth="2.5"
+                                                            opacity={0.85}
+                                                            strokeLinecap="round"
+                                                        />
+                                                        {/* Badge */}
+                                                        <g
+                                                            onMouseEnter={() => setHoveredEdge(edgeId)}
+                                                            onMouseLeave={() => setHoveredEdge(null)}
+                                                            style={{ cursor: 'pointer' }}
+                                                        >
+                                                            {isEdgeHovered && (
+                                                                <circle cx={midLineX} cy={midLineY} r="20" fill={parentColor} opacity="0.2" filter="blur(8px)" />
+                                                            )}
+                                                            <rect
+                                                                x={midLineX - badgeW / 2} y={midLineY - 12}
+                                                                width={badgeW} height={24}
+                                                                fill="rgba(15, 23, 42, 0.95)"
+                                                                stroke={parentColor}
+                                                                strokeWidth={isEdgeHovered ? '2' : '1.5'}
+                                                                rx="12" ry="12"
+                                                            />
+                                                            <text x={midLineX} y={midLineY + 4} textAnchor="middle" fontSize="11" fontWeight="700" fill={parentColor} style={{ letterSpacing: '0.5px' }}>
+                                                                {abbr}
+                                                            </text>
+                                                            {isEdgeHovered && (
+                                                                <g>
+                                                                    <rect x={midLineX - tooltipW / 2} y={midLineY - 44} width={tooltipW} height={26} fill={parentColor} rx="13" ry="13" opacity="0.12" filter="blur(6px)" />
+                                                                    <rect x={midLineX - tooltipW / 2} y={midLineY - 44} width={tooltipW} height={26} fill="rgba(15, 23, 42, 0.98)" stroke={parentColor} strokeWidth="1" rx="13" ry="13" />
+                                                                    <text x={midLineX} y={midLineY - 27} textAnchor="middle" fontSize="11" fontWeight="600" fill={parentColor} style={{ letterSpacing: '0.3px' }}>{fullLabel}</text>
+                                                                </g>
+                                                            )}
+                                                        </g>
+                                                    </g>
+                                                );
+                                            })}
+                                        </g>
+                                    );
+                                })()}
+                            </g>
+                        );
+                    })()}
 
                     {/* Draw nodes */}
                     <g>
