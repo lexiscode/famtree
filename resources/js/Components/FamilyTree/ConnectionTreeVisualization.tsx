@@ -159,7 +159,7 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
             const nodesInLevel = levelMap[level];
             const y = level * levelHeight;
 
-            // Special handling for level 0 (root user and siblings)
+            // Special handling for level 0 (root user, spouses, and siblings)
             if (level === 0) {
                 // Separate nodes by type
                 const rootNode = nodesInLevel.find(id => {
@@ -167,14 +167,10 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                     return node?.relationshipType === 'root';
                 });
 
-                const brothers = nodesInLevel.filter(id => {
+                // Siblings (brothers + sisters combined)
+                const siblings = nodesInLevel.filter(id => {
                     const node = nodes.find(n => n.id === id);
-                    return node?.relationshipType === 'brother';
-                });
-
-                const sisters = nodesInLevel.filter(id => {
-                    const node = nodes.find(n => n.id === id);
-                    return node?.relationshipType === 'sister';
+                    return node && ['brother', 'sister', 'sibling'].includes(node.relationshipType);
                 });
 
                 // Active spouses go to the right
@@ -191,7 +187,7 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
 
                 const others = nodesInLevel.filter(id => {
                     const node = nodes.find(n => n.id === id);
-                    return node && !['root', 'brother', 'sister', 'wife', 'husband', 'partner', 'ex_wife', 'ex_husband', 'ex_partner'].includes(node.relationshipType);
+                    return node && !['root', 'brother', 'sister', 'sibling', 'wife', 'husband', 'partner', 'ex_wife', 'ex_husband', 'ex_partner'].includes(node.relationshipType);
                 });
 
                 // Position root user at center (x = 0)
@@ -205,27 +201,25 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                     positions[nodeId] = { x, y, level };
                 });
 
-                // Position brothers further right after active spouses
-                brothers.forEach((nodeId, index) => {
-                    const x = (activeSpouses.length + index + 1) * nodeWidth;
-                    positions[nodeId] = { x, y, level };
-                });
-
                 // Position divorced spouses to the LEFT of root
                 divorcedSpouses.forEach((nodeId, index) => {
                     const x = -(index + 1) * nodeWidth;
                     positions[nodeId] = { x, y, level };
                 });
 
-                // Position sisters further left after divorced spouses
-                sisters.forEach((nodeId, index) => {
-                    const x = -(divorcedSpouses.length + index + 1) * nodeWidth;
-                    positions[nodeId] = { x, y, level };
+                // Position siblings on their own row, slightly above and to the far right
+                // This keeps the root row clean for root + spouses only
+                const siblingOffsetY = -120; // above root level
+                const siblingStartX = (activeSpouses.length + 1) * nodeWidth + 80;
+                const siblingSpacing = 140;
+                siblings.forEach((nodeId, index) => {
+                    const x = siblingStartX + (index * siblingSpacing);
+                    positions[nodeId] = { x, y: y + siblingOffsetY, level };
                 });
 
                 // Position other level 0 relatives (cousin, etc.)
                 others.forEach((nodeId, index) => {
-                    const x = (activeSpouses.length + brothers.length + index + 1) * nodeWidth;
+                    const x = (activeSpouses.length + index + 1) * nodeWidth;
                     positions[nodeId] = { x, y, level };
                 });
             } else if (level === 1 && treeData.spouseGroups && treeData.spouseGroups.length > 0) {

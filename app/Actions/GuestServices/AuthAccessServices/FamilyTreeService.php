@@ -209,9 +209,9 @@ class FamilyTreeService
                 $connectedUserId
             );
 
-            // Skip siblings' children (nephews/nieces) - don't show them in the tree
+            // Skip siblings' children (nephews/nieces) and siblings' spouses - don't show them in the tree
             if (in_array($firstLevelRelationship, ['brother', 'sister', 'sibling']) &&
-                in_array($relationshipType, ['son', 'daughter', 'child', 'nephew', 'niece'])) {
+                in_array($relationshipType, ['son', 'daughter', 'child', 'nephew', 'niece', 'wife', 'husband', 'partner'])) {
                 continue;
             }
 
