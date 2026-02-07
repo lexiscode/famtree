@@ -392,9 +392,9 @@ class FamilyTreeService
             'child' => 'Child',
             'grandparent' => 'Grandparent',
             'grandchild' => 'Grandchild',
-            'ex_wife' => 'Ex Wife',
-            'ex_husband' => 'Ex Husband',
-            'ex_partner' => 'Ex Partner',
+            'ex_wife' => 'Prev. Spouse',
+            'ex_husband' => 'Prev. Spouse',
+            'ex_partner' => 'Prev. Spouse',
         ];
 
         if (isset($labelMap[$relationshipType])) {

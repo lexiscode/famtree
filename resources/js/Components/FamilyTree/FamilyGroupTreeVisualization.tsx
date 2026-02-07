@@ -94,8 +94,9 @@ const getAbbreviation = (label: string): string => {
         'aunt': 'Au', 'uncle': 'Un', 'nephew': 'Ne', 'niece': 'Ni',
         'cousin': 'Co', 'partner': 'P', 'parent': 'Pa', 'child': 'Ch',
         'sibling': 'Sb', 'grandparent': 'GP', 'grandchild': 'GC',
-        'ex_wife': 'XW', 'ex_husband': 'XH', 'ex_partner': 'XP',
-        'ex wife': 'XW', 'ex husband': 'XH', 'ex partner': 'XP',
+        'ex_wife': 'PS', 'ex_husband': 'PS', 'ex_partner': 'PS',
+        'ex wife': 'PS', 'ex husband': 'PS', 'ex partner': 'PS',
+        'prev. spouse': 'PS', 'prev spouse': 'PS',
     };
     return map[label.toLowerCase()] || label.charAt(0).toUpperCase();
 };

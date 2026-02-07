@@ -58,8 +58,9 @@ const getAbbreviation = (label: string): string => {
         'aunt': 'Au', 'uncle': 'Un', 'nephew': 'Ne', 'niece': 'Ni',
         'cousin': 'Co', 'partner': 'P', 'parent': 'Pa', 'child': 'Ch',
         'sibling': 'Sb', 'grandparent': 'GP', 'grandchild': 'GC',
-        'ex_wife': 'XW', 'ex_husband': 'XH', 'ex_partner': 'XP',
-        'ex wife': 'XW', 'ex husband': 'XH', 'ex partner': 'XP',
+        'ex_wife': 'PS', 'ex_husband': 'PS', 'ex_partner': 'PS',
+        'ex wife': 'PS', 'ex husband': 'PS', 'ex partner': 'PS',
+        'prev. spouse': 'PS', 'prev spouse': 'PS',
     };
     return map[label.toLowerCase()] || label.charAt(0).toUpperCase();
 };
@@ -832,9 +833,9 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                         const junctionY = childTopY - 30;
 
                         // Parent-to-child lines are always solid — divorce only affects the spouse-to-spouse edge
-                        const lineColor = group.isDivorced ? '#9CA3AF' : '#667eea';
-                        const lineOpacity = group.isDivorced ? 0.7 : 0.85;
-                        const glowOpacity = group.isDivorced ? 0.12 : 0.2;
+                        const lineColor = group.isDivorced ? '#38BDF8' : '#667eea';
+                        const lineOpacity = group.isDivorced ? 0.8 : 0.85;
+                        const glowOpacity = group.isDivorced ? 0.15 : 0.2;
 
                         // Calculate horizontal span of children for the horizontal fan bar
                         const childXs = childPositions.map(c => c.x);
