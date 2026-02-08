@@ -320,7 +320,8 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                 // Apply rootYOffset so children shift down with the root, preserving their gap
                 const childY = y + rootYOffset;
                 const rootPos = positions[rootUserId];
-                const childSpacing = 160; // spacing between children within a group
+                const hasChildSpouseGroups = treeData.childSpouseGroups && treeData.childSpouseGroups.length > 0;
+                const childSpacing = hasChildSpouseGroups ? 340 : 160; // widen when in-law spouses exist
                 const groupGap = 80; // minimum gap between separate groups
                 const rowDropOffset = 200; // vertical offset when pushing a group to a lower row
 
@@ -507,15 +508,17 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                 const childPos = positions[group.childId];
                 if (!childPos) return;
 
-                // Place in-law spouse to the right of child (or left if divorced)
+                // Place in-law spouse diagonally below and to the side of child
+                const spouseYOffset = 40; // gentle slant downward (halfway between horizontal and diagonal)
                 const spouseX = group.isDivorced
-                    ? childPos.x - nodeWidth
-                    : childPos.x + nodeWidth;
-                positions[group.spouseId] = { x: spouseX, y: childPos.y, level: 1 };
+                    ? childPos.x - (nodeWidth * 0.8)
+                    : childPos.x + (nodeWidth * 0.8);
+                positions[group.spouseId] = { x: spouseX, y: childPos.y + spouseYOffset, level: 1 };
 
                 // Position grandchildren under midpoint of child + in-law
                 if (group.grandchildIds.length > 0) {
-                    const gcY = childPos.y + levelHeight;
+                    const spouseY = childPos.y + spouseYOffset;
+                    const gcY = spouseY + levelHeight;
                     const midX = (childPos.x + spouseX) / 2;
                     const groupWidth = (group.grandchildIds.length - 1) * childSpacing;
 
@@ -1373,9 +1376,13 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                         const spouseX = spousePos.x - (minX || 0) + padding;
                         const spouseY = spousePos.y - (minY || 0) + padding;
 
-                        // Horizontal line from inner edges of child and spouse nodes
+                        // Slanted line from inner edges of child and spouse nodes
+                        const spouseIsLeft = spouseX < childX;
                         const lineX1 = Math.min(childX, spouseX) + 60;
                         const lineX2 = Math.max(childX, spouseX) - 60;
+                        // Pair Y values so line slopes DOWN toward the spouse side
+                        const lineY1 = spouseIsLeft ? spouseY : childY;
+                        const lineY2 = spouseIsLeft ? childY : spouseY;
                         const midSpX = (childX + spouseX) / 2;
 
                         const spouseNode = treeData.nodes.find(n => n.id === group.spouseId);
@@ -1408,12 +1415,16 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                         const lineOpacity = group.isDivorced ? 0.8 : 0.85;
                         const glowOpacity = group.isDivorced ? 0.15 : 0.2;
 
+                        // Badge midpoint for slanted line
+                        const badgeMidY = (childY + spouseY) / 2;
+
                         // Junction and bar calculations for grandchildren
                         let junctionY = 0;
                         let gcMinX = 0;
                         let gcMaxX = 0;
                         let gcCenterX = midSpX;
-                        const parentBottomY = childY + 60;
+                        const childBottomY = childY + 60;
+                        const spouseBottomY = spouseY + 60;
 
                         if (grandchildPositions.length > 0) {
                             gcCenterX = grandchildPositions.reduce((sum, c) => sum + c.x, 0) / grandchildPositions.length;
@@ -1426,24 +1437,24 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
 
                         return (
                             <g key={`csg-${group.childId}-${group.spouseId}`}>
-                                {/* Horizontal line from child to in-law spouse */}
-                                <line x1={lineX1} y1={childY} x2={lineX2} y2={spouseY} stroke={spouseLineColor} strokeWidth="4" opacity={spouseGlowOpacity} filter="blur(6px)" />
+                                {/* Slanted line from child to in-law spouse */}
+                                <line x1={lineX1} y1={lineY1} x2={lineX2} y2={lineY2} stroke={spouseLineColor} strokeWidth="4" opacity={spouseGlowOpacity} filter="blur(6px)" />
                                 <line
-                                    x1={lineX1} y1={childY} x2={lineX2} y2={spouseY}
+                                    x1={lineX1} y1={lineY1} x2={lineX2} y2={lineY2}
                                     stroke={spouseLineColor} strokeWidth="2.5" opacity={spouseLineOpacity}
                                     strokeLinecap="round"
                                     strokeDasharray={group.isDivorced ? '8,6' : undefined}
                                 />
                                 {/* In-law badge */}
                                 <g onMouseEnter={() => setHoveredEdge(spEdgeId)} onMouseLeave={() => setHoveredEdge(null)} style={{ cursor: 'pointer' }}>
-                                    {isSpHovered && <circle cx={midSpX} cy={childY} r="20" fill={spouseLineColor} opacity="0.2" filter="blur(8px)" />}
-                                    <rect x={midSpX - spouseBadgeW / 2} y={childY - 12} width={spouseBadgeW} height={24} fill="rgba(15, 23, 42, 0.95)" stroke={spouseLineColor} strokeWidth={isSpHovered ? '2' : '1.5'} rx="12" ry="12" />
-                                    <text x={midSpX} y={childY + 4} textAnchor="middle" fontSize="11" fontWeight="700" fill={spouseLineColor} style={{ letterSpacing: '0.5px' }}>{spouseAbbr}</text>
+                                    {isSpHovered && <circle cx={midSpX} cy={badgeMidY} r="20" fill={spouseLineColor} opacity="0.2" filter="blur(8px)" />}
+                                    <rect x={midSpX - spouseBadgeW / 2} y={badgeMidY - 12} width={spouseBadgeW} height={24} fill="rgba(15, 23, 42, 0.95)" stroke={spouseLineColor} strokeWidth={isSpHovered ? '2' : '1.5'} rx="12" ry="12" />
+                                    <text x={midSpX} y={badgeMidY + 4} textAnchor="middle" fontSize="11" fontWeight="700" fill={spouseLineColor} style={{ letterSpacing: '0.5px' }}>{spouseAbbr}</text>
                                     {isSpHovered && (
                                         <g>
-                                            <rect x={midSpX - spTooltipW / 2} y={childY - 44} width={spTooltipW} height={26} fill={spouseLineColor} rx="13" ry="13" opacity="0.12" filter="blur(6px)" />
-                                            <rect x={midSpX - spTooltipW / 2} y={childY - 44} width={spTooltipW} height={26} fill="rgba(15, 23, 42, 0.98)" stroke={spouseLineColor} strokeWidth="1" rx="13" ry="13" />
-                                            <text x={midSpX} y={childY - 27} textAnchor="middle" fontSize="11" fontWeight="600" fill={spouseLineColor} style={{ letterSpacing: '0.3px' }}>{spouseFullLabel}</text>
+                                            <rect x={midSpX - spTooltipW / 2} y={badgeMidY - 44} width={spTooltipW} height={26} fill={spouseLineColor} rx="13" ry="13" opacity="0.12" filter="blur(6px)" />
+                                            <rect x={midSpX - spTooltipW / 2} y={badgeMidY - 44} width={spTooltipW} height={26} fill="rgba(15, 23, 42, 0.98)" stroke={spouseLineColor} strokeWidth="1" rx="13" ry="13" />
+                                            <text x={midSpX} y={badgeMidY - 27} textAnchor="middle" fontSize="11" fontWeight="600" fill={spouseLineColor} style={{ letterSpacing: '0.3px' }}>{spouseFullLabel}</text>
                                         </g>
                                     )}
                                 </g>
@@ -1452,12 +1463,12 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                                 {grandchildPositions.length > 0 && (
                                     <g>
                                         {/* Line from child down to junction */}
-                                        <line x1={childX} y1={parentBottomY} x2={gcCenterX} y2={junctionY} stroke={lineColor} strokeWidth="4" opacity={glowOpacity} filter="blur(6px)" />
-                                        <line x1={childX} y1={parentBottomY} x2={gcCenterX} y2={junctionY} stroke={lineColor} strokeWidth="2.5" opacity={lineOpacity} strokeLinecap="round" />
+                                        <line x1={childX} y1={childBottomY} x2={gcCenterX} y2={junctionY} stroke={lineColor} strokeWidth="4" opacity={glowOpacity} filter="blur(6px)" />
+                                        <line x1={childX} y1={childBottomY} x2={gcCenterX} y2={junctionY} stroke={lineColor} strokeWidth="2.5" opacity={lineOpacity} strokeLinecap="round" />
 
                                         {/* Line from in-law spouse down to junction */}
-                                        <line x1={spouseX} y1={parentBottomY} x2={gcCenterX} y2={junctionY} stroke={lineColor} strokeWidth="4" opacity={glowOpacity} filter="blur(6px)" />
-                                        <line x1={spouseX} y1={parentBottomY} x2={gcCenterX} y2={junctionY} stroke={lineColor} strokeWidth="2.5" opacity={lineOpacity} strokeLinecap="round" />
+                                        <line x1={spouseX} y1={spouseBottomY} x2={gcCenterX} y2={junctionY} stroke={lineColor} strokeWidth="4" opacity={glowOpacity} filter="blur(6px)" />
+                                        <line x1={spouseX} y1={spouseBottomY} x2={gcCenterX} y2={junctionY} stroke={lineColor} strokeWidth="2.5" opacity={lineOpacity} strokeLinecap="round" />
 
                                         {/* Junction circle */}
                                         <circle cx={gcCenterX} cy={junctionY} r="5" fill={lineColor} opacity={lineOpacity} />
