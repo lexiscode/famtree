@@ -90,12 +90,159 @@ class FamilyTreeService
             ];
         }
 
+        // Step 1.5: Detect step-parents and step-siblings
+        // When a child is the center point, some "parents" may be step-parents and
+        // some "siblings" may be step-siblings. Detect by finding the real parent pair
+        // (parents who are/were spouses AND share the most children with root's siblings).
+        $allStepIds = [];
+        $parentNodeIds = [];
+        foreach ($nodes as $node) {
+            if (in_array($node['relationshipType'], ['father', 'mother', 'parent'])) {
+                $parentNodeIds[] = $node['id'];
+            }
+        }
+
+        if (count($parentNodeIds) >= 2) {
+            $siblingNodeIds = [];
+            foreach ($nodes as $node) {
+                if (in_array($node['relationshipType'], ['brother', 'sister', 'sibling'])) {
+                    $siblingNodeIds[] = $node['id'];
+                }
+            }
+
+            // Try precise detection using other_parent_id first
+            $realParentPair = [];
+            $allParentConnsHaveOtherParent = true;
+            foreach ($parentNodeIds as $pid) {
+                $parentToRoot = $this->connectionRepository->getConnectionBetween($userId, $pid);
+                if (!$parentToRoot || $parentToRoot->other_parent_id === null) {
+                    $allParentConnsHaveOtherParent = false;
+                    break;
+                }
+            }
+
+            if ($allParentConnsHaveOtherParent) {
+                // Find parents that reference each other via other_parent_id
+                foreach ($parentNodeIds as $pid) {
+                    $parentToRoot = $this->connectionRepository->getConnectionBetween($userId, $pid);
+                    $otherPid = $parentToRoot->other_parent_id;
+                    if (in_array($otherPid, $parentNodeIds)) {
+                        // Verify mutual: the other parent's connection also references this one
+                        $otherParentToRoot = $this->connectionRepository->getConnectionBetween($userId, $otherPid);
+                        if ($otherParentToRoot && $otherParentToRoot->other_parent_id === $pid) {
+                            $realParentPair = [$pid, $otherPid];
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // Fallback: heuristic scoring when other_parent_id is not available
+            if (empty($realParentPair)) {
+                $parentPairs = [];
+                for ($i = 0; $i < count($parentNodeIds); $i++) {
+                    for ($j = $i + 1; $j < count($parentNodeIds); $j++) {
+                        $spouseConn = $this->connectionRepository->getConnectionBetween($parentNodeIds[$i], $parentNodeIds[$j]);
+                        if ($spouseConn) {
+                            $spRelType = $this->getRelationshipFromUserPerspective($spouseConn, $parentNodeIds[$i]);
+                            if (in_array($spRelType, ['wife', 'husband', 'partner'])) {
+                                $sharedChildren = 0;
+                                foreach ($siblingNodeIds as $sibId) {
+                                    $hasConn1 = $this->connectionRepository->getConnectionBetween($sibId, $parentNodeIds[$i]) !== null;
+                                    $hasConn2 = $this->connectionRepository->getConnectionBetween($sibId, $parentNodeIds[$j]) !== null;
+                                    if ($hasConn1 && $hasConn2) {
+                                        $sharedChildren++;
+                                    }
+                                }
+                                $parentPairs[] = [
+                                    'pair' => [$parentNodeIds[$i], $parentNodeIds[$j]],
+                                    'sharedChildren' => $sharedChildren,
+                                ];
+                            }
+                        }
+                    }
+                }
+
+                // Best pair = most shared children
+                usort($parentPairs, fn($a, $b) => $b['sharedChildren'] - $a['sharedChildren']);
+                $realParentPair = !empty($parentPairs) ? $parentPairs[0]['pair'] : [];
+            }
+
+            if (!empty($realParentPair)) {
+                // Parents not in the real pair → step-parents
+                $stepParentIds = [];
+                foreach ($parentNodeIds as $pid) {
+                    if (!in_array($pid, $realParentPair)) {
+                        $stepParentIds[] = $pid;
+                    }
+                }
+
+                // Siblings whose parent-pair doesn't match root's → step-siblings
+                // Use other_parent_id for precise detection when available.
+                // Logic per sibling:
+                //   - other_parent_id set AND matches the other parent → real sibling (definite)
+                //   - other_parent_id set AND doesn't match → step-sibling (definite)
+                //   - other_parent_id NULL but connected to a parent → real sibling (benefit of doubt)
+                //   - not connected to any parent → real sibling (benefit of doubt / missing data)
+                $stepSiblingIds = [];
+                foreach ($siblingNodeIds as $sibId) {
+                    $isRealSibling = false;
+                    $hasDefiniteMismatch = false;
+
+                    foreach ($realParentPair as $rpId) {
+                        $sibToParent = $this->connectionRepository->getConnectionBetween($sibId, $rpId);
+                        if (!$sibToParent) {
+                            continue;
+                        }
+
+                        if ($sibToParent->other_parent_id !== null) {
+                            // Precise check: does the other_parent_id match the other parent in the pair?
+                            $otherParentInPair = ($rpId === $realParentPair[0]) ? $realParentPair[1] : $realParentPair[0];
+                            if ($sibToParent->other_parent_id === $otherParentInPair) {
+                                $isRealSibling = true;
+                                break;
+                            } else {
+                                // other_parent_id points to someone outside the real pair → step-sibling
+                                $hasDefiniteMismatch = true;
+                            }
+                        } else {
+                            // Connected to parent but other_parent_id not set — benefit of doubt
+                            $isRealSibling = true;
+                            break;
+                        }
+                    }
+
+                    // If not connected to any parent and no definite mismatch, give benefit of doubt
+                    if (!$isRealSibling && !$hasDefiniteMismatch) {
+                        $isRealSibling = true;
+                    }
+
+                    if (!$isRealSibling) {
+                        $stepSiblingIds[] = $sibId;
+                    }
+                }
+
+                $allStepIds = array_merge($stepParentIds, $stepSiblingIds);
+
+                if (!empty($allStepIds)) {
+                    // Remove step nodes and their edges from first-level data
+                    // Keep them in processedUsers to prevent addSecondLevelConnections from re-adding them
+                    $nodes = array_values(array_filter($nodes, fn($node) => !in_array($node['id'], $allStepIds)));
+                    $edges = array_values(array_filter($edges, fn($edge) =>
+                        !in_array($edge['source'], $allStepIds) && !in_array($edge['target'], $allStepIds)
+                    ));
+                    $firstLevelUsers = array_values(array_filter($firstLevelUsers, fn($id) => !in_array($id, $allStepIds)));
+                }
+            }
+        }
+
         // Step 2: Now process second-level connections for each first-level user
         // IMPORTANT: Process sons/daughters FIRST so grandchildren are connected through their parent
         // Sort first level users to process children (son/daughter) before spouse (wife/husband)
         $sortedFirstLevelUsers = [];
         $childConnections = [];
         $otherConnections = [];
+        $parentConnections = [];
 
         foreach ($allConnections as $connection) {
             $connectedUser = $connection->requester_user_id === $userId
@@ -110,12 +257,14 @@ class FamilyTreeService
 
             if (in_array($relationshipType, ['son', 'daughter', 'child'])) {
                 $childConnections[] = $connectedUser->id;
+            } elseif (in_array($relationshipType, ['father', 'mother', 'parent'])) {
+                $parentConnections[] = $connectedUser->id;
             } else {
                 $otherConnections[] = $connectedUser->id;
             }
         }
 
-        // Process children first, then others
+        // Process children first, then others (parents are handled separately by addParentFamilyUnits)
         $sortedFirstLevelUsers = array_merge($childConnections, $otherConnections);
 
         foreach ($sortedFirstLevelUsers as $connectedUserId) {
@@ -144,8 +293,19 @@ class FamilyTreeService
         foreach ($spouseIds as $spouseId => $isDivorced) {
             $groupChildIds = [];
             foreach ($childConnections as $childId) {
-                $childToSpouse = $this->connectionRepository->getConnectionBetween($childId, $spouseId);
-                if ($childToSpouse) {
+                // Check other_parent_id on root-to-child connection first
+                $rootToChild = $this->connectionRepository->getConnectionBetween($childId, $userId);
+                $matched = false;
+                if ($rootToChild && $rootToChild->other_parent_id !== null) {
+                    // Precise match: other_parent_id tells us exactly which spouse
+                    $matched = ($rootToChild->other_parent_id === $spouseId);
+                } else {
+                    // Fallback for legacy data: check if child is connected to this spouse
+                    $childToSpouse = $this->connectionRepository->getConnectionBetween($childId, $spouseId);
+                    $matched = ($childToSpouse !== null);
+                }
+
+                if ($matched) {
                     $groupChildIds[] = $childId;
                     // Tag the child node with spouseGroupId
                     foreach ($nodes as &$node) {
@@ -164,12 +324,276 @@ class FamilyTreeService
             ];
         }
 
+        // Step 3: Build parent family units (extended family through parents)
+        // Unmark step-parents/siblings so addParentFamilyUnits can discover them through parent traversal
+        foreach ($allStepIds as $stepId) {
+            unset($processedUsers[$stepId]);
+        }
+
+        $parentFamilyUnits = $this->addParentFamilyUnits(
+            $userId,
+            $parentConnections,
+            $childConnections,
+            $nodes,
+            $edges,
+            $processedUsers
+        );
+
+        // Check if parents are/were married to add a horizontal connection between them
+        $parentConnection = null;
+        if (count($parentConnections) >= 2) {
+            for ($i = 0; $i < count($parentConnections); $i++) {
+                for ($j = $i + 1; $j < count($parentConnections); $j++) {
+                    $pConn = $this->connectionRepository->getConnectionBetween($parentConnections[$i], $parentConnections[$j]);
+                    if ($pConn) {
+                        $pRelType = $this->getRelationshipFromUserPerspective($pConn, $parentConnections[$i]);
+                        if (in_array($pRelType, ['wife', 'husband', 'partner', 'ex_wife', 'ex_husband', 'ex_partner'])) {
+                            $parentConnection = [
+                                'parent1Id' => $parentConnections[$i],
+                                'parent2Id' => $parentConnections[$j],
+                                'isDivorced' => $pConn->isDivorced(),
+                            ];
+                            break 2;
+                        }
+                    }
+                }
+            }
+        }
+
         return [
             'nodes' => $nodes,
             'edges' => $edges,
             'rootUserId' => $userId,
             'spouseGroups' => $spouseGroups,
+            'parentFamilyUnits' => $parentFamilyUnits,
+            'parentConnection' => $parentConnection,
         ];
+    }
+
+    /**
+     * Build parent family units: traverse each parent's connections to find
+     * grandparents, uncles/aunts, step-parents, and step-siblings with correct
+     * relationship labels from the root user's perspective.
+     */
+    private function addParentFamilyUnits(
+        int $rootUserId,
+        array $parentIds,
+        array $rootChildIds,
+        array &$nodes,
+        array &$edges,
+        array &$processedUsers
+    ): array {
+        $parentFamilyUnits = [];
+
+        // Collect root's sibling IDs (already in nodes) to avoid duplicating them
+        $rootSiblingIds = [];
+        foreach ($nodes as $node) {
+            if (in_array($node['relationshipType'], ['brother', 'sister', 'sibling'])) {
+                $rootSiblingIds[] = $node['id'];
+            }
+        }
+
+        // Collect root's spouse IDs (already in nodes)
+        $rootSpouseIds = [];
+        foreach ($nodes as $node) {
+            if (in_array($node['relationshipType'], ['wife', 'husband', 'partner', 'ex_wife', 'ex_husband', 'ex_partner'])) {
+                $rootSpouseIds[] = $node['id'];
+            }
+        }
+
+        foreach ($parentIds as $parentId) {
+            $parentConnections = $this->connectionRepository->getConnections($parentId);
+            $parentUser = User::find($parentId);
+            $parentGender = $parentUser?->gender;
+
+            $unitSiblings = [];   // parent's siblings → uncle/aunt
+            $unitParents = [];    // parent's parents → grandfather/grandmother
+            $unitOtherSpouses = []; // parent's other spouses → step_mother/step_father
+
+            foreach ($parentConnections as $connection) {
+                $otherUser = $connection->requester_user_id === $parentId
+                    ? $connection->recipient
+                    : $connection->requester;
+
+                // Skip root user and already-processed users
+                if ($otherUser->id === $rootUserId) {
+                    continue;
+                }
+
+                $relType = $this->getRelationshipFromUserPerspective($connection, $parentId);
+
+                // Parent's siblings → uncle/aunt from root's perspective
+                if (in_array($relType, ['brother', 'sister', 'sibling'])) {
+                    if (!isset($processedUsers[$otherUser->id])) {
+                        $derivedType = $this->deriveExtendedRelationship('parent_sibling', $otherUser->gender);
+                        $nodes[] = $this->formatUserNode($otherUser, $derivedType);
+                        $processedUsers[$otherUser->id] = true;
+                        $unitSiblings[] = $otherUser->id;
+
+                        $edges[] = [
+                            'id' => "edge-{$parentId}-{$otherUser->id}",
+                            'source' => $parentId,
+                            'target' => $otherUser->id,
+                            'relationshipType' => $derivedType,
+                            'label' => $this->formatRelationshipLabel($derivedType),
+                            'color' => $this->getRelationshipColor($derivedType),
+                            'isDivorced' => false,
+                        ];
+                    }
+                }
+
+                // Parent's parents → grandfather/grandmother from root's perspective
+                if (in_array($relType, ['father', 'mother', 'parent'])) {
+                    if (!isset($processedUsers[$otherUser->id])) {
+                        $derivedType = $this->deriveExtendedRelationship('parent_parent', $otherUser->gender);
+                        $nodes[] = $this->formatUserNode($otherUser, $derivedType);
+                        $processedUsers[$otherUser->id] = true;
+                        $unitParents[] = $otherUser->id;
+
+                        $edges[] = [
+                            'id' => "edge-{$parentId}-{$otherUser->id}",
+                            'source' => $parentId,
+                            'target' => $otherUser->id,
+                            'relationshipType' => $derivedType,
+                            'label' => $this->formatRelationshipLabel($derivedType),
+                            'color' => $this->getRelationshipColor($derivedType),
+                            'isDivorced' => false,
+                        ];
+                    }
+                }
+
+                // Parent's spouse who is NOT already a parent of root → step_mother/step_father
+                if (in_array($relType, ['wife', 'husband', 'partner'])) {
+                    // Check if this spouse is already a parent of the root user
+                    if (in_array($otherUser->id, $parentIds) || in_array($otherUser->id, $rootSpouseIds)) {
+                        continue;
+                    }
+
+                    $isDivorced = $connection->isDivorced();
+
+                    if (!isset($processedUsers[$otherUser->id])) {
+                        $derivedType = $this->deriveExtendedRelationship('parent_spouse', $otherUser->gender);
+                        $nodes[] = $this->formatUserNode($otherUser, $derivedType);
+                        $processedUsers[$otherUser->id] = true;
+
+                        $edges[] = [
+                            'id' => "edge-{$parentId}-{$otherUser->id}",
+                            'source' => $parentId,
+                            'target' => $otherUser->id,
+                            'relationshipType' => $derivedType,
+                            'label' => $this->formatRelationshipLabel($derivedType),
+                            'color' => $this->getRelationshipColor($derivedType),
+                            'isDivorced' => $isDivorced,
+                        ];
+                    }
+
+                    // Find children of parent+otherSpouse that are NOT root's siblings
+                    // Use other_parent_id for precise parent-pair matching when available
+                    $stepChildIds = [];
+                    $otherSpouseConnections = $this->connectionRepository->getConnections($otherUser->id);
+                    foreach ($otherSpouseConnections as $spouseConn) {
+                        $spouseOther = $spouseConn->requester_user_id === $otherUser->id
+                            ? $spouseConn->recipient
+                            : $spouseConn->requester;
+
+                        $spouseRelType = $this->getRelationshipFromUserPerspective($spouseConn, $otherUser->id);
+
+                        if (in_array($spouseRelType, ['son', 'daughter', 'child'])) {
+                            // Skip if it's the root user or already a sibling of root
+                            if ($spouseOther->id === $rootUserId
+                                || in_array($spouseOther->id, $rootSiblingIds)
+                                || in_array($spouseOther->id, $rootChildIds)) {
+                                continue;
+                            }
+
+                            // Use other_parent_id to verify this child belongs to parent + otherSpouse
+                            if ($spouseConn->other_parent_id !== null) {
+                                // Precise: only include if the other parent matches the current parent
+                                if ($spouseConn->other_parent_id !== $parentId) {
+                                    // Child belongs to otherSpouse + someone else, not this parent
+                                    continue;
+                                }
+                            } else {
+                                // Fallback: check if this child is connected to the parent
+                                $childToParent = $this->connectionRepository->getConnectionBetween($spouseOther->id, $parentId);
+                                if (!$childToParent) {
+                                    // Not connected to parent, skip
+                                    continue;
+                                }
+                            }
+
+                            // Skip if already shown in the tree
+                            // Children removed by Step 1.5 (step-siblings) were unset from
+                            // processedUsers, so they should be re-added here.
+                            if (isset($processedUsers[$spouseOther->id])) {
+                                continue;
+                            }
+
+                            $stepType = $this->deriveExtendedRelationship('parent_spouse_child', $spouseOther->gender);
+                            $nodes[] = $this->formatUserNode($spouseOther, $stepType);
+                            $processedUsers[$spouseOther->id] = true;
+                            $stepChildIds[] = $spouseOther->id;
+
+                            $edges[] = [
+                                'id' => "edge-{$otherUser->id}-{$spouseOther->id}",
+                                'source' => $otherUser->id,
+                                'target' => $spouseOther->id,
+                                'relationshipType' => $stepType,
+                                'label' => $this->formatRelationshipLabel($stepType),
+                                'color' => $this->getRelationshipColor($stepType),
+                                'isDivorced' => false,
+                            ];
+                        }
+                    }
+
+                    $unitOtherSpouses[] = [
+                        'spouseId' => $otherUser->id,
+                        'isDivorced' => $isDivorced,
+                        'childIds' => $stepChildIds,
+                    ];
+                }
+
+            }
+
+            $parentFamilyUnits[] = [
+                'parentId' => $parentId,
+                'siblings' => $unitSiblings,
+                'parents' => $unitParents,
+                'otherSpouses' => $unitOtherSpouses,
+            ];
+        }
+
+        return $parentFamilyUnits;
+    }
+
+    /**
+     * Derive extended relationship label from the root user's perspective
+     */
+    private function deriveExtendedRelationship(string $chainType, ?string $gender): string
+    {
+        return match ($chainType) {
+            'parent_sibling' => match ($gender) {
+                'male' => 'uncle',
+                'female' => 'aunt',
+                default => 'uncle',
+            },
+            'parent_parent' => match ($gender) {
+                'male' => 'grandfather',
+                'female' => 'grandmother',
+                default => 'grandparent',
+            },
+            'parent_spouse' => match ($gender) {
+                'male' => 'step_father',
+                'female' => 'step_mother',
+                default => 'step_parent',
+            },
+            'parent_spouse_child' => match ($gender) {
+                'male' => 'step_brother',
+                'female' => 'step_sister',
+                default => 'step_sibling',
+            },
+            default => 'relative',
+        };
     }
 
     /**
@@ -209,9 +633,9 @@ class FamilyTreeService
                 $connectedUserId
             );
 
-            // Skip siblings' children (nephews/nieces) and siblings' spouses - don't show them in the tree
+            // Skip siblings' children, siblings' spouses, and siblings' siblings (step-siblings) - don't show them in the tree
             if (in_array($firstLevelRelationship, ['brother', 'sister', 'sibling']) &&
-                in_array($relationshipType, ['son', 'daughter', 'child', 'nephew', 'niece', 'wife', 'husband', 'partner'])) {
+                in_array($relationshipType, ['son', 'daughter', 'child', 'nephew', 'niece', 'wife', 'husband', 'partner', 'brother', 'sister', 'sibling'])) {
                 continue;
             }
 
@@ -395,6 +819,12 @@ class FamilyTreeService
             'ex_wife' => 'Prev. Spouse',
             'ex_husband' => 'Prev. Spouse',
             'ex_partner' => 'Prev. Spouse',
+            'step_mother' => 'Step Mother',
+            'step_father' => 'Step Father',
+            'step_brother' => 'Step Brother',
+            'step_sister' => 'Step Sister',
+            'step_sibling' => 'Step Sibling',
+            'step_parent' => 'Step Parent',
         ];
 
         if (isset($labelMap[$relationshipType])) {
@@ -438,6 +868,12 @@ class FamilyTreeService
             'ex_wife' => '#9CA3AF',     // Gray
             'ex_husband' => '#9CA3AF',  // Gray
             'ex_partner' => '#9CA3AF',  // Gray
+            'step_mother' => '#F472B6', // Pink
+            'step_father' => '#3B82F6', // Blue
+            'step_brother' => '#8B5CF6', // Purple
+            'step_sister' => '#EF4444',  // Red
+            'step_sibling' => '#8B5CF6', // Purple
+            'step_parent' => '#6366F1',  // Indigo
         ];
 
         return $colorMap[$relationshipType] ?? '#64748B'; // Default gray
@@ -469,6 +905,16 @@ class FamilyTreeService
             'ex_wife' => '#F3F4F6',     // Light gray
             'ex_husband' => '#F3F4F6',  // Light gray
             'ex_partner' => '#F3F4F6',  // Light gray
+            'step_mother' => '#FCE7F3', // Light pink
+            'step_father' => '#DBEAFE', // Light blue
+            'step_brother' => '#EDE9FE', // Light purple
+            'step_sister' => '#FEE2E2',  // Light red
+            'step_sibling' => '#EDE9FE', // Light purple
+            'step_parent' => '#E0E7FF',  // Light indigo
+            'uncle' => '#ECFCCB',        // Light lime
+            'aunt' => '#FED7AA',         // Light orange
+            'grandfather' => '#E0E7FF',  // Light indigo
+            'grandmother' => '#F3E8FF',  // Light violet
         ];
 
         return $colorMap[$relationshipType] ?? '#F1F5F9'; // Default light gray
@@ -670,6 +1116,8 @@ class FamilyTreeService
             'nodes' => $treeData['nodes'],
             'edges' => $treeData['edges'],
             'spouseGroups' => $treeData['spouseGroups'] ?? [],
+            'parentFamilyUnits' => $treeData['parentFamilyUnits'] ?? [],
+            'parentConnection' => $treeData['parentConnection'] ?? null,
         ];
     }
 

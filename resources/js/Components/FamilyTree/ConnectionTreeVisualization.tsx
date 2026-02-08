@@ -31,11 +31,32 @@ interface SpouseGroup {
     childIds: number[];
 }
 
+interface ParentOtherSpouse {
+    spouseId: number;
+    isDivorced: boolean;
+    childIds: number[];
+}
+
+interface ParentFamilyUnit {
+    parentId: number;
+    siblings: number[];
+    parents: number[];
+    otherSpouses: ParentOtherSpouse[];
+}
+
+interface ParentConnection {
+    parent1Id: number;
+    parent2Id: number;
+    isDivorced: boolean;
+}
+
 interface TreeData {
     nodes: Node[];
     edges: Edge[];
     rootUserId: number;
     spouseGroups?: SpouseGroup[];
+    parentFamilyUnits?: ParentFamilyUnit[];
+    parentConnection?: ParentConnection | null;
 }
 
 interface Props {
@@ -61,6 +82,11 @@ const getAbbreviation = (label: string): string => {
         'ex_wife': 'PS', 'ex_husband': 'PS', 'ex_partner': 'PS',
         'ex wife': 'PS', 'ex husband': 'PS', 'ex partner': 'PS',
         'prev. spouse': 'PS', 'prev spouse': 'PS',
+        'step_mother': 'SM', 'step_father': 'SF',
+        'step_brother': 'StBr', 'step_sister': 'StSi',
+        'step_sibling': 'StSb', 'step_parent': 'SP',
+        'step mother': 'SM', 'step father': 'SF',
+        'step brother': 'StBr', 'step sister': 'StSi',
     };
     return map[label.toLowerCase()] || label.charAt(0).toUpperCase();
 };
@@ -134,15 +160,39 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                 'nephew': 1,
                 'niece': 1,
                 'cousin': 0,
+
+                // Step relationships
+                'step_mother': -1,
+                'step_father': -1,
+                'step_parent': -1,
+                'step_brother': 0,
+                'step_sister': 0,
+                'step_sibling': 0,
             };
 
             return levelMap[relationshipType] ?? 0;
         };
 
+        // Pre-collect node IDs managed by parentFamilyUnits (positioned separately in Phase 2)
+        const parentFamilyUnitNodeIds = new Set<number>();
+        if (treeData.parentFamilyUnits) {
+            treeData.parentFamilyUnits.forEach(unit => {
+                unit.siblings.forEach(id => parentFamilyUnitNodeIds.add(id));
+                unit.parents.forEach(id => parentFamilyUnitNodeIds.add(id));
+                unit.otherSpouses.forEach(os => {
+                    parentFamilyUnitNodeIds.add(os.spouseId);
+                    os.childIds.forEach(id => parentFamilyUnitNodeIds.add(id));
+                });
+            });
+        }
+
         // Group nodes by their calculated level based on relationship type
         const levelMap: Record<number, number[]> = {};
 
         nodes.forEach(node => {
+            // Skip nodes that belong to parentFamilyUnits (positioned in Phase 2)
+            if (parentFamilyUnitNodeIds.has(node.id)) return;
+
             const level = getRelationshipLevel(node.relationshipType);
 
             if (!levelMap[level]) {
@@ -311,10 +361,26 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                     });
                 }
             } else if (level === -1) {
-                // Parents level: center above Michael (x=0) with spacing
-                // Push parents higher to avoid overlapping with siblings row
+                // Parents level: center above root (x=0) with spacing
+                // Sort so the parent with otherSpouses goes to the RIGHT position,
+                // keeping the co-parent to the LEFT. This places the "bridge" parent
+                // (e.g. Michael) between the co-parent and other spouses.
                 const parentSpacing = 180;
                 const parentY = -350; // well above siblings (-160)
+
+                if (treeData.parentFamilyUnits) {
+                    const parentWithOtherSpouses = treeData.parentFamilyUnits.find(u =>
+                        u.otherSpouses && u.otherSpouses.length > 0
+                    );
+                    if (parentWithOtherSpouses) {
+                        nodesInLevel.sort((a, b) => {
+                            if (a === parentWithOtherSpouses.parentId) return 1;  // goes right
+                            if (b === parentWithOtherSpouses.parentId) return -1;
+                            return 0;
+                        });
+                    }
+                }
+
                 const totalParentWidth = (nodesInLevel.length - 1) * parentSpacing;
                 nodesInLevel.forEach((nodeId, index) => {
                     const x = (index * parentSpacing) - (totalParentWidth / 2);
@@ -329,6 +395,107 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                 });
             }
         });
+
+        // Phase 2: Position parentFamilyUnit nodes relative to their parent node
+        if (treeData.parentFamilyUnits) {
+            treeData.parentFamilyUnits.forEach(unit => {
+                const parentPos = positions[unit.parentId];
+                if (!parentPos) return;
+
+                const pfuSpacing = 160;
+
+                // Uncle/Aunt (parent's siblings): horizontal row ABOVE the parent
+                if (unit.siblings.length > 0) {
+                    const uncleAuntY = parentPos.y - 160;
+                    const totalWidth = (unit.siblings.length - 1) * pfuSpacing;
+                    unit.siblings.forEach((sibId, index) => {
+                        const x = parentPos.x + (index * pfuSpacing) - (totalWidth / 2);
+                        positions[sibId] = { x, y: uncleAuntY, level: -1 };
+                    });
+                }
+
+                // Grandparents (parent's parents): V-shape above uncle/aunt row
+                if (unit.parents.length > 0) {
+                    const gpY = parentPos.y - 350;
+                    const gpSpacing = 180;
+                    const totalGpWidth = (unit.parents.length - 1) * gpSpacing;
+                    unit.parents.forEach((gpId, index) => {
+                        const x = parentPos.x + (index * gpSpacing) - (totalGpWidth / 2);
+                        positions[gpId] = { x, y: gpY, level: -2 };
+                    });
+                }
+
+                // Other spouses of parent: to the RIGHT of the parent
+                // This places them on the opposite side from the co-parent,
+                // so the "bridge" parent sits between co-parent and other spouses.
+                let rightmostXAtParentY = parentPos.x;
+                Object.values(positions).forEach(pos => {
+                    if (Math.abs(pos.y - parentPos.y) < 10 && pos.x > rightmostXAtParentY) {
+                        rightmostXAtParentY = pos.x;
+                    }
+                });
+                let nextSpouseX = rightmostXAtParentY + nodeWidth;
+                unit.otherSpouses.forEach(os => {
+                    positions[os.spouseId] = { x: nextSpouseX, y: parentPos.y, level: parentPos.level };
+
+                    // Step-siblings: below the other spouse, creating a slanted V-shape
+                    if (os.childIds.length > 0) {
+                        const stepSibY = parentPos.y + 200;
+                        const totalStepWidth = (os.childIds.length - 1) * pfuSpacing;
+                        const stepCenterX = nextSpouseX; // centered under the other spouse
+                        os.childIds.forEach((childId, index) => {
+                            const x = stepCenterX + (index * pfuSpacing) - (totalStepWidth / 2);
+                            positions[childId] = { x, y: stepSibY, level: 0 };
+                        });
+                    }
+
+                    nextSpouseX += nodeWidth;
+                });
+            });
+        }
+
+        // Phase 3: Resolve overlaps between step-sibling groups and other nodes
+        // Step-siblings are positioned to the RIGHT of the main tree. Ensure they
+        // don't collide with siblings or other nodes by shifting the group further right.
+        if (treeData.parentFamilyUnits) {
+            const minNodeGap = 150; // minimum center-to-center distance to avoid overlap
+            const yProximity = 130; // nodes within this vertical distance can collide
+
+            treeData.parentFamilyUnits.forEach(unit => {
+                unit.otherSpouses.forEach(os => {
+                    if (os.childIds.length === 0) return;
+
+                    const groupIds = new Set([os.spouseId, ...os.childIds]);
+
+                    // Get the leftmost step-sibling X and their Y level
+                    const stepXs = os.childIds.filter(id => positions[id]).map(id => positions[id].x);
+                    if (stepXs.length === 0) return;
+                    const minStepX = Math.min(...stepXs);
+                    const stepY = positions[os.childIds[0]].y;
+
+                    // Find the rightmost non-group node at a similar Y level (to the left of group)
+                    let rightmostNearbyX = -Infinity;
+                    Object.entries(positions).forEach(([idStr, pos]) => {
+                        const id = Number(idStr);
+                        if (groupIds.has(id)) return;
+                        if (Math.abs(pos.y - stepY) < yProximity && pos.x < minStepX) {
+                            rightmostNearbyX = Math.max(rightmostNearbyX, pos.x);
+                        }
+                    });
+
+                    if (rightmostNearbyX > -Infinity) {
+                        // The leftmost step-sibling must be at least minNodeGap to the right
+                        const requiredMinX = rightmostNearbyX + minNodeGap;
+                        if (minStepX < requiredMinX) {
+                            const shift = requiredMinX - minStepX;
+                            groupIds.forEach(id => {
+                                if (positions[id]) positions[id].x += shift;
+                            });
+                        }
+                    }
+                });
+            });
+        }
 
         // Calculate SVG dimensions
         const allX = Object.values(positions).map(p => p.x);
@@ -645,8 +812,26 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                             const parentIds = new Set(treeData.nodes.filter(n => ['father', 'mother', 'parent'].includes(n.relationshipType)).map(n => n.id));
                             const hasFamilyUnit = siblingIds.size > 0 || parentIds.size > 0;
 
+                            // Collect parent family unit node IDs (rendered by parent family unit section)
+                            const pfuNodeIds = new Set<number>();
+                            if (treeData.parentFamilyUnits) {
+                                treeData.parentFamilyUnits.forEach(unit => {
+                                    unit.siblings.forEach(id => pfuNodeIds.add(id));
+                                    unit.parents.forEach(id => pfuNodeIds.add(id));
+                                    unit.otherSpouses.forEach(os => {
+                                        pfuNodeIds.add(os.spouseId);
+                                        os.childIds.forEach(id => pfuNodeIds.add(id));
+                                    });
+                                });
+                            }
+
                             return treeData.edges
                                 .filter(edge => {
+                                    // Skip edges involving parent family unit nodes (rendered separately)
+                                    if (pfuNodeIds.has(edge.source) || pfuNodeIds.has(edge.target)) {
+                                        return false;
+                                    }
+
                                     // Skip root↔sibling and root↔parent edges (rendered by family unit section)
                                     if (hasFamilyUnit) {
                                         if (edge.source === treeData.rootUserId && (siblingIds.has(edge.target) || parentIds.has(edge.target))) {
@@ -1349,6 +1534,344 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                             </g>
                         );
                     })()}
+
+                    {/* Horizontal connection line between parents (showing married/divorced status) */}
+                    {treeData.parentConnection && (() => {
+                        const p1Pos = nodePositions[treeData.parentConnection.parent1Id];
+                        const p2Pos = nodePositions[treeData.parentConnection.parent2Id];
+                        if (!p1Pos || !p2Pos) return null;
+
+                        const p1X = p1Pos.x - (minX || 0) + padding;
+                        const p1Y = p1Pos.y - (minY || 0) + padding;
+                        const p2X = p2Pos.x - (minX || 0) + padding;
+                        const p2Y = p2Pos.y - (minY || 0) + padding;
+
+                        const leftX = Math.min(p1X, p2X) + 60;
+                        const rightX = Math.max(p1X, p2X) - 60;
+                        const midPX = (p1X + p2X) / 2;
+                        const lineY = p1Y; // same Y level
+
+                        const isDivorced = treeData.parentConnection.isDivorced;
+                        const pcLineColor = isDivorced ? '#9CA3AF' : '#F472B6';
+                        const pcLineOpacity = isDivorced ? 0.5 : 0.85;
+                        const pcLabel = isDivorced ? 'PS' : 'W';
+                        const pcFullLabel = isDivorced ? 'Previous Spouse' : 'Wife';
+                        const pcBadgeW = isDivorced ? 36 : 26;
+                        const pcTooltipW = Math.max(pcFullLabel.length * 7.5 + 24, 70);
+                        const pcEdgeId = 'parent-connection';
+                        const isPcHovered = hoveredEdge === pcEdgeId;
+
+                        return (
+                            <g>
+                                {/* Glow */}
+                                <line x1={leftX} y1={lineY} x2={rightX} y2={lineY} stroke={pcLineColor} strokeWidth="4" opacity={0.15} filter="blur(6px)" />
+                                {/* Main line */}
+                                <line
+                                    x1={leftX} y1={lineY} x2={rightX} y2={lineY}
+                                    stroke={pcLineColor} strokeWidth="2.5" opacity={pcLineOpacity}
+                                    strokeLinecap="round"
+                                    strokeDasharray={isDivorced ? '8,6' : undefined}
+                                />
+                                {/* Badge */}
+                                <g onMouseEnter={() => setHoveredEdge(pcEdgeId)} onMouseLeave={() => setHoveredEdge(null)} style={{ cursor: 'pointer' }}>
+                                    {isPcHovered && <circle cx={midPX} cy={lineY} r="20" fill={pcLineColor} opacity="0.2" filter="blur(8px)" />}
+                                    <rect x={midPX - pcBadgeW / 2} y={lineY - 12} width={pcBadgeW} height={24} fill="rgba(15, 23, 42, 0.95)" stroke={pcLineColor} strokeWidth={isPcHovered ? '2' : '1.5'} rx="12" ry="12" />
+                                    <text x={midPX} y={lineY + 4} textAnchor="middle" fontSize="11" fontWeight="700" fill={pcLineColor} style={{ letterSpacing: '0.5px' }}>{pcLabel}</text>
+                                    {isPcHovered && (
+                                        <g>
+                                            <rect x={midPX - pcTooltipW / 2} y={lineY - 44} width={pcTooltipW} height={26} fill={pcLineColor} rx="13" ry="13" opacity="0.12" filter="blur(6px)" />
+                                            <rect x={midPX - pcTooltipW / 2} y={lineY - 44} width={pcTooltipW} height={26} fill="rgba(15, 23, 42, 0.98)" stroke={pcLineColor} strokeWidth="1" rx="13" ry="13" />
+                                            <text x={midPX} y={lineY - 27} textAnchor="middle" fontSize="11" fontWeight="600" fill={pcLineColor} style={{ letterSpacing: '0.3px' }}>{pcFullLabel}</text>
+                                        </g>
+                                    )}
+                                </g>
+                            </g>
+                        );
+                    })()}
+
+                    {/* Parent Family Units: extended family through parents */}
+                    {treeData.parentFamilyUnits && treeData.parentFamilyUnits.map((unit) => {
+                        const parentPos = nodePositions[unit.parentId];
+                        if (!parentPos) return null;
+
+                        const parX = parentPos.x - (minX || 0) + padding;
+                        const parY = parentPos.y - (minY || 0) + padding;
+                        const parBottomY = parY + 60;
+                        const parTopY = parY - 60;
+
+                        const pfuColor = '#6366F1'; // Indigo for extended family
+                        const pfuOpacity = 0.85;
+                        const pfuGlow = 0.2;
+
+                        // Get uncle/aunt positions
+                        const uncleAuntPositions = unit.siblings.map(id => {
+                            const pos = nodePositions[id];
+                            if (!pos) return null;
+                            const node = treeData.nodes.find(n => n.id === id);
+                            return {
+                                id,
+                                x: pos.x - (minX || 0) + padding,
+                                y: pos.y - (minY || 0) + padding,
+                                relationshipType: node?.relationshipType || '',
+                            };
+                        }).filter(Boolean) as { id: number; x: number; y: number; relationshipType: string }[];
+
+                        // Get grandparent positions
+                        const grandparentPositions = unit.parents.map(id => {
+                            const pos = nodePositions[id];
+                            if (!pos) return null;
+                            const node = treeData.nodes.find(n => n.id === id);
+                            return {
+                                id,
+                                x: pos.x - (minX || 0) + padding,
+                                y: pos.y - (minY || 0) + padding,
+                                relationshipType: node?.relationshipType || '',
+                            };
+                        }).filter(Boolean) as { id: number; x: number; y: number; relationshipType: string }[];
+
+                        // Calculate uncle/aunt bar
+                        let uaJunctionY = parTopY - 40;
+                        let uaBarMinX = parX;
+                        let uaBarMaxX = parX;
+                        if (uncleAuntPositions.length > 0) {
+                            const uaXs = uncleAuntPositions.map(u => u.x);
+                            uaBarMinX = Math.min(...uaXs);
+                            uaBarMaxX = Math.max(...uaXs);
+                            uaJunctionY = uncleAuntPositions[0].y;
+                        }
+
+                        return (
+                            <g key={`pfu-${unit.parentId}`}>
+                                {/* Uncle/Aunt T-shape: vertical from parent up to horizontal bar */}
+                                {uncleAuntPositions.length > 0 && (
+                                    <g>
+                                        {/* Vertical line from parent up to uncle/aunt row */}
+                                        <line x1={parX} y1={parTopY} x2={parX} y2={uaJunctionY} stroke={pfuColor} strokeWidth="4" opacity={pfuGlow} filter="blur(6px)" />
+                                        <line x1={parX} y1={parTopY} x2={parX} y2={uaJunctionY} stroke={pfuColor} strokeWidth="2.5" opacity={pfuOpacity} strokeLinecap="round" />
+
+                                        {/* Horizontal bar */}
+                                        <line x1={Math.min(uaBarMinX, parX)} y1={uaJunctionY} x2={Math.max(uaBarMaxX, parX)} y2={uaJunctionY} stroke={pfuColor} strokeWidth="4" opacity={pfuGlow} filter="blur(6px)" />
+                                        <line x1={Math.min(uaBarMinX, parX)} y1={uaJunctionY} x2={Math.max(uaBarMaxX, parX)} y2={uaJunctionY} stroke={pfuColor} strokeWidth="2.5" opacity={pfuOpacity} strokeLinecap="round" />
+
+                                        {/* Junction circle */}
+                                        <circle cx={parX} cy={uaJunctionY} r="5" fill={pfuColor} opacity={pfuOpacity} />
+
+                                        {/* Vertical stubs to each uncle/aunt with badges */}
+                                        {uncleAuntPositions.map(ua => {
+                                            const label = ua.relationshipType;
+                                            const abbr = getAbbreviation(label);
+                                            const fullLabel = capitalizeLabel(label);
+                                            const badgeW = abbr.length > 2 ? 42 : abbr.length > 1 ? 36 : 26;
+                                            const stubBottomY = ua.y - 55;
+                                            const badgeMidY = (uaJunctionY + stubBottomY) / 2;
+                                            const tooltipW = Math.max(fullLabel.length * 7.5 + 24, 70);
+                                            const edgeId = `pfu-ua-${ua.id}`;
+                                            const isEdgeHovered = hoveredEdge === edgeId;
+
+                                            return (
+                                                <g key={edgeId}>
+                                                    <line x1={ua.x} y1={uaJunctionY} x2={ua.x} y2={stubBottomY} stroke={pfuColor} strokeWidth="4" opacity={pfuGlow} filter="blur(6px)" />
+                                                    <line x1={ua.x} y1={uaJunctionY} x2={ua.x} y2={stubBottomY} stroke={pfuColor} strokeWidth="2.5" opacity={pfuOpacity} strokeLinecap="round" />
+                                                    <g onMouseEnter={() => setHoveredEdge(edgeId)} onMouseLeave={() => setHoveredEdge(null)} style={{ cursor: 'pointer' }}>
+                                                        {isEdgeHovered && <circle cx={ua.x} cy={badgeMidY} r="20" fill={pfuColor} opacity="0.2" filter="blur(8px)" />}
+                                                        <rect x={ua.x - badgeW / 2} y={badgeMidY - 12} width={badgeW} height={24} fill="rgba(15, 23, 42, 0.95)" stroke={pfuColor} strokeWidth={isEdgeHovered ? '2' : '1.5'} rx="12" ry="12" />
+                                                        <text x={ua.x} y={badgeMidY + 4} textAnchor="middle" fontSize="11" fontWeight="700" fill={pfuColor} style={{ letterSpacing: '0.5px' }}>{abbr}</text>
+                                                        {isEdgeHovered && (
+                                                            <g>
+                                                                <rect x={ua.x - tooltipW / 2} y={badgeMidY - 44} width={tooltipW} height={26} fill={pfuColor} rx="13" ry="13" opacity="0.12" filter="blur(6px)" />
+                                                                <rect x={ua.x - tooltipW / 2} y={badgeMidY - 44} width={tooltipW} height={26} fill="rgba(15, 23, 42, 0.98)" stroke={pfuColor} strokeWidth="1" rx="13" ry="13" />
+                                                                <text x={ua.x} y={badgeMidY - 27} textAnchor="middle" fontSize="11" fontWeight="600" fill={pfuColor} style={{ letterSpacing: '0.3px' }}>{fullLabel}</text>
+                                                            </g>
+                                                        )}
+                                                    </g>
+                                                </g>
+                                            );
+                                        })}
+                                    </g>
+                                )}
+
+                                {/* Grandparents V-shape: lines from each grandparent down to junction */}
+                                {grandparentPositions.length > 0 && (() => {
+                                    const gpTargetX = parX;
+                                    const gpTargetY = uncleAuntPositions.length > 0 ? uaJunctionY : parTopY - 40;
+                                    const gpColor = '#7C3AED'; // Violet for grandparents
+
+                                    return (
+                                        <g>
+                                            {grandparentPositions.map(gp => {
+                                                const gpBottomY = gp.y + 60;
+                                                const label = gp.relationshipType;
+                                                const abbr = getAbbreviation(label);
+                                                const fullLabel = capitalizeLabel(label);
+                                                const badgeW = abbr.length > 2 ? 42 : abbr.length > 1 ? 36 : 26;
+                                                const midX = (gp.x + gpTargetX) / 2;
+                                                const midY = (gpBottomY + gpTargetY) / 2;
+                                                const tooltipW = Math.max(fullLabel.length * 7.5 + 24, 70);
+                                                const edgeId = `pfu-gp-${gp.id}`;
+                                                const isEdgeHovered = hoveredEdge === edgeId;
+
+                                                return (
+                                                    <g key={edgeId}>
+                                                        <line x1={gp.x} y1={gpBottomY} x2={gpTargetX} y2={gpTargetY} stroke={gpColor} strokeWidth="4" opacity={0.15} filter="blur(6px)" />
+                                                        <line x1={gp.x} y1={gpBottomY} x2={gpTargetX} y2={gpTargetY} stroke={gpColor} strokeWidth="2.5" opacity={0.85} strokeLinecap="round" />
+                                                        <g onMouseEnter={() => setHoveredEdge(edgeId)} onMouseLeave={() => setHoveredEdge(null)} style={{ cursor: 'pointer' }}>
+                                                            {isEdgeHovered && <circle cx={midX} cy={midY} r="20" fill={gpColor} opacity="0.2" filter="blur(8px)" />}
+                                                            <rect x={midX - badgeW / 2} y={midY - 12} width={badgeW} height={24} fill="rgba(15, 23, 42, 0.95)" stroke={gpColor} strokeWidth={isEdgeHovered ? '2' : '1.5'} rx="12" ry="12" />
+                                                            <text x={midX} y={midY + 4} textAnchor="middle" fontSize="11" fontWeight="700" fill={gpColor} style={{ letterSpacing: '0.5px' }}>{abbr}</text>
+                                                            {isEdgeHovered && (
+                                                                <g>
+                                                                    <rect x={midX - tooltipW / 2} y={midY - 44} width={tooltipW} height={26} fill={gpColor} rx="13" ry="13" opacity="0.12" filter="blur(6px)" />
+                                                                    <rect x={midX - tooltipW / 2} y={midY - 44} width={tooltipW} height={26} fill="rgba(15, 23, 42, 0.98)" stroke={gpColor} strokeWidth="1" rx="13" ry="13" />
+                                                                    <text x={midX} y={midY - 27} textAnchor="middle" fontSize="11" fontWeight="600" fill={gpColor} style={{ letterSpacing: '0.3px' }}>{fullLabel}</text>
+                                                                </g>
+                                                            )}
+                                                        </g>
+                                                    </g>
+                                                );
+                                            })}
+                                        </g>
+                                    );
+                                })()}
+
+                                {/* Other spouses of parent + step-sibling inverted triangles */}
+                                {unit.otherSpouses.map(os => {
+                                    const spousePos = nodePositions[os.spouseId];
+                                    if (!spousePos) return null;
+
+                                    const spX = spousePos.x - (minX || 0) + padding;
+                                    const spY = spousePos.y - (minY || 0) + padding;
+
+                                    const spouseNode = treeData.nodes.find(n => n.id === os.spouseId);
+                                    const spouseLabel = spouseNode?.relationshipType || '';
+                                    const spouseAbbr = getAbbreviation(spouseLabel);
+                                    const spouseFullLabel = capitalizeLabel(spouseLabel);
+                                    const spouseBadgeW = spouseAbbr.length > 2 ? 42 : spouseAbbr.length > 1 ? 36 : 26;
+                                    const midSpX = (parX + spX) / 2;
+                                    const spTooltipW = Math.max(spouseFullLabel.length * 7.5 + 24, 70);
+                                    const spEdgeId = `pfu-sp-${os.spouseId}`;
+                                    const isSpHovered = hoveredEdge === spEdgeId;
+
+                                    const spouseLineColor = os.isDivorced ? '#9CA3AF' : '#F472B6';
+                                    const spouseLineOpacity = os.isDivorced ? 0.5 : 0.85;
+
+                                    // Step-sibling positions
+                                    const stepChildPositions = os.childIds
+                                        .map(childId => {
+                                            const pos = nodePositions[childId];
+                                            if (!pos) return null;
+                                            const node = treeData.nodes.find(n => n.id === childId);
+                                            return {
+                                                id: childId,
+                                                x: pos.x - (minX || 0) + padding,
+                                                y: pos.y - (minY || 0) + padding,
+                                                relationshipType: node?.relationshipType || '',
+                                            };
+                                        })
+                                        .filter(Boolean) as { id: number; x: number; y: number; relationshipType: string }[];
+
+                                    // Determine line endpoints: from inner edges of both nodes
+                                    const lineX1 = Math.min(parX, spX) + 60;
+                                    const lineX2 = Math.max(parX, spX) - 60;
+
+                                    return (
+                                        <g key={`pfu-os-${os.spouseId}`}>
+                                            {/* Horizontal line from parent to other spouse */}
+                                            <line x1={lineX1} y1={parY} x2={lineX2} y2={spY} stroke={spouseLineColor} strokeWidth="4" opacity={pfuGlow} filter="blur(6px)" />
+                                            <line
+                                                x1={lineX1} y1={parY} x2={lineX2} y2={spY}
+                                                stroke={spouseLineColor} strokeWidth="2.5" opacity={spouseLineOpacity}
+                                                strokeLinecap="round"
+                                                strokeDasharray={os.isDivorced ? '8,6' : undefined}
+                                            />
+                                            {/* Spouse badge */}
+                                            <g onMouseEnter={() => setHoveredEdge(spEdgeId)} onMouseLeave={() => setHoveredEdge(null)} style={{ cursor: 'pointer' }}>
+                                                {isSpHovered && <circle cx={midSpX} cy={parY} r="20" fill={spouseLineColor} opacity="0.2" filter="blur(8px)" />}
+                                                <rect x={midSpX - spouseBadgeW / 2} y={parY - 12} width={spouseBadgeW} height={24} fill="rgba(15, 23, 42, 0.95)" stroke={spouseLineColor} strokeWidth={isSpHovered ? '2' : '1.5'} rx="12" ry="12" />
+                                                <text x={midSpX} y={parY + 4} textAnchor="middle" fontSize="11" fontWeight="700" fill={spouseLineColor} style={{ letterSpacing: '0.5px' }}>{spouseAbbr}</text>
+                                                {isSpHovered && (
+                                                    <g>
+                                                        <rect x={midSpX - spTooltipW / 2} y={parY - 44} width={spTooltipW} height={26} fill={spouseLineColor} rx="13" ry="13" opacity="0.12" filter="blur(6px)" />
+                                                        <rect x={midSpX - spTooltipW / 2} y={parY - 44} width={spTooltipW} height={26} fill="rgba(15, 23, 42, 0.98)" stroke={spouseLineColor} strokeWidth="1" rx="13" ry="13" />
+                                                        <text x={midSpX} y={parY - 27} textAnchor="middle" fontSize="11" fontWeight="600" fill={spouseLineColor} style={{ letterSpacing: '0.3px' }}>{spouseFullLabel}</text>
+                                                    </g>
+                                                )}
+                                            </g>
+
+                                            {/* Inverted triangle for step-siblings */}
+                                            {stepChildPositions.length > 0 && (() => {
+                                                const stepColor = '#8B5CF6';
+                                                const stepOpacity = 0.85;
+                                                const stepGlow = 0.2;
+                                                const stepParentY = spY + 60;
+
+                                                const childCenterX = stepChildPositions.reduce((sum, c) => sum + c.x, 0) / stepChildPositions.length;
+                                                const childTopY = Math.min(...stepChildPositions.map(c => c.y)) - 60;
+                                                const junctionY = childTopY - 30;
+
+                                                const childXs = stepChildPositions.map(c => c.x);
+                                                const minStepChildX = Math.min(...childXs);
+                                                const maxStepChildX = Math.max(...childXs);
+
+                                                return (
+                                                    <g>
+                                                        {/* Line from parent down to junction (inverted triangle) */}
+                                                        <line x1={parX} y1={parBottomY} x2={childCenterX} y2={junctionY} stroke={stepColor} strokeWidth="4" opacity={stepGlow} filter="blur(6px)" />
+                                                        <line x1={parX} y1={parBottomY} x2={childCenterX} y2={junctionY} stroke={stepColor} strokeWidth="2.5" opacity={stepOpacity} strokeLinecap="round" />
+
+                                                        {/* Line from step-parent down to junction (inverted triangle) */}
+                                                        <line x1={spX} y1={stepParentY} x2={childCenterX} y2={junctionY} stroke={stepColor} strokeWidth="4" opacity={stepGlow} filter="blur(6px)" />
+                                                        <line x1={spX} y1={stepParentY} x2={childCenterX} y2={junctionY} stroke={stepColor} strokeWidth="2.5" opacity={stepOpacity} strokeLinecap="round" />
+
+                                                        {/* Junction circle */}
+                                                        <circle cx={childCenterX} cy={junctionY} r="5" fill={stepColor} opacity={stepOpacity} />
+
+                                                        {/* Horizontal bar if multiple children */}
+                                                        {stepChildPositions.length > 1 && (
+                                                            <>
+                                                                <line x1={minStepChildX} y1={junctionY} x2={maxStepChildX} y2={junctionY} stroke={stepColor} strokeWidth="4" opacity={stepGlow} filter="blur(6px)" />
+                                                                <line x1={minStepChildX} y1={junctionY} x2={maxStepChildX} y2={junctionY} stroke={stepColor} strokeWidth="2.5" opacity={stepOpacity} strokeLinecap="round" />
+                                                            </>
+                                                        )}
+
+                                                        {/* Vertical lines to each step-child with badges */}
+                                                        {stepChildPositions.map(child => {
+                                                            const label = child.relationshipType;
+                                                            const abbr = getAbbreviation(label);
+                                                            const fullLabel = capitalizeLabel(label);
+                                                            const badgeW = abbr.length > 2 ? 42 : abbr.length > 1 ? 36 : 26;
+                                                            const badgeMidY = (junctionY + (child.y - 60)) / 2;
+                                                            const tooltipW = Math.max(fullLabel.length * 7.5 + 24, 70);
+                                                            const edgeId = `pfu-step-${child.id}`;
+                                                            const isEdgeHovered = hoveredEdge === edgeId;
+
+                                                            return (
+                                                                <g key={edgeId}>
+                                                                    <line x1={child.x} y1={junctionY} x2={child.x} y2={child.y - 60} stroke={stepColor} strokeWidth="4" opacity={stepGlow} filter="blur(6px)" />
+                                                                    <line x1={child.x} y1={junctionY} x2={child.x} y2={child.y - 60} stroke={stepColor} strokeWidth="2.5" opacity={stepOpacity} strokeLinecap="round" />
+                                                                    <g onMouseEnter={() => setHoveredEdge(edgeId)} onMouseLeave={() => setHoveredEdge(null)} style={{ cursor: 'pointer' }}>
+                                                                        {isEdgeHovered && <circle cx={child.x} cy={badgeMidY} r="20" fill={stepColor} opacity="0.2" filter="blur(8px)" />}
+                                                                        <rect x={child.x - badgeW / 2} y={badgeMidY - 12} width={badgeW} height={24} fill="rgba(15, 23, 42, 0.95)" stroke={stepColor} strokeWidth={isEdgeHovered ? '2' : '1.5'} rx="12" ry="12" />
+                                                                        <text x={child.x} y={badgeMidY + 4} textAnchor="middle" fontSize="11" fontWeight="700" fill={stepColor} style={{ letterSpacing: '0.5px' }}>{abbr}</text>
+                                                                        {isEdgeHovered && (
+                                                                            <g>
+                                                                                <rect x={child.x - tooltipW / 2} y={badgeMidY - 44} width={tooltipW} height={26} fill={stepColor} rx="13" ry="13" opacity="0.12" filter="blur(6px)" />
+                                                                                <rect x={child.x - tooltipW / 2} y={badgeMidY - 44} width={tooltipW} height={26} fill="rgba(15, 23, 42, 0.98)" stroke={stepColor} strokeWidth="1" rx="13" ry="13" />
+                                                                                <text x={child.x} y={badgeMidY - 27} textAnchor="middle" fontSize="11" fontWeight="600" fill={stepColor} style={{ letterSpacing: '0.3px' }}>{fullLabel}</text>
+                                                                            </g>
+                                                                        )}
+                                                                    </g>
+                                                                </g>
+                                                            );
+                                                        })}
+                                                    </g>
+                                                );
+                                            })()}
+                                        </g>
+                                    );
+                                })}
+                            </g>
+                        );
+                    })}
 
                     {/* Draw nodes */}
                     <g>

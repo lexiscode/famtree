@@ -20,6 +20,7 @@ class UserConnection extends Model
         'requester_user_id',
         'recipient_user_id',
         'relationship_type',
+        'other_parent_id',
         'status',
         'requested_at',
         'accepted_at',
@@ -53,6 +54,24 @@ class UserConnection extends Model
     public function recipient()
     {
         return $this->belongsTo(User::class, 'recipient_user_id');
+    }
+
+    /**
+     * Get the other parent (for parent-child connections)
+     */
+    public function otherParent()
+    {
+        return $this->belongsTo(User::class, 'other_parent_id');
+    }
+
+    /**
+     * Check if this is a parent-child connection
+     */
+    public function isParentChildConnection(): bool
+    {
+        return in_array($this->relationship_type, [
+            'father', 'mother', 'parent', 'son', 'daughter', 'child',
+        ]);
     }
 
     /**

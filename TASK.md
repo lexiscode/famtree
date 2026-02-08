@@ -1,80 +1,48 @@
-I want you to first take a good look at the image.jpeg in this project root directory. i sketched it on a piece of paper, how i will like two different tree-like case studies to look like. That's a draft sketch, but it should give you an idea of what i expect to see.
+When either James or Emily or David is clicked on as to be the center point. Below is my expectations of how the tree should look like. Lets use one of them as he case study, so lets say Emily is clicked on to be the center point.
 
+Her circular node being the center point. I want a connection-line to go vertically up above her, and connects to a horizontal connection-line where all her siblings will be. (similar to how we had done Michael T-like connection with his siblings Robert and Ruth, when Michael was the center point). So i expect something similar when Emily (or James or David) ic clicked as the center point, they should see their siblings above them in a T-like shape.
 
------------------------------------------------------------------------------
-CASE I (First Case)
+Then, above her siblings, she should be able to see her parents (that is, Sarah and Michael, still with the PS label between those two and broken lines), in a V-like inverted-triangle connection, just as we have in Daniel and Glory visualization where their lines touches the mid-point of Robert and Ruth (when Michael was the center point).
 
-Mr A and Mrs B are husband and wife. They both have sons and daughters. Each member of this family are connected in this famtree app, and have their tree structures intact in http://localhost/your-tree
-Now lets assume, some years down the line, Mr A and Mrs B divorces. Then Mr A marries a new wife (lets call it Mrs C). And then Mr A and Mrs C had children to, some sons and daughters for example. The previous connection node-line between Mr A and Mrs B has to be cut off in the tree (to indicate a divorce case). Look at image.jpeg, look at how i want the tree to look like for CASE I.
+Also, automatically, the system should be able to show Emily's Dad new wife, Deborah, as well as their children (Fatime and Steve) who will happen to be the step-sister or step-brother to them. 
 
-NB: Currently we have no logic that hands a divorce case, so we might need to consider that, so we can difference between when there are two wives in the application, to be sure if they are active wives or if one is divorced.
+Note that, Emily does not need to connect with any extended family members before she can see these tree visuals in her /your-tree page or when she's the center point, inasmuch as one of her nuclear family member has those connections to their own nuclear family members, then it should show her. In summary, what i'm trying to say regarding this family tree visualization logic is that, the initial tree when the center point is viewing should not be entirely totally depending on whom they are connected within the platform/system; the platform connection for the initial tree logic is only mandatory is for the nuclear family connections and if they have any kids (children of their own) only (meaning Emily must at least be connected with her siblings, parents, her husband and their children at the very least). Then any other thing outside her main nuclear family circle (her siblings, parents, her husband and their children), if she doesn't connect with them, in the tree visualization, she still should be able to see those her extended family on her tree, inasmuch as one of her connections are connected to their own people, like for instance their Dad is connected to his own nuclear family (his own siblings and parents) which will automatically tell her that its her Uncles/Aunts and Grandparents, in summary, just any (external) linkage from her Dad. 
 
-
-
-------------------------------------------------------------------------------
-CASE II (The Reverse Case)
-
-Mr A and Mrs B are husband and wife. They both have 2 sons and 2 daughters. Each member of this family are connected in this famtree app, and have their tree structures in http://localhost/your-tree
-Now lets assume, some years down the line, Mr A and Mrs A divorces. Then Mr B marries another husband (lets call it Mr C). And then Mrs A and Mr C had children to, lets say 2 sons and 2 daughters. The previous connection node-line between Mr A and Mrs B has to be cut off in the tree (to indicate a divorce case). Look at image.jpeg, look at how i want the tree to look like for CASE II.
-
-
-
-UI Testing Workflow
-
-  1. Set Up: You need two users with a spousal connection
-
-  - Log in as User A, go to /connections/create
-  - Search for User B and send a connection request with relationship type Wife, Husband, or Partner
-  - Log in as User B, go to /connections/pending and accept the request
-
-  2. Test the Divorce Button on MyConnections Page
-
-  - Log in as either user, go to /connections
-  - Find the spousal connection card — it should show "✓ Connected" badge
-  - You should see a "Mark as Divorced" button (red outline) at the bottom of that card
-  - Non-spousal connections (brother, mother, etc.) should NOT have this button
-  - Click "Mark as Divorced" — a confirmation prompt appears: "Are you sure?" with Confirm / Cancel
-  - Click Cancel — nothing happens
-  - Click Confirm — the connection card now shows a "Divorced" badge (red background) instead of "✓ Connected", and the divorce
-  button disappears
-
-  3. Test the Connection Tree (/your-tree)
-
-  - Log in as the root user who has both a divorced spouse and (ideally) a current spouse
-  - Go to /your-tree
-  - Divorced spouse should appear to the LEFT of you with:
-    - A dashed gray line (not solid colored)
-    - Label abbreviation XW / XH / XP on hover
-  - Active spouse should appear to the RIGHT with a solid colored line (unchanged behavior)
-  - The legend at the bottom-left should show a dashed line entry labeled "Divorced"
-
-  4. Test the Family Group Tree (/family-tree/{uuid}/tree)
-
-  - Go to your family tree page and click into the tree visualization
-  - Divorced spouse should appear with:
-    - Gray dashed line connecting to you
-    - A ✕ symbol instead of the ♥ heart
-    - Gray-toned node styling
-    - Role label showing "ex wife" / "ex husband" / "ex partner" above the node
-
-  5. Test Child Grouping (requires children)
-
-  - If User A has children connected to both the divorced and current spouse:
-    - On /your-tree, children should be grouped under their respective parent pair
-    - Children connected to the divorced spouse cluster toward the left
-    - Children connected to the active spouse cluster toward the right
-
-  Ideal Test Scenario
-
-  For the fullest test, set up:
-  - Root user (you)
-  - Ex-spouse (connected as wife/husband, then divorced)
-  - Current spouse (new spousal connection)
-  - Child 1 connected to both root and ex-spouse
-  - Child 2 connected to both root and current spouse
-
-  This lets you verify all the visual grouping and layout behavior.
+So it means, Emily should automatically be able to see the tree visualization of the siblings of Michael, connected to Michael, above him, and from there see the parents of Michael too (whom are the grandparents of Emily automatically). And the tree visualization for this part will still look like how it had looked when Michael was the center point, i mean when his siblings are above him, in a T-like shape, and then his parents connected to the mid-point horizontal connection-line in V shaped inverted manner.
 
 
 
 
+
+
+
+Claude's response below,
+
+Here's my understanding of what you want:
+
+  ---
+  When Emily is the center point:
+
+  1. Emily's siblings above her (T-shape)
+  Same pattern as Michael's siblings — a vertical line goes up from Emily to a horizontal bar where James and David sit. Emily
+  connects to the midpoint of that bar.
+
+  2. Her parents above the siblings (V-shape inverted triangle)
+  Sarah and Michael appear above the siblings bar, with their inverted triangle lines converging down to the midpoint — exactly like
+  Daniel and Glory do when Michael is center. The Sarah-Michael connection still shows the PS label with dashed lines since they're
+  divorced.
+
+  3. Her Dad's new wife + their kids (step-siblings)
+  Because Michael is connected to Deborah, Emily should automatically see Deborah and their children (Fatima, Steve) on the tree.
+  Fatima and Steve would be shown as step-sister/step-brother to Emily.
+
+  4. The big rule: tree visualization doesn't depend only on Emily's direct connections
+  Emily only needs to be directly connected with her nuclear family (siblings, parents, her own spouse/children). But anything beyond
+   that should be pulled automatically through her connections' connections:
+  - Michael is her dad → Michael is connected to his siblings (Robert, Ruth) → Emily sees them as Uncle/Aunt
+  - Michael is connected to his parents (Daniel, Glory) → Emily sees them as Grandparents
+  - Michael is connected to Deborah → Emily sees Deborah as step-mother and Deborah's kids as step-siblings
+
+  The tree keeps the same visual patterns we already built — T-shapes for siblings, V-shapes for parents — just applied recursively
+  at each level. The key insight is: traverse through nuclear family connections to show extended family, even if Emily hasn't
+  personally connected with them on the platform.

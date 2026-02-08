@@ -19,9 +19,12 @@ interface RelationshipType {
     description: string;
 }
 
+const PARENT_CHILD_TYPES = ['father', 'mother', 'parent', 'son', 'daughter', 'child'];
+
 export default function SendRequest({
     user,
     current_user_id,
+    spouses,
     connectionCount,
     pendingRequestCount,
     sentRequestCount,
@@ -30,6 +33,7 @@ export default function SendRequest({
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [relationshipType, setRelationshipType] = useState('');
+    const [otherParentId, setOtherParentId] = useState<number | null>(null);
     const [users, setUsers] = useState<User[]>([]);
     const [relationshipTypes, setRelationshipTypes] = useState<RelationshipType[]>([]);
     const [loading, setLoading] = useState(false);
@@ -110,6 +114,9 @@ export default function SendRequest({
                 body: JSON.stringify({
                     recipient_id: selectedUser.id,
                     relationship_type: relationshipType,
+                    ...(PARENT_CHILD_TYPES.includes(relationshipType) && otherParentId
+                        ? { other_parent_id: otherParentId }
+                        : {}),
                 }),
             });
 
@@ -117,6 +124,7 @@ export default function SendRequest({
                 setSuccess('Connection request sent successfully!');
                 setSelectedUser(null);
                 setRelationshipType('');
+                setOtherParentId(null);
                 setSearchQuery('');
                 setUsers([]);
 
@@ -269,6 +277,28 @@ export default function SendRequest({
                                 </small>
                             )}
                         </div>
+
+                        {/* Other Parent (conditional) */}
+                        {relationshipType && PARENT_CHILD_TYPES.includes(relationshipType) && spouses.length > 0 && (
+                            <div className="connections-form-group">
+                                <label className="connections-form-label">Other Parent (optional)</label>
+                                <select
+                                    className="connections-form-select"
+                                    value={otherParentId ?? ''}
+                                    onChange={(e) => setOtherParentId(e.target.value ? Number(e.target.value) : null)}
+                                >
+                                    <option value="">No other parent / Single parent</option>
+                                    {spouses.map((spouse) => (
+                                        <option key={spouse.id} value={spouse.id}>
+                                            {spouse.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                <small className="connections-form-hint">
+                                    Select the child's other parent to help with family tree grouping
+                                </small>
+                            </div>
+                        )}
 
                         {/* Submit Button */}
                         <button

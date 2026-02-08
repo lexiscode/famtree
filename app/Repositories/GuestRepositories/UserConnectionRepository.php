@@ -15,12 +15,13 @@ class UserConnectionRepository
      * This ensures the recipient must explicitly accept the request.
      * NO automatic acceptance is allowed under any circumstances.
      */
-    public function sendRequest(int $requesterId, int $recipientId, string $relationshipType): UserConnection
+    public function sendRequest(int $requesterId, int $recipientId, string $relationshipType, ?int $otherParentId = null): UserConnection
     {
         return UserConnection::create([
             'requester_user_id' => $requesterId,
             'recipient_user_id' => $recipientId,
             'relationship_type' => $relationshipType,
+            'other_parent_id' => $otherParentId,
             'status' => 'pending',  // Always pending - recipient must accept
             'requested_at' => now(),
         ]);

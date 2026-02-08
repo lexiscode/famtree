@@ -175,9 +175,13 @@ class ConnectionRequestController extends Controller
         $pendingRequestCount = $this->connectionRepository->getPendingRequestCount($userId);
         $sentRequestCount = $this->connectionRepository->getSentRequestCount($userId);
 
+        // Get active (non-divorced) spouses for "Other Parent" dropdown
+        $spouses = $this->getActiveSpouses($userId);
+
         return Inertia::render('GuestPages/AuthAccessPages/Connections/SendRequest', [
             'user' => $userProfile,
             'current_user_id' => $userId,
+            'spouses' => $spouses,
             'connectionCount' => $connectionCount,
             'pendingRequestCount' => $pendingRequestCount,
             'sentRequestCount' => $sentRequestCount,
@@ -196,6 +200,7 @@ class ConnectionRequestController extends Controller
         $validated = $request->validate([
             'recipient_id' => 'required|integer|exists:users,id',
             'relationship_type' => 'required|string',
+            'other_parent_id' => 'nullable|integer|exists:users,id',
         ]);
 
         try {
@@ -220,7 +225,8 @@ class ConnectionRequestController extends Controller
             $result = $this->connectionService->sendConnectionRequest(
                 $userId,
                 $recipientId,
-                $validated['relationship_type']
+                $validated['relationship_type'],
+                $validated['other_parent_id'] ?? null
             );
 
             return response()->json($result, 201);
@@ -350,6 +356,36 @@ class ConnectionRequestController extends Controller
                 'error' => $e->getMessage(),
             ], 404);
         }
+    }
+
+    /**
+     * Get active (non-divorced) spouses for the user
+     */
+    private function getActiveSpouses(int $userId): array
+    {
+        $connections = $this->connectionRepository->getConnections($userId);
+        $spouses = [];
+
+        foreach ($connections as $connection) {
+            if (!in_array($connection->relationship_type, ['wife', 'husband', 'partner'])) {
+                continue;
+            }
+            if ($connection->isDivorced()) {
+                continue;
+            }
+
+            $spouse = $connection->requester_user_id === $userId
+                ? $connection->recipient
+                : $connection->requester;
+
+            $spouses[] = [
+                'id' => $spouse->id,
+                'name' => trim($spouse->first_name . ' ' . $spouse->last_name),
+                'profile_image_url' => $spouse->profile_image_url,
+            ];
+        }
+
+        return $spouses;
     }
 
     /**

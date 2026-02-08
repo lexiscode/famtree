@@ -52,17 +52,20 @@ class ChildAccountService
         // Auto-create connection: parent → child based on parent and child genders
         $relationshipType = $this->determineRelationshipType($parent->gender, $childAccount->gender);
 
+        $otherParentId = $childData['other_parent_id'] ?? null;
+
         $this->connectionRepository->createConnection([
             'requester_user_id' => $parentId,
             'recipient_user_id' => $childAccount->id,
             'relationship_type' => $relationshipType,
+            'other_parent_id' => $otherParentId,
             'status' => 'accepted',
             'requested_at' => now(),
             'accepted_at' => now(),
         ]);
 
         // Auto-connect child with all of parent's existing connections
-        $this->autoConnectChildWithParentConnections($parent, $childAccount);
+        $this->autoConnectChildWithParentConnections($parent, $childAccount, $otherParentId);
 
         return [
             'child_account' => $childAccount,
@@ -82,7 +85,7 @@ class ChildAccountService
      * - Parent's other children → siblings of child (child is brother/sister)
      * - Parent's nieces/nephews → cousins of child
      */
-    private function autoConnectChildWithParentConnections(User $parent, User $child): void
+    private function autoConnectChildWithParentConnections(User $parent, User $child, ?int $otherParentId = null): void
     {
         // Get all accepted connections of the parent
         $parentConnections = $this->connectionRepository->getConnections($parent->id);
@@ -139,14 +142,23 @@ class ChildAccountService
             // Create the connection (from the connected person's perspective to the child)
             // The connected person is the "requester" and the child is the "recipient"
             // This way, the relationship_type represents what the child is TO the connected person
-            $this->connectionRepository->createConnection([
+            $connectionData = [
                 'requester_user_id' => $connectedUserId,
                 'recipient_user_id' => $child->id,
                 'relationship_type' => $childRelationshipType,
                 'status' => 'accepted',
                 'requested_at' => now(),
                 'accepted_at' => now(),
-            ]);
+            ];
+
+            // If this connected person is the other parent (spouse), set other_parent_id
+            // to the creating parent so the spouse-to-child connection also tracks the pair
+            if ($otherParentId && $connectedUserId === $otherParentId
+                && in_array($parentRelationshipType, ['wife', 'husband', 'partner'])) {
+                $connectionData['other_parent_id'] = $parent->id;
+            }
+
+            $this->connectionRepository->createConnection($connectionData);
         }
     }
 

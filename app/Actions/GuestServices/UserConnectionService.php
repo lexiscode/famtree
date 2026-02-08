@@ -25,7 +25,7 @@ class UserConnectionService
      * The recipient MUST explicitly accept the request before it becomes an accepted connection.
      * NO automatic acceptance is allowed, even for symmetric/bidirectional relationships.
      */
-    public function sendConnectionRequest(int $requesterId, int $recipientId, string $relationshipType): array
+    public function sendConnectionRequest(int $requesterId, int $recipientId, string $relationshipType, ?int $otherParentId = null): array
     {
         // Validate users exist
         $requester = $this->profileRepository->getProfile($requesterId);
@@ -72,7 +72,7 @@ class UserConnectionService
 
         // Create the connection request - ALWAYS with 'pending' status
         // The recipient must accept this request for it to become 'accepted'
-        $connection = $this->connectionRepository->sendRequest($requesterId, $recipientId, $relationshipType);
+        $connection = $this->connectionRepository->sendRequest($requesterId, $recipientId, $relationshipType, $otherParentId);
 
         return [
             'success' => true,

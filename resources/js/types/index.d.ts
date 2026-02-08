@@ -217,4 +217,5 @@ export interface RequestSentProps extends ConnectionPageBaseProps {
 
 export interface SendRequestProps extends ConnectionPageBaseProps {
     current_user_id: number;
+    spouses: Array<{ id: number; name: string; profile_image_url?: string }>;
 }
