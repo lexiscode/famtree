@@ -13,6 +13,7 @@ interface Node {
     nodeColor: string;
     shouldBlur?: boolean;
     spouseGroupId?: number | null;
+    childSpouseGroupId?: number | null;
 }
 
 interface Edge {
@@ -29,6 +30,13 @@ interface SpouseGroup {
     spouseId: number;
     isDivorced: boolean;
     childIds: number[];
+}
+
+interface ChildSpouseGroup {
+    childId: number;
+    spouseId: number;
+    isDivorced: boolean;
+    grandchildIds: number[];
 }
 
 interface ParentOtherSpouse {
@@ -55,6 +63,7 @@ interface TreeData {
     edges: Edge[];
     rootUserId: number;
     spouseGroups?: SpouseGroup[];
+    childSpouseGroups?: ChildSpouseGroup[];
     parentFamilyUnits?: ParentFamilyUnit[];
     parentConnection?: ParentConnection | null;
 }
@@ -87,6 +96,11 @@ const getAbbreviation = (label: string): string => {
         'step_sibling': 'StSb', 'step_parent': 'SP',
         'step mother': 'SM', 'step father': 'SF',
         'step brother': 'StBr', 'step sister': 'StSi',
+        'daughter_in_law': 'DIL', 'son_in_law': 'SIL',
+        'daughter-in-law': 'DIL', 'son-in-law': 'SIL',
+        'daughter in law': 'DIL', 'son in law': 'SIL',
+        'ex_daughter_in_law': 'xDIL', 'ex_son_in_law': 'xSIL',
+        'ex daughter-in-law': 'xDIL', 'ex son-in-law': 'xSIL',
     };
     return map[label.toLowerCase()] || label.charAt(0).toUpperCase();
 };
@@ -161,6 +175,12 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                 'niece': 1,
                 'cousin': 0,
 
+                // In-law relationships (same level as children)
+                'daughter_in_law': 1,
+                'son_in_law': 1,
+                'ex_daughter_in_law': 1,
+                'ex_son_in_law': 1,
+
                 // Step relationships
                 'step_mother': -1,
                 'step_father': -1,
@@ -186,12 +206,24 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
             });
         }
 
+        // Pre-collect node IDs managed by childSpouseGroups (positioned separately)
+        const childSpouseGroupNodeIds = new Set<number>();
+        if (treeData.childSpouseGroups) {
+            treeData.childSpouseGroups.forEach(group => {
+                childSpouseGroupNodeIds.add(group.spouseId);
+                group.grandchildIds.forEach(id => childSpouseGroupNodeIds.add(id));
+            });
+        }
+
         // Group nodes by their calculated level based on relationship type
         const levelMap: Record<number, number[]> = {};
 
         nodes.forEach(node => {
             // Skip nodes that belong to parentFamilyUnits (positioned in Phase 2)
             if (parentFamilyUnitNodeIds.has(node.id)) return;
+
+            // Skip nodes that belong to childSpouseGroups (positioned separately)
+            if (childSpouseGroupNodeIds.has(node.id)) return;
 
             const level = getRelationshipLevel(node.relationshipType);
 
@@ -461,6 +493,65 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                     nextSpouseX += nodeWidth;
                 });
             });
+        }
+
+        // Phase 2b: Position childSpouseGroup nodes (in-law spouses + grouped grandchildren)
+        if (treeData.childSpouseGroups && treeData.childSpouseGroups.length > 0) {
+            const childSpacing = 160;
+            const groupGap = 80;
+            const rowDropOffset = 200;
+
+            const csgBounds: { childId: number; spouseId: number; grandchildIds: number[]; minX: number; maxX: number; centerX: number; rowY: number }[] = [];
+
+            treeData.childSpouseGroups.forEach(group => {
+                const childPos = positions[group.childId];
+                if (!childPos) return;
+
+                // Place in-law spouse to the right of child (or left if divorced)
+                const spouseX = group.isDivorced
+                    ? childPos.x - nodeWidth
+                    : childPos.x + nodeWidth;
+                positions[group.spouseId] = { x: spouseX, y: childPos.y, level: 1 };
+
+                // Position grandchildren under midpoint of child + in-law
+                if (group.grandchildIds.length > 0) {
+                    const gcY = childPos.y + levelHeight;
+                    const midX = (childPos.x + spouseX) / 2;
+                    const groupWidth = (group.grandchildIds.length - 1) * childSpacing;
+
+                    group.grandchildIds.forEach((gcId, index) => {
+                        const x = midX + (index * childSpacing) - (groupWidth / 2);
+                        positions[gcId] = { x, y: gcY, level: 2 };
+                    });
+
+                    const xs = group.grandchildIds.map(id => positions[id].x);
+                    csgBounds.push({
+                        childId: group.childId,
+                        spouseId: group.spouseId,
+                        grandchildIds: group.grandchildIds,
+                        minX: Math.min(...xs),
+                        maxX: Math.max(...xs),
+                        centerX: midX,
+                        rowY: gcY,
+                    });
+                }
+            });
+
+            // Resolve overlaps between grandchild groups
+            csgBounds.sort((a, b) => a.centerX - b.centerX);
+            for (let i = 1; i < csgBounds.length; i++) {
+                const prev = csgBounds[i - 1];
+                const curr = csgBounds[i];
+                const overlap = (prev.maxX + groupGap) - curr.minX;
+
+                if (overlap > 0) {
+                    const newY = prev.rowY + rowDropOffset;
+                    curr.rowY = newY;
+                    curr.grandchildIds.forEach(gcId => {
+                        if (positions[gcId]) positions[gcId].y = newY;
+                    });
+                }
+            }
         }
 
         // Phase 3: Resolve overlaps between step-sibling groups and other nodes
@@ -834,10 +925,31 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                                 });
                             }
 
+                            // Collect child spouse group node IDs (rendered by child spouse group section)
+                            const csgSpouseIds = new Set<number>();
+                            const csgGrandchildIds = new Set<number>();
+                            if (treeData.childSpouseGroups) {
+                                treeData.childSpouseGroups.forEach(group => {
+                                    csgSpouseIds.add(group.spouseId);
+                                    group.grandchildIds.forEach(id => csgGrandchildIds.add(id));
+                                });
+                            }
+
                             return treeData.edges
                                 .filter(edge => {
                                     // Skip edges involving parent family unit nodes (rendered separately)
                                     if (pfuNodeIds.has(edge.source) || pfuNodeIds.has(edge.target)) {
+                                        return false;
+                                    }
+
+                                    // Skip edges where target is an in-law spouse (rendered by child spouse group)
+                                    if (csgSpouseIds.has(edge.target)) {
+                                        return false;
+                                    }
+
+                                    // Skip edges where target is a grandchild in a child spouse group
+                                    // (rendered as inverted triangle by child spouse group section)
+                                    if (csgGrandchildIds.has(edge.target)) {
                                         return false;
                                     }
 
@@ -1245,6 +1357,155 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                                         </g>
                                     );
                                 })}
+                            </g>
+                        );
+                    })}
+
+                    {/* Child Spouse Group connections: inverted triangles for child+in-law → grandchildren */}
+                    {treeData.childSpouseGroups && treeData.childSpouseGroups.map((group) => {
+                        const childPos = nodePositions[group.childId];
+                        const spousePos = nodePositions[group.spouseId];
+                        if (!childPos || !spousePos) return null;
+
+                        // Convert to SVG coordinates
+                        const childX = childPos.x - (minX || 0) + padding;
+                        const childY = childPos.y - (minY || 0) + padding;
+                        const spouseX = spousePos.x - (minX || 0) + padding;
+                        const spouseY = spousePos.y - (minY || 0) + padding;
+
+                        // Horizontal line from inner edges of child and spouse nodes
+                        const lineX1 = Math.min(childX, spouseX) + 60;
+                        const lineX2 = Math.max(childX, spouseX) - 60;
+                        const midSpX = (childX + spouseX) / 2;
+
+                        const spouseNode = treeData.nodes.find(n => n.id === group.spouseId);
+                        const spouseLabel = spouseNode?.relationshipType || '';
+                        const spouseAbbr = getAbbreviation(spouseLabel);
+                        const spouseFullLabel = capitalizeLabel(spouseLabel);
+                        const spouseBadgeW = spouseAbbr.length > 2 ? 42 : spouseAbbr.length > 1 ? 36 : 26;
+                        const spTooltipW = Math.max(spouseFullLabel.length * 7.5 + 24, 70);
+                        const spEdgeId = `csg-spouse-${group.childId}-${group.spouseId}`;
+                        const isSpHovered = hoveredEdge === spEdgeId;
+
+                        const spouseLineColor = group.isDivorced ? '#9CA3AF' : '#F472B6';
+                        const spouseLineOpacity = group.isDivorced ? 0.5 : 0.85;
+                        const spouseGlowOpacity = group.isDivorced ? 0.1 : 0.2;
+
+                        // Get grandchild positions
+                        const grandchildPositions = group.grandchildIds
+                            .map(gcId => {
+                                const pos = nodePositions[gcId];
+                                if (!pos) return null;
+                                return {
+                                    id: gcId,
+                                    x: pos.x - (minX || 0) + padding,
+                                    y: pos.y - (minY || 0) + padding,
+                                };
+                            })
+                            .filter(Boolean) as { id: number; x: number; y: number }[];
+
+                        const lineColor = group.isDivorced ? '#38BDF8' : '#667eea';
+                        const lineOpacity = group.isDivorced ? 0.8 : 0.85;
+                        const glowOpacity = group.isDivorced ? 0.15 : 0.2;
+
+                        // Junction and bar calculations for grandchildren
+                        let junctionY = 0;
+                        let gcMinX = 0;
+                        let gcMaxX = 0;
+                        let gcCenterX = midSpX;
+                        const parentBottomY = childY + 60;
+
+                        if (grandchildPositions.length > 0) {
+                            gcCenterX = grandchildPositions.reduce((sum, c) => sum + c.x, 0) / grandchildPositions.length;
+                            const gcTopY = Math.min(...grandchildPositions.map(c => c.y)) - 60;
+                            junctionY = gcTopY - 30;
+                            const gcXs = grandchildPositions.map(c => c.x);
+                            gcMinX = Math.min(...gcXs);
+                            gcMaxX = Math.max(...gcXs);
+                        }
+
+                        return (
+                            <g key={`csg-${group.childId}-${group.spouseId}`}>
+                                {/* Horizontal line from child to in-law spouse */}
+                                <line x1={lineX1} y1={childY} x2={lineX2} y2={spouseY} stroke={spouseLineColor} strokeWidth="4" opacity={spouseGlowOpacity} filter="blur(6px)" />
+                                <line
+                                    x1={lineX1} y1={childY} x2={lineX2} y2={spouseY}
+                                    stroke={spouseLineColor} strokeWidth="2.5" opacity={spouseLineOpacity}
+                                    strokeLinecap="round"
+                                    strokeDasharray={group.isDivorced ? '8,6' : undefined}
+                                />
+                                {/* In-law badge */}
+                                <g onMouseEnter={() => setHoveredEdge(spEdgeId)} onMouseLeave={() => setHoveredEdge(null)} style={{ cursor: 'pointer' }}>
+                                    {isSpHovered && <circle cx={midSpX} cy={childY} r="20" fill={spouseLineColor} opacity="0.2" filter="blur(8px)" />}
+                                    <rect x={midSpX - spouseBadgeW / 2} y={childY - 12} width={spouseBadgeW} height={24} fill="rgba(15, 23, 42, 0.95)" stroke={spouseLineColor} strokeWidth={isSpHovered ? '2' : '1.5'} rx="12" ry="12" />
+                                    <text x={midSpX} y={childY + 4} textAnchor="middle" fontSize="11" fontWeight="700" fill={spouseLineColor} style={{ letterSpacing: '0.5px' }}>{spouseAbbr}</text>
+                                    {isSpHovered && (
+                                        <g>
+                                            <rect x={midSpX - spTooltipW / 2} y={childY - 44} width={spTooltipW} height={26} fill={spouseLineColor} rx="13" ry="13" opacity="0.12" filter="blur(6px)" />
+                                            <rect x={midSpX - spTooltipW / 2} y={childY - 44} width={spTooltipW} height={26} fill="rgba(15, 23, 42, 0.98)" stroke={spouseLineColor} strokeWidth="1" rx="13" ry="13" />
+                                            <text x={midSpX} y={childY - 27} textAnchor="middle" fontSize="11" fontWeight="600" fill={spouseLineColor} style={{ letterSpacing: '0.3px' }}>{spouseFullLabel}</text>
+                                        </g>
+                                    )}
+                                </g>
+
+                                {/* Inverted triangle for grandchildren */}
+                                {grandchildPositions.length > 0 && (
+                                    <g>
+                                        {/* Line from child down to junction */}
+                                        <line x1={childX} y1={parentBottomY} x2={gcCenterX} y2={junctionY} stroke={lineColor} strokeWidth="4" opacity={glowOpacity} filter="blur(6px)" />
+                                        <line x1={childX} y1={parentBottomY} x2={gcCenterX} y2={junctionY} stroke={lineColor} strokeWidth="2.5" opacity={lineOpacity} strokeLinecap="round" />
+
+                                        {/* Line from in-law spouse down to junction */}
+                                        <line x1={spouseX} y1={parentBottomY} x2={gcCenterX} y2={junctionY} stroke={lineColor} strokeWidth="4" opacity={glowOpacity} filter="blur(6px)" />
+                                        <line x1={spouseX} y1={parentBottomY} x2={gcCenterX} y2={junctionY} stroke={lineColor} strokeWidth="2.5" opacity={lineOpacity} strokeLinecap="round" />
+
+                                        {/* Junction circle */}
+                                        <circle cx={gcCenterX} cy={junctionY} r="5" fill={lineColor} opacity={lineOpacity} />
+
+                                        {/* Horizontal bar if multiple grandchildren */}
+                                        {grandchildPositions.length > 1 && (
+                                            <>
+                                                <line x1={gcMinX} y1={junctionY} x2={gcMaxX} y2={junctionY} stroke={lineColor} strokeWidth="4" opacity={glowOpacity} filter="blur(6px)" />
+                                                <line x1={gcMinX} y1={junctionY} x2={gcMaxX} y2={junctionY} stroke={lineColor} strokeWidth="2.5" opacity={lineOpacity} strokeLinecap="round" />
+                                            </>
+                                        )}
+
+                                        {/* Vertical lines from bar to each grandchild with badges */}
+                                        {grandchildPositions.map(gc => {
+                                            const gcNode = treeData.nodes.find(n => n.id === gc.id);
+                                            const label = gcNode?.relationshipType || '';
+                                            const abbr = getAbbreviation(label);
+                                            const fullLabel = capitalizeLabel(label);
+                                            const badgeW = abbr.length > 2 ? 42 : abbr.length > 1 ? 36 : 26;
+                                            const badgeMidY = (junctionY + (gc.y - 60)) / 2;
+                                            const tooltipW = Math.max(fullLabel.length * 7.5 + 24, 70);
+                                            const edgeId = `csg-gc-${gc.id}`;
+                                            const isEdgeHovered = hoveredEdge === edgeId;
+
+                                            return (
+                                                <g key={edgeId}>
+                                                    {/* Glow */}
+                                                    <line x1={gc.x} y1={junctionY} x2={gc.x} y2={gc.y - 60} stroke={lineColor} strokeWidth="4" opacity={glowOpacity} filter="blur(6px)" />
+                                                    {/* Main line */}
+                                                    <line x1={gc.x} y1={junctionY} x2={gc.x} y2={gc.y - 60} stroke={lineColor} strokeWidth="2.5" opacity={lineOpacity} strokeLinecap="round" />
+                                                    {/* Badge */}
+                                                    <g onMouseEnter={() => setHoveredEdge(edgeId)} onMouseLeave={() => setHoveredEdge(null)} style={{ cursor: 'pointer' }}>
+                                                        {isEdgeHovered && <circle cx={gc.x} cy={badgeMidY} r="20" fill={lineColor} opacity="0.2" filter="blur(8px)" />}
+                                                        <rect x={gc.x - badgeW / 2} y={badgeMidY - 12} width={badgeW} height={24} fill="rgba(15, 23, 42, 0.95)" stroke={lineColor} strokeWidth={isEdgeHovered ? '2' : '1.5'} rx="12" ry="12" />
+                                                        <text x={gc.x} y={badgeMidY + 4} textAnchor="middle" fontSize="11" fontWeight="700" fill={lineColor} style={{ letterSpacing: '0.5px' }}>{abbr}</text>
+                                                        {isEdgeHovered && (
+                                                            <g>
+                                                                <rect x={gc.x - tooltipW / 2} y={badgeMidY - 44} width={tooltipW} height={26} fill={lineColor} rx="13" ry="13" opacity="0.12" filter="blur(6px)" />
+                                                                <rect x={gc.x - tooltipW / 2} y={badgeMidY - 44} width={tooltipW} height={26} fill="rgba(15, 23, 42, 0.98)" stroke={lineColor} strokeWidth="1" rx="13" ry="13" />
+                                                                <text x={gc.x} y={badgeMidY - 27} textAnchor="middle" fontSize="11" fontWeight="600" fill={lineColor} style={{ letterSpacing: '0.3px' }}>{fullLabel}</text>
+                                                            </g>
+                                                        )}
+                                                    </g>
+                                                </g>
+                                            );
+                                        })}
+                                    </g>
+                                )}
                             </g>
                         );
                     })}

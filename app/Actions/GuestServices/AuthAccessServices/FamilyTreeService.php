@@ -330,6 +330,71 @@ class FamilyTreeService
             ];
         }
 
+        // Build child spouse groups: for each child, find their in-law spouses and group grandchildren
+        $childSpouseGroups = [];
+        foreach ($childConnections as $childId) {
+            // Find in-law nodes connected to this child (from edges)
+            $childInLaws = [];
+            foreach ($edges as $edge) {
+                if ($edge['source'] === $childId &&
+                    in_array($edge['relationshipType'], ['daughter_in_law', 'son_in_law', 'ex_daughter_in_law', 'ex_son_in_law'])) {
+                    $childInLaws[] = [
+                        'spouseId' => $edge['target'],
+                        'isDivorced' => $edge['isDivorced'] ?? false,
+                    ];
+                }
+            }
+
+            foreach ($childInLaws as $inLaw) {
+                $groupGrandchildIds = [];
+
+                // Find grandchildren that belong to this child+in-law pair
+                foreach ($nodes as &$node) {
+                    if (!in_array($node['relationshipType'], ['grandson', 'granddaughter', 'grandchild'])) {
+                        continue;
+                    }
+
+                    // Check if this grandchild is connected to this child via edges
+                    $connectedToChild = false;
+                    foreach ($edges as $edge) {
+                        if ($edge['source'] === $childId && $edge['target'] === $node['id'] &&
+                            in_array($edge['relationshipType'], ['son', 'daughter', 'child', 'grandson', 'granddaughter', 'grandchild'])) {
+                            $connectedToChild = true;
+                            break;
+                        }
+                    }
+
+                    if (!$connectedToChild) {
+                        continue;
+                    }
+
+                    // Use other_parent_id on child→grandchild connection for precise matching
+                    $childToGrandchild = $this->connectionRepository->getConnectionBetween($node['id'], $childId);
+                    $matched = false;
+                    if ($childToGrandchild && $childToGrandchild->other_parent_id !== null) {
+                        $matched = ($childToGrandchild->other_parent_id === $inLaw['spouseId']);
+                    } else {
+                        // Fallback: check if grandchild is connected to the in-law spouse
+                        $grandchildToInLaw = $this->connectionRepository->getConnectionBetween($node['id'], $inLaw['spouseId']);
+                        $matched = ($grandchildToInLaw !== null);
+                    }
+
+                    if ($matched) {
+                        $groupGrandchildIds[] = $node['id'];
+                        $node['childSpouseGroupId'] = $inLaw['spouseId'];
+                    }
+                }
+                unset($node);
+
+                $childSpouseGroups[] = [
+                    'childId' => $childId,
+                    'spouseId' => $inLaw['spouseId'],
+                    'isDivorced' => $inLaw['isDivorced'],
+                    'grandchildIds' => $groupGrandchildIds,
+                ];
+            }
+        }
+
         // Step 3: Build parent family units (extended family through parents)
         // Unmark step-parents/siblings so addParentFamilyUnits can discover them through parent traversal
         foreach ($allStepIds as $stepId) {
@@ -371,6 +436,7 @@ class FamilyTreeService
             'edges' => $edges,
             'rootUserId' => $userId,
             'spouseGroups' => $spouseGroups,
+            'childSpouseGroups' => $childSpouseGroups,
             'parentFamilyUnits' => $parentFamilyUnits,
             'parentConnection' => $parentConnection,
         ];
@@ -681,8 +747,25 @@ class FamilyTreeService
                 $nodeRelationshipType = $secondLevelUser->gender === 'male' ? 'grandson' : 'granddaughter';
             }
 
+            // If first level is son/daughter and second level is their spouse, it's a child-in-law to root
+            if (in_array($firstLevelRelationship, ['son', 'daughter', 'child']) &&
+                in_array($relationshipType, ['wife', 'husband', 'partner'])) {
+                $nodeRelationshipType = $secondLevelUser->gender === 'female' ? 'daughter_in_law' : 'son_in_law';
+                $isDivorced = $connection->isDivorced();
+                if ($isDivorced) {
+                    $nodeRelationshipType = 'ex_' . $nodeRelationshipType;
+                }
+            }
+
             $nodes[] = $this->formatUserNode($secondLevelUser, $nodeRelationshipType);
             $processedUsers[$secondLevelUser->id] = true;
+
+            // Determine if this edge represents a divorced connection
+            $edgeIsDivorced = false;
+            if (in_array($firstLevelRelationship, ['son', 'daughter', 'child']) &&
+                in_array($relationshipType, ['wife', 'husband', 'partner'])) {
+                $edgeIsDivorced = $connection->isDivorced();
+            }
 
             // Create edge between the first level connection and second level user
             // Edge label shows the relationship from first level user's perspective
@@ -690,10 +773,10 @@ class FamilyTreeService
                 'id' => "edge-{$connectedUserId}-{$secondLevelUser->id}",
                 'source' => $connectedUserId,
                 'target' => $secondLevelUser->id,
-                'relationshipType' => $relationshipType,
-                'label' => $this->formatRelationshipLabel($relationshipType),
-                'color' => $this->getRelationshipColor($relationshipType),
-                'isDivorced' => false,
+                'relationshipType' => $nodeRelationshipType,
+                'label' => $this->formatRelationshipLabel($nodeRelationshipType),
+                'color' => $this->getRelationshipColor($nodeRelationshipType),
+                'isDivorced' => $edgeIsDivorced,
             ];
         }
     }
@@ -852,6 +935,10 @@ class FamilyTreeService
             'step_sister' => 'Step Sister',
             'step_sibling' => 'Step Sibling',
             'step_parent' => 'Step Parent',
+            'daughter_in_law' => 'Daughter-in-law',
+            'son_in_law' => 'Son-in-law',
+            'ex_daughter_in_law' => 'Ex Daughter-in-law',
+            'ex_son_in_law' => 'Ex Son-in-law',
         ];
 
         if (isset($labelMap[$relationshipType])) {
@@ -901,6 +988,10 @@ class FamilyTreeService
             'step_sister' => '#EF4444',  // Red
             'step_sibling' => '#8B5CF6', // Purple
             'step_parent' => '#6366F1',  // Indigo
+            'daughter_in_law' => '#F472B6', // Pink
+            'son_in_law' => '#06B6D4',     // Cyan
+            'ex_daughter_in_law' => '#9CA3AF', // Gray
+            'ex_son_in_law' => '#9CA3AF',     // Gray
         ];
 
         return $colorMap[$relationshipType] ?? '#64748B'; // Default gray
@@ -942,6 +1033,10 @@ class FamilyTreeService
             'aunt' => '#FED7AA',         // Light orange
             'grandfather' => '#E0E7FF',  // Light indigo
             'grandmother' => '#F3E8FF',  // Light violet
+            'daughter_in_law' => '#FCE7F3', // Light pink
+            'son_in_law' => '#CFFAFE',     // Light cyan
+            'ex_daughter_in_law' => '#F3F4F6', // Light gray
+            'ex_son_in_law' => '#F3F4F6',     // Light gray
         ];
 
         return $colorMap[$relationshipType] ?? '#F1F5F9'; // Default light gray
@@ -1143,6 +1238,7 @@ class FamilyTreeService
             'nodes' => $treeData['nodes'],
             'edges' => $treeData['edges'],
             'spouseGroups' => $treeData['spouseGroups'] ?? [],
+            'childSpouseGroups' => $treeData['childSpouseGroups'] ?? [],
             'parentFamilyUnits' => $treeData['parentFamilyUnits'] ?? [],
             'parentConnection' => $treeData['parentConnection'] ?? null,
         ];
