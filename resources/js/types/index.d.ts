@@ -189,6 +189,8 @@ export interface PendingRequest {
     relationship_type: string;
     relationship_label: string;
     requested_at: string;
+    other_parent?: { id: number; name: string; username: string; profile_image_url?: string } | null;
+    needs_other_parent?: boolean;
 }
 
 export interface ConnectionPageBaseProps {
@@ -208,6 +210,7 @@ export interface MyConnectionsProps extends ConnectionPageBaseProps {
 export interface PendingRequestsProps extends ConnectionPageBaseProps {
     requests: PendingRequest[];
     count: number;
+    spouses: Array<{ id: number; name: string; profile_image_url?: string }>;
 }
 
 export interface RequestSentProps extends ConnectionPageBaseProps {

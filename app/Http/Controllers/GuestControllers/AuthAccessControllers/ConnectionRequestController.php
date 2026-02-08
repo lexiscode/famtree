@@ -93,10 +93,14 @@ class ConnectionRequestController extends Controller
         $pendingRequestCount = $this->connectionRepository->getPendingRequestCount($userId);
         $sentRequestCount = $this->connectionRepository->getSentRequestCount($userId);
 
+        // Get active spouses for "Other Parent" dropdown on parent-child requests
+        $spouses = $this->getActiveSpouses($userId);
+
         return Inertia::render('GuestPages/AuthAccessPages/Connections/PendingRequests', [
             'user' => $userProfile,
             'requests' => $requestsData['requests'],
             'count' => $requestsData['count'],
+            'spouses' => $spouses,
             'connectionCount' => $connectionCount,
             'pendingRequestCount' => $pendingRequestCount,
             'sentRequestCount' => $sentRequestCount,
@@ -249,9 +253,10 @@ class ConnectionRequestController extends Controller
     public function accept(Request $request, int $connectionId)
     {
         $userId = $request->user()->id;
+        $otherParentId = $request->input('other_parent_id');
 
         try {
-            $result = $this->connectionService->acceptConnection($connectionId, $userId);
+            $result = $this->connectionService->acceptConnection($connectionId, $userId, $otherParentId ? (int) $otherParentId : null);
 
             return response()->json($result, 200);
         } catch (\Illuminate\Validation\ValidationException $e) {

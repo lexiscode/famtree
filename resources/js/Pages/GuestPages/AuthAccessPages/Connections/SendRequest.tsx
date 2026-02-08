@@ -19,7 +19,7 @@ interface RelationshipType {
     description: string;
 }
 
-const PARENT_CHILD_TYPES = ['father', 'mother', 'parent', 'son', 'daughter', 'child'];
+const CHILD_TYPES = ['son', 'daughter', 'child'];
 
 export default function SendRequest({
     user,
@@ -102,7 +102,7 @@ export default function SendRequest({
             return;
         }
 
-        if (PARENT_CHILD_TYPES.includes(relationshipType) && otherParentId === null) {
+        if (CHILD_TYPES.includes(relationshipType) && otherParentId === null) {
             setError('Please select the other parent');
             return;
         }
@@ -119,7 +119,7 @@ export default function SendRequest({
                 body: JSON.stringify({
                     recipient_id: selectedUser.id,
                     relationship_type: relationshipType,
-                    ...(PARENT_CHILD_TYPES.includes(relationshipType)
+                    ...(CHILD_TYPES.includes(relationshipType)
                         ? { other_parent_id: otherParentId === 0 ? null : otherParentId }
                         : {}),
                 }),
@@ -284,7 +284,7 @@ export default function SendRequest({
                         </div>
 
                         {/* Other Parent (conditional - mandatory for parent-child types) */}
-                        {relationshipType && PARENT_CHILD_TYPES.includes(relationshipType) && (
+                        {relationshipType && CHILD_TYPES.includes(relationshipType) && (
                             <div className="connections-form-group">
                                 <label className="connections-form-label">Other Parent</label>
                                 <select

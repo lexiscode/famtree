@@ -296,6 +296,16 @@ class RelationshipInferenceService
             return 'parent';
         }
 
+        // Gender-aware inverse: mother/father/parent → son/daughter/child based on requester gender
+        if ($relationshipType === 'mother' || $relationshipType === 'father' || $relationshipType === 'parent') {
+            if ($requesterGender === 'female') {
+                return 'daughter';
+            } elseif ($requesterGender === 'male') {
+                return 'son';
+            }
+            return 'child';
+        }
+
         // Gender-aware inverse for grandparent-grandchild relationships
         if ($relationshipType === 'grandson' || $relationshipType === 'granddaughter') {
             if ($requesterGender === 'female') {

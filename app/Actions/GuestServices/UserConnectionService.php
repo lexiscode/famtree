@@ -84,7 +84,7 @@ class UserConnectionService
     /**
      * Accept a connection request
      */
-    public function acceptConnection(int $connectionId, int $userId): array
+    public function acceptConnection(int $connectionId, int $userId, ?int $otherParentId = null): array
     {
         $connection = \App\Models\GuestModels\UserConnection::findOrFail($connectionId);
 
@@ -102,13 +102,81 @@ class UserConnectionService
             ]);
         }
 
+        // If the accepting parent specified the other parent, save it before accepting
+        if ($otherParentId !== null && !$connection->other_parent_id) {
+            $connection->other_parent_id = $otherParentId ?: null;
+            $connection->save();
+        }
+
         $this->connectionRepository->acceptRequest($connectionId);
+
+        // Auto-connect to other parent if specified on a parent-child connection
+        $this->autoConnectOtherParent($connection->fresh());
 
         return [
             'success' => true,
             'message' => 'Connection request accepted',
             'connection' => $connection->fresh(['requester', 'recipient']),
         ];
+    }
+
+    /**
+     * Auto-create an accepted connection to the other parent when a parent-child request is accepted.
+     * Skips if: no other_parent_id, not a parent-child type, or connection already exists.
+     */
+    private function autoConnectOtherParent(\App\Models\GuestModels\UserConnection $connection): void
+    {
+        // Only for parent-child connections with other_parent_id
+        if (!$connection->other_parent_id || !$connection->isParentChildConnection()) {
+            return;
+        }
+
+        // Determine who the child is in this connection
+        $childTypes = ['son', 'daughter', 'child'];
+        $parentTypes = ['father', 'mother', 'parent'];
+
+        if (in_array($connection->relationship_type, $childTypes)) {
+            // Requester labeled recipient as their child (son/daughter/child) → recipient is the child
+            $childUserId = $connection->recipient_user_id;
+            $senderParentId = $connection->requester_user_id;
+        } elseif (in_array($connection->relationship_type, $parentTypes)) {
+            // Requester labeled recipient as their parent (father/mother/parent) → requester is the child
+            $childUserId = $connection->requester_user_id;
+            $senderParentId = $connection->recipient_user_id;
+        } else {
+            return;
+        }
+
+        $otherParentId = $connection->other_parent_id;
+
+        // Skip if other parent is already connected to the child
+        $existingConnection = $this->connectionRepository->getConnectionBetween($otherParentId, $childUserId);
+        if ($existingConnection) {
+            return;
+        }
+
+        // Determine relationship type based on child's gender
+        $childUser = $this->profileRepository->getProfile($childUserId);
+        if (!$childUser) {
+            return;
+        }
+
+        $relationshipType = match ($childUser->gender) {
+            'male' => 'son',
+            'female' => 'daughter',
+            default => 'child',
+        };
+
+        // Create an accepted connection: other_parent → child
+        $this->connectionRepository->createConnection([
+            'requester_user_id' => $otherParentId,
+            'recipient_user_id' => $childUserId,
+            'relationship_type' => $relationshipType,
+            'other_parent_id' => $senderParentId,
+            'status' => 'accepted',
+            'requested_at' => now(),
+            'accepted_at' => now(),
+        ]);
     }
 
     /**
@@ -373,6 +441,23 @@ class UserConnectionService
             $connection->recipient->gender
         );
 
+        // Look up other parent info if specified
+        $otherParent = null;
+        if ($connection->other_parent_id) {
+            $otherParentUser = $this->profileRepository->getProfile($connection->other_parent_id);
+            if ($otherParentUser) {
+                $otherParent = [
+                    'id' => $otherParentUser->id,
+                    'name' => $otherParentUser->first_name . ' ' . $otherParentUser->last_name,
+                    'username' => $otherParentUser->username,
+                    'profile_image_url' => $otherParentUser->profile_image_url,
+                ];
+            }
+        }
+
+        // Flag: the receiving parent needs to select the other parent
+        $needsOtherParent = $connection->isParentChildConnection() && !$connection->other_parent_id;
+
         return [
             'id' => $connection->id,
             'requester' => [
@@ -391,6 +476,8 @@ class UserConnectionService
             'relationship_type' => $connection->relationship_type,
             'relationship_label' => $relationshipLabel,
             'requested_at' => $connection->requested_at,
+            'other_parent' => $otherParent,
+            'needs_other_parent' => $needsOtherParent,
         ];
     }
 
