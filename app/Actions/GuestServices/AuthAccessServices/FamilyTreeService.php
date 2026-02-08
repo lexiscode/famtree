@@ -470,8 +470,21 @@ class FamilyTreeService
 
                 // Parent's spouse who is NOT already a parent of root → step_mother/step_father
                 if (in_array($relType, ['wife', 'husband', 'partner'])) {
-                    // Check if this spouse is already a parent of the root user
+                    // Check if this spouse is already a parent of the root user (directly or via sibling)
                     if (in_array($otherUser->id, $parentIds) || in_array($otherUser->id, $rootSpouseIds)) {
+                        continue;
+                    }
+
+                    // Also skip if this spouse already appears in nodes as a parent type
+                    // (e.g. discovered through a sibling's second-level connections)
+                    $alreadyParentNode = false;
+                    foreach ($nodes as $node) {
+                        if ($node['id'] === $otherUser->id && in_array($node['relationshipType'], ['father', 'mother', 'parent'])) {
+                            $alreadyParentNode = true;
+                            break;
+                        }
+                    }
+                    if ($alreadyParentNode) {
                         continue;
                     }
 
