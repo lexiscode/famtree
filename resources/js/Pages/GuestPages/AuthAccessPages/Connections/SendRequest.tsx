@@ -102,6 +102,11 @@ export default function SendRequest({
             return;
         }
 
+        if (PARENT_CHILD_TYPES.includes(relationshipType) && otherParentId === null) {
+            setError('Please select the other parent');
+            return;
+        }
+
         setLoading(true);
 
         try {
@@ -114,8 +119,8 @@ export default function SendRequest({
                 body: JSON.stringify({
                     recipient_id: selectedUser.id,
                     relationship_type: relationshipType,
-                    ...(PARENT_CHILD_TYPES.includes(relationshipType) && otherParentId
-                        ? { other_parent_id: otherParentId }
+                    ...(PARENT_CHILD_TYPES.includes(relationshipType)
+                        ? { other_parent_id: otherParentId === 0 ? null : otherParentId }
                         : {}),
                 }),
             });
@@ -278,16 +283,17 @@ export default function SendRequest({
                             )}
                         </div>
 
-                        {/* Other Parent (conditional) */}
-                        {relationshipType && PARENT_CHILD_TYPES.includes(relationshipType) && spouses.length > 0 && (
+                        {/* Other Parent (conditional - mandatory for parent-child types) */}
+                        {relationshipType && PARENT_CHILD_TYPES.includes(relationshipType) && (
                             <div className="connections-form-group">
-                                <label className="connections-form-label">Other Parent (optional)</label>
+                                <label className="connections-form-label">Other Parent</label>
                                 <select
                                     className="connections-form-select"
-                                    value={otherParentId ?? ''}
-                                    onChange={(e) => setOtherParentId(e.target.value ? Number(e.target.value) : null)}
+                                    value={otherParentId === null ? '' : otherParentId}
+                                    onChange={(e) => setOtherParentId(e.target.value === '' ? null : Number(e.target.value))}
                                 >
-                                    <option value="">No other parent / Single parent</option>
+                                    <option value="" disabled>Select the other parent...</option>
+                                    <option value="0">No other parent / Single parent</option>
                                     {spouses.map((spouse) => (
                                         <option key={spouse.id} value={spouse.id}>
                                             {spouse.name}
@@ -295,7 +301,10 @@ export default function SendRequest({
                                     ))}
                                 </select>
                                 <small className="connections-form-hint">
-                                    Select the child's other parent to help with family tree grouping
+                                    {spouses.length > 0
+                                        ? 'Select the child\'s other parent to help with family tree grouping'
+                                        : 'If this child has another parent, first send a connection request to your spouse, then come back to select them here'
+                                    }
                                 </small>
                             </div>
                         )}

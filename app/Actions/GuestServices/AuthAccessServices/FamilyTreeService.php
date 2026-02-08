@@ -259,6 +259,12 @@ class FamilyTreeService
                 $childConnections[] = $connectedUser->id;
             } elseif (in_array($relationshipType, ['father', 'mother', 'parent'])) {
                 $parentConnections[] = $connectedUser->id;
+            } elseif (in_array($relationshipType, ['wife', 'husband', 'partner', 'ex_wife', 'ex_husband', 'ex_partner'])) {
+                // Spouses are excluded from second-level traversal.
+                // Their extended family (parents, siblings, other spouses, other children)
+                // should NOT appear in the root user's tree. Shared children are already
+                // direct connections of the root user.
+                continue;
             } else {
                 $otherConnections[] = $connectedUser->id;
             }
@@ -636,6 +642,14 @@ class FamilyTreeService
             // Skip siblings' children, siblings' spouses, and siblings' siblings (step-siblings) - don't show them in the tree
             if (in_array($firstLevelRelationship, ['brother', 'sister', 'sibling']) &&
                 in_array($relationshipType, ['son', 'daughter', 'child', 'nephew', 'niece', 'wife', 'husband', 'partner', 'brother', 'sister', 'sibling'])) {
+                continue;
+            }
+
+            // Skip children's siblings and parents - siblings are either already root's
+            // children (processed) or half-siblings from another parent (not in this tree).
+            // Parents are root user or root's spouse (already processed).
+            if (in_array($firstLevelRelationship, ['son', 'daughter', 'child']) &&
+                in_array($relationshipType, ['brother', 'sister', 'sibling', 'father', 'mother', 'parent'])) {
                 continue;
             }
 

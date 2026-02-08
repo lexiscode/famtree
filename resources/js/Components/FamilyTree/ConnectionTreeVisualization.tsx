@@ -205,6 +205,7 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
         const levelHeight = 200;
         const nodeWidth = 180;
         const levels = Object.keys(levelMap).map(Number).sort((a, b) => a - b);
+        let rootYOffset = 0; // tracks how far root was pushed down (for siblings gap)
 
         levels.forEach(level => {
             const nodesInLevel = levelMap[level];
@@ -241,21 +242,27 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                     return node && !['root', 'brother', 'sister', 'sibling', 'wife', 'husband', 'partner', 'ex_wife', 'ex_husband', 'ex_partner'].includes(node.relationshipType);
                 });
 
+                // Push root (and spouses) down when siblings exist, to give more room
+                // for the sibling connection line label. Track the offset so level 1
+                // children can be shifted by the same amount, preserving their gap.
+                rootYOffset = siblings.length > 0 ? 60 : 0;
+                const rootY = y + rootYOffset;
+
                 // Position root user at center (x = 0)
                 if (rootNode) {
-                    positions[rootNode] = { x: 0, y, level };
+                    positions[rootNode] = { x: 0, y: rootY, level };
                 }
 
                 // Position active spouses to the RIGHT of root (closest)
                 activeSpouses.forEach((nodeId, index) => {
                     const x = (index + 1) * nodeWidth;
-                    positions[nodeId] = { x, y, level };
+                    positions[nodeId] = { x, y: rootY, level };
                 });
 
                 // Position divorced spouses to the LEFT of root
                 divorcedSpouses.forEach((nodeId, index) => {
                     const x = -(index + 1) * nodeWidth;
-                    positions[nodeId] = { x, y, level };
+                    positions[nodeId] = { x, y: rootY, level };
                 });
 
                 // Position siblings on a dedicated row between root and parents
@@ -278,6 +285,8 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                 });
             } else if (level === 1 && treeData.spouseGroups && treeData.spouseGroups.length > 0) {
                 // Group children by spouseGroupId and center each group under midpoint of root + spouse
+                // Apply rootYOffset so children shift down with the root, preserving their gap
+                const childY = y + rootYOffset;
                 const rootPos = positions[rootUserId];
                 const childSpacing = 160; // spacing between children within a group
                 const groupGap = 80; // minimum gap between separate groups
@@ -311,7 +320,7 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
 
                         childIds.forEach((childId, index) => {
                             const x = centerX + (index * childSpacing) - (groupWidth / 2);
-                            positions[childId] = { x, y, level };
+                            positions[childId] = { x, y: childY, level };
                         });
 
                         const xs = childIds.map(id => positions[id].x);
@@ -321,7 +330,7 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                             minX: Math.min(...xs),
                             maxX: Math.max(...xs),
                             centerX,
-                            rowY: y,
+                            rowY: childY,
                         });
                     });
 
@@ -349,7 +358,7 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                         const groupWidth = (ungrouped.length - 1) * childSpacing;
                         ungrouped.forEach((childId, index) => {
                             const x = rootPos.x + (index * childSpacing) - (groupWidth / 2);
-                            positions[childId] = { x, y, level };
+                            positions[childId] = { x, y: childY, level };
                         });
                     }
                 } else {
@@ -357,7 +366,7 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                     const levelWidth = nodesInLevel.length * nodeWidth;
                     nodesInLevel.forEach((nodeId, index) => {
                         const x = (index * nodeWidth) - (levelWidth / 2) + (nodeWidth / 2);
-                        positions[nodeId] = { x, y, level };
+                        positions[nodeId] = { x, y: childY, level };
                     });
                 }
             } else if (level === -1) {
@@ -1536,7 +1545,8 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                     })()}
 
                     {/* Horizontal connection line between parents (showing married/divorced status) */}
-                    {treeData.parentConnection && (() => {
+                    {/* Only show when root user has no spouseGroups (child-as-center view) */}
+                    {treeData.parentConnection && (!treeData.spouseGroups || treeData.spouseGroups.length === 0) && (() => {
                         const p1Pos = nodePositions[treeData.parentConnection.parent1Id];
                         const p2Pos = nodePositions[treeData.parentConnection.parent2Id];
                         if (!p1Pos || !p2Pos) return null;
@@ -1596,8 +1606,8 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
 
                         const parX = parentPos.x - (minX || 0) + padding;
                         const parY = parentPos.y - (minY || 0) + padding;
-                        const parBottomY = parY + 60;
-                        const parTopY = parY - 60;
+                        const parBottomY = parY + 55;
+                        const parTopY = parY - 55;
 
                         const pfuColor = '#6366F1'; // Indigo for extended family
                         const pfuOpacity = 0.85;
