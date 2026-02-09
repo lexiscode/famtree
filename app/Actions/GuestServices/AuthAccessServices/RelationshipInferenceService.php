@@ -68,6 +68,72 @@ class RelationshipInferenceService
                 $targetUser?->gender
             );
 
+            // Divorce-aware handling
+            if ($firstConnection->isDivorced()) {
+                if (str_ends_with($inferredType['type'], '_in_law')) {
+                    // In-law through divorced ex-spouse → prefix with ex_
+                    $inferredType['type'] = 'ex_' . $inferredType['type'];
+                    $inferredType['label'] = $this->getRelationshipLabel($inferredType['type']);
+                } else {
+                    // Non-in-law through divorced ex-spouse → exclude entirely
+                    // Ex-spouse's new partner and children from new marriage are not related
+                    return null;
+                }
+            } elseif ($secondConnection->isDivorced()) {
+                if (str_ends_with($inferredType['type'], '_in_law')) {
+                    // In-law where the second hop is divorced → prefix with ex_
+                    $inferredType['type'] = 'ex_' . $inferredType['type'];
+                    $inferredType['label'] = $this->getRelationshipLabel($inferredType['type']);
+                } else {
+                    // Spouse's ex-spouse has no relationship to user → exclude
+                    return null;
+                }
+            }
+
+            // Step-child detection: spouse's children from a different parent
+            $childTypes = ['son', 'daughter', 'child'];
+            $spouseTypes = ['wife', 'husband', 'partner'];
+            $parentTypes = ['father', 'mother', 'parent'];
+            if (in_array($inferredType['type'], $childTypes) && in_array($firstType, $spouseTypes)) {
+                if ($secondConnection->other_parent_id && $secondConnection->other_parent_id !== $userId) {
+                    $stepType = match ($inferredType['type']) {
+                        'daughter' => 'step_daughter',
+                        'child' => 'step_child',
+                        default => 'step_son',
+                    };
+                    $inferredType['type'] = $stepType;
+                    $inferredType['label'] = $this->getRelationshipLabel($stepType);
+                }
+            }
+
+            // Step-parent detection: parent's spouse who isn't the user's other parent
+            if (in_array($inferredType['type'], $parentTypes) && in_array($firstType, $parentTypes)) {
+                if ($firstConnection->other_parent_id && $firstConnection->other_parent_id !== $targetUserId) {
+                    $stepType = match ($inferredType['type']) {
+                        'mother' => 'step_mother',
+                        'father' => 'step_father',
+                        default => 'step_father',
+                    };
+                    $inferredType['type'] = $stepType;
+                    $inferredType['label'] = $this->getRelationshipLabel($stepType);
+                }
+            }
+
+            // Step-sibling detection: parent's children from a different other parent
+            $siblingTypes = ['brother', 'sister', 'sibling'];
+            if (in_array($inferredType['type'], $siblingTypes) && in_array($firstType, $parentTypes)) {
+                if ($firstConnection->other_parent_id && $secondConnection->other_parent_id
+                    && $firstConnection->other_parent_id !== $secondConnection->other_parent_id) {
+                    $stepType = match ($inferredType['type']) {
+                        'sister' => 'step_sister',
+                        'sibling' => 'step_sibling',
+                        default => 'step_brother',
+                    };
+                    $inferredType['type'] = $stepType;
+                    $inferredType['label'] = $this->getRelationshipLabel($stepType);
+                }
+            }
+
             return [
                 'type' => $inferredType['type'],
                 'label' => $inferredType['label'],
@@ -156,21 +222,21 @@ class RelationshipInferenceService
             'sister_mother' => 'mother',
             'sister_father' => 'father',
 
-            // Child viewing parent's parent (grandparent inference)
-            // If I am X's son/daughter, and X's mother/father is Y, then Y is my grandmother/grandfather
-            'son_mother' => 'grandmother',
-            'son_father' => 'grandfather',
-            'daughter_mother' => 'grandmother',
-            'daughter_father' => 'grandfather',
+            // Parent viewing child's parent (co-parent inference)
+            // If X is my son/daughter, and X's mother/father is Y, then Y is my co-parent (wife/husband)
+            'son_mother' => 'wife',
+            'son_father' => 'husband',
+            'daughter_mother' => 'wife',
+            'daughter_father' => 'husband',
 
-            // Child viewing parent's spouse (other parent inference)
-            // If I am X's son/daughter, and X's wife/husband is Y, then Y is my mother/father
-            'son_wife' => 'mother',
-            'son_husband' => 'father',
-            'daughter_wife' => 'mother',
-            'daughter_husband' => 'father',
-            'child_wife' => 'mother',
-            'child_husband' => 'father',
+            // Parent viewing child's spouse (in-law inference)
+            // If X is my son/daughter, and X's wife/husband is Y, then Y is my daughter/son-in-law
+            'son_wife' => 'daughter_in_law',
+            'son_husband' => 'son_in_law',
+            'daughter_wife' => 'daughter_in_law',
+            'daughter_husband' => 'son_in_law',
+            'child_wife' => 'daughter_in_law',
+            'child_husband' => 'son_in_law',
 
             // Viewing parent's spouse (other parent inference)
             // If X is my father/mother, and X's wife/husband is Y, then Y is my mother/father
@@ -263,6 +329,26 @@ class RelationshipInferenceService
             'child_mother' => 'wife',
             'child_father' => 'husband',
 
+            // In-law relationships: via current spouse → their relatives
+            'wife_mother'     => 'mother_in_law',
+            'wife_father'     => 'father_in_law',
+            'wife_brother'    => 'brother_in_law',
+            'wife_sister'     => 'sister_in_law',
+            'husband_mother'  => 'mother_in_law',
+            'husband_father'  => 'father_in_law',
+            'husband_brother' => 'brother_in_law',
+            'husband_sister'  => 'sister_in_law',
+            'partner_mother'  => 'mother_in_law',
+            'partner_father'  => 'father_in_law',
+            'partner_brother' => 'brother_in_law',
+            'partner_sister'  => 'sister_in_law',
+
+            // In-law relationships: via sibling → their spouse
+            'brother_wife'    => 'sister_in_law',
+            'brother_husband' => 'brother_in_law',
+            'sister_wife'     => 'sister_in_law',
+            'sister_husband'  => 'brother_in_law',
+
             // Default fallbacks
             'child_child' => 'cousin',
             'son_child' => 'nephew',
@@ -336,6 +422,72 @@ class RelationshipInferenceService
             return 'nephew'; // fallback
         }
 
+        // Gender-aware inverse for step-child relationships
+        if ($relationshipType === 'step_son' || $relationshipType === 'step_daughter') {
+            if ($requesterGender === 'female') {
+                return 'step_mother';
+            } elseif ($requesterGender === 'male') {
+                return 'step_father';
+            }
+            return 'step_father'; // fallback
+        }
+
+        if ($relationshipType === 'step_mother' || $relationshipType === 'step_father') {
+            if ($requesterGender === 'female') {
+                return 'step_daughter';
+            } elseif ($requesterGender === 'male') {
+                return 'step_son';
+            }
+            return 'step_child'; // fallback
+        }
+
+        // Gender-aware inverse for in-law relationships
+        if ($relationshipType === 'mother_in_law' || $relationshipType === 'father_in_law') {
+            if ($requesterGender === 'female') {
+                return 'daughter_in_law';
+            } elseif ($requesterGender === 'male') {
+                return 'son_in_law';
+            }
+            return 'son_in_law'; // fallback
+        }
+
+        if ($relationshipType === 'sister_in_law' || $relationshipType === 'brother_in_law') {
+            if ($requesterGender === 'female') {
+                return 'sister_in_law';
+            } elseif ($requesterGender === 'male') {
+                return 'brother_in_law';
+            }
+            return 'brother_in_law'; // fallback
+        }
+
+        if ($relationshipType === 'son_in_law' || $relationshipType === 'daughter_in_law') {
+            if ($requesterGender === 'female') {
+                return 'mother_in_law';
+            } elseif ($requesterGender === 'male') {
+                return 'father_in_law';
+            }
+            return 'father_in_law'; // fallback
+        }
+
+        // Gender-aware inverse for ex-in-law relationships
+        if ($relationshipType === 'ex_mother_in_law' || $relationshipType === 'ex_father_in_law') {
+            if ($requesterGender === 'female') {
+                return 'ex_daughter_in_law';
+            } elseif ($requesterGender === 'male') {
+                return 'ex_son_in_law';
+            }
+            return 'ex_son_in_law'; // fallback
+        }
+
+        if ($relationshipType === 'ex_sister_in_law' || $relationshipType === 'ex_brother_in_law') {
+            if ($requesterGender === 'female') {
+                return 'ex_sister_in_law';
+            } elseif ($requesterGender === 'male') {
+                return 'ex_brother_in_law';
+            }
+            return 'ex_brother_in_law'; // fallback
+        }
+
         $inverseMap = [
             // Sibling relationships (gender-neutral)
             'sibling' => 'sibling',
@@ -394,12 +546,24 @@ class RelationshipInferenceService
             'partner' => 'Partner',
             'step_mother' => 'Step-mother',
             'step_father' => 'Step-father',
+            'step_son' => 'Step-son',
+            'step_daughter' => 'Step-daughter',
+            'step_brother' => 'Step-brother',
+            'step_sister' => 'Step-sister',
             'step_sibling' => 'Step-sibling',
             'step_child' => 'Step-child',
             'mother_in_law' => 'Mother-in-law',
             'father_in_law' => 'Father-in-law',
             'sister_in_law' => 'Sister-in-law',
             'brother_in_law' => 'Brother-in-law',
+            'son_in_law' => 'Son-in-law',
+            'daughter_in_law' => 'Daughter-in-law',
+            'ex_mother_in_law' => 'Ex-mother-in-law',
+            'ex_father_in_law' => 'Ex-father-in-law',
+            'ex_sister_in_law' => 'Ex-sister-in-law',
+            'ex_brother_in_law' => 'Ex-brother-in-law',
+            'ex_daughter_in_law' => 'Ex-daughter-in-law',
+            'ex_son_in_law' => 'Ex-son-in-law',
             'godparent' => 'Godparent',
             'godchild' => 'Godchild',
         ];

@@ -19,7 +19,7 @@ interface RelationshipType {
     description: string;
 }
 
-const CHILD_TYPES = ['son', 'daughter', 'child'];
+const CHILD_TYPES = ['son', 'daughter', 'child', 'step_son', 'step_daughter', 'step_child'];
 
 export default function SendRequest({
     user,

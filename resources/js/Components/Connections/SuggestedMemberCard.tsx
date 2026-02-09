@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ExternalLink, Send, Loader } from 'lucide-react';
 import { router } from '@inertiajs/react';
+import { toast } from 'react-toastify';
 
 interface InferredRelationship {
     type: string;
@@ -24,17 +25,27 @@ interface SuggestedMember {
     inferred_relationship: InferredRelationship;
 }
 
+interface Spouse {
+    id: number;
+    name: string;
+    profile_image_url: string | null;
+}
+
 interface Props {
     suggestion: SuggestedMember;
+    spouses: Spouse[];
     onConnectionRequested: (userId: number) => void;
 }
 
-export default function SuggestedMemberCard({ suggestion, onConnectionRequested }: Props) {
+const CHILD_TYPES = ['son', 'daughter', 'child', 'step_son', 'step_daughter', 'step_child'];
+
+export default function SuggestedMemberCard({ suggestion, spouses, onConnectionRequested }: Props) {
     const [loading, setLoading] = useState(false);
     const [showModal, setShowModal] = useState(false);
     const [selectedRelationshipType, setSelectedRelationshipType] = useState(
         suggestion.inferred_relationship.type
     );
+    const [otherParentId, setOtherParentId] = useState<number | null>(null);
 
     const getConfidenceColor = (confidence: number) => {
         if (confidence >= 90) return '#22c55e'; // Green
@@ -44,6 +55,11 @@ export default function SuggestedMemberCard({ suggestion, onConnectionRequested 
     };
 
     const handleSendRequest = async () => {
+        if (CHILD_TYPES.includes(selectedRelationshipType) && otherParentId === null) {
+            toast.error('Please select the other parent');
+            return;
+        }
+
         setLoading(true);
         try {
             const response = await fetch(route('connections.store'), {
@@ -55,6 +71,9 @@ export default function SuggestedMemberCard({ suggestion, onConnectionRequested 
                 body: JSON.stringify({
                     recipient_id: suggestion.id,
                     relationship_type: selectedRelationshipType,
+                    ...(CHILD_TYPES.includes(selectedRelationshipType)
+                        ? { other_parent_id: otherParentId === 0 ? null : otherParentId }
+                        : {}),
                 }),
             });
 
@@ -65,15 +84,14 @@ export default function SuggestedMemberCard({ suggestion, onConnectionRequested 
                     setShowModal(false);
                     onConnectionRequested(suggestion.id);
 
-                    // Show success message (you might want to use a toast notification here)
-                    console.log('Connection request sent successfully');
+                    toast.success('Connection request sent successfully!');
                 }
             } else {
                 const errorData = await response.json();
-                console.error('Error:', errorData.error);
+                toast.error(errorData.error || 'Failed to send connection request');
             }
         } catch (error) {
-            console.error('Error sending connection request:', error);
+            toast.error('Failed to send connection request');
         } finally {
             setLoading(false);
         }
@@ -174,7 +192,10 @@ export default function SuggestedMemberCard({ suggestion, onConnectionRequested 
                                     id="relationship-type"
                                     className="suggested-member-modal-select"
                                     value={selectedRelationshipType}
-                                    onChange={(e) => setSelectedRelationshipType(e.target.value)}
+                                    onChange={(e) => {
+                                        setSelectedRelationshipType(e.target.value);
+                                        setOtherParentId(null);
+                                    }}
                                 >
                                     <option value={suggestion.inferred_relationship.type}>
                                         {suggestion.inferred_relationship.label} (Suggested)
@@ -185,6 +206,33 @@ export default function SuggestedMemberCard({ suggestion, onConnectionRequested 
                                     <strong>{suggestion.inferred_relationship.label.toLowerCase()}</strong>.
                                 </p>
                             </div>
+
+                            {/* Other Parent (conditional - for child relationship types) */}
+                            {CHILD_TYPES.includes(selectedRelationshipType) && (
+                                <div className="suggested-member-modal-form" style={{ marginTop: '1rem' }}>
+                                    <label htmlFor="other-parent">Other Parent:</label>
+                                    <select
+                                        id="other-parent"
+                                        className="suggested-member-modal-select"
+                                        value={otherParentId === null ? '' : otherParentId}
+                                        onChange={(e) => setOtherParentId(e.target.value === '' ? null : Number(e.target.value))}
+                                    >
+                                        <option value="" disabled>Select the other parent...</option>
+                                        <option value="0">No other parent / Single parent</option>
+                                        {spouses.map((spouse) => (
+                                            <option key={spouse.id} value={spouse.id}>
+                                                {spouse.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <p className="suggested-member-modal-hint">
+                                        {spouses.length > 0
+                                            ? "Select the child's other parent to help with family tree grouping"
+                                            : 'If this child has another parent, first send a connection request to your spouse, then come back to select them here'
+                                        }
+                                    </p>
+                                </div>
+                            )}
                         </div>
 
                         <div className="suggested-member-modal-footer">

@@ -530,6 +530,8 @@ class UserConnectionService
             // Step relationships (different genders)
             'step_mother' => 'step_child',
             'step_father' => 'step_child',
+            'step_son' => ($recipientGender === 'male') ? 'step_father' : 'step_mother',
+            'step_daughter' => ($recipientGender === 'male') ? 'step_father' : 'step_mother',
             'step_sibling' => 'step_sibling',
             'step_child' => ($recipientGender === 'male') ? 'step_father' : 'step_mother',
 
@@ -538,6 +540,16 @@ class UserConnectionService
             'father_in_law' => 'child',
             'sister_in_law' => ($requesterGender === 'female') ? 'sister_in_law' : 'brother_in_law',
             'brother_in_law' => ($requesterGender === 'male') ? 'brother_in_law' : 'sister_in_law',
+            'daughter_in_law' => ($recipientGender === 'male') ? 'father_in_law' : 'mother_in_law',
+            'son_in_law' => ($recipientGender === 'male') ? 'father_in_law' : 'mother_in_law',
+
+            // Ex-in-law relationships
+            'ex_mother_in_law' => 'child',
+            'ex_father_in_law' => 'child',
+            'ex_sister_in_law' => ($requesterGender === 'female') ? 'ex_sister_in_law' : 'ex_brother_in_law',
+            'ex_brother_in_law' => ($requesterGender === 'male') ? 'ex_brother_in_law' : 'ex_sister_in_law',
+            'ex_daughter_in_law' => ($recipientGender === 'male') ? 'ex_father_in_law' : 'ex_mother_in_law',
+            'ex_son_in_law' => ($recipientGender === 'male') ? 'ex_father_in_law' : 'ex_mother_in_law',
 
             // Godparent - Godchild
             'godparent' => 'godchild',
@@ -590,6 +602,8 @@ class UserConnectionService
             // Step relationships (non-bidirectional)
             'step_mother' => 'step_child',
             'step_father' => 'step_child',
+            'step_son' => 'step_father',
+            'step_daughter' => 'step_mother',
             'step_sibling' => 'step_sibling',
             'step_child' => 'step_mother',
 
@@ -598,6 +612,16 @@ class UserConnectionService
             'father_in_law' => 'child',
             'sister_in_law' => 'sister_in_law',
             'brother_in_law' => 'brother_in_law',
+            'daughter_in_law' => 'mother_in_law',
+            'son_in_law' => 'father_in_law',
+
+            // Ex-in-law relationships (non-bidirectional)
+            'ex_mother_in_law' => 'child',
+            'ex_father_in_law' => 'child',
+            'ex_sister_in_law' => 'ex_sister_in_law',
+            'ex_brother_in_law' => 'ex_brother_in_law',
+            'ex_daughter_in_law' => 'ex_mother_in_law',
+            'ex_son_in_law' => 'ex_father_in_law',
 
             // Other relationships (non-bidirectional)
             'godparent' => 'godchild',
@@ -669,6 +693,8 @@ class UserConnectionService
             // Step relationships
             'step_mother' => ['female' => 'step_mother', 'male' => 'step_father'],
             'step_father' => ['male' => 'step_father', 'female' => 'step_mother'],
+            'step_son' => ['male' => 'step_son', 'female' => 'step_daughter'],
+            'step_daughter' => ['female' => 'step_daughter', 'male' => 'step_son'],
             'step_sibling' => ['male' => 'step_sibling', 'female' => 'step_sibling'],
             'step_child' => ['male' => 'step_son', 'female' => 'step_daughter'],
 
@@ -677,6 +703,16 @@ class UserConnectionService
             'brother_in_law' => ['male' => 'brother_in_law', 'female' => 'sister_in_law'],
             'mother_in_law' => ['female' => 'mother_in_law', 'male' => 'father_in_law'],
             'father_in_law' => ['male' => 'father_in_law', 'female' => 'mother_in_law'],
+            'daughter_in_law' => ['female' => 'daughter_in_law', 'male' => 'son_in_law'],
+            'son_in_law' => ['male' => 'son_in_law', 'female' => 'daughter_in_law'],
+
+            // Ex-in-law
+            'ex_sister_in_law' => ['female' => 'ex_sister_in_law', 'male' => 'ex_brother_in_law'],
+            'ex_brother_in_law' => ['male' => 'ex_brother_in_law', 'female' => 'ex_sister_in_law'],
+            'ex_mother_in_law' => ['female' => 'ex_mother_in_law', 'male' => 'ex_father_in_law'],
+            'ex_father_in_law' => ['male' => 'ex_father_in_law', 'female' => 'ex_mother_in_law'],
+            'ex_daughter_in_law' => ['female' => 'ex_daughter_in_law', 'male' => 'ex_son_in_law'],
+            'ex_son_in_law' => ['male' => 'ex_son_in_law', 'female' => 'ex_daughter_in_law'],
 
             // Godparent - Godchild (typically keep reciprocal roles)
             'godparent' => ['male' => 'godparent', 'female' => 'godparent'],
