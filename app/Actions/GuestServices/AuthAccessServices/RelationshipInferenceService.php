@@ -85,6 +85,14 @@ class RelationshipInferenceService
                 return null;
             }
 
+            // Divorce-through-intermediate: if the intermediate user is a child of
+            // divorced parents, and the user is on one parent's side while the target
+            // is on the other parent's side, exclude the suggestion. This covers
+            // paths where the user is the parent, sibling, uncle/aunt, etc.
+            if ($this->isExcludedByDivorcedParentage($userId, $targetUserId, $intermediateUserId)) {
+                return null;
+            }
+
             // Step-child detection: spouse's children from a different parent
             $childTypes = ['son', 'daughter', 'child'];
             $spouseTypes = ['wife', 'husband', 'partner'];
@@ -804,5 +812,97 @@ class RelationshipInferenceService
     public function getInferenceText(string $relationshipLabel): string
     {
         return "This person seems to be your " . strtolower($relationshipLabel);
+    }
+
+    /**
+     * Check if a suggestion should be excluded because the 2-hop path goes
+     * through a child of divorced parents, and the user and target are on
+     * different sides of the divorce.
+     *
+     * Covers: parent→child, uncle→nephew, grandparent→grandchild, etc.
+     */
+    private function isExcludedByDivorcedParentage(int $userId, int $targetUserId, int $intermediateUserId): bool
+    {
+        // Find parent-child connections where the intermediate is the child
+        $parentConnections = UserConnection::where('status', 'accepted')
+            ->whereNotNull('other_parent_id')
+            ->where(function ($q) use ($intermediateUserId) {
+                $q->where(function ($q) use ($intermediateUserId) {
+                    // Someone labeled the intermediate as their child
+                    $q->where('recipient_user_id', $intermediateUserId)
+                      ->whereIn('relationship_type', ['son', 'daughter', 'child']);
+                })->orWhere(function ($q) use ($intermediateUserId) {
+                    // The intermediate labeled someone as their parent
+                    $q->where('requester_user_id', $intermediateUserId)
+                      ->whereIn('relationship_type', ['father', 'mother', 'parent']);
+                });
+            })
+            ->get();
+
+        foreach ($parentConnections as $conn) {
+            // Identify the two parents
+            if (in_array($conn->relationship_type, ['son', 'daughter', 'child'])) {
+                $parentA = $conn->requester_user_id;
+            } else {
+                $parentA = $conn->recipient_user_id;
+            }
+            $parentB = $conn->other_parent_id;
+
+            // Check if these parents are divorced
+            $areDivorced = UserConnection::where('status', 'accepted')
+                ->whereNotNull('divorced_at')
+                ->where(function ($q) use ($parentA, $parentB) {
+                    $q->where(function ($q) use ($parentA, $parentB) {
+                        $q->where('requester_user_id', $parentA)
+                          ->where('recipient_user_id', $parentB);
+                    })->orWhere(function ($q) use ($parentA, $parentB) {
+                        $q->where('requester_user_id', $parentB)
+                          ->where('recipient_user_id', $parentA);
+                    });
+                })
+                ->exists();
+
+            if (!$areDivorced) {
+                continue;
+            }
+
+            // Determine which side the user is on (non-ex, non-divorced connection)
+            $userOnSideA = ($userId === $parentA) || $this->hasGenuineConnection($userId, $parentA);
+            $userOnSideB = ($userId === $parentB) || $this->hasGenuineConnection($userId, $parentB);
+
+            // Determine which side the target is on
+            $targetOnSideA = $this->hasGenuineConnection($targetUserId, $parentA);
+            $targetOnSideB = $this->hasGenuineConnection($targetUserId, $parentB);
+
+            // If user and target are on different sides → exclude
+            if ($userOnSideA && !$userOnSideB && $targetOnSideB) {
+                return true;
+            }
+            if ($userOnSideB && !$userOnSideA && $targetOnSideA) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if two users have a genuine (non-ex, non-divorced) accepted connection.
+     */
+    private function hasGenuineConnection(int $userId1, int $userId2): bool
+    {
+        return UserConnection::where('status', 'accepted')
+            ->whereNull('divorced_at')
+            ->where('relationship_type', 'not like', 'ex\\_%')
+            ->where(function ($q) use ($userId1, $userId2) {
+                $q->where(function ($q) use ($userId1, $userId2) {
+                    $q->where('requester_user_id', $userId1)
+                      ->where('recipient_user_id', $userId2);
+                })->orWhere(function ($q) use ($userId1, $userId2) {
+                    $q->where('requester_user_id', $userId2)
+                      ->where('recipient_user_id', $userId1);
+                });
+            })
+            ->exists();
     }
 }

@@ -394,18 +394,19 @@ class UserConnectionService
         $otherUser = $connection->requester_user_id === $userId ? $connection->recipient : $connection->requester;
         $isRequester = $connection->requester_user_id === $userId;
 
-        // Determine the correct relationship label based on who is viewing
+        // Determine the correct relationship type and label based on who is viewing
         // If the current user is the requester, use the stored relationship type as-is
         // If the current user is the recipient, use the inverse relationship
         if ($isRequester) {
             // User is the requester: use stored relationship type
+            $viewerType = $connection->relationship_type;
             $relationshipLabel = $connection->relationshipType?->label ?? $connection->relationship_type;
         } else {
             // User is the recipient: use inverse relationship
-            $inverseType = $this->connectionRepository->getRelationshipFromViewerPerspective($userId, $otherUser->id);
+            $viewerType = $this->connectionRepository->getRelationshipFromViewerPerspective($userId, $otherUser->id);
             // Look up the label for the inverse relationship type
-            $inverseRelationType = RelationshipType::where('type_key', $inverseType)->first();
-            $relationshipLabel = $inverseRelationType?->label ?? $inverseType;
+            $inverseRelationType = RelationshipType::where('type_key', $viewerType)->first();
+            $relationshipLabel = $inverseRelationType?->label ?? $viewerType;
         }
 
         return [
@@ -416,7 +417,7 @@ class UserConnectionService
                 'username' => $otherUser->username,
                 'profile_image_url' => $otherUser->profile_image_url,
             ],
-            'relationship_type' => $connection->relationship_type,
+            'relationship_type' => $viewerType,
             'relationship_label' => $relationshipLabel,
             'status' => $connection->status,
             'accepted_at' => $connection->accepted_at,
