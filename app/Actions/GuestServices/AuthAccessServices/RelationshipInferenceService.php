@@ -171,13 +171,13 @@ class RelationshipInferenceService
             if (is_array($result)) {
                 $inferred = $result;
             } else {
-                $inferred = ['type' => $result, 'confidence' => 85];
+                $inferred = ['type' => $result, 'confidence' => 99];
             }
         } else {
             // Fallback: default to the second relationship type if no specific rule
             $inferred = [
                 'type' => $secondRelationType,
-                'confidence' => 60,
+                'confidence' => 75,
             ];
         }
 
@@ -239,6 +239,14 @@ class RelationshipInferenceService
             'husband_daughter' => 'daughter',
             'wife_son' => 'son',
             'wife_daughter' => 'daughter',
+
+            // Spouse viewing spouse's grandchildren (my spouse's grandchild is my grandchild)
+            'husband_grandson'    => 'grandson',
+            'husband_granddaughter' => 'granddaughter',
+            'husband_grandchild'  => 'grandchild',
+            'wife_grandson'       => 'grandson',
+            'wife_granddaughter'  => 'granddaughter',
+            'wife_grandchild'     => 'grandchild',
 
             // Parent with child through siblings (parent viewing their children)
             'son_brother' => 'son',
@@ -305,7 +313,7 @@ class RelationshipInferenceService
             'parent_child' => 'grandparent',   // When both genders unknown
 
             // Extended relationships
-            'sibling_child' => ['type' => 'nephew', 'confidence' => 85], // or niece
+            'sibling_child' => ['type' => 'nephew', 'confidence' => 99], // or niece
             'sibling_mother' => 'mother',
             'sibling_father' => 'father',
 
@@ -338,6 +346,30 @@ class RelationshipInferenceService
             'brother_husband' => 'brother_in_law',
             'sister_wife'     => 'sister_in_law',
             'sister_husband'  => 'brother_in_law',
+
+            // In-law relationships: via sibling → their in-laws (sibling's in-laws are your in-laws)
+            'brother_mother_in_law'  => 'mother_in_law',
+            'brother_father_in_law'  => 'father_in_law',
+            'brother_brother_in_law' => 'brother_in_law',
+            'brother_sister_in_law'  => 'sister_in_law',
+            'sister_mother_in_law'   => 'mother_in_law',
+            'sister_father_in_law'   => 'father_in_law',
+            'sister_brother_in_law'  => 'brother_in_law',
+            'sister_sister_in_law'   => 'sister_in_law',
+
+            // In-law relationships: via parent → their in-laws (parent's in-laws are your in-laws)
+            'son_mother_in_law'      => 'mother_in_law',
+            'son_father_in_law'      => 'father_in_law',
+            'son_brother_in_law'     => 'brother_in_law',
+            'son_sister_in_law'      => 'sister_in_law',
+            'daughter_mother_in_law' => 'mother_in_law',
+            'daughter_father_in_law' => 'father_in_law',
+            'daughter_brother_in_law'=> 'brother_in_law',
+            'daughter_sister_in_law' => 'sister_in_law',
+            'child_mother_in_law'    => 'mother_in_law',
+            'child_father_in_law'    => 'father_in_law',
+            'child_brother_in_law'   => 'brother_in_law',
+            'child_sister_in_law'    => 'sister_in_law',
 
             // In-law relationships: via in-law parent → their children/grandchildren
             'father_in_law_son'           => 'brother_in_law',
