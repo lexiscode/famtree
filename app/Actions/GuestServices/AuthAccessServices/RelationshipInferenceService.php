@@ -74,6 +74,11 @@ class RelationshipInferenceService
                 $targetUser?->gender
             );
 
+            // Excluded chains: no kinship term exists for this combination
+            if ($inferredType['type'] === '_exclude') {
+                return null;
+            }
+
             // Divorce-aware handling: if either connection is divorced, the chain
             // goes through a dissolved marriage — exclude entirely.
             if ($firstConnection->isDivorced() || $secondConnection->isDivorced()) {
@@ -164,8 +169,13 @@ class RelationshipInferenceService
         // Create a key from the two relationship types
         $key = $firstRelationType . '_' . $secondRelationType;
 
-        if (isset($inferenceMap[$key])) {
+        if (array_key_exists($key, $inferenceMap)) {
             $result = $inferenceMap[$key];
+
+            // Null means "no kinship term exists" — exclude this suggestion
+            if ($result === null) {
+                return ['type' => '_exclude', 'confidence' => 0, 'label' => '', 'reasoning' => null];
+            }
 
             // Handle gender-specific outcomes
             if (is_array($result)) {
@@ -296,6 +306,54 @@ class RelationshipInferenceService
             'sister_nephew' => 'cousin',
             'sister_niece' => 'cousin',
 
+            // First cousin relationships (parent's sibling's child)
+            'father_nephew' => 'first_cousin',
+            'father_niece' => 'first_cousin',
+            'mother_nephew' => 'first_cousin',
+            'mother_niece' => 'first_cousin',
+            'uncle_son' => 'first_cousin',
+            'uncle_daughter' => 'first_cousin',
+            'uncle_child' => 'first_cousin',
+            'aunt_son' => 'first_cousin',
+            'aunt_daughter' => 'first_cousin',
+            'aunt_child' => 'first_cousin',
+
+            // Second cousin relationships (cousin's child)
+            'first_cousin_son' => 'second_cousin',
+            'first_cousin_daughter' => 'second_cousin',
+            'first_cousin_child' => 'second_cousin',
+            'cousin_son' => 'second_cousin',
+            'cousin_daughter' => 'second_cousin',
+            'cousin_child' => 'second_cousin',
+
+            // Great-grandparent relationships (grandparent → parent)
+            'grandmother_mother' => 'great_grandmother',
+            'grandmother_father' => 'great_grandfather',
+            'grandfather_mother' => 'great_grandmother',
+            'grandfather_father' => 'great_grandfather',
+            'grandparent_mother' => 'great_grandmother',
+            'grandparent_father' => 'great_grandfather',
+
+            // Great-grandchild relationships (grandchild → child)
+            'grandson_son' => 'great_grandson',
+            'grandson_daughter' => 'great_granddaughter',
+            'granddaughter_son' => 'great_grandson',
+            'granddaughter_daughter' => 'great_granddaughter',
+            'grandchild_son' => 'great_grandson',
+            'grandchild_daughter' => 'great_granddaughter',
+
+            // Great-great-grandparent relationships (great-grandparent → parent)
+            'great_grandmother_mother' => 'great_great_grandmother',
+            'great_grandmother_father' => 'great_great_grandfather',
+            'great_grandfather_mother' => 'great_great_grandmother',
+            'great_grandfather_father' => 'great_great_grandfather',
+
+            // Great-great-grandchild relationships (great-grandchild → child)
+            'great_grandson_son' => 'great_great_grandson',
+            'great_grandson_daughter' => 'great_great_granddaughter',
+            'great_granddaughter_son' => 'great_great_grandson',
+            'great_granddaughter_daughter' => 'great_great_granddaughter',
+
             // Cousin relationships
             'brother_cousin' => 'cousin',
             'sister_cousin' => 'cousin',
@@ -389,6 +447,26 @@ class RelationshipInferenceService
             'sister_in_law_son'        => 'nephew',
             'sister_in_law_daughter'   => 'niece',
 
+            // In-law relationships: via in-law sibling → their in-laws (extended in-laws)
+            'brother_in_law_father_in_law'  => 'father_in_law',
+            'brother_in_law_mother_in_law'  => 'mother_in_law',
+            'brother_in_law_brother_in_law' => 'brother_in_law',
+            'brother_in_law_sister_in_law'  => 'sister_in_law',
+            'sister_in_law_father_in_law'   => 'father_in_law',
+            'sister_in_law_mother_in_law'   => 'mother_in_law',
+            'sister_in_law_brother_in_law'  => 'brother_in_law',
+            'sister_in_law_sister_in_law'   => 'sister_in_law',
+
+            // In-law relationships: via in-law sibling → their family
+            'sister_in_law_father'  => 'father_in_law',
+            'sister_in_law_mother'  => 'mother_in_law',
+            'sister_in_law_brother' => 'brother_in_law',
+            'sister_in_law_sister'  => 'sister_in_law',
+            'brother_in_law_father' => 'father_in_law',
+            'brother_in_law_mother' => 'mother_in_law',
+            'brother_in_law_brother' => 'brother_in_law',
+            'brother_in_law_sister'  => 'sister_in_law',
+
             // Via spouse → their nephew/niece (husband's brother's child)
             'husband_nephew'  => 'nephew',
             'husband_niece'   => 'niece',
@@ -396,6 +474,24 @@ class RelationshipInferenceService
             'wife_niece'      => 'niece',
             'partner_nephew'  => 'nephew',
             'partner_niece'   => 'niece',
+
+            // Uncle/Aunt by marriage: uncle/aunt's spouse's siblings
+            'uncle_brother_in_law' => 'uncle_by_marriage',
+            'uncle_sister_in_law'  => 'aunt_by_marriage',
+            'aunt_brother_in_law'  => 'uncle_by_marriage',
+            'aunt_sister_in_law'   => 'aunt_by_marriage',
+
+            // Uncle/Aunt's spouse (uncle's wife = aunt by marriage, etc.)
+            'uncle_wife'    => 'aunt_by_marriage',
+            'uncle_husband' => 'uncle_by_marriage',
+            'aunt_husband'  => 'uncle_by_marriage',
+            'aunt_wife'     => 'aunt_by_marriage',
+
+            // Exclude: uncle/aunt's spouse's parents (no English kinship term)
+            'uncle_father_in_law'  => null,
+            'uncle_mother_in_law'  => null,
+            'aunt_father_in_law'   => null,
+            'aunt_mother_in_law'   => null,
 
             // Default fallbacks
             'child_child' => 'cousin',
@@ -450,6 +546,44 @@ class RelationshipInferenceService
             return 'grandparent';
         }
 
+        // Gender-aware inverse for great-grandparent-great-grandchild relationships
+        if ($relationshipType === 'great_grandson' || $relationshipType === 'great_granddaughter') {
+            if ($requesterGender === 'female') {
+                return 'great_grandmother';
+            } elseif ($requesterGender === 'male') {
+                return 'great_grandfather';
+            }
+            return 'great_grandparent';
+        }
+
+        if ($relationshipType === 'great_grandmother' || $relationshipType === 'great_grandfather') {
+            if ($requesterGender === 'female') {
+                return 'great_granddaughter';
+            } elseif ($requesterGender === 'male') {
+                return 'great_grandson';
+            }
+            return 'great_grandchild';
+        }
+
+        // Gender-aware inverse for great-great-grandparent-great-great-grandchild relationships
+        if ($relationshipType === 'great_great_grandson' || $relationshipType === 'great_great_granddaughter') {
+            if ($requesterGender === 'female') {
+                return 'great_great_grandmother';
+            } elseif ($requesterGender === 'male') {
+                return 'great_great_grandfather';
+            }
+            return 'great_great_grandparent';
+        }
+
+        if ($relationshipType === 'great_great_grandmother' || $relationshipType === 'great_great_grandfather') {
+            if ($requesterGender === 'female') {
+                return 'great_great_granddaughter';
+            } elseif ($requesterGender === 'male') {
+                return 'great_great_grandson';
+            }
+            return 'great_great_grandchild';
+        }
+
         // Gender-aware inverse for niece/nephew
         if ($relationshipType === 'niece' || $relationshipType === 'nephew') {
             if ($requesterGender === 'female') {
@@ -468,6 +602,26 @@ class RelationshipInferenceService
                 return 'nephew';
             }
             return 'nephew'; // fallback
+        }
+
+        // Gender-aware inverse for uncle/aunt by marriage
+        if ($relationshipType === 'uncle_by_marriage' || $relationshipType === 'aunt_by_marriage') {
+            if ($requesterGender === 'female') {
+                return 'niece_by_marriage';
+            } elseif ($requesterGender === 'male') {
+                return 'nephew_by_marriage';
+            }
+            return 'nephew_by_marriage'; // fallback
+        }
+
+        // Gender-aware inverse for nephew/niece by marriage
+        if ($relationshipType === 'nephew_by_marriage' || $relationshipType === 'niece_by_marriage') {
+            if ($requesterGender === 'female') {
+                return 'aunt_by_marriage';
+            } elseif ($requesterGender === 'male') {
+                return 'uncle_by_marriage';
+            }
+            return 'uncle_by_marriage'; // fallback
         }
 
         // Gender-aware inverse for step-child relationships
@@ -552,6 +706,13 @@ class RelationshipInferenceService
 
             // Extended family (aunt/uncle and niece/nephew are handled by gender-aware logic above)
             'cousin' => 'cousin',
+            'first_cousin' => 'first_cousin',
+            'second_cousin' => 'second_cousin',
+            'third_cousin' => 'third_cousin',
+
+            // Great-grandparent (gender-aware handled above, these are fallbacks)
+            'great_grandchild' => 'great_grandparent',
+            'great_great_grandchild' => 'great_great_grandparent',
 
             // Spousal
             'wife' => 'husband',
@@ -583,12 +744,29 @@ class RelationshipInferenceService
             'granddaughter' => 'Granddaughter',
             'aunt' => 'Aunt',
             'uncle' => 'Uncle',
+            'uncle_by_marriage' => 'Uncle (by marriage)',
+            'aunt_by_marriage' => 'Aunt (by marriage)',
+            'nephew_by_marriage' => 'Nephew (by marriage)',
+            'niece_by_marriage' => 'Niece (by marriage)',
             'niece' => 'Niece',
             'nephew' => 'Nephew',
             'cousin' => 'Cousin',
+            'first_cousin' => 'First Cousin',
+            'second_cousin' => 'Second Cousin',
+            'third_cousin' => 'Third Cousin',
             'child' => 'Child',
             'sibling' => 'Sibling',
             'grandchild' => 'Grandchild',
+            'great_grandmother' => 'Great-grandmother',
+            'great_grandfather' => 'Great-grandfather',
+            'great_grandchild' => 'Great-grandchild',
+            'great_grandson' => 'Great-grandson',
+            'great_granddaughter' => 'Great-granddaughter',
+            'great_great_grandmother' => 'Great-great-grandmother',
+            'great_great_grandfather' => 'Great-great-grandfather',
+            'great_great_grandchild' => 'Great-great-grandchild',
+            'great_great_grandson' => 'Great-great-grandson',
+            'great_great_granddaughter' => 'Great-great-granddaughter',
             'wife' => 'Wife',
             'husband' => 'Husband',
             'partner' => 'Partner',

@@ -130,7 +130,7 @@ class SuggestedConnectionService
             })
             ->unique('type')
             ->filter(function ($item) {
-                return $item['type'] !== null;
+                return $item['type'] !== null && $item['type'] !== 'cousin';
             })
             ->values()
             ->toArray();

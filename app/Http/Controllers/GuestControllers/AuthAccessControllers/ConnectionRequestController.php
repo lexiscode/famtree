@@ -438,7 +438,7 @@ class ConnectionRequestController extends Controller
      */
     public function relationshipTypes()
     {
-        $types = \App\Models\GuestModels\RelationshipType::whereNotIn('type_key', ['child', 'partner', 'godparent', 'godchild', 'step_child'])
+        $types = \App\Models\GuestModels\RelationshipType::whereNotIn('type_key', ['child', 'partner', 'cousin', 'godparent', 'godchild', 'step_child'])
             ->orderBy('sort_order')
             ->get()
             ->map(function ($type) {

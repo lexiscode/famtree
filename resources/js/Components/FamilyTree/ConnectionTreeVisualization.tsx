@@ -85,8 +85,14 @@ const getAbbreviation = (label: string): string => {
         'wife': 'W', 'husband': 'H', 'son': 'S', 'daughter': 'D',
         'mother': 'M', 'father': 'F', 'brother': 'Br', 'sister': 'Si',
         'grandson': 'GS', 'granddaughter': 'GD', 'grandmother': 'GM', 'grandfather': 'GF',
-        'aunt': 'Au', 'uncle': 'Un', 'nephew': 'Ne', 'niece': 'Ni',
-        'cousin': 'Co', 'partner': 'P', 'parent': 'Pa', 'child': 'Ch',
+        'great_grandmother': 'GGM', 'great_grandfather': 'GGF',
+        'great_grandchild': 'GGC', 'great_grandson': 'GGS', 'great_granddaughter': 'GGD',
+        'great_great_grandmother': 'GGGM', 'great_great_grandfather': 'GGGF',
+        'great_great_grandchild': 'GGGC', 'great_great_grandson': 'GGGS', 'great_great_granddaughter': 'GGGD',
+        'aunt': 'Au', 'uncle': 'Un', 'uncle_by_marriage': 'UbM', 'aunt_by_marriage': 'AbM',
+        'nephew': 'Ne', 'niece': 'Ni', 'nephew_by_marriage': 'NbM', 'niece_by_marriage': 'NibM',
+        'cousin': 'Co', 'first_cousin': '1Co', 'second_cousin': '2Co', 'third_cousin': '3Co',
+        'partner': 'P', 'parent': 'Pa', 'child': 'Ch',
         'sibling': 'Sb', 'grandparent': 'GP', 'grandchild': 'GC',
         'ex_wife': 'PS', 'ex_husband': 'PS', 'ex_partner': 'PS',
         'ex wife': 'PS', 'ex husband': 'PS', 'ex partner': 'PS',
@@ -176,12 +182,37 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                 'granddaughter': 2,
                 'grandchild': 2,
 
+                // Great-grandparents (3 levels above)
+                'great_grandmother': -3,
+                'great_grandfather': -3,
+
+                // Great-grandchildren (3 levels below)
+                'great_grandchild': 3,
+                'great_grandson': 3,
+                'great_granddaughter': 3,
+
+                // Great-great-grandparents (4 levels above)
+                'great_great_grandmother': -4,
+                'great_great_grandfather': -4,
+
+                // Great-great-grandchildren (4 levels below)
+                'great_great_grandchild': 4,
+                'great_great_grandson': 4,
+                'great_great_granddaughter': 4,
+
                 // Extended family at appropriate levels
                 'aunt': -1,
                 'uncle': -1,
+                'uncle_by_marriage': -1,
+                'aunt_by_marriage': -1,
                 'nephew': 1,
                 'niece': 1,
+                'nephew_by_marriage': 1,
+                'niece_by_marriage': 1,
                 'cousin': 0,
+                'first_cousin': 0,
+                'second_cousin': 0,
+                'third_cousin': 0,
 
                 // In-law relationships (same level as children)
                 'daughter_in_law': 1,

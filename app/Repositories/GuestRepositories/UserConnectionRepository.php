@@ -272,10 +272,27 @@ class UserConnectionRepository
             'brother' => ['brother', 'sister'],
             'sister' => ['brother', 'sister'],
             'cousin' => ['cousin'],
+            'first_cousin' => ['first_cousin'],
+            'second_cousin' => ['second_cousin'],
+            'third_cousin' => ['third_cousin'],
             'aunt' => ['nephew', 'niece'],
             'uncle' => ['nephew', 'niece'],
+            'uncle_by_marriage' => ['nephew_by_marriage', 'niece_by_marriage'],
+            'aunt_by_marriage' => ['nephew_by_marriage', 'niece_by_marriage'],
             'nephew' => ['aunt', 'uncle'],
             'niece' => ['aunt', 'uncle'],
+            'nephew_by_marriage' => ['uncle_by_marriage', 'aunt_by_marriage'],
+            'niece_by_marriage' => ['uncle_by_marriage', 'aunt_by_marriage'],
+            'great_grandmother' => ['great_grandson', 'great_granddaughter', 'great_grandchild'],
+            'great_grandfather' => ['great_grandson', 'great_granddaughter', 'great_grandchild'],
+            'great_grandson' => ['great_grandmother', 'great_grandfather'],
+            'great_granddaughter' => ['great_grandmother', 'great_grandfather'],
+            'great_grandchild' => ['great_grandmother', 'great_grandfather'],
+            'great_great_grandmother' => ['great_great_grandson', 'great_great_granddaughter', 'great_great_grandchild'],
+            'great_great_grandfather' => ['great_great_grandson', 'great_great_granddaughter', 'great_great_grandchild'],
+            'great_great_grandson' => ['great_great_grandmother', 'great_great_grandfather'],
+            'great_great_granddaughter' => ['great_great_grandmother', 'great_great_grandfather'],
+            'great_great_grandchild' => ['great_great_grandmother', 'great_great_grandfather'],
         ];
 
         return $inverseMap[$relationshipType] ?? [];
@@ -463,85 +480,151 @@ class UserConnectionRepository
      */
     private function getInverseRelationship(string $relationshipType, ?string $requesterGender = null, ?string $recipientGender = null): string
     {
-        // For son/daughter relationships, determine parent gender based on requester
-        if (($relationshipType === 'son' || $relationshipType === 'daughter') && $requesterGender) {
-            return $requesterGender === 'male' ? 'father' : 'mother';
+        // Gender-aware inverse: parent-child
+        if (in_array($relationshipType, ['son', 'daughter', 'child'])) {
+            if ($requesterGender === 'male') return 'father';
+            if ($requesterGender === 'female') return 'mother';
+            return 'parent';
+        }
+        if (in_array($relationshipType, ['mother', 'father', 'parent'])) {
+            if ($requesterGender === 'male') return 'son';
+            if ($requesterGender === 'female') return 'daughter';
+            return 'child';
         }
 
-        // For mother/father relationships, determine child gender based on requester
-        if (($relationshipType === 'mother' || $relationshipType === 'father') && $requesterGender) {
-            return $requesterGender === 'male' ? 'son' : 'daughter';
+        // Gender-aware inverse: siblings
+        if (in_array($relationshipType, ['brother', 'sister', 'sibling'])) {
+            if ($requesterGender === 'male') return 'brother';
+            if ($requesterGender === 'female') return 'sister';
+            return 'sibling';
         }
 
-        // Handle gender-specific sibling relationships
-        if ($relationshipType === 'brother' || $relationshipType === 'sister') {
-            // If both are same gender
-            if ($requesterGender === $recipientGender) {
-                return $relationshipType; // Keep the same relationship
-            }
-            // If different genders, inverse based on REQUESTER's gender (the other person)
-            if ($requesterGender === 'male') {
-                return 'brother';
-            } elseif ($requesterGender === 'female') {
-                return 'sister';
-            }
+        // Gender-aware inverse: grandparent-grandchild
+        if (in_array($relationshipType, ['grandson', 'granddaughter', 'grandchild'])) {
+            if ($requesterGender === 'male') return 'grandfather';
+            if ($requesterGender === 'female') return 'grandmother';
+            return 'grandparent';
+        }
+        if (in_array($relationshipType, ['grandmother', 'grandfather', 'grandparent'])) {
+            if ($requesterGender === 'male') return 'grandson';
+            if ($requesterGender === 'female') return 'granddaughter';
+            return 'grandchild';
         }
 
-        // Handle aunt/uncle based on requester's gender
-        if (($relationshipType === 'niece' || $relationshipType === 'nephew') && $requesterGender) {
-            return $requesterGender === 'male' ? 'uncle' : 'aunt';
+        // Gender-aware inverse: great-grandparent-great-grandchild
+        if (in_array($relationshipType, ['great_grandson', 'great_granddaughter', 'great_grandchild'])) {
+            if ($requesterGender === 'male') return 'great_grandfather';
+            if ($requesterGender === 'female') return 'great_grandmother';
+            return 'great_grandparent';
+        }
+        if (in_array($relationshipType, ['great_grandmother', 'great_grandfather'])) {
+            if ($requesterGender === 'male') return 'great_grandson';
+            if ($requesterGender === 'female') return 'great_granddaughter';
+            return 'great_grandchild';
         }
 
-        // Handle niece/nephew based on requester's gender (the person we're viewing)
-        if (($relationshipType === 'aunt' || $relationshipType === 'uncle') && $requesterGender) {
-            return $requesterGender === 'male' ? 'nephew' : 'niece';
+        // Gender-aware inverse: great-great-grandparent-great-great-grandchild
+        if (in_array($relationshipType, ['great_great_grandson', 'great_great_granddaughter', 'great_great_grandchild'])) {
+            if ($requesterGender === 'male') return 'great_great_grandfather';
+            if ($requesterGender === 'female') return 'great_great_grandmother';
+            return 'great_great_grandparent';
+        }
+        if (in_array($relationshipType, ['great_great_grandmother', 'great_great_grandfather'])) {
+            if ($requesterGender === 'male') return 'great_great_grandson';
+            if ($requesterGender === 'female') return 'great_great_granddaughter';
+            return 'great_great_grandchild';
         }
 
+        // Gender-aware inverse: aunt/uncle ↔ niece/nephew
+        if (in_array($relationshipType, ['niece', 'nephew'])) {
+            if ($requesterGender === 'male') return 'uncle';
+            if ($requesterGender === 'female') return 'aunt';
+            return 'uncle';
+        }
+        if (in_array($relationshipType, ['aunt', 'uncle'])) {
+            if ($requesterGender === 'male') return 'nephew';
+            if ($requesterGender === 'female') return 'niece';
+            return 'nephew';
+        }
+
+        // Gender-aware inverse: uncle/aunt by marriage ↔ nephew/niece by marriage
+        if (in_array($relationshipType, ['uncle_by_marriage', 'aunt_by_marriage'])) {
+            if ($requesterGender === 'male') return 'nephew_by_marriage';
+            if ($requesterGender === 'female') return 'niece_by_marriage';
+            return 'nephew_by_marriage';
+        }
+        if (in_array($relationshipType, ['nephew_by_marriage', 'niece_by_marriage'])) {
+            if ($requesterGender === 'male') return 'uncle_by_marriage';
+            if ($requesterGender === 'female') return 'aunt_by_marriage';
+            return 'uncle_by_marriage';
+        }
+
+        // Gender-aware inverse: step-parent ↔ step-child
+        if (in_array($relationshipType, ['step_son', 'step_daughter', 'step_child'])) {
+            if ($requesterGender === 'male') return 'step_father';
+            if ($requesterGender === 'female') return 'step_mother';
+            return 'step_father';
+        }
+        if (in_array($relationshipType, ['step_mother', 'step_father'])) {
+            if ($requesterGender === 'male') return 'step_son';
+            if ($requesterGender === 'female') return 'step_daughter';
+            return 'step_child';
+        }
+
+        // Gender-aware inverse: step-siblings
+        if (in_array($relationshipType, ['step_brother', 'step_sister', 'step_sibling'])) {
+            if ($requesterGender === 'male') return 'step_brother';
+            if ($requesterGender === 'female') return 'step_sister';
+            return 'step_sibling';
+        }
+
+        // Gender-aware inverse: in-law parent ↔ in-law child
+        if (in_array($relationshipType, ['mother_in_law', 'father_in_law'])) {
+            if ($requesterGender === 'male') return 'son_in_law';
+            if ($requesterGender === 'female') return 'daughter_in_law';
+            return 'son_in_law';
+        }
+        if (in_array($relationshipType, ['son_in_law', 'daughter_in_law'])) {
+            if ($requesterGender === 'male') return 'father_in_law';
+            if ($requesterGender === 'female') return 'mother_in_law';
+            return 'father_in_law';
+        }
+
+        // Gender-aware inverse: in-law siblings
+        if (in_array($relationshipType, ['sister_in_law', 'brother_in_law'])) {
+            if ($requesterGender === 'male') return 'brother_in_law';
+            if ($requesterGender === 'female') return 'sister_in_law';
+            return 'brother_in_law';
+        }
+
+        // Gender-aware inverse: ex-in-law parent ↔ ex-in-law child
+        if (in_array($relationshipType, ['ex_mother_in_law', 'ex_father_in_law'])) {
+            if ($requesterGender === 'male') return 'ex_son_in_law';
+            if ($requesterGender === 'female') return 'ex_daughter_in_law';
+            return 'ex_son_in_law';
+        }
+        if (in_array($relationshipType, ['ex_son_in_law', 'ex_daughter_in_law'])) {
+            if ($requesterGender === 'male') return 'ex_father_in_law';
+            if ($requesterGender === 'female') return 'ex_mother_in_law';
+            return 'ex_father_in_law';
+        }
+
+        // Gender-aware inverse: ex-in-law siblings
+        if (in_array($relationshipType, ['ex_sister_in_law', 'ex_brother_in_law'])) {
+            if ($requesterGender === 'male') return 'ex_brother_in_law';
+            if ($requesterGender === 'female') return 'ex_sister_in_law';
+            return 'ex_brother_in_law';
+        }
+
+        // Simple bidirectional/symmetric types
         $inverseMap = [
-            // Spousal relationships (bidirectional)
             'wife' => 'husband',
             'husband' => 'wife',
             'partner' => 'partner',
-
-            // Parent-child (non-bidirectional)
-            'mother' => 'child',
-            'father' => 'child',
-            'child' => 'mother', // Default to mother if not specified
-            'son' => 'father', // Default to father if gender not available
-            'daughter' => 'mother', // Default to mother if gender not available
-
-            // Sibling (bidirectional)
-            'sibling' => 'sibling',
-            'brother' => 'sister',
-            'sister' => 'brother',
-
-            // Grandparent-grandchild (non-bidirectional)
-            'grandmother' => 'grandchild',
-            'grandfather' => 'grandchild',
-            'grandchild' => 'grandmother', // or grandfather
-            'grandson' => 'grandmother', // or grandfather
-            'granddaughter' => 'grandmother', // or grandfather
-
-            // Extended family (non-bidirectional)
-            'aunt' => 'niece', // or nephew
-            'uncle' => 'niece', // or nephew
-            'niece' => 'aunt',
-            'nephew' => 'uncle',
             'cousin' => 'cousin',
-
-            // Step relationships (non-bidirectional)
-            'step_mother' => 'step_child',
-            'step_father' => 'step_child',
-            'step_sibling' => 'step_sibling',
-            'step_child' => 'step_mother', // or step_father
-
-            // In-law relationships (non-bidirectional)
-            'mother_in_law' => 'child', // This would need more context
-            'father_in_law' => 'child', // This would need more context
-            'sister_in_law' => 'sister_in_law',
-            'brother_in_law' => 'brother_in_law',
-
-            // Other relationships (non-bidirectional)
+            'first_cousin' => 'first_cousin',
+            'second_cousin' => 'second_cousin',
+            'third_cousin' => 'third_cousin',
             'godparent' => 'godchild',
             'godchild' => 'godparent',
         ];

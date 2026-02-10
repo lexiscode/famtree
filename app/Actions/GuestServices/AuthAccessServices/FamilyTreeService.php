@@ -78,7 +78,13 @@ class FamilyTreeService
             // second-level traversal instead.
             $derivedOnlyTypes = [
                 'grandmother', 'grandfather', 'grandparent',
-                'uncle', 'aunt', 'cousin',
+                'great_grandmother', 'great_grandfather',
+                'great_grandchild', 'great_grandson', 'great_granddaughter',
+                'great_great_grandmother', 'great_great_grandfather',
+                'great_great_grandchild', 'great_great_grandson', 'great_great_granddaughter',
+                'uncle', 'aunt', 'uncle_by_marriage', 'aunt_by_marriage',
+                'nephew_by_marriage', 'niece_by_marriage',
+                'cousin', 'first_cousin', 'second_cousin', 'third_cousin',
                 'mother_in_law', 'father_in_law', 'sister_in_law', 'brother_in_law',
                 'daughter_in_law', 'son_in_law',
                 'ex_mother_in_law', 'ex_father_in_law', 'ex_sister_in_law', 'ex_brother_in_law',
