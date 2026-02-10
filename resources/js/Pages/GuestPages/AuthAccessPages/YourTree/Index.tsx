@@ -352,6 +352,7 @@ export default function Index({ connectionTreeData, user }: Props) {
                     {/* Main Visualization */}
                     <div style={{ marginBottom: '2rem' }}>
                         <ConnectionTreeVisualization
+                            key={currentTreeData.rootUserId}
                             treeData={currentTreeData}
                             onAvatarClick={handleAvatarClick}
                         />

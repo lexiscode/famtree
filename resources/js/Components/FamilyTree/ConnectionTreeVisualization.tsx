@@ -143,6 +143,12 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
         const positions: Record<number, NodePosition> = {};
         const { nodes, edges, rootUserId } = treeData;
 
+        // Filter out empty parentFamilyUnits (units with no siblings, parents, or otherSpouses)
+        // to prevent phantom rendering artefacts
+        const filteredParentFamilyUnits = (treeData.parentFamilyUnits || []).filter(
+            unit => unit.siblings.length > 0 || unit.parents.length > 0 || unit.otherSpouses.length > 0
+        );
+
         // Map relationship types to vertical levels
         const getRelationshipLevel = (relationshipType: string): number => {
             const levelMap: Record<string, number> = {
@@ -245,8 +251,8 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
 
         // Pre-collect node IDs managed by parentFamilyUnits (positioned separately in Phase 2)
         const parentFamilyUnitNodeIds = new Set<number>();
-        if (treeData.parentFamilyUnits) {
-            treeData.parentFamilyUnits.forEach(unit => {
+        if (filteredParentFamilyUnits.length > 0) {
+            filteredParentFamilyUnits.forEach(unit => {
                 unit.siblings.forEach(id => parentFamilyUnitNodeIds.add(id));
                 unit.parents.forEach(id => parentFamilyUnitNodeIds.add(id));
                 unit.otherSpouses.forEach(os => {
@@ -458,8 +464,8 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                 const parentSpacing = 180;
                 const parentY = -350; // well above siblings (-160)
 
-                if (treeData.parentFamilyUnits) {
-                    const parentWithOtherSpouses = treeData.parentFamilyUnits.find(u =>
+                if (filteredParentFamilyUnits.length > 0) {
+                    const parentWithOtherSpouses = filteredParentFamilyUnits.find(u =>
                         u.otherSpouses && u.otherSpouses.length > 0
                     );
                     if (parentWithOtherSpouses) {
@@ -487,8 +493,8 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
         });
 
         // Phase 2: Position parentFamilyUnit nodes relative to their parent node
-        if (treeData.parentFamilyUnits) {
-            treeData.parentFamilyUnits.forEach(unit => {
+        if (filteredParentFamilyUnits.length > 0) {
+            filteredParentFamilyUnits.forEach(unit => {
                 const parentPos = positions[unit.parentId];
                 if (!parentPos) return;
 
@@ -610,11 +616,11 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
         // Phase 3: Resolve overlaps between step-sibling groups and other nodes
         // Step-siblings are positioned to the RIGHT of the main tree. Ensure they
         // don't collide with siblings or other nodes by shifting the group further right.
-        if (treeData.parentFamilyUnits) {
+        if (filteredParentFamilyUnits.length > 0) {
             const minNodeGap = 150; // minimum center-to-center distance to avoid overlap
             const yProximity = 130; // nodes within this vertical distance can collide
 
-            treeData.parentFamilyUnits.forEach(unit => {
+            filteredParentFamilyUnits.forEach(unit => {
                 unit.otherSpouses.forEach(os => {
                     if (os.childIds.length === 0) return;
 
@@ -744,8 +750,7 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
             });
 
             // Parent family units: parent is group root with all unit members
-            const parentFamilyUnits = treeData.parentFamilyUnits || [];
-            parentFamilyUnits.forEach(unit => {
+            filteredParentFamilyUnits.forEach(unit => {
                 const groupRoot = unit.parentId;
                 assignGroup([groupRoot], groupRoot);
                 assignGroup(unit.siblings, groupRoot);
@@ -1155,17 +1160,19 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                             const hasFamilyUnit = siblingIds.size > 0 || parentIds.size > 0;
 
                             // Collect parent family unit node IDs (rendered by parent family unit section)
+                            // Filter out empty units (no siblings, parents, or otherSpouses)
+                            const nonEmptyPfus = (treeData.parentFamilyUnits || []).filter(
+                                u => u.siblings.length > 0 || u.parents.length > 0 || u.otherSpouses.length > 0
+                            );
                             const pfuNodeIds = new Set<number>();
-                            if (treeData.parentFamilyUnits) {
-                                treeData.parentFamilyUnits.forEach(unit => {
-                                    unit.siblings.forEach(id => pfuNodeIds.add(id));
-                                    unit.parents.forEach(id => pfuNodeIds.add(id));
-                                    unit.otherSpouses.forEach(os => {
-                                        pfuNodeIds.add(os.spouseId);
-                                        os.childIds.forEach(id => pfuNodeIds.add(id));
-                                    });
+                            nonEmptyPfus.forEach(unit => {
+                                unit.siblings.forEach(id => pfuNodeIds.add(id));
+                                unit.parents.forEach(id => pfuNodeIds.add(id));
+                                unit.otherSpouses.forEach(os => {
+                                    pfuNodeIds.add(os.spouseId);
+                                    os.childIds.forEach(id => pfuNodeIds.add(id));
                                 });
-                            }
+                            });
 
                             // Collect child spouse group node IDs (rendered by child spouse group section)
                             const csgSpouseIds = new Set<number>();
@@ -2057,7 +2064,7 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                     })()}
 
                     {/* Parent Family Units: extended family through parents */}
-                    {treeData.parentFamilyUnits && treeData.parentFamilyUnits.map((unit) => {
+                    {(treeData.parentFamilyUnits || []).filter(u => u.siblings.length > 0 || u.parents.length > 0 || u.otherSpouses.length > 0).map((unit) => {
                         const parentPos = nodePositions[unit.parentId];
                         if (!parentPos) return null;
 

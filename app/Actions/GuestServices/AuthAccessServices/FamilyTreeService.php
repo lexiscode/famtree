@@ -664,12 +664,17 @@ class FamilyTreeService
 
             }
 
-            $parentFamilyUnits[] = [
-                'parentId' => $parentId,
-                'siblings' => $unitSiblings,
-                'parents' => $unitParents,
-                'otherSpouses' => $unitOtherSpouses,
-            ];
+            // Only include this unit if it has actual members (siblings, parents, or other spouses).
+            // Empty units (no extended family discovered) add no value and can cause
+            // phantom rendering artefacts on the frontend.
+            if (!empty($unitSiblings) || !empty($unitParents) || !empty($unitOtherSpouses)) {
+                $parentFamilyUnits[] = [
+                    'parentId' => $parentId,
+                    'siblings' => $unitSiblings,
+                    'parents' => $unitParents,
+                    'otherSpouses' => $unitOtherSpouses,
+                ];
+            }
         }
 
         return $parentFamilyUnits;
