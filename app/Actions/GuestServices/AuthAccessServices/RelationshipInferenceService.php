@@ -56,6 +56,12 @@ class RelationshipInferenceService
             $firstType = $this->getRelationshipFromUserPerspective($userId, $intermediateUserId, $firstConnection);
             $secondType = $this->getRelationshipFromUserPerspective($intermediateUserId, $targetUserId, $secondConnection);
 
+            // If either hop has an "ex_" prefixed type, the chain goes through a dissolved
+            // relationship — the target has no familial tie to the logged-in user.
+            if (str_starts_with($firstType, 'ex_') || str_starts_with($secondType, 'ex_')) {
+                return null;
+            }
+
             // Get genders for context-aware inference
             $targetUser = User::find($targetUserId);
             $intermediateUser = User::find($intermediateUserId);
@@ -68,26 +74,10 @@ class RelationshipInferenceService
                 $targetUser?->gender
             );
 
-            // Divorce-aware handling
-            if ($firstConnection->isDivorced()) {
-                if (str_ends_with($inferredType['type'], '_in_law')) {
-                    // In-law through divorced ex-spouse → prefix with ex_
-                    $inferredType['type'] = 'ex_' . $inferredType['type'];
-                    $inferredType['label'] = $this->getRelationshipLabel($inferredType['type']);
-                } else {
-                    // Non-in-law through divorced ex-spouse → exclude entirely
-                    // Ex-spouse's new partner and children from new marriage are not related
-                    return null;
-                }
-            } elseif ($secondConnection->isDivorced()) {
-                if (str_ends_with($inferredType['type'], '_in_law')) {
-                    // In-law where the second hop is divorced → prefix with ex_
-                    $inferredType['type'] = 'ex_' . $inferredType['type'];
-                    $inferredType['label'] = $this->getRelationshipLabel($inferredType['type']);
-                } else {
-                    // Spouse's ex-spouse has no relationship to user → exclude
-                    return null;
-                }
+            // Divorce-aware handling: if either connection is divorced, the chain
+            // goes through a dissolved marriage — exclude entirely.
+            if ($firstConnection->isDivorced() || $secondConnection->isDivorced()) {
+                return null;
             }
 
             // Step-child detection: spouse's children from a different parent
@@ -348,6 +338,32 @@ class RelationshipInferenceService
             'brother_husband' => 'brother_in_law',
             'sister_wife'     => 'sister_in_law',
             'sister_husband'  => 'brother_in_law',
+
+            // In-law relationships: via in-law parent → their children/grandchildren
+            'father_in_law_son'           => 'brother_in_law',
+            'father_in_law_daughter'      => 'sister_in_law',
+            'mother_in_law_son'           => 'brother_in_law',
+            'mother_in_law_daughter'      => 'sister_in_law',
+            'father_in_law_grandson'      => 'nephew',
+            'father_in_law_granddaughter' => 'niece',
+            'father_in_law_grandchild'    => 'nephew',
+            'mother_in_law_grandson'      => 'nephew',
+            'mother_in_law_granddaughter' => 'niece',
+            'mother_in_law_grandchild'    => 'nephew',
+
+            // In-law relationships: via in-law sibling → their children
+            'brother_in_law_son'       => 'nephew',
+            'brother_in_law_daughter'  => 'niece',
+            'sister_in_law_son'        => 'nephew',
+            'sister_in_law_daughter'   => 'niece',
+
+            // Via spouse → their nephew/niece (husband's brother's child)
+            'husband_nephew'  => 'nephew',
+            'husband_niece'   => 'niece',
+            'wife_nephew'     => 'nephew',
+            'wife_niece'      => 'niece',
+            'partner_nephew'  => 'nephew',
+            'partner_niece'   => 'niece',
 
             // Default fallbacks
             'child_child' => 'cousin',

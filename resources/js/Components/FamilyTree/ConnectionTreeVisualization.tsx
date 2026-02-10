@@ -96,11 +96,19 @@ const getAbbreviation = (label: string): string => {
         'step_sibling': 'StSb', 'step_parent': 'SP',
         'step mother': 'SM', 'step father': 'SF',
         'step brother': 'StBr', 'step sister': 'StSi',
+        'step_son': 'StS', 'step_daughter': 'StD', 'step_child': 'StCh',
+        'step son': 'StS', 'step daughter': 'StD',
         'daughter_in_law': 'DIL', 'son_in_law': 'SIL',
         'daughter-in-law': 'DIL', 'son-in-law': 'SIL',
         'daughter in law': 'DIL', 'son in law': 'SIL',
+        'mother_in_law': 'MIL', 'father_in_law': 'FIL',
+        'mother-in-law': 'MIL', 'father-in-law': 'FIL',
+        'sister_in_law': 'SsIL', 'brother_in_law': 'BrIL',
+        'sister-in-law': 'SsIL', 'brother-in-law': 'BrIL',
         'ex_daughter_in_law': 'xDIL', 'ex_son_in_law': 'xSIL',
         'ex daughter-in-law': 'xDIL', 'ex son-in-law': 'xSIL',
+        'ex_mother_in_law': 'xMIL', 'ex_father_in_law': 'xFIL',
+        'ex_sister_in_law': 'xSsIL', 'ex_brother_in_law': 'xBrIL',
     };
     return map[label.toLowerCase()] || label.charAt(0).toUpperCase();
 };
@@ -180,6 +188,14 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                 'son_in_law': 1,
                 'ex_daughter_in_law': 1,
                 'ex_son_in_law': 1,
+                'mother_in_law': -1,
+                'father_in_law': -1,
+                'sister_in_law': 0,
+                'brother_in_law': 0,
+                'ex_mother_in_law': -1,
+                'ex_father_in_law': -1,
+                'ex_sister_in_law': 0,
+                'ex_brother_in_law': 0,
 
                 // Step relationships
                 'step_mother': -1,
@@ -188,6 +204,9 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                 'step_brother': 0,
                 'step_sister': 0,
                 'step_sibling': 0,
+                'step_son': 1,
+                'step_daughter': 1,
+                'step_child': 1,
             };
 
             return levelMap[relationshipType] ?? 0;
@@ -322,8 +341,7 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                 const rootPos = positions[rootUserId];
                 const hasChildSpouseGroups = treeData.childSpouseGroups && treeData.childSpouseGroups.length > 0;
                 const childSpacing = hasChildSpouseGroups ? 340 : 160; // widen when in-law spouses exist
-                const groupGap = 80; // minimum gap between separate groups
-                const rowDropOffset = 200; // vertical offset when pushing a group to a lower row
+                const groupGap = 180; // minimum center-to-center gap between separate groups (matches node visual width)
 
                 if (rootPos) {
                     const grouped: Record<number, number[]> = {};
@@ -342,7 +360,7 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                     });
 
                     // First pass: position each group biased toward the spouse's side (slanted outward)
-                    const groupBounds: { spouseId: number; childIds: number[]; minX: number; maxX: number; centerX: number; rowY: number }[] = [];
+                    const groupBounds: { spouseId: number; childIds: number[]; minX: number; maxX: number; centerX: number }[] = [];
 
                     Object.entries(grouped).forEach(([spouseIdStr, childIds]) => {
                         const spouseId = Number(spouseIdStr);
@@ -363,11 +381,10 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                             minX: Math.min(...xs),
                             maxX: Math.max(...xs),
                             centerX,
-                            rowY: childY,
                         });
                     });
 
-                    // Second pass: resolve overlaps by pushing groups to lower rows
+                    // Second pass: resolve overlaps by pushing groups to the right
                     // Sort groups by center position (left to right)
                     groupBounds.sort((a, b) => a.centerX - b.centerX);
 
@@ -377,12 +394,12 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                         const overlap = (prev.maxX + groupGap) - curr.minX;
 
                         if (overlap > 0) {
-                            // Push the current group down to a lower row instead of shifting horizontally
-                            const newY = prev.rowY + rowDropOffset;
-                            curr.rowY = newY;
                             curr.childIds.forEach(childId => {
-                                positions[childId].y = newY;
+                                positions[childId].x += overlap;
                             });
+                            curr.minX += overlap;
+                            curr.maxX += overlap;
+                            curr.centerX += overlap;
                         }
                     }
 
@@ -499,10 +516,9 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
         // Phase 2b: Position childSpouseGroup nodes (in-law spouses + grouped grandchildren)
         if (treeData.childSpouseGroups && treeData.childSpouseGroups.length > 0) {
             const childSpacing = 160;
-            const groupGap = 80;
-            const rowDropOffset = 200;
+            const groupGap = 180;
 
-            const csgBounds: { childId: number; spouseId: number; grandchildIds: number[]; minX: number; maxX: number; centerX: number; rowY: number }[] = [];
+            const csgBounds: { childId: number; spouseId: number; grandchildIds: number[]; minX: number; maxX: number; centerX: number }[] = [];
 
             treeData.childSpouseGroups.forEach(group => {
                 const childPos = positions[group.childId];
@@ -519,7 +535,7 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                 if (group.grandchildIds.length > 0) {
                     const spouseY = childPos.y + spouseYOffset;
                     const gcY = spouseY + levelHeight;
-                    const midX = (childPos.x + spouseX) / 2;
+                    const midX = spouseX;
                     const groupWidth = (group.grandchildIds.length - 1) * childSpacing;
 
                     group.grandchildIds.forEach((gcId, index) => {
@@ -527,7 +543,7 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                         positions[gcId] = { x, y: gcY, level: 2 };
                     });
 
-                    const xs = group.grandchildIds.map(id => positions[id].x);
+                    const xs = [...group.grandchildIds.map(id => positions[id].x), spouseX, childPos.x];
                     csgBounds.push({
                         childId: group.childId,
                         spouseId: group.spouseId,
@@ -535,12 +551,11 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                         minX: Math.min(...xs),
                         maxX: Math.max(...xs),
                         centerX: midX,
-                        rowY: gcY,
                     });
                 }
             });
 
-            // Resolve overlaps between grandchild groups
+            // Resolve overlaps between grandchild groups by shifting right
             csgBounds.sort((a, b) => a.centerX - b.centerX);
             for (let i = 1; i < csgBounds.length; i++) {
                 const prev = csgBounds[i - 1];
@@ -548,11 +563,15 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                 const overlap = (prev.maxX + groupGap) - curr.minX;
 
                 if (overlap > 0) {
-                    const newY = prev.rowY + rowDropOffset;
-                    curr.rowY = newY;
+                    // Shift entire unit: child + in-law spouse + grandchildren
+                    if (positions[curr.childId]) positions[curr.childId].x += overlap;
+                    if (positions[curr.spouseId]) positions[curr.spouseId].x += overlap;
                     curr.grandchildIds.forEach(gcId => {
-                        if (positions[gcId]) positions[gcId].y = newY;
+                        if (positions[gcId]) positions[gcId].x += overlap;
                     });
+                    curr.minX += overlap;
+                    curr.maxX += overlap;
+                    curr.centerX += overlap;
                 }
             }
         }
@@ -598,6 +617,195 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                     }
                 });
             });
+        }
+
+        // Phase 4: Global collision resolution
+        // After all positioning phases, run a comprehensive pass that catches ANY
+        // remaining overlaps regardless of which phase positioned the nodes.
+        {
+            const MIN_NODE_GAP = 180;   // minimum center-to-center horizontal distance
+            const Y_BAND_TOLERANCE = 60; // nodes within this vertical distance are on the same "row"
+            const MAX_ITERATIONS = 5;    // safety limit for convergence
+
+            // Step 1: Build a dependency map — which nodes belong to which "shift group"
+            // A shift group is a set of nodes that must move together as a rigid body.
+            const nodeToGroup = new Map<number, number>(); // nodeId → groupRootId
+
+            // Helper: assign all nodes in a set to a group root
+            const assignGroup = (nodeIds: number[], groupRoot: number) => {
+                nodeIds.forEach(id => {
+                    if (positions[id] && !nodeToGroup.has(id)) {
+                        nodeToGroup.set(id, groupRoot);
+                    }
+                });
+            };
+
+            // Root is immovable — group ID = rootUserId, but we'll skip shifting it
+            nodeToGroup.set(rootUserId, rootUserId);
+
+            // Each spouse forms a group root with all transitive dependents
+            const spouseGroups = treeData.spouseGroups || [];
+            const childSpouseGroups = treeData.childSpouseGroups || [];
+
+            // Build child → childSpouseGroup lookup for transitive dependents
+            const childToCsg = new Map<number, ChildSpouseGroup[]>();
+            childSpouseGroups.forEach(csg => {
+                if (!childToCsg.has(csg.childId)) childToCsg.set(csg.childId, []);
+                childToCsg.get(csg.childId)!.push(csg);
+            });
+
+            spouseGroups.forEach(sg => {
+                const groupRoot = sg.spouseId;
+                // Spouse itself
+                assignGroup([groupRoot], groupRoot);
+
+                // Children: if they have a childSpouseGroup, they become their own
+                // sub-group so Phase 4 can shift each sub-family independently.
+                // Children without sub-families stay in the spouse's group.
+                sg.childIds.forEach(childId => {
+                    const csgs = childToCsg.get(childId) || [];
+                    if (csgs.length > 0) {
+                        // Child with sub-family → own group root
+                        if (!nodeToGroup.has(childId) && positions[childId]) {
+                            nodeToGroup.set(childId, childId);
+                        }
+                        csgs.forEach(csg => {
+                            assignGroup([csg.spouseId], childId);
+                            assignGroup(csg.grandchildIds, childId);
+                        });
+                    } else {
+                        // Childless child → stays in spouse's group
+                        assignGroup([childId], groupRoot);
+                    }
+                });
+            });
+
+            // Siblings: each sibling is its own group
+            const siblingNodeIds: number[] = [];
+            nodes.forEach(node => {
+                if (['brother', 'sister', 'sibling'].includes(node.relationshipType)) {
+                    if (!nodeToGroup.has(node.id) && positions[node.id]) {
+                        nodeToGroup.set(node.id, node.id);
+                        siblingNodeIds.push(node.id);
+                    }
+                }
+            });
+
+            // Extend sibling groups to include their connected family members
+            // (e.g. Robert's wife Jennifer + their children Olivia, Daniel)
+            // BFS through edges from each sibling; only claim nodes not yet assigned
+            siblingNodeIds.forEach(sibId => {
+                const queue = [sibId];
+                const visited = new Set<number>([sibId]);
+                while (queue.length > 0) {
+                    const current = queue.shift()!;
+                    edges.forEach(edge => {
+                        let neighbor: number | null = null;
+                        if (edge.source === current) neighbor = edge.target;
+                        else if (edge.target === current) neighbor = edge.source;
+                        if (neighbor !== null && !visited.has(neighbor) && positions[neighbor] && !nodeToGroup.has(neighbor)) {
+                            visited.add(neighbor);
+                            nodeToGroup.set(neighbor, sibId);
+                            queue.push(neighbor);
+                        }
+                    });
+                }
+            });
+
+            // Parent family units: parent is group root with all unit members
+            const parentFamilyUnits = treeData.parentFamilyUnits || [];
+            parentFamilyUnits.forEach(unit => {
+                const groupRoot = unit.parentId;
+                assignGroup([groupRoot], groupRoot);
+                assignGroup(unit.siblings, groupRoot);
+                assignGroup(unit.parents, groupRoot);
+                unit.otherSpouses.forEach(os => {
+                    assignGroup([os.spouseId], groupRoot);
+                    assignGroup(os.childIds, groupRoot);
+                });
+            });
+
+            // Any ungrouped positioned node becomes its own group
+            Object.keys(positions).forEach(idStr => {
+                const id = Number(idStr);
+                if (!nodeToGroup.has(id)) {
+                    nodeToGroup.set(id, id);
+                }
+            });
+
+            // Step 2: Build group → member list
+            const groupMembers = new Map<number, number[]>();
+            nodeToGroup.forEach((groupRoot, nodeId) => {
+                if (!groupMembers.has(groupRoot)) groupMembers.set(groupRoot, []);
+                groupMembers.get(groupRoot)!.push(nodeId);
+            });
+
+            // Step 3: Iterative overlap resolution
+            for (let iteration = 0; iteration < MAX_ITERATIONS; iteration++) {
+                let anyShift = false;
+
+                // Group all positioned nodes into Y-bands
+                const allNodeIds = Object.keys(positions).map(Number);
+                const bandMap = new Map<number, number[]>(); // bandY → nodeIds
+
+                allNodeIds.forEach(nodeId => {
+                    const y = positions[nodeId].y;
+                    let foundBand = false;
+                    for (const [bandY, members] of bandMap) {
+                        if (Math.abs(y - bandY) <= Y_BAND_TOLERANCE) {
+                            members.push(nodeId);
+                            foundBand = true;
+                            break;
+                        }
+                    }
+                    if (!foundBand) {
+                        bandMap.set(y, [nodeId]);
+                    }
+                });
+
+                // Within each band, sort by X and check consecutive pairs from different groups
+                for (const [, bandNodes] of bandMap) {
+                    bandNodes.sort((a, b) => positions[a].x - positions[b].x);
+
+                    let shifted = true;
+                    while (shifted) {
+                        shifted = false;
+                        for (let i = 0; i < bandNodes.length - 1; i++) {
+                            const leftId = bandNodes[i];
+                            const rightId = bandNodes[i + 1];
+                            const leftGroup = nodeToGroup.get(leftId) ?? leftId;
+                            const rightGroup = nodeToGroup.get(rightId) ?? rightId;
+
+                            // Only resolve between different groups (skip root's own group)
+                            if (leftGroup === rightGroup) continue;
+
+                            const gap = positions[rightId].x - positions[leftId].x;
+                            if (gap < MIN_NODE_GAP) {
+                                const shiftAmount = MIN_NODE_GAP - gap;
+
+                                // Don't shift the root's group
+                                if (rightGroup === rootUserId) continue;
+
+                                // Shift the entire right group
+                                const members = groupMembers.get(rightGroup) || [rightId];
+                                members.forEach(memberId => {
+                                    if (positions[memberId]) {
+                                        positions[memberId].x += shiftAmount;
+                                    }
+                                });
+
+                                // Re-sort after shifting
+                                bandNodes.sort((a, b) => positions[a].x - positions[b].x);
+                                shifted = true;
+                                anyShift = true;
+                                break; // restart scan for this band
+                            }
+                        }
+                    }
+                }
+
+                if (!anyShift) break; // converged
+            }
         }
 
         // Calculate SVG dimensions

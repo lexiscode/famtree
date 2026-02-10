@@ -72,6 +72,22 @@ class FamilyTreeService
                 continue;
             }
 
+            // Skip non-primary relationship types that should only be derived through the tree,
+            // not stored as direct connections. These may exist from the suggested connections
+            // page which sometimes stores inferred types. They will be properly derived through
+            // second-level traversal instead.
+            $derivedOnlyTypes = [
+                'grandmother', 'grandfather', 'grandparent',
+                'uncle', 'aunt', 'cousin',
+                'mother_in_law', 'father_in_law', 'sister_in_law', 'brother_in_law',
+                'daughter_in_law', 'son_in_law',
+                'ex_mother_in_law', 'ex_father_in_law', 'ex_sister_in_law', 'ex_brother_in_law',
+                'ex_daughter_in_law', 'ex_son_in_law',
+            ];
+            if (in_array($relationshipType, $derivedOnlyTypes)) {
+                continue;
+            }
+
             if (!isset($processedUsers[$connectedUser->id])) {
                 $nodes[] = $this->formatUserNode($connectedUser, $relationshipType);
                 $processedUsers[$connectedUser->id] = true;
@@ -270,8 +286,10 @@ class FamilyTreeService
             }
         }
 
-        // Process children first, then others (parents are handled separately by addParentFamilyUnits)
-        $sortedFirstLevelUsers = array_merge($childConnections, $otherConnections);
+        // Only children need second-level traversal (for grandchildren and in-laws).
+        // Parents are handled by addParentFamilyUnits (Step 3).
+        // Spouses, siblings, step-children, and other types should not contribute second-level nodes.
+        $sortedFirstLevelUsers = $childConnections;
 
         foreach ($sortedFirstLevelUsers as $connectedUserId) {
             $this->addSecondLevelConnections(
@@ -718,23 +736,29 @@ class FamilyTreeService
                 $connectedUserId
             );
 
-            // Skip siblings' children, siblings' spouses, and siblings' siblings (step-siblings) - don't show them in the tree
-            if (in_array($firstLevelRelationship, ['brother', 'sister', 'sibling']) &&
-                in_array($relationshipType, ['son', 'daughter', 'child', 'nephew', 'niece', 'wife', 'husband', 'partner', 'brother', 'sister', 'sibling'])) {
+            // Siblings should not contribute any second-level nodes to the tree.
+            // Their extended family is handled through parentFamilyUnits (Step 3).
+            if (in_array($firstLevelRelationship, ['brother', 'sister', 'sibling'])) {
                 continue;
             }
 
-            // Skip children's siblings and parents - siblings are either already root's
-            // children (processed) or half-siblings from another parent (not in this tree).
-            // Parents are root user or root's spouse (already processed).
+            // For children, only allow their own children (grandchildren) and spouses (in-laws).
+            // Skip everything else (siblings, parents, grandparents, uncles, aunts, etc.)
             if (in_array($firstLevelRelationship, ['son', 'daughter', 'child']) &&
-                in_array($relationshipType, ['brother', 'sister', 'sibling', 'father', 'mother', 'parent'])) {
+                !in_array($relationshipType, ['son', 'daughter', 'child', 'wife', 'husband', 'partner'])) {
                 continue;
             }
 
             // Skip parents' grandchildren (which are actually siblings' children = nephews/nieces)
             if (in_array($firstLevelRelationship, ['father', 'mother', 'parent']) &&
                 in_array($relationshipType, ['grandson', 'granddaughter', 'grandchild'])) {
+                continue;
+            }
+
+            // For spouses, only allow their children through (which are also root's children).
+            // Skip everything else (parents, siblings, grandparents, etc.)
+            if (in_array($firstLevelRelationship, ['wife', 'husband', 'partner', 'ex_wife', 'ex_husband', 'ex_partner']) &&
+                !in_array($relationshipType, ['son', 'daughter', 'child'])) {
                 continue;
             }
 

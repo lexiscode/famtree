@@ -37,7 +37,7 @@ interface Props {
     onConnectionRequested: (userId: number) => void;
 }
 
-const CHILD_TYPES = ['son', 'daughter', 'child', 'step_son', 'step_daughter', 'step_child'];
+const CHILD_TYPES = ['son', 'daughter', 'child'];
 
 export default function SuggestedMemberCard({ suggestion, spouses, onConnectionRequested }: Props) {
     const [loading, setLoading] = useState(false);
