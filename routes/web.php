@@ -370,8 +370,7 @@ Route::middleware(['web', 'auth'])->group(function () {
 
     // Organization Groups routes
     Route::prefix('organizations')->group(function () {
-        Route::get('/', [OrganizationController::class, 'categories'])->name('organizations.categories');
-        Route::get('/category/{slug}', [OrganizationController::class, 'showCategory'])->name('organizations.category');
+        Route::get('/', [OrganizationController::class, 'index'])->name('organizations.index');
         Route::get('/{slug}', [OrganizationController::class, 'showOrganization'])->name('organizations.show');
         Route::get('/{organizationSlug}/faculties', [OrganizationController::class, 'faculties'])->name('organizations.faculties');
         Route::get('/{organizationSlug}/channels', [OrganizationController::class, 'channels'])->name('organizations.channels');

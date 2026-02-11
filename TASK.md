@@ -1,19 +1,11 @@
-i'm logged-in as @daniel.williams, and in http://localhost/suggested-connections,
+I want each individual organizations to have a special organization accounts on this platform, we will be the ones to provide them their login details (for now you can use seeder to create their accounts). The point is, we want each organizations pages listed in /organizations page, to be controlled by some organization admins (with roles/permissions also present).
 
-@emma.vincent was suggested as "This person seems to be your father-in-law" (wrong)
-@anthia.vincent was suggested as "This person seems to be your mother-in-law" (wrong)
-@tosin.vincent was suggested as "This person seems to be your brother-in-law" (wrong)
-@damilola.vincent was suggested as "This person seems to be your sister-in-law" (wrong)
+All users who join any group(s) which are within any organizations, should mean that they are automatically following that organization, and they can get to see any alerts, news or posts made by that organization.
 
-@daniel.williams is the child of @robert.williams, and @robert.williams is the brother to @michael.johnson, and then @michael.johnson's wife (@deborah.johnson) has siblings (@tosin.vincent and @damilola.vincent) and parents (@emma.vincent and @anthia.vincent).
+Once an organization account logs in, they should have a different UI pages, which should be able to control all the things within their own organization. Also the organization can make posts/stories and it will reflect to all users who have joined a group within that organization, it should show in their "following" feeds in homepage.
 
-And in English, there's no specific kinship term for the relationship between @daniel.williams and @emma.vincent (nor @anthia.vincent). 
-And in English, there's a kinship term for the relationship between @daniel.williams and @tosin.vincent (or @damilola.vincent) - which is "Uncle (by marriage)" and "Aunt (by marriage)" respectively.
+There some special news which an organization might want to share to all groups chat within that organization, or some selected groups chat; and was they send it, that special news or message should only reflect inside the group chat (like an ads style or so, something everyone within that group chat would see). And they can schedule how many times the message should autosend in the group chat in a day or a week, so in case someone scroll past it they can see it popup again later within the group chat automatically.
 
-Therefore my final take is that, let the system not suggest to @daniel.williams, the parents of @deborah.johnson' but the system can still suggest to @daniel.williams the siblings of @deborah.johson in this way,
+I want you to think creatively and think of more better ideas and improvements beyond what i might have mentioned above. The goal i'm trying to achieve is so that, organizations can see a reason to want to partner with us and create an account with us. Also knowing that they can be able to promote their brands and make posts on our platform, because this app is still like a social media app as well. We will like to target higher institutions, schools, banks, football clubs, churches, etc. So we need a system that will encourage them to want to be in our platform as an organization.
 
-@tosin.vincent was suggested as "This person seems to be your uncle (by marriage)" 
-@damilola.vincent was suggested as "This person seems to be your aunt (by marriage)"
-
-
-Also in that case, it means we would need to include these relationship type in both the /suggested-connections form field and also the /connections/create page in the relationship type field options list. and also, we will need to have its own new row/section in /connections page as well
+This is why i earlier said that we the platform owners will be the one to create the login details or account for them, because we will need to verify them well to know who to release the accounts to. And those accounts should have roles and permissions as well, just a few, for proper management and security for the owners and staffs they might have who are helping them to manage the platform.

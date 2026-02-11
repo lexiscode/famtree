@@ -140,10 +140,10 @@ export default function OrganizationShow({ organization, facultiesCount, galleri
                     {/* Back Button */}
                     <button
                         className="org-back-button"
-                        onClick={() => router.visit(`/organizations/category/${organization.category.slug}`)}
+                        onClick={() => router.visit('/organizations')}
                     >
                         <ArrowLeft size={18} />
-                        Back to {organization.category.name}
+                        Back to Organizations
                     </button>
 
                     {/* Breadcrumb */}

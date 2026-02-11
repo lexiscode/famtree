@@ -85,10 +85,6 @@ export default function ChannelsIndex({ organization, channels }: Props) {
                     <div className="org-breadcrumb">
                         <a href="/organizations">Organizations</a>
                         <span className="separator">/</span>
-                        <a href={`/organizations/category/${organization.category.slug}`}>
-                            {organization.category.name}
-                        </a>
-                        <span className="separator">/</span>
                         <a href={`/organizations/${organization.slug}`}>
                             {organization.short_name || organization.name}
                         </a>

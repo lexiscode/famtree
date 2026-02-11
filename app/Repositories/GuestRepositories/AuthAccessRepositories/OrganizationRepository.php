@@ -2,7 +2,6 @@
 
 namespace App\Repositories\GuestRepositories\AuthAccessRepositories;
 
-use App\Models\GuestModels\OrganizationCategory;
 use App\Models\GuestModels\Organization;
 use App\Models\GuestModels\Faculty;
 use App\Models\GuestModels\Department;
@@ -11,36 +10,12 @@ use App\Models\GuestModels\ClassSet;
 class OrganizationRepository
 {
     /**
-     * Get all active organization categories with organization counts
+     * Get all active organizations ordered by name
      */
-    public function getAllCategories()
+    public function getAllOrganizations()
     {
-        return OrganizationCategory::active()
-            ->ordered()
-            ->withCount(['organizations' => function ($query) {
-                $query->where('is_active', true);
-            }])
-            ->get();
-    }
-
-    /**
-     * Get a category by slug
-     */
-    public function getCategoryBySlug(string $slug): ?OrganizationCategory
-    {
-        return OrganizationCategory::where('slug', $slug)
-            ->active()
-            ->first();
-    }
-
-    /**
-     * Get organizations by category ID
-     */
-    public function getOrganizationsByCategory(int $categoryId)
-    {
-        return Organization::where('category_id', $categoryId)
-            ->active()
-            ->orderBy('name')
+        return Organization::active()
+            ->inRandomOrder()
             ->get();
     }
 
