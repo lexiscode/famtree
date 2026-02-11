@@ -4,10 +4,11 @@ import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
 import {
     Home, TrendingUp, Users, Bell, Plus, Heart, MessageCircle, Mail,
     User, Settings, UserPlus, UserCheck, Globe, FileText, Loader, Image as ImageIcon, Video, ArrowUp,
-    GraduationCap
+    GraduationCap, Bookmark
 } from 'lucide-react';
 import CreatePostModal from '../Stories/CreatePostModal';
 import PostCard from '../Stories/PostCard';
+import CommentModal from '../Stories/CommentModal';
 import ProfileCompletionModal from '@/Components/Profile/ProfileCompletionModal';
 import TreeChatWindow from '@/Components/FamilyTree/TreeChatWindow';
 import { ProfileCompletion } from '@/types/inertia';
@@ -27,6 +28,7 @@ interface FeedUser {
 
 interface Post {
     id: number | string;
+    org_post_id?: number;
     type: string;
     title: string;
     content: string | null;
@@ -35,6 +37,9 @@ interface Post {
     views_count: number;
     comments_count: number;
     reactions_count: number;
+    refams_count: number;
+    user_has_refammed: boolean;
+    user_has_saved: boolean;
     user_reaction: string | null;
     images: Array<{ id: number; url: string; order: number }>;
     comments: any[];
@@ -46,6 +51,7 @@ interface Post {
         is_organization?: boolean;
     };
     is_organization?: boolean;
+    refammed_by?: { name: string; username: string } | null;
     created_at: string;
     created_at_human: string;
 }
@@ -84,7 +90,7 @@ interface FeedProps {
     generalPosts: Post[];
     followersPosts: Post[];
     allPosts: Post[];
-    myPosts: Post[];
+    savedPosts: Post[];
     trendingPosts: Post[];
     recentNotifications: Notification[];
     suggestedUsers: SuggestedUser[];
@@ -97,9 +103,10 @@ interface FeedProps {
     treeForChat: TreeForChat | null;
     groupsJoinedCount: number;
     myStoriesCount: number;
+    showPost?: Post;
 }
 
-type TabType = 'following' | 'connections' | 'general' | 'followers' | 'all' | 'mystories';
+type TabType = 'following' | 'connections' | 'general' | 'followers' | 'all' | 'saved';
 
 export default function Feed({
     user,
@@ -109,7 +116,7 @@ export default function Feed({
     generalPosts: initialGeneralPosts,
     followersPosts: initialFollowersPosts = [],
     allPosts: initialAllPosts = [],
-    myPosts: initialMyPosts = [],
+    savedPosts: initialSavedPosts = [],
     trendingPosts,
     recentNotifications,
     suggestedUsers,
@@ -122,6 +129,7 @@ export default function Feed({
     treeForChat,
     groupsJoinedCount = 0,
     myStoriesCount = 0,
+    showPost,
 }: FeedProps) {
     const [activeTab, setActiveTab] = useState<TabType>('following');
     const [showCreateModal, setShowCreateModal] = useState(false);
@@ -130,6 +138,33 @@ export default function Feed({
     const [isChatMinimized, setIsChatMinimized] = useState(false);
     const [showScrollTop, setShowScrollTop] = useState(false);
 
+    // Client-side post viewing: keeps the feed mounted so scroll position is preserved
+    const [viewingPost, setViewingPost] = useState<Post | null>(null);
+    const scrollPositionRef = useRef(0);
+    const activePost = viewingPost || showPost || null;
+
+    // Comment modal state (for feed view only)
+    const [commentModalPost, setCommentModalPost] = useState<Post | null>(null);
+
+    const handlePostClick = useCallback((post: Post) => {
+        scrollPositionRef.current = window.scrollY;
+        setViewingPost(post);
+        window.scrollTo(0, 0);
+    }, []);
+
+    const handleBackToFeed = useCallback(() => {
+        if (viewingPost) {
+            // Client-side: feed is still mounted, just restore scroll
+            setViewingPost(null);
+            requestAnimationFrame(() => {
+                window.scrollTo(0, scrollPositionRef.current);
+            });
+        } else if (showPost) {
+            // Direct URL visit: need actual navigation
+            router.visit('/');
+        }
+    }, [viewingPost, showPost]);
+
     // Separate state for each tab's posts
     const [tabPosts, setTabPosts] = useState({
         following: initialFollowingPosts,
@@ -137,7 +172,7 @@ export default function Feed({
         general: initialGeneralPosts,
         followers: initialFollowersPosts,
         all: initialAllPosts,
-        mystories: initialMyPosts,
+        saved: initialSavedPosts,
     });
 
     // Loading and pagination states
@@ -148,7 +183,7 @@ export default function Feed({
         general: true,
         followers: true,
         all: true,
-        mystories: true,
+        saved: true,
     });
 
     const isLoadingRef = useRef(false);
@@ -230,7 +265,7 @@ export default function Feed({
         { key: 'general' as TabType, label: 'Discover', icon: Home },
         { key: 'followers' as TabType, label: 'Followers', icon: UserCheck },
         { key: 'all' as TabType, label: 'All', icon: Globe },
-        { key: 'mystories' as TabType, label: 'My Stories', icon: FileText },
+        { key: 'saved' as TabType, label: 'Saved', icon: Bookmark },
     ];
 
     return (
@@ -345,8 +380,14 @@ export default function Feed({
                                         {tabs.map((tab) => (
                                             <button
                                                 key={tab.key}
-                                                className={`feed-tab ${activeTab === tab.key ? 'active' : ''}`}
-                                                onClick={() => setActiveTab(tab.key)}
+                                                className={`feed-tab ${!activePost && activeTab === tab.key ? 'active' : ''}`}
+                                                onClick={() => {
+                                                    if (activePost) {
+                                                        handleBackToFeed();
+                                                    } else {
+                                                        setActiveTab(tab.key);
+                                                    }
+                                                }}
                                             >
                                                 <tab.icon size={18} />
                                                 <span>{tab.label}</span>
@@ -357,11 +398,19 @@ export default function Feed({
 
                                 {/* Posts Container */}
                                 <div className="posts-container">
-                                    {currentPosts.length > 0 ? (
+                                    {activePost ? (
+                                        <>
+                                            <PostCard
+                                                post={activePost}
+                                                onPostDeleted={() => { setViewingPost(null); router.reload(); }}
+                                                defaultShowComments={true}
+                                            />
+                                        </>
+                                    ) : currentPosts.length > 0 ? (
                                         <>
                                             {currentPosts.map((post) => (
                                                 <div key={post.id} className="post-card">
-                                                    <PostCard post={post} currentUserId={user.id} onPostDeleted={handlePostDeleted} />
+                                                    <PostCard post={post as any} currentUserId={user.id} onPostDeleted={handlePostDeleted} onPostClick={handlePostClick} onCommentClick={() => setCommentModalPost(post)} />
                                                 </div>
                                             ))}
 
@@ -392,19 +441,13 @@ export default function Feed({
                                                 {activeTab === 'general' && "Discover posts from the community"}
                                                 {activeTab === 'followers' && "Posts from users who follow you (but you don't follow back) will appear here"}
                                                 {activeTab === 'all' && "All public posts will appear here"}
-                                                {activeTab === 'mystories' && "Your stories will appear here"}
+                                                {activeTab === 'saved' && "Posts you bookmark will appear here"}
                                             </p>
                                             {activeTab === 'following' && (
                                                 <Link href="/suggested-connections" className="btn btn-primary">
                                                     <UserPlus size={18} style={{ marginRight: '8px' }} />
                                                     Find People to Follow
                                                 </Link>
-                                            )}
-                                            {activeTab === 'mystories' && (
-                                                <button onClick={() => setShowCreateModal(true)} className="btn btn-primary">
-                                                    <Plus size={18} style={{ marginRight: '8px' }} />
-                                                    Create Your First Story
-                                                </button>
                                             )}
                                         </div>
                                     )}
@@ -688,6 +731,30 @@ export default function Feed({
                     onClose={() => setShowChat(false)}
                     isMinimized={isChatMinimized}
                     onToggleMinimize={() => setIsChatMinimized(!isChatMinimized)}
+                />
+            )}
+
+            {/* Comment Modal */}
+            {commentModalPost && (
+                <CommentModal
+                    post={commentModalPost as any}
+                    isOpen={!!commentModalPost}
+                    onClose={() => setCommentModalPost(null)}
+                    onCommentSubmitted={() => {
+                        const postId = commentModalPost!.id;
+                        setTabPosts(prev => {
+                            const updated = { ...prev };
+                            for (const tab of Object.keys(updated) as TabType[]) {
+                                updated[tab] = updated[tab].map(p =>
+                                    p.id === postId
+                                        ? { ...p, comments_count: p.comments_count + 1 }
+                                        : p
+                                );
+                            }
+                            return updated;
+                        });
+                        setCommentModalPost(null);
+                    }}
                 />
             )}
         </AuthAccessLayout>

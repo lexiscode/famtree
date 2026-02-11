@@ -39,6 +39,10 @@ Route::group(['prefix' => 'org', 'as' => 'org.', 'middleware' => ['web']], funct
         Route::put('/posts/{id}', [PostController::class, 'update'])->name('posts.update');
         Route::delete('/posts/{id}', [PostController::class, 'destroy'])->name('posts.destroy');
         Route::post('/posts/{id}/toggle-pin', [PostController::class, 'togglePin'])->name('posts.togglePin');
+        Route::post('/posts/{id}/comments', [PostController::class, 'addComment'])->name('posts.comments.store');
+        Route::delete('/posts/comments/{commentId}', [PostController::class, 'deleteComment'])->name('posts.comments.destroy');
+        Route::post('/posts/comments/{commentId}/like', [PostController::class, 'toggleCommentLike'])->name('posts.comments.like');
+        Route::post('/posts/{id}/reaction', [PostController::class, 'toggleReaction'])->name('posts.reaction.toggle');
 
         // Broadcasts
         Route::get('/broadcasts', [BroadcastController::class, 'index'])->name('broadcasts.index');

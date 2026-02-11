@@ -134,25 +134,8 @@ class PostController extends Controller
         }
     }
 
-    /**
-     * Display a single post
-     */
-    public function show(int $postId)
-    {
-        try {
-            $post = $this->postService->getPost($postId);
-            $comments = $this->postService->getPostComments($postId);
-            $reactions = $this->postService->getPostReactions($postId);
-
-            return Inertia::render('GuestPages/AuthAccessPages/Stories/ShowPost', [
-                'post' => $post,
-                'comments' => $comments,
-                'reactions' => $reactions,
-            ]);
-        } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Post not found']);
-        }
-    }
+    // Note: show() and showOrgPost() methods moved to FeedController
+    // to render within the full feed layout with sidebars
 
     /**
      * Update a post
@@ -189,7 +172,7 @@ class PostController extends Controller
     }
 
     /**
-     * Add a comment to a post
+     * Add a comment to a post (supports threaded replies)
      */
     public function addComment(int $postId)
     {
@@ -197,9 +180,15 @@ class PostController extends Controller
             $user = auth()->user();
             $data = request()->validate([
                 'content' => 'required|string|max:1000',
+                'parent_comment_id' => 'nullable|integer|exists:post_comments,id',
             ]);
 
-            $comment = $this->postService->addComment($postId, $user, $data['content']);
+            $comment = $this->postService->addComment(
+                $postId,
+                $user,
+                $data['content'],
+                $data['parent_comment_id'] ?? null
+            );
 
             return response()->json(['comment' => $comment], 201);
         } catch (\Exception $e) {
@@ -217,6 +206,111 @@ class PostController extends Controller
             $this->postService->deleteComment($commentId, $user);
 
             return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
+     * Toggle like on a post comment
+     */
+    public function toggleCommentLike(int $commentId)
+    {
+        try {
+            $user = auth()->user();
+            $result = $this->postService->toggleCommentLike($commentId, $user);
+            return response()->json($result);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
+     * Toggle like on an org post comment
+     */
+    public function toggleOrgCommentLike(int $commentId)
+    {
+        try {
+            $user = auth()->user();
+            $result = $this->postService->toggleOrgCommentLike($commentId, $user);
+            return response()->json($result);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
+     * Show a shareable comment thread page
+     */
+    public function showCommentThread(string $uuid)
+    {
+        try {
+            $user = auth()->user();
+            $thread = $this->postService->getCommentThread($uuid, $user->id);
+
+            if (!$thread) {
+                return redirect('/')->with('error', 'Comment not found');
+            }
+
+            return Inertia::render('GuestPages/AuthAccessPages/Stories/ShowCommentThread', [
+                'thread' => $thread,
+            ]);
+        } catch (\Exception $e) {
+            return redirect('/')->with('error', 'Comment not found');
+        }
+    }
+
+    /**
+     * Toggle refam on a regular post
+     */
+    public function toggleRefam(int $postId)
+    {
+        try {
+            $user = auth()->user();
+            $result = $this->postService->toggleRefam($postId, $user, false);
+            return response()->json($result);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
+     * Toggle refam on an org post
+     */
+    public function toggleOrgRefam(int $orgPostId)
+    {
+        try {
+            $user = auth()->user();
+            $result = $this->postService->toggleRefam($orgPostId, $user, true);
+            return response()->json($result);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
+     * Toggle save on a regular post
+     */
+    public function toggleSave(int $postId)
+    {
+        try {
+            $user = auth()->user();
+            $result = $this->postService->toggleSave($postId, $user, false);
+            return response()->json($result);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
+     * Toggle save on an org post
+     */
+    public function toggleOrgSave(int $orgPostId)
+    {
+        try {
+            $user = auth()->user();
+            $result = $this->postService->toggleSave($orgPostId, $user, true);
+            return response()->json($result);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
@@ -249,6 +343,119 @@ class PostController extends Controller
         try {
             $user = auth()->user();
             $this->postService->removeReaction($postId, $user);
+
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
+     * Add a reaction to an org post
+     */
+    public function addOrgReaction(int $orgPostId)
+    {
+        try {
+            $user = auth()->user();
+            $data = request()->validate([
+                'reaction_type' => 'required|in:like,love,haha,wow,sad,angry',
+            ]);
+
+            $orgPost = \App\Models\OrgModels\OrgPost::findOrFail($orgPostId);
+
+            $reaction = \App\Models\OrgModels\OrgPostReaction::updateOrCreate(
+                ['org_post_id' => $orgPost->id, 'user_id' => $user->id],
+                ['reaction_type' => $data['reaction_type']]
+            );
+
+            // Update reactions count
+            $orgPost->update(['reactions_count' => $orgPost->reactions()->count()]);
+
+            return response()->json(['reaction' => $reaction], 201);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
+     * Remove a reaction from an org post
+     */
+    public function removeOrgReaction(int $orgPostId)
+    {
+        try {
+            $user = auth()->user();
+            $orgPost = \App\Models\OrgModels\OrgPost::findOrFail($orgPostId);
+
+            \App\Models\OrgModels\OrgPostReaction::where('org_post_id', $orgPost->id)
+                ->where('user_id', $user->id)
+                ->delete();
+
+            // Update reactions count
+            $orgPost->update(['reactions_count' => $orgPost->reactions()->count()]);
+
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
+     * Add a comment to an org post (supports threaded replies)
+     */
+    public function addOrgComment(int $orgPostId)
+    {
+        try {
+            $user = auth()->user();
+            $data = request()->validate([
+                'content' => 'required|string|max:1000',
+                'parent_comment_id' => 'nullable|integer|exists:org_post_comments,id',
+            ]);
+
+            $orgPost = \App\Models\OrgModels\OrgPost::findOrFail($orgPostId);
+
+            // Flatten: if parent is itself a reply, use its parent instead (max 2 levels)
+            $parentId = $data['parent_comment_id'] ?? null;
+            if ($parentId) {
+                $parent = \App\Models\OrgModels\OrgPostComment::find($parentId);
+                if ($parent && $parent->parent_comment_id) {
+                    $parentId = $parent->parent_comment_id;
+                }
+            }
+
+            $comment = \App\Models\OrgModels\OrgPostComment::create([
+                'org_post_id' => $orgPost->id,
+                'user_id' => $user->id,
+                'content' => $data['content'],
+                'parent_comment_id' => $parentId,
+            ]);
+
+            // Update comments count
+            $orgPost->update(['comments_count' => $orgPost->comments()->count()]);
+
+            return response()->json(['comment' => $comment->load('user')], 201);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
+     * Delete a comment from an org post
+     */
+    public function deleteOrgComment(int $commentId)
+    {
+        try {
+            $user = auth()->user();
+            $comment = \App\Models\OrgModels\OrgPostComment::findOrFail($commentId);
+
+            if ($comment->user_id !== $user->id) {
+                return response()->json(['error' => 'Unauthorized'], 403);
+            }
+
+            $orgPost = $comment->orgPost;
+            $comment->delete();
+
+            // Update comments count
+            $orgPost->update(['comments_count' => $orgPost->comments()->count()]);
 
             return response()->json(['success' => true]);
         } catch (\Exception $e) {

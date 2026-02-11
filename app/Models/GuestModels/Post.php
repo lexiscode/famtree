@@ -20,6 +20,7 @@ class Post extends Model
         'views_count',
         'comments_count',
         'reactions_count',
+        'refams_count',
     ];
 
     protected $casts = [
@@ -58,5 +59,15 @@ class Post extends Model
     public function images()
     {
         return $this->hasMany(PostImage::class)->orderBy('order');
+    }
+
+    public function refams()
+    {
+        return $this->hasMany(PostRefam::class);
+    }
+
+    public function saves()
+    {
+        return $this->hasMany(PostSave::class);
     }
 }

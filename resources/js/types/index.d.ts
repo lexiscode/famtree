@@ -43,7 +43,15 @@ export interface UserProfile extends UserBase {
 
 export interface Comment {
     id: number;
+    uuid: string;
     content: string;
+    parent_comment_id: number | null;
+    likes_count: number;
+    user_has_liked: boolean;
+    replies_count: number;
+    replies?: Comment[];
+    is_reply: boolean;
+    is_org_comment?: boolean;
     user: UserBase;
     created_at: string;
     created_at_human: string;
@@ -51,6 +59,8 @@ export interface Comment {
 
 export interface Post {
     id: number | string;
+    org_post_id?: number;
+    uuid?: string;
     type: 'text' | 'voice';
     title: string;
     content: string | null;
@@ -59,11 +69,15 @@ export interface Post {
     views_count: number;
     comments_count: number;
     reactions_count: number;
+    refams_count: number;
+    user_has_refammed: boolean;
+    user_has_saved: boolean;
     user_reaction: string | null;
     images: Image[];
     comments: Comment[];
     user: UserBase;
     is_organization?: boolean;
+    refammed_by?: { name: string; username: string } | null;
     created_at: string;
     created_at_human: string;
 }
@@ -104,8 +118,11 @@ export interface Notification {
 
 export interface PostCardProps {
     post: Post;
-    onPostDeleted: (postId: number) => void;
+    onPostDeleted: (postId: number | string) => void;
     isOwnPost?: boolean;
+    defaultShowComments?: boolean;
+    onPostClick?: (post: Post) => void;
+    onCommentClick?: () => void;
 }
 
 export interface ProfileSidebarProps {
