@@ -9,3 +9,7 @@ There some special news which an organization might want to share to all groups 
 I want you to think creatively and think of more better ideas and improvements beyond what i might have mentioned above. The goal i'm trying to achieve is so that, organizations can see a reason to want to partner with us and create an account with us. Also knowing that they can be able to promote their brands and make posts on our platform, because this app is still like a social media app as well. We will like to target higher institutions, schools, banks, football clubs, churches, etc. So we need a system that will encourage them to want to be in our platform as an organization.
 
 This is why i earlier said that we the platform owners will be the one to create the login details or account for them, because we will need to verify them well to know who to release the accounts to. And those accounts should have roles and permissions as well, just a few, for proper management and security for the owners and staffs they might have who are helping them to manage the platform.
+
+Think of all the needed admin organization account pages that will be good for an organization to have and how it should reflect on their organzation pages. ALl designs should look very mordern and professional pls, and still maintain the dark theme of this application
+
+Go to plan mode and begin.

@@ -17,6 +17,8 @@ use App\Repositories\GuestRepositories\FamilyTreeRepository;
 use App\Repositories\GuestRepositories\AuthAccessRepositories\TreeChatRepository;
 use App\Repositories\GuestRepositories\AuthAccessRepositories\ClassSetRepository;
 use App\Repositories\GuestRepositories\AuthAccessRepositories\ClassSetMessageRepository;
+use App\Repositories\GuestRepositories\OrganizationFollowRepository;
+use App\Repositories\OrgRepositories\OrgPostRepository;
 
 class FeedController extends Controller
 {
@@ -34,6 +36,8 @@ class FeedController extends Controller
         private TreeChatRepository $treeChatRepository,
         private ClassSetRepository $classSetRepository,
         private ClassSetMessageRepository $classSetMessageRepository,
+        private OrganizationFollowRepository $organizationFollowRepo,
+        private OrgPostRepository $orgPostRepository,
     ) {}
 
     /**
@@ -63,6 +67,21 @@ class FeedController extends Controller
         $followingList = $this->followService->getFollowingList($user->id, $user->id);
         $followingIds = collect($followingList)->pluck('id')->toArray();
         $followingPosts = !empty($followingIds) ? $this->getPostsFromFollowedUsers($followingIds, $user->id) : [];
+
+        // Get posts from followed organizations and merge into following feed
+        $followedOrgIds = $this->organizationFollowRepo->getFollowedOrgIds($user->id)->toArray();
+        if (!empty($followedOrgIds)) {
+            $orgPosts = $this->orgPostRepository->getByOrganizationIds($followedOrgIds, 20);
+            $formattedOrgPosts = $orgPosts->map(function ($post) {
+                return $this->formatOrgPost($post);
+            })->toArray();
+
+            // Merge and sort by created_at descending
+            $followingPosts = collect(array_merge($followingPosts, $formattedOrgPosts))
+                ->sortByDesc('created_at')
+                ->values()
+                ->toArray();
+        }
 
         // Get posts from connections
         $connectionPosts = $this->connectionFeedsService->getConnectionFeeds($user);
@@ -117,7 +136,7 @@ class FeedController extends Controller
         $allPublicPosts = \App\Models\GuestModels\Post::where('user_id', '!=', $user->id)
             ->where(function ($query) {
                 $query->where('privacy', 'public')
-                      ->orWhereNull('privacy'); // Include posts where privacy is not set (default to public)
+                      ->orWhereNull('privacy');
             })
             ->with(['user', 'images', 'comments.user'])
             ->orderBy('created_at', 'desc')
@@ -125,7 +144,21 @@ class FeedController extends Controller
             ->get()
             ->map(function ($post) use ($user) {
                 return $this->formatPost($post, $user->id);
-            })
+            });
+
+        // Include org posts in the "all" tab as well
+        $allOrgPosts = \App\Models\OrgModels\OrgPost::with(['organization', 'creator', 'images'])
+            ->orderByDesc('created_at')
+            ->limit(20)
+            ->get()
+            ->map(function ($post) {
+                return $this->formatOrgPost($post);
+            });
+
+        $allPublicPosts = $allPublicPosts->concat($allOrgPosts)
+            ->sortByDesc('created_at')
+            ->values()
+            ->take(20)
             ->toArray();
 
         // Get user's family trees for chat (trees where user is a member)
@@ -257,6 +290,43 @@ class FeedController extends Controller
     }
 
     /**
+     * Format a single org post for the feed
+     */
+    private function formatOrgPost($orgPost): array
+    {
+        $org = $orgPost->organization;
+
+        return [
+            'id' => 'org_' . $orgPost->id,
+            'type' => $orgPost->type,
+            'title' => null,
+            'content' => $orgPost->content,
+            'voice_url' => $orgPost->voice_url,
+            'voice_duration' => $orgPost->voice_duration,
+            'views_count' => $orgPost->views_count,
+            'comments_count' => $orgPost->comments_count,
+            'reactions_count' => $orgPost->reactions_count,
+            'user_reaction' => null,
+            'images' => $orgPost->images->map(fn($img) => [
+                'id' => $img->id,
+                'url' => $img->full_image_url ?? $img->image_url,
+                'order' => $img->order,
+            ])->toArray(),
+            'comments' => [],
+            'user' => [
+                'id' => $org->id,
+                'name' => $org->short_name ?: $org->name,
+                'username' => $org->slug,
+                'profile_image_url' => $org->logo_url,
+                'is_organization' => true,
+            ],
+            'is_organization' => true,
+            'created_at' => $orgPost->created_at->format('Y-m-d H:i:s'),
+            'created_at_human' => $orgPost->created_at->diffForHumans(),
+        ];
+    }
+
+    /**
      * API: Get paginated posts from followed users
      */
     public function getFollowingPosts(\Illuminate\Http\Request $request)
@@ -269,29 +339,36 @@ class FeedController extends Controller
         $followingList = $this->followService->getFollowingList($user->id, $user->id);
         $followingIds = collect($followingList)->pluck('id')->toArray();
 
-        if (empty($followingIds)) {
-            return response()->json([
-                'posts' => [],
-                'hasMore' => false,
-            ]);
+        // Get user posts
+        $userPosts = collect();
+        if (!empty($followingIds)) {
+            $userPosts = \App\Models\GuestModels\Post::whereIn('user_id', $followingIds)
+                ->with(['user', 'images', 'comments.user'])
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->map(function ($post) use ($user) {
+                    return $this->formatPost($post, $user->id);
+                });
         }
 
-        // Get posts with pagination
-        $posts = \App\Models\GuestModels\Post::whereIn('user_id', $followingIds)
-            ->with(['user', 'images', 'comments.user'])
-            ->orderBy('created_at', 'desc')
-            ->offset($offset)
-            ->limit($limit + 1) // Fetch one extra to check if there are more
-            ->get();
-
-        $hasMore = $posts->count() > $limit;
-        if ($hasMore) {
-            $posts = $posts->slice(0, $limit);
+        // Get org posts from followed organizations
+        $followedOrgIds = $this->organizationFollowRepo->getFollowedOrgIds($user->id)->toArray();
+        $orgPosts = collect();
+        if (!empty($followedOrgIds)) {
+            $orgPosts = $this->orgPostRepository->getByOrganizationIds($followedOrgIds)
+                ->map(function ($post) {
+                    return $this->formatOrgPost($post);
+                });
         }
 
-        $formattedPosts = $posts->map(function ($post) use ($user) {
-            return $this->formatPost($post, $user->id);
-        })->values()->toArray();
+        // Merge, sort, and paginate
+        $allPosts = $userPosts->concat($orgPosts)
+            ->sortByDesc('created_at')
+            ->values();
+
+        $paginatedPosts = $allPosts->slice($offset, $limit + 1);
+        $hasMore = $paginatedPosts->count() > $limit;
+        $formattedPosts = $paginatedPosts->take($limit)->values()->toArray();
 
         return response()->json([
             'posts' => $formattedPosts,

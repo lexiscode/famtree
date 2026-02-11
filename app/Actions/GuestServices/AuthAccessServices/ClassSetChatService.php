@@ -109,20 +109,48 @@ class ClassSetChatService
                 'name' => $classSet->name,
             ],
             'messages' => $messages->map(function ($msg) {
-                return [
-                    'id' => $msg->id,
-                    'uuid' => $msg->uuid,
-                    'message' => $msg->message,
-                    'sender' => [
+                $isBroadcast = (bool) $msg->is_org_broadcast;
+
+                if ($isBroadcast) {
+                    $org = $msg->organization;
+                    $senderData = [
+                        'id' => $org?->id ?? 0,
+                        'uuid' => null,
+                        'first_name' => $org?->short_name ?: ($org?->name ?? 'Organization'),
+                        'last_name' => '',
+                        'username' => $org?->slug ?? '',
+                        'profile_image' => $org?->logo_url,
+                    ];
+                } else {
+                    $senderData = [
                         'id' => $msg->sender->id,
                         'uuid' => $msg->sender->uuid,
                         'first_name' => $msg->sender->first_name,
                         'last_name' => $msg->sender->last_name,
                         'username' => $msg->sender->username,
                         'profile_image' => $msg->sender->profile_image_url,
-                    ],
+                    ];
+                }
+
+                $data = [
+                    'id' => $msg->id,
+                    'uuid' => $msg->uuid,
+                    'message' => $msg->message,
+                    'is_org_broadcast' => $isBroadcast,
+                    'sender' => $senderData,
                     'created_at' => $msg->created_at,
                 ];
+
+                if ($isBroadcast && $org) {
+                    $data['organization'] = [
+                        'id' => $org->id,
+                        'name' => $org->name,
+                        'short_name' => $org->short_name,
+                        'logo_url' => $org->logo_url,
+                    ];
+                }
+
+                return $data;
             }),
             'has_more' => $messages->count() >= $limit,
         ];

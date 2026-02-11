@@ -44,6 +44,10 @@ return [
             'driver' => 'session',
             'provider' => 'admins',
         ],
+        'org' => [
+            'driver' => 'session',
+            'provider' => 'org_accounts',
+        ],
     ],
 
     /*
@@ -71,6 +75,10 @@ return [
         'admins' => [
             'driver' => 'eloquent',
             'model' => App\Models\AdminModels\Admin::class,
+        ],
+        'org_accounts' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\OrgModels\OrgAccount::class,
         ],
 
         // 'users' => [
@@ -107,6 +115,12 @@ return [
         ],
         'admins' => [
             'provider' => 'admins',
+            'table' => 'password_reset_tokens',
+            'expire' => 60,
+            'throttle' => 60,
+        ],
+        'org_accounts' => [
+            'provider' => 'org_accounts',
             'table' => 'password_reset_tokens',
             'expire' => 60,
             'throttle' => 60,

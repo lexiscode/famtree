@@ -22,6 +22,7 @@ export interface UserBase {
     name: string;
     username: string;
     profile_image_url: string;
+    is_organization?: boolean;
 }
 
 export interface UserProfile extends UserBase {
@@ -49,7 +50,7 @@ export interface Comment {
 }
 
 export interface Post {
-    id: number;
+    id: number | string;
     type: 'text' | 'voice';
     title: string;
     content: string | null;
@@ -62,6 +63,7 @@ export interface Post {
     images: Image[];
     comments: Comment[];
     user: UserBase;
+    is_organization?: boolean;
     created_at: string;
     created_at_human: string;
 }

@@ -26,7 +26,7 @@ interface FeedUser {
 }
 
 interface Post {
-    id: number;
+    id: number | string;
     type: string;
     title: string;
     content: string | null;
@@ -43,7 +43,9 @@ interface Post {
         name: string;
         username: string;
         profile_image_url: string | null;
+        is_organization?: boolean;
     };
+    is_organization?: boolean;
     created_at: string;
     created_at_human: string;
 }

@@ -133,6 +133,13 @@ interface GroupMessage {
     message: string;
     is_edited?: boolean;
     edited_at?: string | null;
+    is_org_broadcast?: boolean;
+    organization?: {
+        id: number;
+        name: string;
+        short_name: string;
+        logo_url: string | null;
+    } | null;
     created_at: string;
     user: {
         id: number;
@@ -327,8 +334,22 @@ export default function MessagesIndex({
             .leaving((user: OnlineUser) => {
                 setOnlineUsers(prev => prev.filter(u => u.id !== user.id));
             })
-            .listen(eventName, (e: { message: GroupMessage }) => {
-                setGroupMessages(prev => [...prev, e.message]);
+            .listen(eventName, (e: { message: any }) => {
+                const msg: GroupMessage = {
+                    id: e.message.id,
+                    user_id: e.message.sender?.id || e.message.sender_id,
+                    message: e.message.message,
+                    is_org_broadcast: e.message.is_org_broadcast || false,
+                    organization: e.message.organization || null,
+                    created_at: e.message.created_at,
+                    user: e.message.sender ? {
+                        id: e.message.sender.id,
+                        first_name: e.message.sender.first_name,
+                        last_name: e.message.sender.last_name,
+                        profile_image_url: e.message.sender.profile_image,
+                    } : { id: 0, first_name: 'Organization', last_name: '', profile_image_url: null },
+                };
+                setGroupMessages(prev => [...prev, msg]);
                 setTimeout(scrollToBottom, 100);
             });
 
@@ -370,6 +391,8 @@ export default function MessagesIndex({
                     id: m.id,
                     user_id: m.sender?.id || m.sender_id,
                     message: m.message,
+                    is_org_broadcast: m.is_org_broadcast || false,
+                    organization: m.organization || null,
                     created_at: m.created_at,
                     user: m.sender ? {
                         id: m.sender.id,
@@ -412,6 +435,8 @@ export default function MessagesIndex({
                     id: response.data.message.id,
                     user_id: response.data.message.sender?.id || response.data.message.sender_id,
                     message: response.data.message.message,
+                    is_org_broadcast: response.data.message.is_org_broadcast || false,
+                    organization: response.data.message.organization || null,
                     created_at: response.data.message.created_at,
                     user: response.data.message.sender ? {
                         id: response.data.message.sender.id,
@@ -971,14 +996,63 @@ export default function MessagesIndex({
                                     ) : (
                                         <>
                                             {groupMessages.map((message, index) => {
-                                                const isOwnMessage = message.user_id === currentUserId;
+                                                const isBroadcast = message.is_org_broadcast;
+                                                const isOwnMessage = !isBroadcast && message.user_id === currentUserId;
                                                 const showAvatar = !isOwnMessage &&
-                                                    (index === 0 || groupMessages[index - 1].user_id !== message.user_id);
+                                                    (index === 0 || groupMessages[index - 1].user_id !== message.user_id || isBroadcast);
                                                 const showName = !isOwnMessage &&
-                                                    (index === 0 || groupMessages[index - 1].user_id !== message.user_id);
+                                                    (index === 0 || groupMessages[index - 1].user_id !== message.user_id || isBroadcast);
                                                 const isEditing = editingMessageId === message.id;
                                                 const isShowingDeleteConfirm = deletingMessageId === message.id;
                                                 const isSelected = selectedMessageIds.includes(message.id);
+
+                                                // Render broadcast messages with distinctive styling
+                                                if (isBroadcast) {
+                                                    const orgName = message.organization?.short_name || message.organization?.name || message.user?.first_name || 'Organization';
+                                                    return (
+                                                        <div key={message.id} style={{
+                                                            padding: '10px 16px',
+                                                            margin: '8px 0',
+                                                            background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(109, 40, 217, 0.05))',
+                                                            border: '1px solid rgba(139, 92, 246, 0.2)',
+                                                            borderRadius: '12px',
+                                                            borderLeft: '3px solid #8B5CF6',
+                                                        }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                                                                {message.organization?.logo_url ? (
+                                                                    <img src={message.organization.logo_url} alt={orgName}
+                                                                        style={{ width: '24px', height: '24px', borderRadius: '6px', objectFit: 'cover' }} />
+                                                                ) : (
+                                                                    <div style={{
+                                                                        width: '24px', height: '24px', borderRadius: '6px',
+                                                                        background: 'linear-gradient(135deg, #8B5CF6, #6D28D9)',
+                                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                                        color: '#fff', fontSize: '0.65rem', fontWeight: 700,
+                                                                    }}>
+                                                                        {orgName.charAt(0)}
+                                                                    </div>
+                                                                )}
+                                                                <span style={{ fontSize: '0.78rem', fontWeight: 600, color: '#8B5CF6' }}>
+                                                                    {orgName}
+                                                                </span>
+                                                                <span style={{
+                                                                    fontSize: '0.6rem', fontWeight: 700, color: '#fff',
+                                                                    background: 'linear-gradient(135deg, #8B5CF6, #6D28D9)',
+                                                                    padding: '1px 6px', borderRadius: '8px', textTransform: 'uppercase',
+                                                                    letterSpacing: '0.5px',
+                                                                }}>
+                                                                    Broadcast
+                                                                </span>
+                                                            </div>
+                                                            <p style={{ margin: '0 0 4px', fontSize: '0.875rem', color: '#e0e0e0', lineHeight: 1.5 }}>
+                                                                {message.message}
+                                                            </p>
+                                                            <span style={{ fontSize: '0.7rem', color: '#888' }}>
+                                                                {formatTime(message.created_at)}
+                                                            </span>
+                                                        </div>
+                                                    );
+                                                }
 
                                                 return (
                                                     <div

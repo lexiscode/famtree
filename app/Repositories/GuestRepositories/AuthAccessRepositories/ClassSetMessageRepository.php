@@ -13,7 +13,11 @@ class ClassSetMessageRepository
     public function getMessages(int $classSetId, int $limit = 50, ?int $beforeId = null)
     {
         $query = ClassSetMessage::where('class_set_id', $classSetId)
-            ->with(['sender:id,uuid,first_name,last_name,username,profile_image']);
+            ->with([
+                'sender:id,uuid,first_name,last_name,username,profile_image',
+                'organization',
+                'orgAccount',
+            ]);
 
         if ($beforeId) {
             $query->where('id', '<', $beforeId);
@@ -35,6 +39,27 @@ class ClassSetMessageRepository
             'class_set_id' => $classSetId,
             'sender_id' => $senderId,
             'message' => $message,
+        ]);
+    }
+
+    /**
+     * Create a broadcast message in a class set
+     */
+    public function createBroadcastMessage(
+        int $classSetId,
+        string $message,
+        int $orgBroadcastId,
+        int $orgAccountId,
+        int $organizationId
+    ): ClassSetMessage {
+        return ClassSetMessage::create([
+            'class_set_id' => $classSetId,
+            'sender_id' => null,
+            'message' => $message,
+            'is_org_broadcast' => true,
+            'org_broadcast_id' => $orgBroadcastId,
+            'org_account_id' => $orgAccountId,
+            'organization_id' => $organizationId,
         ]);
     }
 

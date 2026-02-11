@@ -20,8 +20,25 @@ export interface ProfileCompletion {
   missing_fields: ProfileCompletionField[];
 }
 
+export interface OrgAuth {
+  id: number;
+  uuid: string;
+  username: string;
+  email: string;
+  role: 'owner' | 'admin' | 'editor' | 'moderator';
+  display_name: string | null;
+  organization: {
+    id: number;
+    name: string;
+    short_name: string;
+    slug: string;
+    logo_url: string | null;
+  } | null;
+}
+
 interface CustomPageProps extends PageProps {
   auth?: {
     user?: AuthUser;
+    org?: OrgAuth;
   };
 }

@@ -17,10 +17,15 @@ class ClassSetMessage extends Model
         'message',
         'is_edited',
         'edited_at',
+        'is_org_broadcast',
+        'org_broadcast_id',
+        'org_account_id',
+        'organization_id',
     ];
 
     protected $casts = [
         'is_edited' => 'boolean',
+        'is_org_broadcast' => 'boolean',
         'edited_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
@@ -45,5 +50,20 @@ class ClassSetMessage extends Model
     public function sender()
     {
         return $this->belongsTo(User::class, 'sender_id');
+    }
+
+    public function orgBroadcast()
+    {
+        return $this->belongsTo(\App\Models\OrgModels\OrgBroadcast::class);
+    }
+
+    public function orgAccount()
+    {
+        return $this->belongsTo(\App\Models\OrgModels\OrgAccount::class);
+    }
+
+    public function organization()
+    {
+        return $this->belongsTo(\App\Models\GuestModels\Organization::class);
     }
 }

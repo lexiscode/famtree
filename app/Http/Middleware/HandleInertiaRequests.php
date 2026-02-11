@@ -76,11 +76,33 @@ class HandleInertiaRequests extends Middleware
             ];
         }
 
+        $orgAccount = auth()->guard('org')->user();
+        $orgData = null;
+        if ($orgAccount) {
+            $orgAccount->load('organization');
+            $orgData = [
+                'id' => $orgAccount->id,
+                'uuid' => $orgAccount->uuid,
+                'username' => $orgAccount->username,
+                'email' => $orgAccount->email,
+                'role' => $orgAccount->role,
+                'display_name' => $orgAccount->display_name,
+                'organization' => $orgAccount->organization ? [
+                    'id' => $orgAccount->organization->id,
+                    'name' => $orgAccount->organization->name,
+                    'short_name' => $orgAccount->organization->short_name,
+                    'slug' => $orgAccount->organization->slug,
+                    'logo_url' => $orgAccount->organization->logo_url,
+                ] : null,
+            ];
+        }
+
         return [
             ...parent::share($request),
             'auth' => [
                 'admin' => auth()->guard('admin')->user(),
                 'user' => $userData,
+                'org' => $orgData,
             ],
             'progress' => $progress,
             'flash' => [
