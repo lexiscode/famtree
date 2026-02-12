@@ -20,8 +20,15 @@ interface UserProfile {
     status?: string;
 }
 
+interface Spouse {
+    id: number;
+    name: string;
+    profile_image_url?: string;
+}
+
 interface Props {
     parentName: string;
+    spouses: Spouse[];
     user: UserProfile;
     connectionCount: number;
     pendingRequestCount: number;
@@ -65,6 +72,7 @@ function ChildAccountsLayout({ children }: PropsWithChildren) {
 
 export default function CreateChild({
     parentName,
+    spouses,
     user,
     connectionCount,
     pendingRequestCount,
@@ -77,6 +85,7 @@ export default function CreateChild({
         username: '',
         date_of_birth: '',
         gender: '',
+        other_parent_id: '',
     });
 
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -240,6 +249,27 @@ export default function CreateChild({
                                                 <div className="child-create-error">{errors.gender}</div>
                                             )}
                                         </div>
+
+                                        {/* Other Parent */}
+                                        {spouses.length > 0 && (
+                                            <div className="child-create-form-group">
+                                                <label className="child-create-label">Other Parent</label>
+                                                <select
+                                                    name="other_parent_id"
+                                                    className="child-create-input"
+                                                    value={formData.other_parent_id}
+                                                    onChange={handleInputChange}
+                                                >
+                                                    <option value="">No other parent / Single parent</option>
+                                                    {spouses.map((spouse) => (
+                                                        <option key={spouse.id} value={spouse.id}>
+                                                            {spouse.name}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                <div className="child-create-help">Select the child's other parent if applicable</div>
+                                            </div>
+                                        )}
 
                                         {/* Date of Birth */}
                                         <div className="child-create-form-group">

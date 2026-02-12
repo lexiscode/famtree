@@ -19,9 +19,12 @@ interface RelationshipType {
     description: string;
 }
 
+const CHILD_TYPES = ['son', 'daughter', 'child', 'step_son', 'step_daughter', 'step_child'];
+
 export default function SendRequest({
     user,
     current_user_id,
+    spouses,
     connectionCount,
     pendingRequestCount,
     sentRequestCount,
@@ -30,6 +33,7 @@ export default function SendRequest({
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [relationshipType, setRelationshipType] = useState('');
+    const [otherParentId, setOtherParentId] = useState<number | null>(null);
     const [users, setUsers] = useState<User[]>([]);
     const [relationshipTypes, setRelationshipTypes] = useState<RelationshipType[]>([]);
     const [loading, setLoading] = useState(false);
@@ -98,6 +102,11 @@ export default function SendRequest({
             return;
         }
 
+        if (CHILD_TYPES.includes(relationshipType) && otherParentId === null) {
+            setError('Please select the other parent');
+            return;
+        }
+
         setLoading(true);
 
         try {
@@ -110,6 +119,9 @@ export default function SendRequest({
                 body: JSON.stringify({
                     recipient_id: selectedUser.id,
                     relationship_type: relationshipType,
+                    ...(CHILD_TYPES.includes(relationshipType)
+                        ? { other_parent_id: otherParentId === 0 ? null : otherParentId }
+                        : {}),
                 }),
             });
 
@@ -117,6 +129,7 @@ export default function SendRequest({
                 setSuccess('Connection request sent successfully!');
                 setSelectedUser(null);
                 setRelationshipType('');
+                setOtherParentId(null);
                 setSearchQuery('');
                 setUsers([]);
 
@@ -269,6 +282,32 @@ export default function SendRequest({
                                 </small>
                             )}
                         </div>
+
+                        {/* Other Parent (conditional - mandatory for parent-child types) */}
+                        {relationshipType && CHILD_TYPES.includes(relationshipType) && (
+                            <div className="connections-form-group">
+                                <label className="connections-form-label">Other Parent</label>
+                                <select
+                                    className="connections-form-select"
+                                    value={otherParentId === null ? '' : otherParentId}
+                                    onChange={(e) => setOtherParentId(e.target.value === '' ? null : Number(e.target.value))}
+                                >
+                                    <option value="" disabled>Select the other parent...</option>
+                                    <option value="0">No other parent / Single parent</option>
+                                    {spouses.map((spouse) => (
+                                        <option key={spouse.id} value={spouse.id}>
+                                            {spouse.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                <small className="connections-form-hint">
+                                    {spouses.length > 0
+                                        ? 'Select the child\'s other parent to help with family tree grouping'
+                                        : 'If this child has another parent, first send a connection request to your spouse, then come back to select them here'
+                                    }
+                                </small>
+                            </div>
+                        )}
 
                         {/* Submit Button */}
                         <button

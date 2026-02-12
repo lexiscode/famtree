@@ -1,12 +1,15 @@
-I want to integrate an extra new feature, known as Organization groups. There will be several categories of organization groups, like High Schools, Higher Institutions, Football Fans, and so on.
+I want each individual organizations to have a special organization accounts on this platform, we will be the ones to provide them their login details (for now you can use seeder to create their accounts). The point is, we want each organizations pages listed in /organizations page, to be controlled by some organization admins (with roles/permissions also present).
 
-Let me explain first with the Football Fams organization category as a case study:
+All users who join any group(s) which are within any organizations, should mean that they are automatically following that organization, and they can get to see any alerts, news or posts made by that organization.
 
-Lets have two clubs for now, say, Chelsea Football Club and Manchester United. In http://localhost/organizations/category/football-fans
+Once an organization account logs in, they should have a different UI pages, which should be able to control all the things within their own organization. Also the organization can make posts/stories and it will reflect to all users who have joined a group within that organization, it should show in their "following" feeds in homepage.
 
-So when one of them i clicked on, it takes them to that club's profile page, in http://localhost/organizations/chelsea-football-club (for Man Utd, /organizations/manchester-united)
-You will find images for chelsea and manutd in the /public directory, in case you need any of them. There are several kinds of images there, use most of them and think creatively where to place them.. you can add details about the club too and their past achivements and trophies history
+There some special news which an organization might want to share to all groups chat within that organization, or some selected groups chat; and was they send it, that special news or message should only reflect inside the group chat (like an ads style or so, something everyone within that group chat would see). And they can schedule how many times the message should autosend in the group chat in a day or a week, so in case someone scroll past it they can see it popup again later within the group chat automatically.
 
-Then inside that club's profile page there should be a find groups to join button, then upon clicking, it should take them to http://localhost/organizations/chelsea-football-club/channels, in here there can be lists of groups to Join, with different naming as Chelsea - Nigeria, Chelsea - Africa, etc 
+I want you to think creatively and think of more better ideas and improvements beyond what i might have mentioned above. The goal i'm trying to achieve is so that, organizations can see a reason to want to partner with us and create an account with us. Also knowing that they can be able to promote their brands and make posts on our platform, because this app is still like a social media app as well. We will like to target higher institutions, schools, banks, football clubs, churches, etc. So we need a system that will encourage them to want to be in our platform as an organization.
 
-Do likewise for Manchester United 
+This is why i earlier said that we the platform owners will be the one to create the login details or account for them, because we will need to verify them well to know who to release the accounts to. And those accounts should have roles and permissions as well, just a few, for proper management and security for the owners and staffs they might have who are helping them to manage the platform.
+
+Think of all the needed admin organization account pages that will be good for an organization to have and how it should reflect on their organzation pages. ALl designs should look very mordern and professional pls, and still maintain the dark theme of this application
+
+Go to plan mode and begin.

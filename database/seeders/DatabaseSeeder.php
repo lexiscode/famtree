@@ -18,6 +18,8 @@ class DatabaseSeeder extends Seeder
             FamilySeeder::class,
             BlogPostSeeder::class,
             TwoFamiliesUserSeeder::class,
+            OrganizationSeeder::class,
+            OrgAccountSeeder::class,
         ]);
     }
 }

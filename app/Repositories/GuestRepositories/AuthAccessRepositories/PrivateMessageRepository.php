@@ -223,4 +223,46 @@ class PrivateMessageRepository
             ->where('user_two_id', $secondId)
             ->exists();
     }
+
+    /**
+     * Find a message by ID
+     */
+    public function findMessage(int $messageId): ?PrivateMessage
+    {
+        return PrivateMessage::find($messageId);
+    }
+
+    /**
+     * Update a message's content
+     */
+    public function updateMessage(int $messageId, string $newMessage): ?PrivateMessage
+    {
+        $message = PrivateMessage::find($messageId);
+
+        if ($message) {
+            $message->update([
+                'message' => $newMessage,
+                'is_edited' => true,
+                'edited_at' => now(),
+            ]);
+        }
+
+        return $message;
+    }
+
+    /**
+     * Delete a message permanently
+     */
+    public function deleteMessagePermanently(int $messageId): bool
+    {
+        return PrivateMessage::where('id', $messageId)->delete() > 0;
+    }
+
+    /**
+     * Bulk delete messages permanently
+     */
+    public function bulkDeleteMessages(array $messageIds): int
+    {
+        return PrivateMessage::whereIn('id', $messageIds)->delete();
+    }
 }

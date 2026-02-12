@@ -4,6 +4,7 @@ import { TreePine } from 'lucide-react';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { ModalProvider } from '@/Context/ModalContext';
+import { useFlashToast } from '@/hooks/useFlashToast';
 import axios from 'axios';
 import './AuthAccessLayout.css';
 
@@ -11,6 +12,9 @@ export default function AuthAccessLayout({ children }: PropsWithChildren) {
     const { auth } = usePage().props as { auth?: { user?: { id: number } } };
     const currentUserId = auth?.user?.id;
     const hasMarkedDelivered = useRef(false);
+
+    // Show flash messages as toasts
+    useFlashToast();
 
     // Mark all undelivered messages as delivered when user loads any authenticated page
     // This handles the case where user logs in and messages should show as "delivered"

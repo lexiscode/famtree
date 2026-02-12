@@ -25,7 +25,7 @@ class UserConnectionService
      * The recipient MUST explicitly accept the request before it becomes an accepted connection.
      * NO automatic acceptance is allowed, even for symmetric/bidirectional relationships.
      */
-    public function sendConnectionRequest(int $requesterId, int $recipientId, string $relationshipType): array
+    public function sendConnectionRequest(int $requesterId, int $recipientId, string $relationshipType, ?int $otherParentId = null): array
     {
         // Validate users exist
         $requester = $this->profileRepository->getProfile($requesterId);
@@ -72,7 +72,7 @@ class UserConnectionService
 
         // Create the connection request - ALWAYS with 'pending' status
         // The recipient must accept this request for it to become 'accepted'
-        $connection = $this->connectionRepository->sendRequest($requesterId, $recipientId, $relationshipType);
+        $connection = $this->connectionRepository->sendRequest($requesterId, $recipientId, $relationshipType, $otherParentId);
 
         return [
             'success' => true,
@@ -84,7 +84,7 @@ class UserConnectionService
     /**
      * Accept a connection request
      */
-    public function acceptConnection(int $connectionId, int $userId): array
+    public function acceptConnection(int $connectionId, int $userId, ?int $otherParentId = null): array
     {
         $connection = \App\Models\GuestModels\UserConnection::findOrFail($connectionId);
 
@@ -102,13 +102,81 @@ class UserConnectionService
             ]);
         }
 
+        // If the accepting parent specified the other parent, save it before accepting
+        if ($otherParentId !== null && !$connection->other_parent_id) {
+            $connection->other_parent_id = $otherParentId ?: null;
+            $connection->save();
+        }
+
         $this->connectionRepository->acceptRequest($connectionId);
+
+        // Auto-connect to other parent if specified on a parent-child connection
+        $this->autoConnectOtherParent($connection->fresh());
 
         return [
             'success' => true,
             'message' => 'Connection request accepted',
             'connection' => $connection->fresh(['requester', 'recipient']),
         ];
+    }
+
+    /**
+     * Auto-create an accepted connection to the other parent when a parent-child request is accepted.
+     * Skips if: no other_parent_id, not a parent-child type, or connection already exists.
+     */
+    private function autoConnectOtherParent(\App\Models\GuestModels\UserConnection $connection): void
+    {
+        // Only for parent-child connections with other_parent_id
+        if (!$connection->other_parent_id || !$connection->isParentChildConnection()) {
+            return;
+        }
+
+        // Determine who the child is in this connection
+        $childTypes = ['son', 'daughter', 'child'];
+        $parentTypes = ['father', 'mother', 'parent'];
+
+        if (in_array($connection->relationship_type, $childTypes)) {
+            // Requester labeled recipient as their child (son/daughter/child) → recipient is the child
+            $childUserId = $connection->recipient_user_id;
+            $senderParentId = $connection->requester_user_id;
+        } elseif (in_array($connection->relationship_type, $parentTypes)) {
+            // Requester labeled recipient as their parent (father/mother/parent) → requester is the child
+            $childUserId = $connection->requester_user_id;
+            $senderParentId = $connection->recipient_user_id;
+        } else {
+            return;
+        }
+
+        $otherParentId = $connection->other_parent_id;
+
+        // Skip if other parent is already connected to the child
+        $existingConnection = $this->connectionRepository->getConnectionBetween($otherParentId, $childUserId);
+        if ($existingConnection) {
+            return;
+        }
+
+        // Determine relationship type based on child's gender
+        $childUser = $this->profileRepository->getProfile($childUserId);
+        if (!$childUser) {
+            return;
+        }
+
+        $relationshipType = match ($childUser->gender) {
+            'male' => 'son',
+            'female' => 'daughter',
+            default => 'child',
+        };
+
+        // Create an accepted connection: other_parent → child
+        $this->connectionRepository->createConnection([
+            'requester_user_id' => $otherParentId,
+            'recipient_user_id' => $childUserId,
+            'relationship_type' => $relationshipType,
+            'other_parent_id' => $senderParentId,
+            'status' => 'accepted',
+            'requested_at' => now(),
+            'accepted_at' => now(),
+        ]);
     }
 
     /**
@@ -166,6 +234,35 @@ class UserConnectionService
         return [
             'success' => true,
             'message' => 'Connection request unsent',
+        ];
+    }
+
+    /**
+     * Divorce a spousal connection
+     */
+    public function divorceConnection(int $connectionId, int $userId): array
+    {
+        $connection = \App\Models\GuestModels\UserConnection::findOrFail($connectionId);
+
+        // Verify user is one of the parties
+        if ($connection->requester_user_id !== $userId && $connection->recipient_user_id !== $userId) {
+            throw ValidationException::withMessages([
+                'authorization' => ['You are not authorized to divorce this connection'],
+            ]);
+        }
+
+        // Verify connection can be divorced
+        if (!$connection->canDivorce()) {
+            throw ValidationException::withMessages([
+                'divorce' => ['This connection cannot be divorced. It must be an active spousal connection.'],
+            ]);
+        }
+
+        $this->connectionRepository->divorceConnection($connectionId);
+
+        return [
+            'success' => true,
+            'message' => 'Connection has been marked as divorced',
         ];
     }
 
@@ -297,18 +394,19 @@ class UserConnectionService
         $otherUser = $connection->requester_user_id === $userId ? $connection->recipient : $connection->requester;
         $isRequester = $connection->requester_user_id === $userId;
 
-        // Determine the correct relationship label based on who is viewing
+        // Determine the correct relationship type and label based on who is viewing
         // If the current user is the requester, use the stored relationship type as-is
         // If the current user is the recipient, use the inverse relationship
         if ($isRequester) {
             // User is the requester: use stored relationship type
+            $viewerType = $connection->relationship_type;
             $relationshipLabel = $connection->relationshipType?->label ?? $connection->relationship_type;
         } else {
             // User is the recipient: use inverse relationship
-            $inverseType = $this->connectionRepository->getRelationshipFromViewerPerspective($userId, $otherUser->id);
+            $viewerType = $this->connectionRepository->getRelationshipFromViewerPerspective($userId, $otherUser->id);
             // Look up the label for the inverse relationship type
-            $inverseRelationType = RelationshipType::where('type_key', $inverseType)->first();
-            $relationshipLabel = $inverseRelationType?->label ?? $inverseType;
+            $inverseRelationType = RelationshipType::where('type_key', $viewerType)->first();
+            $relationshipLabel = $inverseRelationType?->label ?? $viewerType;
         }
 
         return [
@@ -319,12 +417,14 @@ class UserConnectionService
                 'username' => $otherUser->username,
                 'profile_image_url' => $otherUser->profile_image_url,
             ],
-            'relationship_type' => $connection->relationship_type,
+            'relationship_type' => $viewerType,
             'relationship_label' => $relationshipLabel,
             'status' => $connection->status,
             'accepted_at' => $connection->accepted_at,
             'can_undo' => $connection->canUndo(),
             'undo_expires_at' => $connection->expires_at,
+            'is_divorced' => $connection->isDivorced(),
+            'divorced_at' => $connection->divorced_at,
         ];
     }
 
@@ -341,6 +441,23 @@ class UserConnectionService
             $connection->requester->gender,
             $connection->recipient->gender
         );
+
+        // Look up other parent info if specified
+        $otherParent = null;
+        if ($connection->other_parent_id) {
+            $otherParentUser = $this->profileRepository->getProfile($connection->other_parent_id);
+            if ($otherParentUser) {
+                $otherParent = [
+                    'id' => $otherParentUser->id,
+                    'name' => $otherParentUser->first_name . ' ' . $otherParentUser->last_name,
+                    'username' => $otherParentUser->username,
+                    'profile_image_url' => $otherParentUser->profile_image_url,
+                ];
+            }
+        }
+
+        // Flag: the receiving parent needs to select the other parent
+        $needsOtherParent = $connection->isParentChildConnection() && !$connection->other_parent_id;
 
         return [
             'id' => $connection->id,
@@ -360,6 +477,8 @@ class UserConnectionService
             'relationship_type' => $connection->relationship_type,
             'relationship_label' => $relationshipLabel,
             'requested_at' => $connection->requested_at,
+            'other_parent' => $otherParent,
+            'needs_other_parent' => $needsOtherParent,
         ];
     }
 
@@ -412,6 +531,8 @@ class UserConnectionService
             // Step relationships (different genders)
             'step_mother' => 'step_child',
             'step_father' => 'step_child',
+            'step_son' => ($recipientGender === 'male') ? 'step_father' : 'step_mother',
+            'step_daughter' => ($recipientGender === 'male') ? 'step_father' : 'step_mother',
             'step_sibling' => 'step_sibling',
             'step_child' => ($recipientGender === 'male') ? 'step_father' : 'step_mother',
 
@@ -420,6 +541,16 @@ class UserConnectionService
             'father_in_law' => 'child',
             'sister_in_law' => ($requesterGender === 'female') ? 'sister_in_law' : 'brother_in_law',
             'brother_in_law' => ($requesterGender === 'male') ? 'brother_in_law' : 'sister_in_law',
+            'daughter_in_law' => ($recipientGender === 'male') ? 'father_in_law' : 'mother_in_law',
+            'son_in_law' => ($recipientGender === 'male') ? 'father_in_law' : 'mother_in_law',
+
+            // Ex-in-law relationships
+            'ex_mother_in_law' => 'child',
+            'ex_father_in_law' => 'child',
+            'ex_sister_in_law' => ($requesterGender === 'female') ? 'ex_sister_in_law' : 'ex_brother_in_law',
+            'ex_brother_in_law' => ($requesterGender === 'male') ? 'ex_brother_in_law' : 'ex_sister_in_law',
+            'ex_daughter_in_law' => ($recipientGender === 'male') ? 'ex_father_in_law' : 'ex_mother_in_law',
+            'ex_son_in_law' => ($recipientGender === 'male') ? 'ex_father_in_law' : 'ex_mother_in_law',
 
             // Godparent - Godchild
             'godparent' => 'godchild',
@@ -472,6 +603,8 @@ class UserConnectionService
             // Step relationships (non-bidirectional)
             'step_mother' => 'step_child',
             'step_father' => 'step_child',
+            'step_son' => 'step_father',
+            'step_daughter' => 'step_mother',
             'step_sibling' => 'step_sibling',
             'step_child' => 'step_mother',
 
@@ -480,6 +613,16 @@ class UserConnectionService
             'father_in_law' => 'child',
             'sister_in_law' => 'sister_in_law',
             'brother_in_law' => 'brother_in_law',
+            'daughter_in_law' => 'mother_in_law',
+            'son_in_law' => 'father_in_law',
+
+            // Ex-in-law relationships (non-bidirectional)
+            'ex_mother_in_law' => 'child',
+            'ex_father_in_law' => 'child',
+            'ex_sister_in_law' => 'ex_sister_in_law',
+            'ex_brother_in_law' => 'ex_brother_in_law',
+            'ex_daughter_in_law' => 'ex_mother_in_law',
+            'ex_son_in_law' => 'ex_father_in_law',
 
             // Other relationships (non-bidirectional)
             'godparent' => 'godchild',
@@ -551,6 +694,8 @@ class UserConnectionService
             // Step relationships
             'step_mother' => ['female' => 'step_mother', 'male' => 'step_father'],
             'step_father' => ['male' => 'step_father', 'female' => 'step_mother'],
+            'step_son' => ['male' => 'step_son', 'female' => 'step_daughter'],
+            'step_daughter' => ['female' => 'step_daughter', 'male' => 'step_son'],
             'step_sibling' => ['male' => 'step_sibling', 'female' => 'step_sibling'],
             'step_child' => ['male' => 'step_son', 'female' => 'step_daughter'],
 
@@ -559,6 +704,16 @@ class UserConnectionService
             'brother_in_law' => ['male' => 'brother_in_law', 'female' => 'sister_in_law'],
             'mother_in_law' => ['female' => 'mother_in_law', 'male' => 'father_in_law'],
             'father_in_law' => ['male' => 'father_in_law', 'female' => 'mother_in_law'],
+            'daughter_in_law' => ['female' => 'daughter_in_law', 'male' => 'son_in_law'],
+            'son_in_law' => ['male' => 'son_in_law', 'female' => 'daughter_in_law'],
+
+            // Ex-in-law
+            'ex_sister_in_law' => ['female' => 'ex_sister_in_law', 'male' => 'ex_brother_in_law'],
+            'ex_brother_in_law' => ['male' => 'ex_brother_in_law', 'female' => 'ex_sister_in_law'],
+            'ex_mother_in_law' => ['female' => 'ex_mother_in_law', 'male' => 'ex_father_in_law'],
+            'ex_father_in_law' => ['male' => 'ex_father_in_law', 'female' => 'ex_mother_in_law'],
+            'ex_daughter_in_law' => ['female' => 'ex_daughter_in_law', 'male' => 'ex_son_in_law'],
+            'ex_son_in_law' => ['male' => 'ex_son_in_law', 'female' => 'ex_daughter_in_law'],
 
             // Godparent - Godchild (typically keep reciprocal roles)
             'godparent' => ['male' => 'godparent', 'female' => 'godparent'],

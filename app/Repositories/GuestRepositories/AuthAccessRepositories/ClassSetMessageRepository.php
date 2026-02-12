@@ -13,7 +13,11 @@ class ClassSetMessageRepository
     public function getMessages(int $classSetId, int $limit = 50, ?int $beforeId = null)
     {
         $query = ClassSetMessage::where('class_set_id', $classSetId)
-            ->with(['sender:id,uuid,first_name,last_name,username,profile_image']);
+            ->with([
+                'sender:id,uuid,first_name,last_name,username,profile_image',
+                'organization',
+                'orgAccount',
+            ]);
 
         if ($beforeId) {
             $query->where('id', '<', $beforeId);
@@ -39,6 +43,27 @@ class ClassSetMessageRepository
     }
 
     /**
+     * Create a broadcast message in a class set
+     */
+    public function createBroadcastMessage(
+        int $classSetId,
+        string $message,
+        int $orgBroadcastId,
+        int $orgAccountId,
+        int $organizationId
+    ): ClassSetMessage {
+        return ClassSetMessage::create([
+            'class_set_id' => $classSetId,
+            'sender_id' => null,
+            'message' => $message,
+            'is_org_broadcast' => true,
+            'org_broadcast_id' => $orgBroadcastId,
+            'org_account_id' => $orgAccountId,
+            'organization_id' => $organizationId,
+        ]);
+    }
+
+    /**
      * Get the latest message for a class set
      */
     public function getLatestMessage(int $classSetId): ?ClassSetMessage
@@ -60,11 +85,45 @@ class ClassSetMessageRepository
     }
 
     /**
+     * Find a message by ID
+     */
+    public function findMessage(int $messageId): ?ClassSetMessage
+    {
+        return ClassSetMessage::find($messageId);
+    }
+
+    /**
+     * Update a message's content
+     */
+    public function updateMessage(int $messageId, string $newMessage): ?ClassSetMessage
+    {
+        $message = ClassSetMessage::find($messageId);
+
+        if ($message) {
+            $message->update([
+                'message' => $newMessage,
+                'is_edited' => true,
+                'edited_at' => now(),
+            ]);
+        }
+
+        return $message;
+    }
+
+    /**
      * Delete a message
      */
     public function delete(int $messageId): bool
     {
         return ClassSetMessage::destroy($messageId) > 0;
+    }
+
+    /**
+     * Bulk delete messages
+     */
+    public function bulkDeleteMessages(array $messageIds): int
+    {
+        return ClassSetMessage::whereIn('id', $messageIds)->delete();
     }
 
     /**

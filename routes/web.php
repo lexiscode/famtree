@@ -116,6 +116,7 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::post('/{connection}/decline', [ConnectionRequestController::class, 'decline'])->name('connections.decline');
         Route::post('/{connection}/undo-request', [ConnectionRequestController::class, 'undoRequest'])->name('connections.undo-request');
         Route::post('/{connection}/undo-acceptance', [ConnectionRequestController::class, 'undoAcceptance'])->name('connections.undo-acceptance');
+        Route::post('/{connection}/divorce', [ConnectionRequestController::class, 'divorce'])->name('connections.divorce');
         Route::get('/search-users', [ConnectionRequestController::class, 'searchUsers'])->name('connections.search-users');
         Route::get('/relationship-types', [ConnectionRequestController::class, 'relationshipTypes'])->name('connections.relationship-types');
     });
@@ -179,6 +180,9 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::post('/{familyTree}/chat/send', [\App\Http\Controllers\GuestControllers\AuthAccessControllers\TreeChatController::class, 'sendMessage'])->name('family-tree.chat.send');
         Route::post('/{familyTree}/chat/typing', [\App\Http\Controllers\GuestControllers\AuthAccessControllers\TreeChatController::class, 'typing'])->name('family-tree.chat.typing');
         Route::post('/{familyTree}/chat/mark-read', [\App\Http\Controllers\GuestControllers\AuthAccessControllers\TreeChatController::class, 'markAsRead'])->name('family-tree.chat.mark-read');
+        Route::put('/chat/message/{messageId}', [\App\Http\Controllers\GuestControllers\AuthAccessControllers\TreeChatController::class, 'editMessage'])->name('family-tree.chat.edit');
+        Route::delete('/chat/message/{messageId}', [\App\Http\Controllers\GuestControllers\AuthAccessControllers\TreeChatController::class, 'deleteMessage'])->name('family-tree.chat.delete');
+        Route::post('/chat/bulk-delete', [\App\Http\Controllers\GuestControllers\AuthAccessControllers\TreeChatController::class, 'bulkDeleteMessages'])->name('family-tree.chat.bulk-delete');
     });
 
     // Your Tree (Connection Tree Visualization) route
@@ -336,6 +340,9 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::post('/start', [PrivateMessageController::class, 'startConversation'])->name('messages.start');
         Route::get('/api/conversations', [PrivateMessageController::class, 'getConversations'])->name('messages.conversations');
         Route::get('/api/unread-count', [PrivateMessageController::class, 'getUnreadCount'])->name('messages.unread-count');
+        Route::post('/bulk-delete', [PrivateMessageController::class, 'bulkDeleteMessages'])->name('messages.bulk-delete');
+        Route::put('/message/{messageId}', [PrivateMessageController::class, 'editMessage'])->name('messages.edit');
+        Route::delete('/message/{messageId}', [PrivateMessageController::class, 'deleteMessage'])->name('messages.delete');
         Route::get('/{conversationUuid}', [PrivateMessageController::class, 'show'])->name('messages.show');
         Route::get('/{conversationUuid}/messages', [PrivateMessageController::class, 'getMessages'])->name('messages.get-messages');
         Route::post('/{conversationUuid}/send', [PrivateMessageController::class, 'sendMessage'])->name('messages.send');
@@ -363,8 +370,7 @@ Route::middleware(['web', 'auth'])->group(function () {
 
     // Organization Groups routes
     Route::prefix('organizations')->group(function () {
-        Route::get('/', [OrganizationController::class, 'categories'])->name('organizations.categories');
-        Route::get('/category/{slug}', [OrganizationController::class, 'showCategory'])->name('organizations.category');
+        Route::get('/', [OrganizationController::class, 'index'])->name('organizations.index');
         Route::get('/{slug}', [OrganizationController::class, 'showOrganization'])->name('organizations.show');
         Route::get('/{organizationSlug}/faculties', [OrganizationController::class, 'faculties'])->name('organizations.faculties');
         Route::get('/{organizationSlug}/channels', [OrganizationController::class, 'channels'])->name('organizations.channels');
@@ -380,5 +386,8 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::get('/{classSetUuid}/messages', [ClassSetChatController::class, 'getMessages'])->name('class-sets.messages');
         Route::post('/{classSetUuid}/messages', [ClassSetChatController::class, 'sendMessage'])->name('class-sets.send-message');
         Route::post('/{classSetUuid}/typing', [ClassSetChatController::class, 'typing'])->name('class-sets.typing');
+        Route::put('/message/{messageId}', [ClassSetChatController::class, 'editMessage'])->name('class-sets.edit-message');
+        Route::delete('/message/{messageId}', [ClassSetChatController::class, 'deleteMessage'])->name('class-sets.delete-message');
+        Route::post('/bulk-delete', [ClassSetChatController::class, 'bulkDeleteMessages'])->name('class-sets.bulk-delete');
     });
 });

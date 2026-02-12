@@ -76,8 +76,12 @@ class ChildAccountController extends Controller
         // Get sidebar data
         $sidebarData = $this->getSidebarData($user);
 
+        // Get active (non-divorced) spouses for "Other Parent" dropdown
+        $spouses = $this->getActiveSpouses($user->id);
+
         return Inertia::render('GuestPages/AuthAccessPages/ChildAccounts/CreateChild', [
             'parentName' => $user->first_name . ' ' . $user->last_name,
+            'spouses' => $spouses,
             'user' => $sidebarData['user'],
             'connectionCount' => $sidebarData['connectionCount'],
             'pendingRequestCount' => $sidebarData['pendingRequestCount'],
@@ -109,6 +113,7 @@ class ChildAccountController extends Controller
             'username' => 'required|string|max:255|unique:users,username',
             'gender' => 'required|in:male,female',
             'date_of_birth' => 'required|date|before_or_equal:today',
+            'other_parent_id' => 'nullable|integer|exists:users,id',
         ]);
 
         try {
@@ -282,6 +287,36 @@ class ChildAccountController extends Controller
         $date = new \DateTime($dateOfBirth);
         $today = new \DateTime();
         return $today->diff($date)->y;
+    }
+
+    /**
+     * Get active (non-divorced) spouses for the user
+     */
+    private function getActiveSpouses(int $userId): array
+    {
+        $connections = $this->connectionRepository->getConnections($userId);
+        $spouses = [];
+
+        foreach ($connections as $connection) {
+            if (!in_array($connection->relationship_type, ['wife', 'husband', 'partner'])) {
+                continue;
+            }
+            if ($connection->isDivorced()) {
+                continue;
+            }
+
+            $spouse = $connection->requester_user_id === $userId
+                ? $connection->recipient
+                : $connection->requester;
+
+            $spouses[] = [
+                'id' => $spouse->id,
+                'name' => trim($spouse->first_name . ' ' . $spouse->last_name),
+                'profile_image_url' => $spouse->profile_image_url,
+            ];
+        }
+
+        return $spouses;
     }
 
     /**

@@ -1,10 +1,11 @@
 import { useState, useRef } from 'react';
-import { Heart, MessageCircle, Share2, Trash2, Play, Pause, X, AlertTriangle, Send, Copy, Check } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Trash2, Play, Pause, X, AlertTriangle, Send, Copy, Check, Building2 } from 'lucide-react';
 import { router } from '@inertiajs/react';
 import { Post, PostCardProps } from '@/types';
 import axios from 'axios';
 
 export default function PostCard({ post, onPostDeleted, isOwnPost = false }: PostCardProps) {
+    const isOrgPost = post.is_organization || post.user?.is_organization;
     const [isLiked, setIsLiked] = useState(post.user_reaction === 'like');
     const [likeCount, setLikeCount] = useState(post.reactions_count);
     const [isPlaying, setIsPlaying] = useState(false);
@@ -158,18 +159,61 @@ export default function PostCard({ post, onPostDeleted, isOwnPost = false }: Pos
             {/* Post Header */}
             <div className="post-header">
                 <div className="post-user-info">
-                    <img
-                        src={post.user.profile_image_url || 'https://via.placeholder.com/40'}
-                        alt={post.user.name}
-                        className="post-user-avatar"
-                    />
+                    {isOrgPost ? (
+                        <div className="post-user-avatar org-avatar" style={{
+                            width: '40px',
+                            height: '40px',
+                            borderRadius: '10px',
+                            background: 'linear-gradient(135deg, #8B5CF6, #6D28D9)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                        }}>
+                            {post.user.profile_image_url ? (
+                                <img
+                                    src={post.user.profile_image_url}
+                                    alt={post.user.name}
+                                    style={{ width: '40px', height: '40px', borderRadius: '10px', objectFit: 'cover' }}
+                                />
+                            ) : (
+                                <Building2 size={20} color="#fff" />
+                            )}
+                        </div>
+                    ) : (
+                        <img
+                            src={post.user.profile_image_url || 'https://via.placeholder.com/40'}
+                            alt={post.user.name}
+                            className="post-user-avatar"
+                        />
+                    )}
                     <div>
-                        <h3 className="post-user-name">{post.user.name}</h3>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <h3 className="post-user-name">{post.user.name}</h3>
+                            {isOrgPost && (
+                                <span style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '3px',
+                                    background: 'linear-gradient(135deg, #8B5CF6, #6D28D9)',
+                                    color: '#fff',
+                                    fontSize: '0.65rem',
+                                    fontWeight: 700,
+                                    padding: '2px 8px',
+                                    borderRadius: '12px',
+                                    letterSpacing: '0.3px',
+                                    textTransform: 'uppercase',
+                                }}>
+                                    <Building2 size={10} />
+                                    Org
+                                </span>
+                            )}
+                        </div>
                         <p className="post-timestamp">{post.created_at_human}</p>
                     </div>
                 </div>
                 <div className="post-actions-menu">
-                    {isOwnPost && (
+                    {isOwnPost && !isOrgPost && (
                         <button
                             className="post-action-btn delete-btn"
                             onClick={handleDeleteClick}
@@ -293,29 +337,40 @@ export default function PostCard({ post, onPostDeleted, isOwnPost = false }: Pos
             </div>
 
             {/* Post Actions */}
-            <div className="post-actions">
-                <button
-                    className={`action-btn like-btn ${isLiked ? 'liked' : ''}`}
-                    onClick={handleLike}
-                >
-                    <Heart size={20} fill={isLiked ? 'currentColor' : 'none'} />
-                     {isLiked ? 'Liked' : 'Like'} ({likeCount})
-                </button>
-                <button
-                    className="action-btn comment-btn"
-                    onClick={() => setShowComments(!showComments)}
-                >
-                    <MessageCircle size={20} />
-                    Comment ({post.comments_count})
-                </button>
-                <button
-                    className="action-btn share-btn"
-                    onClick={handleShare}
-                >
-                    <Share2 size={20} />
-                    Share
-                </button>
-            </div>
+            {!isOrgPost ? (
+                <div className="post-actions">
+                    <button
+                        className={`action-btn like-btn ${isLiked ? 'liked' : ''}`}
+                        onClick={handleLike}
+                    >
+                        <Heart size={20} fill={isLiked ? 'currentColor' : 'none'} />
+                         {isLiked ? 'Liked' : 'Like'} ({likeCount})
+                    </button>
+                    <button
+                        className="action-btn comment-btn"
+                        onClick={() => setShowComments(!showComments)}
+                    >
+                        <MessageCircle size={20} />
+                        Comment ({post.comments_count})
+                    </button>
+                    <button
+                        className="action-btn share-btn"
+                        onClick={handleShare}
+                    >
+                        <Share2 size={20} />
+                        Share
+                    </button>
+                </div>
+            ) : (
+                <div className="post-actions" style={{ justifyContent: 'flex-start', gap: '1rem', opacity: 0.7 }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem', color: '#888' }}>
+                        <Heart size={16} /> {likeCount}
+                    </span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem', color: '#888' }}>
+                        <MessageCircle size={16} /> {post.comments_count}
+                    </span>
+                </div>
+            )}
 
             {/* Comments Section */}
             {showComments && (

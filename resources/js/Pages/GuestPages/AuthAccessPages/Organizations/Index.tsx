@@ -1,23 +1,8 @@
 import { useState } from 'react';
 import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { ArrowLeft, MapPin, Search, Building2, GraduationCap, School, Trophy } from 'lucide-react';
-import '../Organizations.css';
-
-const categoryIcons: Record<string, React.ReactNode> = {
-    'higher-institutions': <GraduationCap />,
-    'high-schools': <School />,
-    'football-fans': <Trophy />,
-    'default': <Building2 />,
-};
-
-interface Category {
-    id: number;
-    uuid: string;
-    name: string;
-    slug: string;
-    description: string | null;
-}
+import { Building2, MapPin, Search } from 'lucide-react';
+import './Organizations.css';
 
 interface Organization {
     id: number;
@@ -33,11 +18,10 @@ interface Organization {
 }
 
 interface Props {
-    category: Category;
     organizations: Organization[];
 }
 
-export default function CategoryShow({ category, organizations }: Props) {
+export default function OrganizationsIndex({ organizations }: Props) {
     const [searchTerm, setSearchTerm] = useState('');
 
     const filteredOrganizations = organizations.filter(org =>
@@ -60,29 +44,13 @@ export default function CategoryShow({ category, organizations }: Props) {
                 </div>
 
                 <div className="organizations-container">
-                    {/* Back Button */}
-                    <button
-                        className="org-back-button"
-                        onClick={() => router.visit('/organizations')}
-                    >
-                        <ArrowLeft size={18} />
-                        Back to Categories
-                    </button>
-
-                    {/* Breadcrumb */}
-                    <div className="org-breadcrumb">
-                        <a href="/organizations">Organizations</a>
-                        <span className="separator">/</span>
-                        <span>{category.name}</span>
-                    </div>
-
                     {/* Header */}
                     <div className="org-header">
                         <div className="org-header-icon">
-                            {categoryIcons[category.slug] || categoryIcons['default']}
+                            <Building2 />
                         </div>
-                        <h1>{category.name}</h1>
-                        {category.description && <p>{category.description}</p>}
+                        <h1>Organization Groups</h1>
+                        <p>Connect with your community. Find your school, club, or organization and join class set groups.</p>
                     </div>
 
                     {/* Search */}
@@ -141,7 +109,7 @@ export default function CategoryShow({ category, organizations }: Props) {
                             <p>
                                 {searchTerm
                                     ? 'Try adjusting your search terms.'
-                                    : 'No organizations have been added to this category yet.'}
+                                    : 'No organizations have been added yet.'}
                             </p>
                         </div>
                     )}

@@ -4,13 +4,15 @@ namespace App\Actions\GuestServices\AuthAccessServices;
 
 use App\Repositories\GuestRepositories\AuthAccessRepositories\ClassSetRepository;
 use App\Repositories\GuestRepositories\AuthAccessRepositories\ClassSetMessageRepository;
+use App\Actions\GuestServices\OrganizationFollowService;
 use Illuminate\Validation\ValidationException;
 
 class ClassSetService
 {
     public function __construct(
         private ClassSetRepository $classSetRepository,
-        private ClassSetMessageRepository $messageRepository
+        private ClassSetMessageRepository $messageRepository,
+        private OrganizationFollowService $organizationFollowService
     ) {
     }
 
@@ -40,6 +42,16 @@ class ClassSetService
         }
 
         $member = $this->classSetRepository->addMember($classSet->id, $userId);
+
+        // Auto-follow the parent organization
+        try {
+            $organization = $classSet->department->faculty->organization ?? null;
+            if ($organization) {
+                $this->organizationFollowService->followOrganization($userId, $organization->id);
+            }
+        } catch (\Throwable $e) {
+            // Fire-and-forget: don't let follow failure block joining
+        }
 
         return [
             'success' => true,

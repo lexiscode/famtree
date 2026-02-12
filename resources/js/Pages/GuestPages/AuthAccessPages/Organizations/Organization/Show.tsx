@@ -57,9 +57,11 @@ interface Props {
 
 export default function OrganizationShow({ organization, facultiesCount, galleries, breadcrumb }: Props) {
     const isFootballClub = organization.category.slug === 'football-fans';
+    const isReligiousOrg = organization.category.slug === 'religious-organizations';
+    const usesChannels = isFootballClub || isReligiousOrg;
 
     const handleFindGroup = () => {
-        if (isFootballClub) {
+        if (usesChannels) {
             router.visit(`/organizations/${organization.slug}/channels`);
         } else {
             router.visit(`/organizations/${organization.slug}/faculties`);
@@ -138,10 +140,10 @@ export default function OrganizationShow({ organization, facultiesCount, galleri
                     {/* Back Button */}
                     <button
                         className="org-back-button"
-                        onClick={() => router.visit(`/organizations/category/${organization.category.slug}`)}
+                        onClick={() => router.visit('/organizations')}
                     >
                         <ArrowLeft size={18} />
-                        Back to {organization.category.name}
+                        Back to Organizations
                     </button>
 
                     {/* Breadcrumb */}
@@ -219,7 +221,7 @@ export default function OrganizationShow({ organization, facultiesCount, galleri
                                                 <Calendar size={18} />
                                             </div>
                                             <div className="quick-info-content">
-                                                <label>{isFootballClub ? 'Established' : 'Founded'}</label>
+                                                <label>{isFootballClub ? 'Established' : isReligiousOrg ? 'Established' : 'Founded'}</label>
                                                 <span>{organization.founded_year}</span>
                                             </div>
                                         </div>
@@ -259,7 +261,7 @@ export default function OrganizationShow({ organization, facultiesCount, galleri
                                             </div>
                                         </div>
                                     )}
-                                    {!isFootballClub && (
+                                    {!usesChannels && (
                                         <div className="quick-info-item">
                                             <div className="quick-info-icon">
                                                 <Users size={18} />
@@ -321,11 +323,13 @@ export default function OrganizationShow({ organization, facultiesCount, galleri
                         <p>
                             {isFootballClub
                                 ? `Join fan channels and connect with ${organization.short_name || organization.name} supporters worldwide.`
-                                : 'Find your faculty, department, and join your class set group chat.'
+                                : isReligiousOrg
+                                    ? `Join fellowship channels and connect with ${organization.short_name || organization.name} brethren worldwide.`
+                                    : 'Find your faculty, department, and join your class set group chat.'
                             }
                         </p>
                         <button className="btn-find-group" onClick={handleFindGroup}>
-                            {isFootballClub ? 'Join Fan Channels' : 'Find Your Group'}
+                            {isFootballClub ? 'Join Fan Channels' : isReligiousOrg ? 'Join Fellowship Channels' : 'Find Your Group'}
                             <ChevronRight size={20} />
                         </button>
                     </div>

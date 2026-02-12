@@ -48,11 +48,18 @@ interface RelationshipType {
     label: string;
 }
 
+interface Spouse {
+    id: number;
+    name: string;
+    profile_image_url: string | null;
+}
+
 interface Props {
     user: Profile;
     initial_suggestions: SuggestedMember[];
     total_suggestions: number;
     available_relationship_types: RelationshipType[];
+    spouses: Spouse[];
     initial_page: number;
     per_page: number;
     connectionCount: number;
@@ -65,6 +72,7 @@ export default function SuggestedMembers({
     initial_suggestions,
     total_suggestions,
     available_relationship_types,
+    spouses,
     initial_page,
     per_page,
     connectionCount,
@@ -289,6 +297,7 @@ export default function SuggestedMembers({
                                             <SuggestedMemberCard
                                                 key={suggestion.id}
                                                 suggestion={suggestion}
+                                                spouses={spouses}
                                                 onConnectionRequested={handleConnectionRequested}
                                             />
                                         ))}

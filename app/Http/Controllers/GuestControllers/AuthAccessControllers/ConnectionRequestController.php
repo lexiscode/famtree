@@ -93,10 +93,14 @@ class ConnectionRequestController extends Controller
         $pendingRequestCount = $this->connectionRepository->getPendingRequestCount($userId);
         $sentRequestCount = $this->connectionRepository->getSentRequestCount($userId);
 
+        // Get active spouses for "Other Parent" dropdown on parent-child requests
+        $spouses = $this->getActiveSpouses($userId);
+
         return Inertia::render('GuestPages/AuthAccessPages/Connections/PendingRequests', [
             'user' => $userProfile,
             'requests' => $requestsData['requests'],
             'count' => $requestsData['count'],
+            'spouses' => $spouses,
             'connectionCount' => $connectionCount,
             'pendingRequestCount' => $pendingRequestCount,
             'sentRequestCount' => $sentRequestCount,
@@ -175,9 +179,13 @@ class ConnectionRequestController extends Controller
         $pendingRequestCount = $this->connectionRepository->getPendingRequestCount($userId);
         $sentRequestCount = $this->connectionRepository->getSentRequestCount($userId);
 
+        // Get active (non-divorced) spouses for "Other Parent" dropdown
+        $spouses = $this->getActiveSpouses($userId);
+
         return Inertia::render('GuestPages/AuthAccessPages/Connections/SendRequest', [
             'user' => $userProfile,
             'current_user_id' => $userId,
+            'spouses' => $spouses,
             'connectionCount' => $connectionCount,
             'pendingRequestCount' => $pendingRequestCount,
             'sentRequestCount' => $sentRequestCount,
@@ -196,6 +204,7 @@ class ConnectionRequestController extends Controller
         $validated = $request->validate([
             'recipient_id' => 'required|integer|exists:users,id',
             'relationship_type' => 'required|string',
+            'other_parent_id' => 'nullable|integer|exists:users,id',
         ]);
 
         try {
@@ -220,7 +229,8 @@ class ConnectionRequestController extends Controller
             $result = $this->connectionService->sendConnectionRequest(
                 $userId,
                 $recipientId,
-                $validated['relationship_type']
+                $validated['relationship_type'],
+                $validated['other_parent_id'] ?? null
             );
 
             return response()->json($result, 201);
@@ -243,9 +253,10 @@ class ConnectionRequestController extends Controller
     public function accept(Request $request, int $connectionId)
     {
         $userId = $request->user()->id;
+        $otherParentId = $request->input('other_parent_id');
 
         try {
-            $result = $this->connectionService->acceptConnection($connectionId, $userId);
+            $result = $this->connectionService->acceptConnection($connectionId, $userId, $otherParentId ? (int) $otherParentId : null);
 
             return response()->json($result, 200);
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -310,6 +321,25 @@ class ConnectionRequestController extends Controller
     }
 
     /**
+     * Divorce a spousal connection
+     */
+    public function divorce(Request $request, int $connectionId)
+    {
+        $userId = $request->user()->id;
+
+        try {
+            $this->connectionService->divorceConnection($connectionId, $userId);
+
+            return redirect()->back()->with('success', 'Connection has been marked as divorced');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $firstError = collect($e->errors())->flatten()->first();
+            return redirect()->back()->with('error', $firstError ?? 'Validation failed');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
      * Undo a connection acceptance (API)
      */
     public function undoAcceptance(Request $request, int $connectionId)
@@ -331,6 +361,36 @@ class ConnectionRequestController extends Controller
                 'error' => $e->getMessage(),
             ], 404);
         }
+    }
+
+    /**
+     * Get active (non-divorced) spouses for the user
+     */
+    private function getActiveSpouses(int $userId): array
+    {
+        $connections = $this->connectionRepository->getConnections($userId);
+        $spouses = [];
+
+        foreach ($connections as $connection) {
+            if (!in_array($connection->relationship_type, ['wife', 'husband', 'partner'])) {
+                continue;
+            }
+            if ($connection->isDivorced()) {
+                continue;
+            }
+
+            $spouse = $connection->requester_user_id === $userId
+                ? $connection->recipient
+                : $connection->requester;
+
+            $spouses[] = [
+                'id' => $spouse->id,
+                'name' => trim($spouse->first_name . ' ' . $spouse->last_name),
+                'profile_image_url' => $spouse->profile_image_url,
+            ];
+        }
+
+        return $spouses;
     }
 
     /**
@@ -378,7 +438,7 @@ class ConnectionRequestController extends Controller
      */
     public function relationshipTypes()
     {
-        $types = \App\Models\GuestModels\RelationshipType::whereNotIn('type_key', ['child', 'partner'])
+        $types = \App\Models\GuestModels\RelationshipType::whereNotIn('type_key', ['child', 'partner', 'cousin', 'godparent', 'godchild', 'step_child'])
             ->orderBy('sort_order')
             ->get()
             ->map(function ($type) {

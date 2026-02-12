@@ -15,6 +15,8 @@ class PrivateMessage extends Model
         'delivered_at',
         'is_read',
         'read_at',
+        'is_edited',
+        'edited_at',
     ];
 
     protected $casts = [
@@ -22,6 +24,8 @@ class PrivateMessage extends Model
         'delivered_at' => 'datetime',
         'is_read' => 'boolean',
         'read_at' => 'datetime',
+        'is_edited' => 'boolean',
+        'edited_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];

@@ -43,6 +43,11 @@ class SuggestedConnectionService
         $suggestedWithInference = $suggestedUsers->map(function ($suggestedUser) use ($userId) {
             $inference = $this->inferenceService->inferRelationship($userId, $suggestedUser->id);
 
+            // Exclude users with no inferable relationship (e.g. ex-spouse's new partner/children)
+            if (!$inference) {
+                return null;
+            }
+
             return [
                 'id' => $suggestedUser->id,
                 'name' => $suggestedUser->first_name . ' ' . $suggestedUser->last_name,
@@ -55,14 +60,14 @@ class SuggestedConnectionService
                 'bio' => $suggestedUser->bio,
                 'gender' => $suggestedUser->gender,
                 'inferred_relationship' => [
-                    'type' => $inference['type'] ?? null,
-                    'label' => $inference['label'] ?? null,
-                    'text' => $inference ? $this->inferenceService->getInferenceText($inference['label']) : null,
-                    'confidence' => $inference['confidence'] ?? 0,
-                    'path_length' => $inference['path_length'] ?? null,
+                    'type' => $inference['type'],
+                    'label' => $inference['label'],
+                    'text' => $this->inferenceService->getInferenceText($inference['label']),
+                    'confidence' => $inference['confidence'],
+                    'path_length' => $inference['path_length'],
                 ],
             ];
-        });
+        })->filter()->values();
 
         // Filter by relationship type if provided
         if ($relationshipFilter) {
@@ -125,7 +130,7 @@ class SuggestedConnectionService
             })
             ->unique('type')
             ->filter(function ($item) {
-                return $item['type'] !== null;
+                return $item['type'] !== null && $item['type'] !== 'cousin';
             })
             ->values()
             ->toArray();
@@ -145,12 +150,13 @@ class SuggestedConnectionService
         $pendingRequestUserIds = $this->suggestedConnectionRepository->getPendingRequestUserIds($userId);
         $blockedUserIds = $this->suggestedConnectionRepository->getBlockedUserIds($userId);
 
-        // Count filtered users
+        // Count filtered users (also exclude those with no inferable relationship)
         return $secondDegreeUsers->filter(function ($suggestedUser) use ($userId, $connectedUserIds, $pendingRequestUserIds, $blockedUserIds) {
             return $suggestedUser->id !== $userId
                 && !in_array($suggestedUser->id, $connectedUserIds)
                 && !in_array($suggestedUser->id, $pendingRequestUserIds)
-                && !in_array($suggestedUser->id, $blockedUserIds);
+                && !in_array($suggestedUser->id, $blockedUserIds)
+                && $this->inferenceService->inferRelationship($userId, $suggestedUser->id) !== null;
         })->count();
     }
 

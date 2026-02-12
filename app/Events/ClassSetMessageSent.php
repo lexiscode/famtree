@@ -47,8 +47,31 @@ class ClassSetMessageSent implements ShouldBroadcastNow
      */
     public function broadcastWith(): array
     {
-        // Load sender relationship if not already loaded
-        $this->message->loadMissing('sender');
+        $isBroadcast = (bool) $this->message->is_org_broadcast;
+
+        if ($isBroadcast) {
+            $this->message->loadMissing(['organization', 'orgAccount']);
+            $org = $this->message->organization;
+
+            $senderData = [
+                'id' => $org?->id ?? 0,
+                'uuid' => null,
+                'first_name' => $org?->short_name ?: ($org?->name ?? 'Organization'),
+                'last_name' => '',
+                'username' => $org?->slug ?? '',
+                'profile_image' => $org?->logo_url,
+            ];
+        } else {
+            $this->message->loadMissing('sender');
+            $senderData = [
+                'id' => $this->message->sender->id,
+                'uuid' => $this->message->sender->uuid,
+                'first_name' => $this->message->sender->first_name,
+                'last_name' => $this->message->sender->last_name,
+                'username' => $this->message->sender->username,
+                'profile_image' => $this->message->sender->profile_image_url,
+            ];
+        }
 
         return [
             'message' => [
@@ -57,15 +80,15 @@ class ClassSetMessageSent implements ShouldBroadcastNow
                 'class_set_id' => $this->message->class_set_id,
                 'sender_id' => $this->message->sender_id,
                 'message' => $this->message->message,
+                'is_org_broadcast' => $isBroadcast,
+                'organization' => $isBroadcast && $org ? [
+                    'id' => $org->id,
+                    'name' => $org->name,
+                    'short_name' => $org->short_name,
+                    'logo_url' => $org->logo_url,
+                ] : null,
                 'created_at' => $this->message->created_at->toISOString(),
-                'sender' => [
-                    'id' => $this->message->sender->id,
-                    'uuid' => $this->message->sender->uuid,
-                    'first_name' => $this->message->sender->first_name,
-                    'last_name' => $this->message->sender->last_name,
-                    'username' => $this->message->sender->username,
-                    'profile_image' => $this->message->sender->profile_image_url,
-                ],
+                'sender' => $senderData,
             ],
             'class_set' => [
                 'id' => $this->classSet->id,

@@ -109,20 +109,48 @@ class ClassSetChatService
                 'name' => $classSet->name,
             ],
             'messages' => $messages->map(function ($msg) {
-                return [
-                    'id' => $msg->id,
-                    'uuid' => $msg->uuid,
-                    'message' => $msg->message,
-                    'sender' => [
+                $isBroadcast = (bool) $msg->is_org_broadcast;
+
+                if ($isBroadcast) {
+                    $org = $msg->organization;
+                    $senderData = [
+                        'id' => $org?->id ?? 0,
+                        'uuid' => null,
+                        'first_name' => $org?->short_name ?: ($org?->name ?? 'Organization'),
+                        'last_name' => '',
+                        'username' => $org?->slug ?? '',
+                        'profile_image' => $org?->logo_url,
+                    ];
+                } else {
+                    $senderData = [
                         'id' => $msg->sender->id,
                         'uuid' => $msg->sender->uuid,
                         'first_name' => $msg->sender->first_name,
                         'last_name' => $msg->sender->last_name,
                         'username' => $msg->sender->username,
                         'profile_image' => $msg->sender->profile_image_url,
-                    ],
+                    ];
+                }
+
+                $data = [
+                    'id' => $msg->id,
+                    'uuid' => $msg->uuid,
+                    'message' => $msg->message,
+                    'is_org_broadcast' => $isBroadcast,
+                    'sender' => $senderData,
                     'created_at' => $msg->created_at,
                 ];
+
+                if ($isBroadcast && $org) {
+                    $data['organization'] = [
+                        'id' => $org->id,
+                        'name' => $org->name,
+                        'short_name' => $org->short_name,
+                        'logo_url' => $org->logo_url,
+                    ];
+                }
+
+                return $data;
             }),
             'has_more' => $messages->count() >= $limit,
         ];
@@ -140,5 +168,133 @@ class ClassSetChatService
         }
 
         broadcast(new ClassSetUserTyping($classSet, $user))->toOthers();
+    }
+
+    /**
+     * Edit a message
+     */
+    public function editMessage(int $messageId, int $userId, string $newMessage): array
+    {
+        $message = $this->messageRepository->findMessage($messageId);
+
+        if (!$message) {
+            return [
+                'success' => false,
+                'error' => 'Message not found',
+            ];
+        }
+
+        // Only the sender can edit their message
+        if ($message->sender_id !== $userId) {
+            return [
+                'success' => false,
+                'error' => 'You can only edit your own messages',
+            ];
+        }
+
+        $trimmedMessage = trim($newMessage);
+
+        if (empty($trimmedMessage)) {
+            return [
+                'success' => false,
+                'error' => 'Message cannot be empty',
+            ];
+        }
+
+        if (strlen($trimmedMessage) > 5000) {
+            return [
+                'success' => false,
+                'error' => 'Message cannot exceed 5000 characters',
+            ];
+        }
+
+        $updatedMessage = $this->messageRepository->updateMessage($messageId, $trimmedMessage);
+        $updatedMessage->load('sender:id,uuid,first_name,last_name,username,profile_image');
+
+        return [
+            'success' => true,
+            'message' => [
+                'id' => $updatedMessage->id,
+                'uuid' => $updatedMessage->uuid,
+                'message' => $updatedMessage->message,
+                'is_edited' => $updatedMessage->is_edited,
+                'edited_at' => $updatedMessage->edited_at?->toISOString(),
+                'sender' => [
+                    'id' => $updatedMessage->sender->id,
+                    'uuid' => $updatedMessage->sender->uuid,
+                    'first_name' => $updatedMessage->sender->first_name,
+                    'last_name' => $updatedMessage->sender->last_name,
+                    'username' => $updatedMessage->sender->username,
+                    'profile_image' => $updatedMessage->sender->profile_image_url,
+                ],
+                'created_at' => $updatedMessage->created_at,
+            ],
+        ];
+    }
+
+    /**
+     * Delete a message
+     */
+    public function deleteMessage(int $messageId, int $userId): array
+    {
+        $message = $this->messageRepository->findMessage($messageId);
+
+        if (!$message) {
+            return [
+                'success' => false,
+                'error' => 'Message not found',
+            ];
+        }
+
+        // Only the sender can delete their message
+        if ($message->sender_id !== $userId) {
+            return [
+                'success' => false,
+                'error' => 'You can only delete your own messages',
+            ];
+        }
+
+        $deleted = $this->messageRepository->delete($messageId);
+
+        return [
+            'success' => $deleted,
+            'error' => $deleted ? null : 'Failed to delete message',
+        ];
+    }
+
+    /**
+     * Bulk delete messages
+     */
+    public function bulkDeleteMessages(array $messageIds, int $userId): array
+    {
+        if (empty($messageIds)) {
+            return [
+                'success' => false,
+                'error' => 'No messages selected',
+            ];
+        }
+
+        // Verify all messages belong to the user
+        foreach ($messageIds as $messageId) {
+            $message = $this->messageRepository->findMessage($messageId);
+
+            if (!$message) {
+                continue;
+            }
+
+            if ($message->sender_id !== $userId) {
+                return [
+                    'success' => false,
+                    'error' => 'You can only delete your own messages',
+                ];
+            }
+        }
+
+        $deletedCount = $this->messageRepository->bulkDeleteMessages($messageIds);
+
+        return [
+            'success' => true,
+            'deleted_count' => $deletedCount,
+        ];
     }
 }

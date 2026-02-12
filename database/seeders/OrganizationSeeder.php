@@ -40,6 +40,13 @@ class OrganizationSeeder extends Seeder
                 'icon' => 'users',
                 'display_order' => 3,
             ],
+            [
+                'name' => 'Religious Organizations',
+                'slug' => 'religious-organizations',
+                'description' => 'Churches, mosques, and other religious communities.',
+                'icon' => 'church',
+                'display_order' => 4,
+            ],
         ];
 
         foreach ($categories as $categoryData) {
@@ -177,6 +184,40 @@ class OrganizationSeeder extends Seeder
 
         // Seed channels for Manchester United
         $this->seedFootballChannels($manutd, 'Man Utd');
+
+        // Get Religious Organizations category
+        $religiousOrgs = OrganizationCategory::where('slug', 'religious-organizations')->first();
+
+        // Deeper Christian Life Ministry
+        $deeperLife = Organization::updateOrCreate(
+            ['slug' => 'deeper-christian-life-ministry'],
+            [
+                'category_id' => $religiousOrgs->id,
+                'name' => 'Deeper Christian Life Ministry',
+                'short_name' => 'Deeper Life',
+                'description' => 'Deeper Christian Life Ministry, commonly known as Deeper Life Bible Church, is one of Nigeria\'s largest and most influential evangelical churches. Founded by Pastor William Folorunso Kumuyi in 1973, the ministry began as a small Bible study group of fifteen people in a living room at the University of Lagos. Today, it has grown into a global ministry with millions of members worldwide, known for its emphasis on holiness, in-depth Bible study, and practical Christian living.',
+                'vision' => 'To be a leading global ministry that transforms lives through the uncompromising teaching of God\'s Word, raising disciples who are worthy in character and sound in doctrine, while demonstrating the power of the Gospel in every sphere of human endeavor.',
+                'mission' => 'To proclaim the undiluted Word of God with clarity and power, nurture believers to spiritual maturity through systematic Bible teaching, establish vibrant local assemblies worldwide, and demonstrate Christ\'s love through practical acts of service to humanity. The ministry is committed to raising a generation of Christians who take their faith seriously and live as salt and light in their communities.',
+                'logo' => '/churches/deeper-life/logo.png',
+                'cover_image' => '/churches/deeper-life/deeper-life.jpeg',
+                'address' => 'Deeper Life Bible Church Headquarters, Gbagada',
+                'city' => 'Lagos',
+                'state' => 'Lagos State',
+                'country' => 'Nigeria',
+                'website' => 'https://www.dclm.org',
+                'email' => 'info@dclm.org',
+                'phone' => '+234 1 280 0000',
+                'founded_year' => 1973,
+                'leader_name' => 'Pastor William Folorunso Kumuyi',
+                'leader_title' => 'General Superintendent',
+                'leader_qualifications' => 'BSc Mathematics (First Class Honours), Former Lecturer at the University of Lagos. Pastor Kumuyi is widely regarded as one of the greatest living preachers, known for his clear, systematic Bible exposition and commitment to holiness. Under his leadership, Deeper Life has grown from a small Bible study group to a global ministry with presence in over 100 countries.',
+                'leader_image' => '/churches/deeper-life/founder.webp',
+                'is_active' => true,
+            ]
+        );
+
+        // Seed channels for Deeper Life
+        $this->seedReligiousChannels($deeperLife, 'Deeper Life');
     }
 
     private function seedUnilagFaculties(Organization $unilag): void
@@ -501,6 +542,60 @@ class OrganizationSeeder extends Seeder
             "{$clubName} - Asia",
             "{$clubName} - Middle East",
             "{$clubName} - Worldwide",
+        ];
+
+        $year = date('Y');
+        foreach ($channels as $index => $channelName) {
+            ClassSet::updateOrCreate(
+                [
+                    'department_id' => $department->id,
+                    'year' => $year + $index, // Use different years to make unique
+                ],
+                [
+                    'name' => $channelName,
+                    'is_active' => true,
+                ]
+            );
+        }
+    }
+
+    /**
+     * Seed channels for religious organizations
+     */
+    private function seedReligiousChannels(Organization $org, string $orgName): void
+    {
+        // Create a single faculty for church channels
+        $faculty = Faculty::updateOrCreate(
+            ['slug' => Str::slug($orgName) . '-channels'],
+            [
+                'organization_id' => $org->id,
+                'name' => 'Fellowship Channels',
+                'description' => "Regional fellowship groups for {$org->name}",
+            ]
+        );
+
+        // Create a single department to hold all channels
+        $department = Department::updateOrCreate(
+            ['slug' => Str::slug($orgName) . '-regional-fellowships'],
+            [
+                'faculty_id' => $faculty->id,
+                'name' => 'Regional Fellowships',
+                'description' => 'Connect with brethren from your region',
+            ]
+        );
+
+        // Create regional channels
+        $channels = [
+            "{$orgName} - Nigeria",
+            "{$orgName} - Lagos",
+            "{$orgName} - Abuja",
+            "{$orgName} - Port Harcourt",
+            "{$orgName} - Ibadan",
+            "{$orgName} - Ghana",
+            "{$orgName} - UK",
+            "{$orgName} - USA",
+            "{$orgName} - Europe",
+            "{$orgName} - Worldwide",
         ];
 
         $year = date('Y');

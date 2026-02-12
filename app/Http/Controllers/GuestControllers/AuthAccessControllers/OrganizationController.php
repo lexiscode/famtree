@@ -14,32 +14,14 @@ class OrganizationController extends Controller
     }
 
     /**
-     * Display all organization categories
+     * Display all organizations
      */
-    public function categories()
+    public function index()
     {
-        $categories = $this->organizationService->getAllCategories();
+        $organizations = $this->organizationService->getAllOrganizations();
 
-        return Inertia::render('GuestPages/AuthAccessPages/Organizations/Categories/Index', [
-            'categories' => $categories,
-        ]);
-    }
-
-    /**
-     * Display organizations within a category
-     */
-    public function showCategory(string $slug)
-    {
-        $data = $this->organizationService->getCategory($slug);
-
-        if (!$data) {
-            return redirect()->route('organizations.categories')
-                ->with('error', 'Category not found.');
-        }
-
-        return Inertia::render('GuestPages/AuthAccessPages/Organizations/Category/Show', [
-            'category' => $data['category'],
-            'organizations' => $data['organizations'],
+        return Inertia::render('GuestPages/AuthAccessPages/Organizations/Index', [
+            'organizations' => $organizations,
         ]);
     }
 
@@ -51,7 +33,7 @@ class OrganizationController extends Controller
         $data = $this->organizationService->getOrganization($slug);
 
         if (!$data) {
-            return redirect()->route('organizations.categories')
+            return redirect()->route('organizations.index')
                 ->with('error', 'Organization not found.');
         }
 
@@ -73,7 +55,7 @@ class OrganizationController extends Controller
         $data = $this->organizationService->getFaculties($organizationSlug);
 
         if (!$data) {
-            return redirect()->route('organizations.categories')
+            return redirect()->route('organizations.index')
                 ->with('error', 'Organization not found.');
         }
 
@@ -91,7 +73,7 @@ class OrganizationController extends Controller
         $data = $this->organizationService->getDepartments($facultySlug);
 
         if (!$data) {
-            return redirect()->route('organizations.categories')
+            return redirect()->route('organizations.index')
                 ->with('error', 'Faculty not found.');
         }
 
@@ -111,7 +93,7 @@ class OrganizationController extends Controller
         $data = $this->organizationService->getClassSets($departmentSlug, $userId);
 
         if (!$data) {
-            return redirect()->route('organizations.categories')
+            return redirect()->route('organizations.index')
                 ->with('error', 'Department not found.');
         }
 
@@ -132,7 +114,7 @@ class OrganizationController extends Controller
         $data = $this->organizationService->getChannels($organizationSlug, $userId);
 
         if (!$data) {
-            return redirect()->route('organizations.categories')
+            return redirect()->route('organizations.index')
                 ->with('error', 'Organization not found.');
         }
 

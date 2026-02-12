@@ -67,6 +67,14 @@ class Kernel extends ConsoleKernel
             ->onOneServer()
             ->withoutOverlapping()
             ->name('deceased-execute-pending-changes');
+
+        // Process pending scheduled/recurring organization broadcasts
+        // Runs every minute to check for broadcasts ready to send
+        $schedule->command('org:process-broadcasts')
+            ->everyMinute()
+            ->onOneServer()
+            ->withoutOverlapping()
+            ->name('org-process-broadcasts');
     }
 
     /**

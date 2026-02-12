@@ -82,6 +82,21 @@ class Organization extends Model
         return $this->hasMany(OrganizationGallery::class);
     }
 
+    public function orgAccounts()
+    {
+        return $this->hasMany(\App\Models\OrgModels\OrgAccount::class);
+    }
+
+    public function followers()
+    {
+        return $this->hasMany(\App\Models\OrgModels\OrganizationFollow::class);
+    }
+
+    public function orgPosts()
+    {
+        return $this->hasMany(\App\Models\OrgModels\OrgPost::class);
+    }
+
     public function scopeActive($query)
     {
         return $query->where('is_active', true);

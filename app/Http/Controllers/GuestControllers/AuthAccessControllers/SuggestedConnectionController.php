@@ -54,11 +54,15 @@ class SuggestedConnectionController extends Controller
         // Fetch initial suggestions for the page (first 10)
         $initialSuggestions = $this->suggestedConnectionService->getSuggestedMembers($userId, null, 1, 10);
 
+        // Get active spouses for "Other Parent" dropdown
+        $spouses = $this->getActiveSpouses($userId);
+
         return Inertia::render('GuestPages/AuthAccessPages/Connections/SuggestedMembers', [
             'user' => $userProfile,
             'initial_suggestions' => $initialSuggestions['suggestions'],
             'total_suggestions' => $suggestedCount,
             'available_relationship_types' => $availableRelationshipTypes,
+            'spouses' => $spouses,
             'connectionCount' => $connectionCount,
             'pendingRequestCount' => $pendingRequestCount,
             'sentRequestCount' => $sentRequestCount,
@@ -159,5 +163,35 @@ class SuggestedConnectionController extends Controller
                 'error' => $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Get active (non-divorced) spouses for the user
+     */
+    private function getActiveSpouses(int $userId): array
+    {
+        $connections = $this->connectionRepository->getConnections($userId);
+        $spouses = [];
+
+        foreach ($connections as $connection) {
+            if (!in_array($connection->relationship_type, ['wife', 'husband', 'partner'])) {
+                continue;
+            }
+            if ($connection->isDivorced()) {
+                continue;
+            }
+
+            $spouse = $connection->requester_user_id === $userId
+                ? $connection->recipient
+                : $connection->requester;
+
+            $spouses[] = [
+                'id' => $spouse->id,
+                'name' => trim($spouse->first_name . ' ' . $spouse->last_name),
+                'profile_image_url' => $spouse->profile_image_url,
+            ];
+        }
+
+        return $spouses;
     }
 }

@@ -15,30 +15,11 @@ class OrganizationService
     }
 
     /**
-     * Get all categories formatted for frontend
+     * Get all active organizations
      */
-    public function getAllCategories(): Collection
+    public function getAllOrganizations(): Collection
     {
-        return $this->organizationRepository->getAllCategories();
-    }
-
-    /**
-     * Get a category with its organizations
-     */
-    public function getCategory(string $slug): ?array
-    {
-        $category = $this->organizationRepository->getCategoryBySlug($slug);
-
-        if (!$category) {
-            return null;
-        }
-
-        $organizations = $this->organizationRepository->getOrganizationsByCategory($category->id);
-
-        return [
-            'category' => $category,
-            'organizations' => $organizations,
-        ];
+        return $this->organizationRepository->getAllOrganizations();
     }
 
     /**
@@ -168,7 +149,6 @@ class OrganizationService
                 if ($organization) {
                     $breadcrumb = [
                         ['label' => 'Organizations', 'url' => '/organizations'],
-                        ['label' => $organization->category->name, 'url' => '/organizations/category/' . $organization->category->slug],
                         ['label' => $organization->short_name ?? $organization->name, 'url' => null],
                     ];
                 }
@@ -180,7 +160,6 @@ class OrganizationService
                     $org = $faculty->organization;
                     $breadcrumb = [
                         ['label' => 'Organizations', 'url' => '/organizations'],
-                        ['label' => $org->category->name ?? 'Category', 'url' => '/organizations/category/' . ($org->category->slug ?? '')],
                         ['label' => $org->short_name ?? $org->name, 'url' => '/organizations/' . $org->slug],
                         ['label' => $faculty->name, 'url' => null],
                     ];

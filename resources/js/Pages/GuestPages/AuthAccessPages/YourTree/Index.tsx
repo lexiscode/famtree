@@ -28,6 +28,26 @@ interface ConnectionTreeData {
     nodes: Node[];
     edges: Edge[];
     rootUserId: number;
+    spouseGroups?: Array<{
+        spouseId: number;
+        isDivorced: boolean;
+        childIds: number[];
+    }>;
+    parentFamilyUnits?: Array<{
+        parentId: number;
+        siblings: number[];
+        parents: number[];
+        otherSpouses: Array<{
+            spouseId: number;
+            isDivorced: boolean;
+            childIds: number[];
+        }>;
+    }>;
+    parentConnection?: {
+        parent1Id: number;
+        parent2Id: number;
+        isDivorced: boolean;
+    } | null;
 }
 
 interface User {
@@ -332,6 +352,7 @@ export default function Index({ connectionTreeData, user }: Props) {
                     {/* Main Visualization */}
                     <div style={{ marginBottom: '2rem' }}>
                         <ConnectionTreeVisualization
+                            key={currentTreeData.rootUserId}
                             treeData={currentTreeData}
                             onAvatarClick={handleAvatarClick}
                         />

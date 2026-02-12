@@ -19,6 +19,7 @@ interface TreeEdge {
     relationshipType: string;
     label: string;
     color: string;
+    isDivorced?: boolean;
 }
 
 interface FamilyContainer {
@@ -72,6 +73,7 @@ interface ContainerLayout {
     edges: TreeEdge[];
     spouseId: number | null;
     childrenIds: number[];
+    exSpouseIds: number[];
 }
 
 // Container colors for merged families
@@ -83,6 +85,26 @@ const containerColors = [
     { bg: 'rgba(236, 72, 153, 0.1)', border: '#EC4899', label: '#EC4899' },
 ];
 
+// Abbreviation mapping for relationship labels
+const getAbbreviation = (label: string): string => {
+    const map: Record<string, string> = {
+        'wife': 'W', 'husband': 'H', 'son': 'S', 'daughter': 'D',
+        'mother': 'M', 'father': 'F', 'brother': 'Br', 'sister': 'Si',
+        'grandson': 'GS', 'granddaughter': 'GD', 'grandmother': 'GM', 'grandfather': 'GF',
+        'aunt': 'Au', 'uncle': 'Un', 'nephew': 'Ne', 'niece': 'Ni',
+        'cousin': 'Co', 'partner': 'P', 'parent': 'Pa', 'child': 'Ch',
+        'sibling': 'Sb', 'grandparent': 'GP', 'grandchild': 'GC',
+        'ex_wife': 'PS', 'ex_husband': 'PS', 'ex_partner': 'PS',
+        'ex wife': 'PS', 'ex husband': 'PS', 'ex partner': 'PS',
+        'prev. spouse': 'PS', 'prev spouse': 'PS',
+    };
+    return map[label.toLowerCase()] || label.charAt(0).toUpperCase();
+};
+
+const capitalizeLabel = (label: string): string => {
+    return label.charAt(0).toUpperCase() + label.slice(1).toLowerCase();
+};
+
 const FamilyGroupTreeVisualization: React.FC<Props> = ({ treeData }) => {
     const svgRef = useRef<SVGSVGElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -92,6 +114,7 @@ const FamilyGroupTreeVisualization: React.FC<Props> = ({ treeData }) => {
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [hoveredNode, setHoveredNode] = useState<number | null>(null);
+    const [hoveredEdge, setHoveredEdge] = useState<string | null>(null);
 
     // Calculate node positions within a container with inverted triangle for parents
     // Only shows parents and their direct children (no grandchildren)
@@ -102,18 +125,20 @@ const FamilyGroupTreeVisualization: React.FC<Props> = ({ treeData }) => {
         spouseId: number | null;
         childrenIds: number[];
         filteredNodes: TreeNode[];
+        exSpouseIds: number[];
     } => {
         const positions: Record<number, NodePosition> = {};
 
         // Find the root user and spouse
         const rootNode = nodes.find(n => n.id === rootUserId);
         const spouseNode = nodes.find(n => ['wife', 'husband', 'partner'].includes(n.relationshipType));
+        const exSpouseNodes = nodes.filter(n => ['ex_wife', 'ex_husband', 'ex_partner'].includes(n.relationshipType));
         const children = nodes.filter(n => ['son', 'daughter', 'child'].includes(n.relationshipType));
 
-        // Filter nodes to only include parents and their direct children (exclude grandchildren and other extended family)
+        // Filter nodes to only include parents, ex-spouses, and their direct children
         const filteredNodes = nodes.filter(n =>
             n.id === rootUserId ||
-            ['wife', 'husband', 'partner', 'son', 'daughter', 'child'].includes(n.relationshipType)
+            ['wife', 'husband', 'partner', 'ex_wife', 'ex_husband', 'ex_partner', 'son', 'daughter', 'child'].includes(n.relationshipType)
         );
 
         const nodeWidth = 120;
@@ -131,6 +156,12 @@ const FamilyGroupTreeVisualization: React.FC<Props> = ({ treeData }) => {
             // Only root user, center them
             positions[rootUserId] = { x: 0, y: parentY, level: 0 };
         }
+
+        // Position ex-spouses to the left of root
+        exSpouseNodes.forEach((exSpouse, index) => {
+            const baseOffset = spouseNode ? -parentSpacing / 2 : 0;
+            positions[exSpouse.id] = { x: baseOffset - parentSpacing * (index + 1), y: parentY, level: 0 };
+        });
 
         // Level 1: Children (centered below parents)
         const childrenY = levelHeight;
@@ -167,7 +198,8 @@ const FamilyGroupTreeVisualization: React.FC<Props> = ({ treeData }) => {
             height: maxY - minY + verticalPadding * 2 + labelSpace,
             spouseId: spouseNode?.id ?? null,
             childrenIds: children.map(c => c.id),
-            filteredNodes
+            filteredNodes,
+            exSpouseIds: exSpouseNodes.map(n => n.id),
         };
     }, []);
 
@@ -182,7 +214,7 @@ const FamilyGroupTreeVisualization: React.FC<Props> = ({ treeData }) => {
         let currentX = 30;
 
         treeData.containers.forEach((container) => {
-            const { positions, width, height, spouseId, childrenIds, filteredNodes } = calculateContainerNodePositions(
+            const { positions, width, height, spouseId, childrenIds, filteredNodes, exSpouseIds } = calculateContainerNodePositions(
                 container.nodes,
                 container.rootUserId
             );
@@ -204,7 +236,8 @@ const FamilyGroupTreeVisualization: React.FC<Props> = ({ treeData }) => {
                 filteredNodes,
                 edges: container.edges,
                 spouseId,
-                childrenIds
+                childrenIds,
+                exSpouseIds,
             });
 
             currentX += containerWidth + containerGap;
@@ -375,6 +408,42 @@ const FamilyGroupTreeVisualization: React.FC<Props> = ({ treeData }) => {
                     </g>
                 )}
 
+                {/* Lines to ex-spouses (dashed) */}
+                {container.filteredNodes
+                    .filter(n => ['ex_wife', 'ex_husband', 'ex_partner'].includes(n.relationshipType))
+                    .map(exSpouse => {
+                        const exPos = container.nodePositions[exSpouse.id];
+                        if (!exPos) return null;
+                        const exX = container.x + padding + exPos.x;
+                        const exY = container.y + headerHeight + padding + exPos.y;
+                        return (
+                            <g key={`ex-spouse-line-${exSpouse.id}`}>
+                                <line
+                                    x1={rootX}
+                                    y1={rootY}
+                                    x2={exX}
+                                    y2={exY}
+                                    stroke="#9CA3AF"
+                                    strokeWidth="2"
+                                    opacity="0.5"
+                                    strokeDasharray="8,6"
+                                />
+                                {/* Broken heart / X symbol */}
+                                <text
+                                    x={(rootX + exX) / 2}
+                                    y={rootY - 5}
+                                    textAnchor="middle"
+                                    fontSize="14"
+                                    fill="#9CA3AF"
+                                    opacity="0.7"
+                                >
+                                    ✕
+                                </text>
+                            </g>
+                        );
+                    })
+                }
+
                 {/* Lines from both parents to junction point (inverted triangle) */}
                 <g>
                     {/* Line from root/husband to junction */}
@@ -414,6 +483,14 @@ const FamilyGroupTreeVisualization: React.FC<Props> = ({ treeData }) => {
                     const childEdge = container.edges.find(e => e.target === child.id);
                     const childColor = childEdge?.color || connectionColor;
                     const childLabel = childNode?.relationshipType || '';
+                    const abbr = getAbbreviation(childLabel);
+                    const fullLabel = capitalizeLabel(childLabel);
+                    const labelCx = (junctionX + child.x) / 2;
+                    const labelCy = (junctionY + 30 + child.y - nodeRadius) / 2;
+                    const badgeW = abbr.length > 1 ? 32 : 24;
+                    const hoverKey = `child-${child.id}`;
+                    const isChildHovered = hoveredEdge === hoverKey;
+                    const tooltipW = Math.max(fullLabel.length * 7 + 20, 60);
 
                     return (
                         <g key={`child-connection-${child.id}`}>
@@ -426,29 +503,88 @@ const FamilyGroupTreeVisualization: React.FC<Props> = ({ treeData }) => {
                                 opacity="0.7"
                             />
 
-                            {/* Label for relationship */}
-                            <g>
+                            {/* Abbreviated relationship label with hover tooltip */}
+                            <g
+                                onMouseEnter={() => setHoveredEdge(hoverKey)}
+                                onMouseLeave={() => setHoveredEdge(null)}
+                                style={{ cursor: 'pointer' }}
+                            >
+                                {/* Badge glow on hover */}
+                                {isChildHovered && (
+                                    <circle
+                                        cx={labelCx}
+                                        cy={labelCy}
+                                        r="16"
+                                        fill={childColor}
+                                        opacity="0.2"
+                                        filter="blur(6px)"
+                                    />
+                                )}
+                                {/* Badge pill */}
                                 <rect
-                                    x={(junctionX + child.x) / 2 - 30}
-                                    y={(junctionY + 30 + child.y - nodeRadius) / 2 - 10}
-                                    width="60"
-                                    height="20"
-                                    fill="rgba(15, 23, 42, 0.9)"
+                                    x={labelCx - badgeW / 2}
+                                    y={labelCy - 10}
+                                    width={badgeW}
+                                    height={20}
+                                    fill="rgba(15, 23, 42, 0.95)"
                                     stroke={childColor}
-                                    strokeWidth="1"
+                                    strokeWidth={isChildHovered ? '1.5' : '1'}
                                     rx="10"
+                                    ry="10"
                                 />
+                                {/* Abbreviation text */}
                                 <text
-                                    x={(junctionX + child.x) / 2}
-                                    y={(junctionY + 30 + child.y - nodeRadius) / 2 + 4}
+                                    x={labelCx}
+                                    y={labelCy + 4}
                                     textAnchor="middle"
                                     fontSize="9"
-                                    fontWeight="600"
+                                    fontWeight="700"
                                     fill={childColor}
-                                    style={{ textTransform: 'capitalize' }}
+                                    style={{ letterSpacing: '0.5px' }}
                                 >
-                                    {childLabel}
+                                    {abbr}
                                 </text>
+                                {/* Hover tooltip showing full label */}
+                                {isChildHovered && (
+                                    <g>
+                                        {/* Tooltip glow */}
+                                        <rect
+                                            x={labelCx - tooltipW / 2}
+                                            y={labelCy - 37}
+                                            width={tooltipW}
+                                            height={22}
+                                            fill={childColor}
+                                            rx="11"
+                                            ry="11"
+                                            opacity="0.12"
+                                            filter="blur(5px)"
+                                        />
+                                        {/* Tooltip background */}
+                                        <rect
+                                            x={labelCx - tooltipW / 2}
+                                            y={labelCy - 37}
+                                            width={tooltipW}
+                                            height={22}
+                                            fill="rgba(15, 23, 42, 0.98)"
+                                            stroke={childColor}
+                                            strokeWidth="1"
+                                            rx="11"
+                                            ry="11"
+                                        />
+                                        {/* Tooltip text */}
+                                        <text
+                                            x={labelCx}
+                                            y={labelCy - 22}
+                                            textAnchor="middle"
+                                            fontSize="9"
+                                            fontWeight="600"
+                                            fill={childColor}
+                                            style={{ letterSpacing: '0.3px' }}
+                                        >
+                                            {fullLabel}
+                                        </text>
+                                    </g>
+                                )}
                             </g>
                         </g>
                     );
@@ -698,8 +834,9 @@ const FamilyGroupTreeVisualization: React.FC<Props> = ({ treeData }) => {
                                         const y = container.y + headerHeight + padding + pos.y;
                                         const isRoot = node.id === container.rootUserId;
                                         const isSpouse = node.id === container.spouseId;
+                                        const isExSpouse = container.exSpouseIds.includes(node.id);
                                         const isHovered = hoveredNode === node.id;
-                                        const radius = isRoot || isSpouse ? 40 : 35;
+                                        const radius = isRoot || isSpouse ? 40 : (isExSpouse ? 38 : 35);
 
                                         return (
                                             <g
@@ -709,13 +846,13 @@ const FamilyGroupTreeVisualization: React.FC<Props> = ({ treeData }) => {
                                                 style={{ cursor: 'pointer' }}
                                             >
                                                 {/* Glow effect */}
-                                                {(isRoot || isSpouse || isHovered) && (
+                                                {(isRoot || isSpouse || isExSpouse || isHovered) && (
                                                     <circle
                                                         cx={x}
                                                         cy={y}
                                                         r={radius + 8}
-                                                        fill={isRoot ? '#667eea' : isSpouse ? '#EC4899' : node.nodeColor}
-                                                        opacity="0.3"
+                                                        fill={isRoot ? '#667eea' : isSpouse ? '#EC4899' : isExSpouse ? '#9CA3AF' : node.nodeColor}
+                                                        opacity={isExSpouse ? 0.15 : 0.3}
                                                         filter="blur(10px)"
                                                     />
                                                 )}
@@ -725,8 +862,8 @@ const FamilyGroupTreeVisualization: React.FC<Props> = ({ treeData }) => {
                                                     cx={x}
                                                     cy={y}
                                                     r={radius}
-                                                    fill={isRoot ? 'url(#gradient-root)' : isSpouse ? 'url(#gradient-spouse)' : node.nodeColor}
-                                                    stroke={isHovered ? '#FFFFFF' : isRoot ? '#764ba2' : isSpouse ? '#F472B6' : '#38BDF8'}
+                                                    fill={isRoot ? 'url(#gradient-root)' : isSpouse ? 'url(#gradient-spouse)' : isExSpouse ? '#F3F4F6' : node.nodeColor}
+                                                    stroke={isHovered ? '#FFFFFF' : isRoot ? '#764ba2' : isSpouse ? '#F472B6' : isExSpouse ? '#9CA3AF' : '#38BDF8'}
                                                     strokeWidth={isHovered ? 3 : 2}
                                                     style={{ transition: 'all 0.3s ease', filter: 'drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3))' }}
                                                 />
@@ -819,18 +956,18 @@ const FamilyGroupTreeVisualization: React.FC<Props> = ({ treeData }) => {
                                                     </text>
                                                 </g>
 
-                                                {/* Role label for parents */}
-                                                {(isRoot || isSpouse) && (
+                                                {/* Role label for parents and ex-spouses */}
+                                                {(isRoot || isSpouse || isExSpouse) && (
                                                     <text
                                                         x={x}
                                                         y={y - radius - 10}
                                                         textAnchor="middle"
                                                         fontSize="10"
                                                         fontWeight="600"
-                                                        fill={isRoot ? '#667eea' : '#EC4899'}
+                                                        fill={isRoot ? '#667eea' : isExSpouse ? '#9CA3AF' : '#EC4899'}
                                                         style={{ textTransform: 'capitalize' }}
                                                     >
-                                                        {node.relationshipType === 'root' ? 'You' : node.relationshipType}
+                                                        {node.relationshipType === 'root' ? 'You' : node.relationshipType.replace('_', ' ')}
                                                     </text>
                                                 )}
                                             </g>

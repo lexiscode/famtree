@@ -22,6 +22,7 @@ export interface UserBase {
     name: string;
     username: string;
     profile_image_url: string;
+    is_organization?: boolean;
 }
 
 export interface UserProfile extends UserBase {
@@ -49,7 +50,7 @@ export interface Comment {
 }
 
 export interface Post {
-    id: number;
+    id: number | string;
     type: 'text' | 'voice';
     title: string;
     content: string | null;
@@ -62,6 +63,7 @@ export interface Post {
     images: Image[];
     comments: Comment[];
     user: UserBase;
+    is_organization?: boolean;
     created_at: string;
     created_at_human: string;
 }
@@ -171,6 +173,8 @@ export interface Connection {
     accepted_at: string;
     can_undo: boolean;
     undo_expires_at: string;
+    is_divorced: boolean;
+    divorced_at: string | null;
 }
 
 export interface SentRequest {
@@ -187,6 +191,8 @@ export interface PendingRequest {
     relationship_type: string;
     relationship_label: string;
     requested_at: string;
+    other_parent?: { id: number; name: string; username: string; profile_image_url?: string } | null;
+    needs_other_parent?: boolean;
 }
 
 export interface ConnectionPageBaseProps {
@@ -206,6 +212,7 @@ export interface MyConnectionsProps extends ConnectionPageBaseProps {
 export interface PendingRequestsProps extends ConnectionPageBaseProps {
     requests: PendingRequest[];
     count: number;
+    spouses: Array<{ id: number; name: string; profile_image_url?: string }>;
 }
 
 export interface RequestSentProps extends ConnectionPageBaseProps {
@@ -215,4 +222,5 @@ export interface RequestSentProps extends ConnectionPageBaseProps {
 
 export interface SendRequestProps extends ConnectionPageBaseProps {
     current_user_id: number;
+    spouses: Array<{ id: number; name: string; profile_image_url?: string }>;
 }

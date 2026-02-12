@@ -82,4 +82,117 @@ class TreeChatService
     {
         return $this->chatRepository->getLatestMessage($treeId);
     }
+
+    /**
+     * Edit a message
+     */
+    public function editMessage(int $messageId, int $userId, string $newMessage): array
+    {
+        $message = $this->chatRepository->findMessage($messageId);
+
+        if (!$message) {
+            return [
+                'success' => false,
+                'error' => 'Message not found',
+            ];
+        }
+
+        // Only the sender can edit their message
+        if ($message->user_id !== $userId) {
+            return [
+                'success' => false,
+                'error' => 'You can only edit your own messages',
+            ];
+        }
+
+        $trimmedMessage = trim($newMessage);
+
+        if (empty($trimmedMessage)) {
+            return [
+                'success' => false,
+                'error' => 'Message cannot be empty',
+            ];
+        }
+
+        if (strlen($trimmedMessage) > 5000) {
+            return [
+                'success' => false,
+                'error' => 'Message cannot exceed 5000 characters',
+            ];
+        }
+
+        $updatedMessage = $this->chatRepository->updateMessage($messageId, $trimmedMessage);
+        $updatedMessage->load('user:id,first_name,last_name,profile_image');
+
+        return [
+            'success' => true,
+            'message' => $updatedMessage,
+        ];
+    }
+
+    /**
+     * Delete a message
+     */
+    public function deleteMessage(int $messageId, int $userId): array
+    {
+        $message = $this->chatRepository->findMessage($messageId);
+
+        if (!$message) {
+            return [
+                'success' => false,
+                'error' => 'Message not found',
+            ];
+        }
+
+        // Only the sender can delete their message
+        if ($message->user_id !== $userId) {
+            return [
+                'success' => false,
+                'error' => 'You can only delete your own messages',
+            ];
+        }
+
+        $deleted = $this->chatRepository->deleteMessage($messageId);
+
+        return [
+            'success' => $deleted,
+            'error' => $deleted ? null : 'Failed to delete message',
+        ];
+    }
+
+    /**
+     * Bulk delete messages
+     */
+    public function bulkDeleteMessages(array $messageIds, int $userId): array
+    {
+        if (empty($messageIds)) {
+            return [
+                'success' => false,
+                'error' => 'No messages selected',
+            ];
+        }
+
+        // Verify all messages belong to the user
+        foreach ($messageIds as $messageId) {
+            $message = $this->chatRepository->findMessage($messageId);
+
+            if (!$message) {
+                continue;
+            }
+
+            if ($message->user_id !== $userId) {
+                return [
+                    'success' => false,
+                    'error' => 'You can only delete your own messages',
+                ];
+            }
+        }
+
+        $deletedCount = $this->chatRepository->bulkDeleteMessages($messageIds);
+
+        return [
+            'success' => true,
+            'deleted_count' => $deletedCount,
+        ];
+    }
 }

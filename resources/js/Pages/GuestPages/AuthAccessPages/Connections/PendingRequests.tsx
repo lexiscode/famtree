@@ -9,6 +9,7 @@ export default function PendingRequests({
     user,
     requests: initialRequests,
     count,
+    spouses,
     connectionCount,
     pendingRequestCount,
     sentRequestCount,
@@ -21,6 +22,7 @@ export default function PendingRequests({
     const [selectedRequestId, setSelectedRequestId] = useState<number | null>(null);
     const [expandedRequestId, setExpandedRequestId] = useState<number | null>(null);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [otherParentSelections, setOtherParentSelections] = useState<Record<number, number | null>>({});
 
     const openAcceptModal = (connectionId: number) => {
         setSelectedRequestId(connectionId);
@@ -53,6 +55,13 @@ export default function PendingRequests({
         setErrorMessage(null);
         closeAcceptModal();
 
+        // Build request body with optional other_parent_id
+        const selectedOtherParent = otherParentSelections[selectedRequestId];
+        const body: Record<string, unknown> = {};
+        if (selectedOtherParent !== undefined && selectedOtherParent !== null) {
+            body.other_parent_id = selectedOtherParent === 0 ? null : selectedOtherParent;
+        }
+
         try {
             const response = await fetch(route('connections.accept', selectedRequestId), {
                 method: 'POST',
@@ -60,6 +69,7 @@ export default function PendingRequests({
                     'Content-Type': 'application/json',
                     'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
                 },
+                body: JSON.stringify(body),
             });
 
             const data = await response.json();
@@ -186,7 +196,7 @@ export default function PendingRequests({
                                         {isExpanded && (
                                             <div className="connection-request-details pb-3">
                                         {/* Relationship Badge */}
-                                        <div style={{ marginBottom: '16px' }}>
+                                        <div style={{ marginBottom: '16px', display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
                                             <div style={{
                                                 display: 'inline-block',
                                                 backgroundColor: '#f0f4ff',
@@ -199,7 +209,94 @@ export default function PendingRequests({
                                             }}>
                                                 {request.relationship_label}
                                             </div>
+
+                                            {/* Other Parent Badge */}
+                                            {request.other_parent && (
+                                                <div style={{
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '6px',
+                                                    backgroundColor: '#ecfdf5',
+                                                    color: '#047857',
+                                                    padding: '6px 12px',
+                                                    borderRadius: '20px',
+                                                    fontSize: '0.875rem',
+                                                    fontWeight: '600',
+                                                    letterSpacing: '0.3px'
+                                                }}>
+                                                    <Users size={14} />
+                                                    Other Parent:{' '}
+                                                    <a
+                                                        href={`/profile/${request.other_parent.username}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        onClick={(e) => e.stopPropagation()}
+                                                        style={{
+                                                            color: '#047857',
+                                                            textDecoration: 'underline',
+                                                            cursor: 'pointer',
+                                                        }}
+                                                    >
+                                                        {request.other_parent.name}
+                                                    </a>
+                                                </div>
+                                            )}
                                         </div>
+
+                                        {/* Other Parent Dropdown (for parent-child requests without other_parent set) */}
+                                        {request.needs_other_parent && !request.other_parent && (
+                                            <div style={{ marginBottom: '16px' }}>
+                                                <label style={{
+                                                    display: 'block',
+                                                    fontSize: '0.8rem',
+                                                    fontWeight: '600',
+                                                    color: '#374151',
+                                                    marginBottom: '6px',
+                                                }}>
+                                                    <Users size={14} style={{ display: 'inline', marginRight: '6px', verticalAlign: 'middle' }} />
+                                                    Select the Other Parent
+                                                </label>
+                                                <select
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '8px 12px',
+                                                        borderRadius: '8px',
+                                                        border: '1px solid #d1d5db',
+                                                        fontSize: '0.875rem',
+                                                        color: '#1f2937',
+                                                        backgroundColor: '#fff',
+                                                    }}
+                                                    value={otherParentSelections[request.id] === undefined ? '' : (otherParentSelections[request.id] ?? 0)}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value;
+                                                        setOtherParentSelections(prev => ({
+                                                            ...prev,
+                                                            [request.id]: val === '' ? null : Number(val),
+                                                        }));
+                                                    }}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                >
+                                                    <option value="" disabled>Select the other parent...</option>
+                                                    <option value="0">No other parent / Single parent</option>
+                                                    {spouses.map((spouse) => (
+                                                        <option key={spouse.id} value={spouse.id}>
+                                                            {spouse.name}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                <small style={{
+                                                    display: 'block',
+                                                    marginTop: '4px',
+                                                    fontSize: '0.75rem',
+                                                    color: '#6b7280',
+                                                }}>
+                                                    {spouses.length > 0
+                                                        ? 'Select who the other parent of this child is for family tree grouping'
+                                                        : 'If this child has another parent, connect with your spouse first, then come back here'
+                                                    }
+                                                </small>
+                                            </div>
+                                        )}
 
                                         {/* Info Grid Layout */}
                                         <div style={{
