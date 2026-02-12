@@ -112,4 +112,16 @@ class ClassSetRepository
             ->where('user_id', $userId)
             ->update(['is_admin' => $isAdmin]) > 0;
     }
+
+    /**
+     * Check if two users share a common class set group
+     */
+    public function shareCommonGroup(int $userId1, int $userId2): bool
+    {
+        $user1ClassSetIds = ClassSetMember::where('user_id', $userId1)->pluck('class_set_id');
+
+        return ClassSetMember::where('user_id', $userId2)
+            ->whereIn('class_set_id', $user1ClassSetIds)
+            ->exists();
+    }
 }

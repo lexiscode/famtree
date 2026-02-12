@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { MessageCircle, Search, ArrowLeft, Users, GraduationCap, Pencil, Trash2, X, Check, CheckSquare, Square, Shield, Vote, UserMinus, Clock, AlertTriangle, ChevronDown } from 'lucide-react';
+import { MessageCircle, Search, ArrowLeft, Users, GraduationCap, Pencil, Trash2, X, Check, CheckSquare, Square, Shield, Vote, UserMinus, Clock, AlertTriangle, ChevronDown, LogOut } from 'lucide-react';
 
 // Custom Leaf Indicator Components for message status
 const LeafOutline = ({ size = 14, className = '' }: { size?: number; className?: string }) => (
@@ -264,6 +264,7 @@ export default function MessagesIndex({
     const [electionData, setElectionData] = useState<ElectionData | null>(null);
     const [isVoting, setIsVoting] = useState(false);
     const [electionExpanded, setElectionExpanded] = useState(true);
+    const [removalExpanded, setRemovalExpanded] = useState(true);
 
     // Removal state
     const [removalData, setRemovalData] = useState<RemovalData | null>(null);
@@ -277,6 +278,9 @@ export default function MessagesIndex({
         username: string; profile_image: string | null; is_admin: boolean; joined_at: string;
     }>>([]);
     const [membersLoading, setMembersLoading] = useState(false);
+    const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+    const [isLeaving, setIsLeaving] = useState(false);
+    const [removalConfirmTarget, setRemovalConfirmTarget] = useState<{ id: number; first_name: string; last_name: string } | null>(null);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -539,10 +543,26 @@ export default function MessagesIndex({
         });
     }, [fetchMembers]);
 
-    // Close members panel when switching chats
+    const handleLeaveGroup = useCallback(() => {
+        if (!activeGroupChat || isLeaving) return;
+        setIsLeaving(true);
+        router.post(route('class-sets.leave', activeGroupChat.uuid), {}, {
+            onSuccess: () => {
+                setShowLeaveConfirm(false);
+                setActiveGroupChat(null);
+                setIsLeaving(false);
+            },
+            onError: () => {
+                setIsLeaving(false);
+            },
+        });
+    }, [activeGroupChat, isLeaving]);
+
+    // Close members panel and leave confirm when switching chats
     useEffect(() => {
         setShowMembersPanel(false);
         setMembersList([]);
+        setShowLeaveConfirm(false);
     }, [activeGroupChat]);
 
     // Vote in an election
@@ -1170,8 +1190,221 @@ export default function MessagesIndex({
                                         >
                                             {isBulkSelectMode ? <X size={12} /> : <CheckSquare size={12} />}
                                         </button>
+                                        {activeGroupChat.type === 'class_set' && (
+                                            <button
+                                                onClick={() => setShowLeaveConfirm(true)}
+                                                title="Leave group"
+                                                style={{
+                                                    width: '20px', height: '20px', minWidth: '20px', minHeight: '20px',
+                                                    maxWidth: '20px', maxHeight: '20px',
+                                                    borderRadius: '4px',
+                                                    background: 'rgba(239, 68, 68, 0.08)',
+                                                    border: '1px solid rgba(239, 68, 68, 0.15)',
+                                                    color: '#EF4444',
+                                                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                    cursor: 'pointer', padding: 0, transition: 'all 0.2s ease',
+                                                    boxSizing: 'border-box', lineHeight: 1,
+                                                }}
+                                                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.18)'; }}
+                                                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.08)'; }}
+                                            >
+                                                <LogOut size={11} />
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
+
+                                {/* Leave Group Confirmation Dialog */}
+                                {showLeaveConfirm && activeGroupChat.type === 'class_set' && (
+                                    <div
+                                        onClick={() => setShowLeaveConfirm(false)}
+                                        style={{
+                                            position: 'fixed', inset: 0, zIndex: 9999,
+                                            background: 'rgba(0, 0, 0, 0.6)',
+                                            backdropFilter: 'blur(4px)',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            padding: '1rem',
+                                            animation: 'fadeIn 0.15s ease-out',
+                                        }}
+                                    >
+                                        <div
+                                            onClick={(e) => e.stopPropagation()}
+                                            style={{
+                                                background: '#1a1a2e',
+                                                border: '1px solid rgba(255, 255, 255, 0.08)',
+                                                borderRadius: '16px',
+                                                padding: '1.75rem',
+                                                width: '100%',
+                                                maxWidth: '400px',
+                                                boxShadow: '0 25px 60px rgba(0, 0, 0, 0.5)',
+                                                animation: 'slideUp 0.2s ease-out',
+                                            }}
+                                        >
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                                                <div style={{
+                                                    width: '44px', height: '44px', borderRadius: '12px',
+                                                    background: 'rgba(239, 68, 68, 0.15)',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                }}>
+                                                    <LogOut size={22} color="#EF4444" />
+                                                </div>
+                                                <button
+                                                    onClick={() => setShowLeaveConfirm(false)}
+                                                    style={{
+                                                        background: 'rgba(255, 255, 255, 0.05)', border: 'none',
+                                                        borderRadius: '8px', padding: '6px', cursor: 'pointer',
+                                                        color: '#888', display: 'flex', transition: 'all 0.15s ease',
+                                                    }}
+                                                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'; e.currentTarget.style.color = '#ccc'; }}
+                                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'; e.currentTarget.style.color = '#888'; }}
+                                                >
+                                                    <X size={16} />
+                                                </button>
+                                            </div>
+
+                                            <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.1rem', fontWeight: 600, color: '#ffffff' }}>
+                                                Leave Group
+                                            </h3>
+                                            <p style={{ margin: '0 0 1.5rem', fontSize: '0.875rem', color: '#999', lineHeight: 1.5 }}>
+                                                Are you sure you want to leave <strong style={{ color: '#e0e0e0' }}>{activeGroupChat.name}</strong>? You will no longer receive messages from this group and will need to rejoin to access the chat again.
+                                            </p>
+
+                                            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                                                <button
+                                                    onClick={() => setShowLeaveConfirm(false)}
+                                                    style={{
+                                                        padding: '0.6rem 1.25rem', borderRadius: '10px',
+                                                        background: 'rgba(255, 255, 255, 0.06)',
+                                                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                                                        color: '#ccc', fontSize: '0.85rem', fontWeight: 500,
+                                                        cursor: 'pointer', transition: 'all 0.15s ease',
+                                                    }}
+                                                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'; }}
+                                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)'; }}
+                                                >
+                                                    Cancel
+                                                </button>
+                                                <button
+                                                    onClick={handleLeaveGroup}
+                                                    disabled={isLeaving}
+                                                    style={{
+                                                        padding: '0.6rem 1.25rem', borderRadius: '10px',
+                                                        background: 'rgba(239, 68, 68, 0.15)',
+                                                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                                                        color: '#EF4444', fontSize: '0.85rem', fontWeight: 600,
+                                                        cursor: isLeaving ? 'not-allowed' : 'pointer',
+                                                        opacity: isLeaving ? 0.6 : 1,
+                                                        transition: 'all 0.15s ease',
+                                                        display: 'flex', alignItems: 'center', gap: '6px',
+                                                    }}
+                                                    onMouseEnter={(e) => { if (!isLeaving) e.currentTarget.style.background = 'rgba(239, 68, 68, 0.25)'; }}
+                                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)'; }}
+                                                >
+                                                    <LogOut size={14} />
+                                                    {isLeaving ? 'Leaving...' : 'Leave Group'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Removal Confirmation Dialog */}
+                                {removalConfirmTarget && (
+                                    <div
+                                        onClick={() => setRemovalConfirmTarget(null)}
+                                        style={{
+                                            position: 'fixed', inset: 0, zIndex: 9999,
+                                            background: 'rgba(0, 0, 0, 0.6)',
+                                            backdropFilter: 'blur(4px)',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            padding: '1rem',
+                                            animation: 'fadeIn 0.15s ease-out',
+                                        }}
+                                    >
+                                        <div
+                                            onClick={(e) => e.stopPropagation()}
+                                            style={{
+                                                background: '#1a1a2e',
+                                                border: '1px solid rgba(255, 255, 255, 0.08)',
+                                                borderRadius: '16px',
+                                                padding: '1.75rem',
+                                                width: '100%',
+                                                maxWidth: '420px',
+                                                boxShadow: '0 25px 60px rgba(0, 0, 0, 0.5)',
+                                                animation: 'slideUp 0.2s ease-out',
+                                            }}
+                                        >
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                                                <div style={{
+                                                    width: '44px', height: '44px', borderRadius: '12px',
+                                                    background: 'rgba(239, 68, 68, 0.15)',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                }}>
+                                                    <UserMinus size={22} color="#EF4444" />
+                                                </div>
+                                                <button
+                                                    onClick={() => setRemovalConfirmTarget(null)}
+                                                    style={{
+                                                        background: 'rgba(255, 255, 255, 0.05)', border: 'none',
+                                                        borderRadius: '8px', padding: '6px', cursor: 'pointer',
+                                                        color: '#888', display: 'flex', transition: 'all 0.15s ease',
+                                                    }}
+                                                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'; e.currentTarget.style.color = '#ccc'; }}
+                                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'; e.currentTarget.style.color = '#888'; }}
+                                                >
+                                                    <X size={16} />
+                                                </button>
+                                            </div>
+
+                                            <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.1rem', fontWeight: 600, color: '#ffffff' }}>
+                                                Initiate Member Removal
+                                            </h3>
+                                            <p style={{ margin: '0 0 1.5rem', fontSize: '0.875rem', color: '#999', lineHeight: 1.5 }}>
+                                                Are you sure you want to initiate the removal of <strong style={{ color: '#e0e0e0' }}>{removalConfirmTarget.first_name} {removalConfirmTarget.last_name}</strong> from this group? This will require confirmation from another admin within 3 days to complete.
+                                            </p>
+
+                                            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                                                <button
+                                                    onClick={() => setRemovalConfirmTarget(null)}
+                                                    style={{
+                                                        padding: '0.6rem 1.25rem', borderRadius: '10px',
+                                                        background: 'rgba(255, 255, 255, 0.06)',
+                                                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                                                        color: '#ccc', fontSize: '0.85rem', fontWeight: 500,
+                                                        cursor: 'pointer', transition: 'all 0.15s ease',
+                                                    }}
+                                                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'; }}
+                                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)'; }}
+                                                >
+                                                    Cancel
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        handleInitiateRemoval(removalConfirmTarget.id);
+                                                        setRemovalConfirmTarget(null);
+                                                        setShowMembersPanel(false);
+                                                    }}
+                                                    disabled={isRemovalAction}
+                                                    style={{
+                                                        padding: '0.6rem 1.25rem', borderRadius: '10px',
+                                                        background: 'rgba(239, 68, 68, 0.15)',
+                                                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                                                        color: '#EF4444', fontSize: '0.85rem', fontWeight: 600,
+                                                        cursor: isRemovalAction ? 'not-allowed' : 'pointer',
+                                                        opacity: isRemovalAction ? 0.6 : 1,
+                                                        transition: 'all 0.15s ease',
+                                                        display: 'flex', alignItems: 'center', gap: '6px',
+                                                    }}
+                                                    onMouseEnter={(e) => { if (!isRemovalAction) e.currentTarget.style.background = 'rgba(239, 68, 68, 0.25)'; }}
+                                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)'; }}
+                                                >
+                                                    <UserMinus size={14} />
+                                                    {isRemovalAction ? 'Processing...' : 'Remove Member'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
 
                                 {/* Election Banner (Collapsible) */}
                                 {electionData && activeGroupChat?.type === 'class_set' && (
@@ -1289,16 +1522,26 @@ export default function MessagesIndex({
                                     </div>
                                 )}
 
-                                {/* Removal Alert */}
+                                {/* Removal Alert (Collapsible) */}
                                 {removalData && activeGroupChat?.type === 'class_set' && (
                                     <div style={{
-                                        padding: '12px 16px',
                                         background: removalData.is_target
                                             ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(220, 38, 38, 0.08))'
                                             : 'linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(217, 119, 6, 0.06))',
                                         borderBottom: `1px solid ${removalData.is_target ? 'rgba(239, 68, 68, 0.3)' : 'rgba(245, 158, 11, 0.2)'}`,
                                     }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                                        {/* Clickable Header */}
+                                        <div
+                                            onClick={() => setRemovalExpanded(!removalExpanded)}
+                                            style={{
+                                                display: 'flex', alignItems: 'center', gap: '8px',
+                                                padding: '10px 16px',
+                                                cursor: 'pointer',
+                                                transition: 'background 0.15s ease',
+                                            }}
+                                            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)'; }}
+                                            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                                        >
                                             <AlertTriangle size={16} color={removalData.is_target ? '#EF4444' : '#F59E0B'} />
                                             <span style={{ fontWeight: 600, color: '#ffffff', fontSize: '0.85rem' }}>
                                                 {removalData.is_target
@@ -1307,82 +1550,106 @@ export default function MessagesIndex({
                                                         ? 'Member Removal Vote'
                                                         : 'Moderation in Progress'}
                                             </span>
+                                            {/* Status badge when collapsed */}
+                                            {!removalExpanded && removalData.is_admin && !removalData.has_voted && !removalData.is_initiator && (
+                                                <span style={{
+                                                    fontSize: '0.65rem', fontWeight: 600, padding: '2px 6px',
+                                                    borderRadius: '4px', background: 'rgba(239, 68, 68, 0.15)',
+                                                    color: '#F87171',
+                                                }}>
+                                                    Action Needed
+                                                </span>
+                                            )}
                                             <span style={{ marginLeft: 'auto', fontSize: '0.7rem', color: '#888' }}>
                                                 Expires {new Date(removalData.expires_at).toLocaleDateString()}
                                             </span>
+                                            <ChevronDown
+                                                size={16}
+                                                color="#888"
+                                                style={{
+                                                    transition: 'transform 0.2s ease',
+                                                    transform: removalExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                                                    flexShrink: 0,
+                                                }}
+                                            />
                                         </div>
 
-                                        {removalData.is_target ? (
-                                            <>
-                                                <p style={{ color: '#F87171', fontSize: '0.82rem', margin: '0 0 6px' }}>
-                                                    {removalData.initiator.first_name} {removalData.initiator.last_name} has initiated your removal from this group.
-                                                </p>
-                                                <p style={{ color: '#aaa', fontSize: '0.78rem', margin: '0 0 4px' }}>
-                                                    Contact the admins to discuss:
-                                                </p>
-                                                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                                                    {removalData.admins.map(admin => (
-                                                        <button
-                                                            key={admin.id}
-                                                            onClick={() => router.visit(`/messages/start?userId=${admin.id}`)}
-                                                            style={{
-                                                                padding: '3px 10px', borderRadius: '6px', border: '1px solid rgba(59, 130, 246, 0.3)',
-                                                                background: 'rgba(59, 130, 246, 0.1)', color: '#60A5FA',
-                                                                fontSize: '0.75rem', cursor: 'pointer',
-                                                            }}
-                                                        >
-                                                            {admin.first_name} {admin.last_name}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </>
-                                        ) : removalData.is_admin ? (
-                                            <>
-                                                <p style={{ color: '#e0e0e0', fontSize: '0.82rem', margin: '0 0 8px' }}>
-                                                    {removalData.initiator.first_name} wants to remove <strong>{removalData.target_user.first_name} {removalData.target_user.last_name}</strong> from this group.
-                                                </p>
-                                                <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
-                                                    {removalData.votes.map(v => (
-                                                        <span key={v.admin_user_id} style={{
-                                                            fontSize: '0.72rem', padding: '2px 8px', borderRadius: '4px',
-                                                            background: v.vote === 'confirm' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(34, 197, 94, 0.15)',
-                                                            color: v.vote === 'confirm' ? '#F87171' : '#4ADE80',
-                                                        }}>
-                                                            {v.admin_name}: {v.vote}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                                {!removalData.has_voted && !removalData.is_initiator && (
-                                                    <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-                                                        <button
-                                                            onClick={() => handleRemovalVote('confirm')}
-                                                            disabled={isRemovalAction}
-                                                            style={{
-                                                                padding: '5px 16px', borderRadius: '6px', border: 'none',
-                                                                background: '#EF4444', color: '#fff', fontSize: '0.8rem',
-                                                                fontWeight: 600, cursor: 'pointer', opacity: isRemovalAction ? 0.6 : 1,
-                                                            }}
-                                                        >
-                                                            Confirm Remove
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleRemovalVote('reject')}
-                                                            disabled={isRemovalAction}
-                                                            style={{
-                                                                padding: '5px 16px', borderRadius: '6px', border: '1px solid rgba(34, 197, 94, 0.3)',
-                                                                background: 'rgba(34, 197, 94, 0.1)', color: '#4ADE80',
-                                                                fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', opacity: isRemovalAction ? 0.6 : 1,
-                                                            }}
-                                                        >
-                                                            Reject
-                                                        </button>
-                                                    </div>
+                                        {/* Collapsible Body */}
+                                        {removalExpanded && (
+                                            <div style={{ padding: '0 16px 12px' }}>
+                                                {removalData.is_target ? (
+                                                    <>
+                                                        <p style={{ color: '#F87171', fontSize: '0.82rem', margin: '0 0 6px' }}>
+                                                            {removalData.initiator.first_name} {removalData.initiator.last_name} has initiated your removal from this group.
+                                                        </p>
+                                                        <p style={{ color: '#aaa', fontSize: '0.78rem', margin: '0 0 4px' }}>
+                                                            Contact the admins to discuss:
+                                                        </p>
+                                                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                                            {removalData.admins.map(admin => (
+                                                                <button
+                                                                    key={admin.id}
+                                                                    onClick={() => router.post(route('messages.start'), { user_id: admin.id }, { preserveState: false })}
+                                                                    style={{
+                                                                        padding: '3px 10px', borderRadius: '6px', border: '1px solid rgba(59, 130, 246, 0.3)',
+                                                                        background: 'rgba(59, 130, 246, 0.1)', color: '#60A5FA',
+                                                                        fontSize: '0.75rem', cursor: 'pointer',
+                                                                    }}
+                                                                >
+                                                                    DM {admin.first_name}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    </>
+                                                ) : removalData.is_admin ? (
+                                                    <>
+                                                        <p style={{ color: '#e0e0e0', fontSize: '0.82rem', margin: '0 0 8px' }}>
+                                                            {removalData.initiator.first_name} wants to remove <strong>{removalData.target_user.first_name} {removalData.target_user.last_name}</strong> from this group.
+                                                        </p>
+                                                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+                                                            {removalData.votes.map(v => (
+                                                                <span key={v.admin_user_id} style={{
+                                                                    fontSize: '0.72rem', padding: '2px 8px', borderRadius: '4px',
+                                                                    background: v.vote === 'confirm' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(34, 197, 94, 0.15)',
+                                                                    color: v.vote === 'confirm' ? '#F87171' : '#4ADE80',
+                                                                }}>
+                                                                    {v.admin_name}: {v.vote}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                        {!removalData.has_voted && !removalData.is_initiator && (
+                                                            <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                                                                <button
+                                                                    onClick={() => handleRemovalVote('confirm')}
+                                                                    disabled={isRemovalAction}
+                                                                    style={{
+                                                                        padding: '5px 16px', borderRadius: '6px', border: 'none',
+                                                                        background: '#EF4444', color: '#fff', fontSize: '0.8rem',
+                                                                        fontWeight: 600, cursor: 'pointer', opacity: isRemovalAction ? 0.6 : 1,
+                                                                    }}
+                                                                >
+                                                                    Confirm Remove
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => handleRemovalVote('reject')}
+                                                                    disabled={isRemovalAction}
+                                                                    style={{
+                                                                        padding: '5px 16px', borderRadius: '6px', border: '1px solid rgba(34, 197, 94, 0.3)',
+                                                                        background: 'rgba(34, 197, 94, 0.1)', color: '#4ADE80',
+                                                                        fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', opacity: isRemovalAction ? 0.6 : 1,
+                                                                    }}
+                                                                >
+                                                                    Reject
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    <p style={{ color: '#aaa', fontSize: '0.8rem', margin: 0 }}>
+                                                        A moderation action is in progress.
+                                                    </p>
                                                 )}
-                                            </>
-                                        ) : (
-                                            <p style={{ color: '#aaa', fontSize: '0.8rem', margin: 0 }}>
-                                                A moderation action is in progress.
-                                            </p>
+                                            </div>
                                         )}
                                     </div>
                                 )}
@@ -1999,7 +2266,9 @@ export default function MessagesIndex({
                                                 display: 'flex', alignItems: 'center', gap: '8px',
                                                 padding: '6px 10px', borderRadius: '8px',
                                                 transition: 'background 0.15s',
+                                                cursor: member.id !== currentUserId ? 'pointer' : 'default',
                                             }}
+                                                onClick={() => { if (member.id !== currentUserId) router.post(route('messages.start'), { user_id: member.id }, { preserveState: false }); }}
                                                 onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)'; }}
                                                 onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                                             >
@@ -2017,6 +2286,7 @@ export default function MessagesIndex({
                                                 <div style={{ flex: 1, minWidth: 0 }}>
                                                     <div style={{ fontSize: '0.82rem', color: '#e0e0e0', fontWeight: 500 }}>
                                                         {member.first_name} {member.last_name}
+                                                        {member.id === currentUserId && <span style={{ fontSize: '0.7rem', color: '#888', marginLeft: '4px' }}>(You)</span>}
                                                     </div>
                                                     <div style={{ fontSize: '0.7rem', color: '#666' }}>
                                                         @{member.username}
@@ -2047,7 +2317,9 @@ export default function MessagesIndex({
                                                 display: 'flex', alignItems: 'center', gap: '8px',
                                                 padding: '6px 10px', borderRadius: '8px',
                                                 transition: 'background 0.15s',
+                                                cursor: member.id !== currentUserId ? 'pointer' : 'default',
                                             }}
+                                                onClick={() => { if (member.id !== currentUserId) router.post(route('messages.start'), { user_id: member.id }, { preserveState: false }); }}
                                                 onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)'; }}
                                                 onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                                             >
@@ -2065,11 +2337,32 @@ export default function MessagesIndex({
                                                 <div style={{ flex: 1, minWidth: 0 }}>
                                                     <div style={{ fontSize: '0.82rem', color: '#e0e0e0', fontWeight: 500 }}>
                                                         {member.first_name} {member.last_name}
+                                                        {member.id === currentUserId && <span style={{ fontSize: '0.7rem', color: '#888', marginLeft: '4px' }}>(You)</span>}
                                                     </div>
                                                     <div style={{ fontSize: '0.7rem', color: '#666' }}>
                                                         @{member.username}
                                                     </div>
                                                 </div>
+                                                {/* Remove button - visible to admins only, not for self, not when a removal is already pending */}
+                                                {membersList.some(m => m.id === currentUserId && m.is_admin) && member.id !== currentUserId && !removalData && (
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setRemovalConfirmTarget({ id: member.id, first_name: member.first_name, last_name: member.last_name });
+                                                        }}
+                                                        title={`Remove ${member.first_name}`}
+                                                        style={{
+                                                            background: 'rgba(239, 68, 68, 0.08)', border: 'none',
+                                                            borderRadius: '6px', padding: '4px', cursor: 'pointer',
+                                                            color: '#EF4444', display: 'flex', flexShrink: 0,
+                                                            transition: 'all 0.15s ease', opacity: 0.6,
+                                                        }}
+                                                        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.18)'; e.currentTarget.style.opacity = '1'; }}
+                                                        onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.08)'; e.currentTarget.style.opacity = '0.6'; }}
+                                                    >
+                                                        <UserMinus size={14} />
+                                                    </button>
+                                                )}
                                             </div>
                                         ))}
                                     </>
