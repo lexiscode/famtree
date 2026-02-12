@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { MessageCircle, Search, ArrowLeft, Users, GraduationCap, Pencil, Trash2, X, Check, CheckSquare, Square, Shield, Vote, UserMinus, Clock, AlertTriangle } from 'lucide-react';
+import { MessageCircle, Search, ArrowLeft, Users, GraduationCap, Pencil, Trash2, X, Check, CheckSquare, Square, Shield, Vote, UserMinus, Clock, AlertTriangle, ChevronDown } from 'lucide-react';
 
 // Custom Leaf Indicator Components for message status
 const LeafOutline = ({ size = 14, className = '' }: { size?: number; className?: string }) => (
@@ -263,11 +263,20 @@ export default function MessagesIndex({
     // Election state
     const [electionData, setElectionData] = useState<ElectionData | null>(null);
     const [isVoting, setIsVoting] = useState(false);
+    const [electionExpanded, setElectionExpanded] = useState(true);
 
     // Removal state
     const [removalData, setRemovalData] = useState<RemovalData | null>(null);
     const [isRemovalAction, setIsRemovalAction] = useState(false);
     const [isMuted, setIsMuted] = useState(false);
+
+    // Members panel state
+    const [showMembersPanel, setShowMembersPanel] = useState(false);
+    const [membersList, setMembersList] = useState<Array<{
+        id: number; uuid: string; first_name: string; last_name: string;
+        username: string; profile_image: string | null; is_admin: boolean; joined_at: string;
+    }>>([]);
+    const [membersLoading, setMembersLoading] = useState(false);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -508,6 +517,33 @@ export default function MessagesIndex({
             setIsMuted(false);
         }
     }, [activeGroupChat, fetchGroupAdminData]);
+
+    // Fetch members list for the panel
+    const fetchMembers = useCallback(async () => {
+        if (!activeGroupChat || activeGroupChat.type !== 'class_set') return;
+        setMembersLoading(true);
+        try {
+            const response = await axios.get(route('class-sets.members', activeGroupChat.uuid));
+            setMembersList(response.data.members || []);
+        } catch {
+            setMembersList([]);
+        } finally {
+            setMembersLoading(false);
+        }
+    }, [activeGroupChat]);
+
+    const toggleMembersPanel = useCallback(() => {
+        setShowMembersPanel(prev => {
+            if (!prev) fetchMembers();
+            return !prev;
+        });
+    }, [fetchMembers]);
+
+    // Close members panel when switching chats
+    useEffect(() => {
+        setShowMembersPanel(false);
+        setMembersList([]);
+    }, [activeGroupChat]);
 
     // Vote in an election
     const handleElectionVote = useCallback(async (candidateId: number) => {
@@ -1063,7 +1099,11 @@ export default function MessagesIndex({
                                     >
                                         <ArrowLeft size={20} />
                                     </button>
-                                    <div className="chat-user-info">
+                                    <div
+                                        className="chat-user-info"
+                                        onClick={activeGroupChat.type === 'class_set' ? toggleMembersPanel : undefined}
+                                        style={{ cursor: activeGroupChat.type === 'class_set' ? 'pointer' : 'default' }}
+                                    >
                                         <div className="chat-user-avatar group-avatar">
                                             <div className={`avatar-fallback group-fallback ${activeGroupChat.type === 'class_set' ? 'class-set-fallback' : ''}`}>
                                                 {activeGroupChat.type === 'class_set' ? (
@@ -1133,24 +1173,43 @@ export default function MessagesIndex({
                                     </div>
                                 </div>
 
-                                {/* Election Banner */}
+                                {/* Election Banner (Collapsible) */}
                                 {electionData && activeGroupChat?.type === 'class_set' && (
                                     <div style={{
-                                        padding: '12px 16px',
                                         background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.08))',
                                         borderBottom: '1px solid rgba(59, 130, 246, 0.2)',
                                     }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                                            <Vote size={18} color="#3B82F6" />
-                                            <span style={{ fontWeight: 600, color: '#ffffff', fontSize: '0.9rem' }}>
+                                        {/* Clickable Header */}
+                                        <div
+                                            onClick={() => setElectionExpanded(!electionExpanded)}
+                                            style={{
+                                                display: 'flex', alignItems: 'center', gap: '8px',
+                                                padding: '10px 16px',
+                                                cursor: 'pointer',
+                                                transition: 'background 0.15s ease',
+                                            }}
+                                            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)'; }}
+                                            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                                        >
+                                            <Vote size={16} color="#3B82F6" />
+                                            <span style={{ fontWeight: 600, color: '#ffffff', fontSize: '0.85rem' }}>
                                                 {electionData.type === 'initial' ? 'Group Admin Election' :
                                                     electionData.type === 'replacement' ? 'Replacement Admin Election' : 'Tiebreaker Election'}
                                             </span>
+                                            {electionData.has_voted && (
+                                                <span style={{
+                                                    fontSize: '0.65rem', fontWeight: 600, color: '#10B981',
+                                                    background: 'rgba(16, 185, 129, 0.12)',
+                                                    padding: '2px 6px', borderRadius: '4px',
+                                                }}>
+                                                    Voted
+                                                </span>
+                                            )}
                                             <span style={{
-                                                marginLeft: 'auto', fontSize: '0.75rem', color: '#888',
+                                                marginLeft: 'auto', fontSize: '0.72rem', color: '#888',
                                                 display: 'flex', alignItems: 'center', gap: '4px',
                                             }}>
-                                                <Clock size={12} />
+                                                <Clock size={11} />
                                                 {(() => {
                                                     const end = new Date(electionData.ends_at);
                                                     const now = new Date();
@@ -1161,60 +1220,71 @@ export default function MessagesIndex({
                                                     return hours > 0 ? `${hours}h ${mins}m left` : `${mins}m left`;
                                                 })()}
                                             </span>
+                                            <ChevronDown size={16} color="#888" style={{
+                                                transition: 'transform 0.2s ease',
+                                                transform: electionExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                                                flexShrink: 0,
+                                            }} />
                                         </div>
-                                        <p style={{ color: '#aaa', fontSize: '0.8rem', margin: '0 0 8px' }}>
-                                            Vote for {electionData.positions_to_fill} admin{electionData.positions_to_fill > 1 ? 's' : ''} · {electionData.total_votes} vote{electionData.total_votes !== 1 ? 's' : ''} cast
-                                        </p>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '200px', overflowY: 'auto' }}>
-                                            {electionData.candidates.slice(0, 10).map(candidate => (
-                                                <div key={candidate.user_id} style={{
-                                                    display: 'flex', alignItems: 'center', gap: '8px',
-                                                    padding: '6px 10px', borderRadius: '8px',
-                                                    background: 'rgba(255, 255, 255, 0.03)',
-                                                    border: '1px solid rgba(255, 255, 255, 0.05)',
-                                                }}>
-                                                    <div style={{
-                                                        width: '28px', height: '28px', borderRadius: '50%',
-                                                        background: 'rgba(139, 92, 246, 0.2)', display: 'flex',
-                                                        alignItems: 'center', justifyContent: 'center',
-                                                        fontSize: '0.7rem', fontWeight: 600, color: '#8B5CF6', overflow: 'hidden',
-                                                    }}>
-                                                        {candidate.profile_image
-                                                            ? <img src={candidate.profile_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                                            : candidate.first_name.charAt(0)}
-                                                    </div>
-                                                    <span style={{ flex: 1, fontSize: '0.85rem', color: '#e0e0e0' }}>
-                                                        {candidate.first_name} {candidate.last_name}
-                                                    </span>
-                                                    <span style={{ fontSize: '0.75rem', color: '#888', minWidth: '40px', textAlign: 'right' }}>
-                                                        {candidate.votes_count} vote{candidate.votes_count !== 1 ? 's' : ''}
-                                                    </span>
-                                                    {!electionData.has_voted ? (
-                                                        <button
-                                                            onClick={() => handleElectionVote(candidate.user_id)}
-                                                            disabled={isVoting}
-                                                            style={{
-                                                                padding: '3px 10px', borderRadius: '6px', border: 'none',
-                                                                background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)',
-                                                                color: '#fff', fontSize: '0.75rem', fontWeight: 600,
-                                                                cursor: isVoting ? 'not-allowed' : 'pointer',
-                                                                opacity: isVoting ? 0.6 : 1,
-                                                            }}
-                                                        >
-                                                            Vote
-                                                        </button>
-                                                    ) : (
-                                                        <span style={{ fontSize: '0.7rem', color: '#10B981' }}>
-                                                            <Check size={12} />
-                                                        </span>
-                                                    )}
+
+                                        {/* Collapsible Body */}
+                                        {electionExpanded && (
+                                            <div style={{ padding: '0 16px 12px' }}>
+                                                <p style={{ color: '#aaa', fontSize: '0.78rem', margin: '0 0 8px' }}>
+                                                    Vote for {electionData.positions_to_fill} admin{electionData.positions_to_fill > 1 ? 's' : ''} · {electionData.total_votes} vote{electionData.total_votes !== 1 ? 's' : ''} cast
+                                                </p>
+                                                <div className="election-candidates-list" style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '200px', overflowY: 'auto' }}>
+                                                    {electionData.candidates.slice(0, 10).map(candidate => (
+                                                        <div key={candidate.user_id} style={{
+                                                            display: 'flex', alignItems: 'center', gap: '8px',
+                                                            padding: '6px 10px', borderRadius: '8px',
+                                                            background: 'rgba(255, 255, 255, 0.03)',
+                                                            border: '1px solid rgba(255, 255, 255, 0.05)',
+                                                        }}>
+                                                            <div style={{
+                                                                width: '28px', height: '28px', borderRadius: '50%',
+                                                                background: 'rgba(139, 92, 246, 0.2)', display: 'flex',
+                                                                alignItems: 'center', justifyContent: 'center',
+                                                                fontSize: '0.7rem', fontWeight: 600, color: '#8B5CF6', overflow: 'hidden',
+                                                            }}>
+                                                                {candidate.profile_image
+                                                                    ? <img src={candidate.profile_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                                    : candidate.first_name.charAt(0)}
+                                                            </div>
+                                                            <span style={{ flex: 1, fontSize: '0.85rem', color: '#e0e0e0' }}>
+                                                                {candidate.first_name} {candidate.last_name}
+                                                            </span>
+                                                            <span style={{ fontSize: '0.75rem', color: '#888', minWidth: '40px', textAlign: 'right' }}>
+                                                                {candidate.votes_count} vote{candidate.votes_count !== 1 ? 's' : ''}
+                                                            </span>
+                                                            {!electionData.has_voted ? (
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); handleElectionVote(candidate.user_id); }}
+                                                                    disabled={isVoting}
+                                                                    style={{
+                                                                        padding: '3px 10px', borderRadius: '6px', border: 'none',
+                                                                        background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)',
+                                                                        color: '#fff', fontSize: '0.75rem', fontWeight: 600,
+                                                                        cursor: isVoting ? 'not-allowed' : 'pointer',
+                                                                        opacity: isVoting ? 0.6 : 1,
+                                                                    }}
+                                                                >
+                                                                    Vote
+                                                                </button>
+                                                            ) : (
+                                                                <span style={{ fontSize: '0.7rem', color: '#10B981' }}>
+                                                                    <Check size={12} />
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    ))}
                                                 </div>
-                                            ))}
-                                        </div>
-                                        {electionData.has_voted && (
-                                            <p style={{ color: '#10B981', fontSize: '0.78rem', margin: '8px 0 0', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                <Check size={14} /> You have voted
-                                            </p>
+                                                {electionData.has_voted && (
+                                                    <p style={{ color: '#10B981', fontSize: '0.78rem', margin: '8px 0 0', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                        <Check size={14} /> You have voted
+                                                    </p>
+                                                )}
+                                            </div>
                                         )}
                                     </div>
                                 )}
@@ -1861,6 +1931,156 @@ export default function MessagesIndex({
                             </div>
                         )}
                     </div>
+
+                    {/* Members Panel */}
+                    {showMembersPanel && activeGroupChat?.type === 'class_set' && (
+                        <div style={{
+                            width: '280px', minWidth: '280px',
+                            background: 'rgba(15, 23, 42, 0.95)',
+                            borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
+                            display: 'flex', flexDirection: 'column',
+                            animation: 'slideInRight 0.2s ease-out',
+                        }}>
+                            {/* Panel Header */}
+                            <div style={{
+                                padding: '1rem 1.25rem',
+                                borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <Users size={16} color="#8B5CF6" />
+                                    <span style={{ fontWeight: 600, color: '#fff', fontSize: '0.9rem' }}>
+                                        Members
+                                    </span>
+                                    <span style={{
+                                        fontSize: '0.7rem', color: '#888',
+                                        background: 'rgba(255, 255, 255, 0.06)',
+                                        padding: '2px 6px', borderRadius: '4px',
+                                    }}>
+                                        {activeGroupChat.member_count}
+                                    </span>
+                                </div>
+                                <button
+                                    onClick={() => setShowMembersPanel(false)}
+                                    style={{
+                                        background: 'rgba(255, 255, 255, 0.05)', border: 'none',
+                                        borderRadius: '6px', padding: '4px', cursor: 'pointer',
+                                        color: '#888', display: 'flex', transition: 'all 0.15s ease',
+                                    }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'; e.currentTarget.style.color = '#ccc'; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'; e.currentTarget.style.color = '#888'; }}
+                                >
+                                    <X size={14} />
+                                </button>
+                            </div>
+
+                            {/* Members List */}
+                            <div className="election-candidates-list" style={{
+                                flex: 1, overflowY: 'auto', padding: '0.5rem',
+                            }}>
+                                {membersLoading ? (
+                                    <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+                                        <div className="spinner" style={{ width: '24px', height: '24px', borderWidth: '2px' }}></div>
+                                    </div>
+                                ) : membersList.length > 0 ? (
+                                    <>
+                                        {/* Admins first */}
+                                        {membersList.filter(m => m.is_admin).length > 0 && (
+                                            <div style={{
+                                                padding: '0.5rem 0.75rem 0.35rem',
+                                                fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase',
+                                                letterSpacing: '0.05em', color: '#F59E0B',
+                                            }}>
+                                                Admins
+                                            </div>
+                                        )}
+                                        {membersList.filter(m => m.is_admin).map(member => (
+                                            <div key={member.id} style={{
+                                                display: 'flex', alignItems: 'center', gap: '8px',
+                                                padding: '6px 10px', borderRadius: '8px',
+                                                transition: 'background 0.15s',
+                                            }}
+                                                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)'; }}
+                                                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                                            >
+                                                <div style={{
+                                                    width: '32px', height: '32px', borderRadius: '10px',
+                                                    background: 'rgba(139, 92, 246, 0.2)', display: 'flex',
+                                                    alignItems: 'center', justifyContent: 'center',
+                                                    fontSize: '0.75rem', fontWeight: 600, color: '#8B5CF6',
+                                                    overflow: 'hidden', flexShrink: 0,
+                                                }}>
+                                                    {member.profile_image
+                                                        ? <img src={member.profile_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                        : member.first_name.charAt(0)}
+                                                </div>
+                                                <div style={{ flex: 1, minWidth: 0 }}>
+                                                    <div style={{ fontSize: '0.82rem', color: '#e0e0e0', fontWeight: 500 }}>
+                                                        {member.first_name} {member.last_name}
+                                                    </div>
+                                                    <div style={{ fontSize: '0.7rem', color: '#666' }}>
+                                                        @{member.username}
+                                                    </div>
+                                                </div>
+                                                <span style={{
+                                                    fontSize: '0.6rem', fontWeight: 700, color: '#F59E0B',
+                                                    background: 'rgba(245, 158, 11, 0.12)',
+                                                    padding: '2px 6px', borderRadius: '4px', flexShrink: 0,
+                                                }}>
+                                                    ADMIN
+                                                </span>
+                                            </div>
+                                        ))}
+
+                                        {/* Regular members */}
+                                        {membersList.filter(m => !m.is_admin).length > 0 && (
+                                            <div style={{
+                                                padding: '0.65rem 0.75rem 0.35rem',
+                                                fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase',
+                                                letterSpacing: '0.05em', color: '#666',
+                                            }}>
+                                                Members
+                                            </div>
+                                        )}
+                                        {membersList.filter(m => !m.is_admin).map(member => (
+                                            <div key={member.id} style={{
+                                                display: 'flex', alignItems: 'center', gap: '8px',
+                                                padding: '6px 10px', borderRadius: '8px',
+                                                transition: 'background 0.15s',
+                                            }}
+                                                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)'; }}
+                                                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                                            >
+                                                <div style={{
+                                                    width: '32px', height: '32px', borderRadius: '10px',
+                                                    background: 'rgba(139, 92, 246, 0.2)', display: 'flex',
+                                                    alignItems: 'center', justifyContent: 'center',
+                                                    fontSize: '0.75rem', fontWeight: 600, color: '#8B5CF6',
+                                                    overflow: 'hidden', flexShrink: 0,
+                                                }}>
+                                                    {member.profile_image
+                                                        ? <img src={member.profile_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                        : member.first_name.charAt(0)}
+                                                </div>
+                                                <div style={{ flex: 1, minWidth: 0 }}>
+                                                    <div style={{ fontSize: '0.82rem', color: '#e0e0e0', fontWeight: 500 }}>
+                                                        {member.first_name} {member.last_name}
+                                                    </div>
+                                                    <div style={{ fontSize: '0.7rem', color: '#666' }}>
+                                                        @{member.username}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </>
+                                ) : (
+                                    <div style={{ textAlign: 'center', padding: '2rem', color: '#555', fontSize: '0.85rem' }}>
+                                        No members found.
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </AuthAccessLayout>

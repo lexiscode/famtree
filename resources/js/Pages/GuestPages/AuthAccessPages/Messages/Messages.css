@@ -785,6 +785,47 @@
 }
 
 /* ============================================
+   MEMBERS PANEL ANIMATION
+   ============================================ */
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* ============================================
+   ELECTION / REMOVAL PANEL SCROLLBAR
+   ============================================ */
+
+.election-candidates-list {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(139, 92, 246, 0.25) transparent;
+}
+
+.election-candidates-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.election-candidates-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.election-candidates-list::-webkit-scrollbar-thumb {
+    background: rgba(139, 92, 246, 0.25);
+    border-radius: 10px;
+}
+
+.election-candidates-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(139, 92, 246, 0.45);
+}
+
+/* ============================================
    RESPONSIVE STYLES
    ============================================ */
 

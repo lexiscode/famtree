@@ -75,7 +75,7 @@ Before testing, ensure:
 - Have enough users vote so 3 candidates have the most votes
 - To speed up testing: update the election's `ends_at` in the database to a past time:
   ```sql
-  UPDATE group_elections SET ends_at = NOW() WHERE class_set_id = {id} AND status = 'active';
+  UPDATE group_elections SET ends_at = NOW() WHERE class_set_id = YOUR_CLASS_SET_ID AND status = 'active';
   ```
 
 ### Steps
