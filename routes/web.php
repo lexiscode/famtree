@@ -40,6 +40,8 @@ use App\Http\Controllers\GuestControllers\AuthAccessControllers\MemorialControll
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\OrganizationController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\ClassSetController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\ClassSetChatController;
+use App\Http\Controllers\GuestControllers\AuthAccessControllers\GroupElectionController;
+use App\Http\Controllers\GuestControllers\AuthAccessControllers\GroupRemovalController;
 use Inertia\Inertia;
 
 
@@ -409,5 +411,14 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::put('/message/{messageId}', [ClassSetChatController::class, 'editMessage'])->name('class-sets.edit-message');
         Route::delete('/message/{messageId}', [ClassSetChatController::class, 'deleteMessage'])->name('class-sets.delete-message');
         Route::post('/bulk-delete', [ClassSetChatController::class, 'bulkDeleteMessages'])->name('class-sets.bulk-delete');
+
+        // Group Election routes
+        Route::get('/{classSetUuid}/election', [GroupElectionController::class, 'show'])->name('class-sets.election.show');
+        Route::post('/{classSetUuid}/election/vote', [GroupElectionController::class, 'vote'])->name('class-sets.election.vote');
+
+        // Group Removal routes
+        Route::get('/{classSetUuid}/removal', [GroupRemovalController::class, 'show'])->name('class-sets.removal.show');
+        Route::post('/{classSetUuid}/removal/initiate', [GroupRemovalController::class, 'initiate'])->name('class-sets.removal.initiate');
+        Route::post('/{classSetUuid}/removal/vote', [GroupRemovalController::class, 'vote'])->name('class-sets.removal.vote');
     });
 });

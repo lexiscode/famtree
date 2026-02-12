@@ -83,6 +83,22 @@ class Kernel extends ConsoleKernel
             ->everyMinute()
             ->withoutOverlapping()
             ->name('org-process-broadcasts');
+
+        // Process ended group elections (determine winners, handle ties)
+        // Runs every 5 minutes
+        $schedule->command('groups:process-elections')
+            ->everyFiveMinutes()
+            ->onOneServer()
+            ->withoutOverlapping()
+            ->name('process-group-elections');
+
+        // Process expired pending member removals (auto-confirm after 3 days)
+        // Runs hourly
+        $schedule->command('groups:process-removals')
+            ->hourly()
+            ->onOneServer()
+            ->withoutOverlapping()
+            ->name('process-pending-removals');
     }
 
     /**

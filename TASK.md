@@ -1,9 +1,0 @@
-In all organization groups ONLY, we will like you to add these new features.
-
-we will like each orgs groups to have 3 group admins per group chat, those admins will control people joining and also the removal of members from the group. so we will like implement something similar in every school group chats. pls this feature should only be implemented for all organizations groups chat ONLY.
-
-If an admin tries removing a member from the group, the removal should await pending process, because we want the removal will need at least one of the other two admin to also agree/confirm the removal. So an remove user alert confirmation will be pinned in the group chat whereby only the two admins can see it, so confirm the removal or not. at least two admins should confirm removal of any member in the group, before the system should remove them from the group chat. 
-
-and during the period when the first admin tries removing a member, during that period, the member won't be able to have write access to the group, only read access. And they only should see a pinned alert text in the group, telling them that so so person is trying to remove them (the names of all the admins should be there and when clicked, it should take them straight inside their DMs), and advising them to chat up or DM the person for clarity, so they can cancel/undo the removal in case it was a mistake.
-
-now the question arises, how can we choose the group admins? let me know if you have other better ideas, but one of my idea is that, we can first allow at least 20 persons to easily join a school group. Then from the lists of persons, the system can carry out some kind of voting poll system, which all users can see and vote on. the system will then auto-set the 3 users with the highest votes to be the admins of that group. 

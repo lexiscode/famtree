@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { MessageCircle, Search, ArrowLeft, Users, GraduationCap, Pencil, Trash2, X, Check, CheckSquare, Square } from 'lucide-react';
+import { MessageCircle, Search, ArrowLeft, Users, GraduationCap, Pencil, Trash2, X, Check, CheckSquare, Square, Shield, Vote, UserMinus, Clock, AlertTriangle } from 'lucide-react';
 
 // Custom Leaf Indicator Components for message status
 const LeafOutline = ({ size = 14, className = '' }: { size?: number; className?: string }) => (
@@ -156,6 +156,60 @@ interface OnlineUser {
     profile_image_url: string | null;
 }
 
+interface ElectionCandidate {
+    user_id: number;
+    first_name: string;
+    last_name: string;
+    username: string;
+    profile_image: string | null;
+    votes_count: number;
+}
+
+interface ElectionData {
+    id: number;
+    type: 'initial' | 'replacement' | 'tiebreaker';
+    status: string;
+    positions_to_fill: number;
+    ends_at: string;
+    started_at: string;
+    has_voted: boolean;
+    candidates: ElectionCandidate[];
+    total_votes: number;
+}
+
+interface RemovalVote {
+    admin_user_id: number;
+    admin_name: string;
+    vote: 'confirm' | 'reject';
+}
+
+interface RemovalData {
+    id: number;
+    status: string;
+    expires_at: string;
+    is_admin: boolean;
+    is_target: boolean;
+    is_initiator: boolean;
+    target_user: {
+        id: number;
+        uuid: string;
+        first_name: string;
+        last_name: string;
+        username: string;
+        profile_image: string | null;
+    };
+    initiator: {
+        id: number;
+        uuid: string;
+        first_name: string;
+        last_name: string;
+        username: string;
+    };
+    votes: RemovalVote[];
+    has_voted: boolean;
+    admins: { id: number; uuid: string; first_name: string; last_name: string; username: string }[];
+}
+
 interface Props {
     conversations: Conversation[];
     groupChats: GroupChat[];
@@ -205,6 +259,15 @@ export default function MessagesIndex({
     const [selectedMessageIds, setSelectedMessageIds] = useState<number[]>([]);
     const [isBulkDeleting, setIsBulkDeleting] = useState(false);
     const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+
+    // Election state
+    const [electionData, setElectionData] = useState<ElectionData | null>(null);
+    const [isVoting, setIsVoting] = useState(false);
+
+    // Removal state
+    const [removalData, setRemovalData] = useState<RemovalData | null>(null);
+    const [isRemovalAction, setIsRemovalAction] = useState(false);
+    const [isMuted, setIsMuted] = useState(false);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -417,6 +480,94 @@ export default function MessagesIndex({
             setIsGroupLoading(false);
         }
     }, [scrollToBottom]);
+
+    // Fetch election and removal data for class_set groups
+    const fetchGroupAdminData = useCallback(async (groupUuid: string) => {
+        try {
+            const [electionRes, removalRes] = await Promise.all([
+                axios.get(route('class-sets.election.show', groupUuid)),
+                axios.get(route('class-sets.removal.show', groupUuid)),
+            ]);
+            setElectionData(electionRes.data.election || null);
+            setRemovalData(removalRes.data.removal || null);
+            setIsMuted(removalRes.data.removal?.is_target || false);
+        } catch {
+            setElectionData(null);
+            setRemovalData(null);
+            setIsMuted(false);
+        }
+    }, []);
+
+    // Load group admin data when class_set group is selected
+    useEffect(() => {
+        if (activeGroupChat?.type === 'class_set') {
+            fetchGroupAdminData(activeGroupChat.uuid);
+        } else {
+            setElectionData(null);
+            setRemovalData(null);
+            setIsMuted(false);
+        }
+    }, [activeGroupChat, fetchGroupAdminData]);
+
+    // Vote in an election
+    const handleElectionVote = useCallback(async (candidateId: number) => {
+        if (!activeGroupChat || isVoting) return;
+        setIsVoting(true);
+        try {
+            const response = await axios.post(route('class-sets.election.vote', activeGroupChat.uuid), {
+                candidate_id: candidateId,
+            });
+            if (response.data.success) {
+                setElectionData(prev => prev ? {
+                    ...prev,
+                    has_voted: true,
+                    candidates: response.data.candidates,
+                    total_votes: prev.total_votes + 1,
+                } : null);
+            }
+        } catch (error: any) {
+            console.error('Error voting:', error);
+        } finally {
+            setIsVoting(false);
+        }
+    }, [activeGroupChat, isVoting]);
+
+    // Initiate removal
+    const handleInitiateRemoval = useCallback(async (targetUserId: number) => {
+        if (!activeGroupChat || isRemovalAction) return;
+        setIsRemovalAction(true);
+        try {
+            const response = await axios.post(route('class-sets.removal.initiate', activeGroupChat.uuid), {
+                target_user_id: targetUserId,
+            });
+            if (response.data.success) {
+                // Refresh removal data
+                fetchGroupAdminData(activeGroupChat.uuid);
+            }
+        } catch (error: any) {
+            console.error('Error initiating removal:', error);
+        } finally {
+            setIsRemovalAction(false);
+        }
+    }, [activeGroupChat, isRemovalAction, fetchGroupAdminData]);
+
+    // Vote on removal
+    const handleRemovalVote = useCallback(async (vote: 'confirm' | 'reject') => {
+        if (!activeGroupChat || isRemovalAction) return;
+        setIsRemovalAction(true);
+        try {
+            const response = await axios.post(route('class-sets.removal.vote', activeGroupChat.uuid), {
+                vote,
+            });
+            if (response.data.success) {
+                fetchGroupAdminData(activeGroupChat.uuid);
+            }
+        } catch (error: any) {
+            console.error('Error voting on removal:', error);
+        } finally {
+            setIsRemovalAction(false);
+        }
+    }, [activeGroupChat, isRemovalAction, fetchGroupAdminData]);
 
     // Send group message
     const handleSendGroupMessage = useCallback(async (e: React.FormEvent) => {
@@ -982,6 +1133,190 @@ export default function MessagesIndex({
                                     </div>
                                 </div>
 
+                                {/* Election Banner */}
+                                {electionData && activeGroupChat?.type === 'class_set' && (
+                                    <div style={{
+                                        padding: '12px 16px',
+                                        background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.08))',
+                                        borderBottom: '1px solid rgba(59, 130, 246, 0.2)',
+                                    }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                                            <Vote size={18} color="#3B82F6" />
+                                            <span style={{ fontWeight: 600, color: '#ffffff', fontSize: '0.9rem' }}>
+                                                {electionData.type === 'initial' ? 'Group Admin Election' :
+                                                    electionData.type === 'replacement' ? 'Replacement Admin Election' : 'Tiebreaker Election'}
+                                            </span>
+                                            <span style={{
+                                                marginLeft: 'auto', fontSize: '0.75rem', color: '#888',
+                                                display: 'flex', alignItems: 'center', gap: '4px',
+                                            }}>
+                                                <Clock size={12} />
+                                                {(() => {
+                                                    const end = new Date(electionData.ends_at);
+                                                    const now = new Date();
+                                                    const diff = end.getTime() - now.getTime();
+                                                    if (diff <= 0) return 'Ended';
+                                                    const hours = Math.floor(diff / (1000 * 60 * 60));
+                                                    const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                                                    return hours > 0 ? `${hours}h ${mins}m left` : `${mins}m left`;
+                                                })()}
+                                            </span>
+                                        </div>
+                                        <p style={{ color: '#aaa', fontSize: '0.8rem', margin: '0 0 8px' }}>
+                                            Vote for {electionData.positions_to_fill} admin{electionData.positions_to_fill > 1 ? 's' : ''} · {electionData.total_votes} vote{electionData.total_votes !== 1 ? 's' : ''} cast
+                                        </p>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '200px', overflowY: 'auto' }}>
+                                            {electionData.candidates.slice(0, 10).map(candidate => (
+                                                <div key={candidate.user_id} style={{
+                                                    display: 'flex', alignItems: 'center', gap: '8px',
+                                                    padding: '6px 10px', borderRadius: '8px',
+                                                    background: 'rgba(255, 255, 255, 0.03)',
+                                                    border: '1px solid rgba(255, 255, 255, 0.05)',
+                                                }}>
+                                                    <div style={{
+                                                        width: '28px', height: '28px', borderRadius: '50%',
+                                                        background: 'rgba(139, 92, 246, 0.2)', display: 'flex',
+                                                        alignItems: 'center', justifyContent: 'center',
+                                                        fontSize: '0.7rem', fontWeight: 600, color: '#8B5CF6', overflow: 'hidden',
+                                                    }}>
+                                                        {candidate.profile_image
+                                                            ? <img src={candidate.profile_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                            : candidate.first_name.charAt(0)}
+                                                    </div>
+                                                    <span style={{ flex: 1, fontSize: '0.85rem', color: '#e0e0e0' }}>
+                                                        {candidate.first_name} {candidate.last_name}
+                                                    </span>
+                                                    <span style={{ fontSize: '0.75rem', color: '#888', minWidth: '40px', textAlign: 'right' }}>
+                                                        {candidate.votes_count} vote{candidate.votes_count !== 1 ? 's' : ''}
+                                                    </span>
+                                                    {!electionData.has_voted ? (
+                                                        <button
+                                                            onClick={() => handleElectionVote(candidate.user_id)}
+                                                            disabled={isVoting}
+                                                            style={{
+                                                                padding: '3px 10px', borderRadius: '6px', border: 'none',
+                                                                background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)',
+                                                                color: '#fff', fontSize: '0.75rem', fontWeight: 600,
+                                                                cursor: isVoting ? 'not-allowed' : 'pointer',
+                                                                opacity: isVoting ? 0.6 : 1,
+                                                            }}
+                                                        >
+                                                            Vote
+                                                        </button>
+                                                    ) : (
+                                                        <span style={{ fontSize: '0.7rem', color: '#10B981' }}>
+                                                            <Check size={12} />
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                        {electionData.has_voted && (
+                                            <p style={{ color: '#10B981', fontSize: '0.78rem', margin: '8px 0 0', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                <Check size={14} /> You have voted
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* Removal Alert */}
+                                {removalData && activeGroupChat?.type === 'class_set' && (
+                                    <div style={{
+                                        padding: '12px 16px',
+                                        background: removalData.is_target
+                                            ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(220, 38, 38, 0.08))'
+                                            : 'linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(217, 119, 6, 0.06))',
+                                        borderBottom: `1px solid ${removalData.is_target ? 'rgba(239, 68, 68, 0.3)' : 'rgba(245, 158, 11, 0.2)'}`,
+                                    }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                                            <AlertTriangle size={16} color={removalData.is_target ? '#EF4444' : '#F59E0B'} />
+                                            <span style={{ fontWeight: 600, color: '#ffffff', fontSize: '0.85rem' }}>
+                                                {removalData.is_target
+                                                    ? 'Removal Initiated Against You'
+                                                    : removalData.is_admin
+                                                        ? 'Member Removal Vote'
+                                                        : 'Moderation in Progress'}
+                                            </span>
+                                            <span style={{ marginLeft: 'auto', fontSize: '0.7rem', color: '#888' }}>
+                                                Expires {new Date(removalData.expires_at).toLocaleDateString()}
+                                            </span>
+                                        </div>
+
+                                        {removalData.is_target ? (
+                                            <>
+                                                <p style={{ color: '#F87171', fontSize: '0.82rem', margin: '0 0 6px' }}>
+                                                    {removalData.initiator.first_name} {removalData.initiator.last_name} has initiated your removal from this group.
+                                                </p>
+                                                <p style={{ color: '#aaa', fontSize: '0.78rem', margin: '0 0 4px' }}>
+                                                    Contact the admins to discuss:
+                                                </p>
+                                                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                                    {removalData.admins.map(admin => (
+                                                        <button
+                                                            key={admin.id}
+                                                            onClick={() => router.visit(`/messages/start?userId=${admin.id}`)}
+                                                            style={{
+                                                                padding: '3px 10px', borderRadius: '6px', border: '1px solid rgba(59, 130, 246, 0.3)',
+                                                                background: 'rgba(59, 130, 246, 0.1)', color: '#60A5FA',
+                                                                fontSize: '0.75rem', cursor: 'pointer',
+                                                            }}
+                                                        >
+                                                            {admin.first_name} {admin.last_name}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </>
+                                        ) : removalData.is_admin ? (
+                                            <>
+                                                <p style={{ color: '#e0e0e0', fontSize: '0.82rem', margin: '0 0 8px' }}>
+                                                    {removalData.initiator.first_name} wants to remove <strong>{removalData.target_user.first_name} {removalData.target_user.last_name}</strong> from this group.
+                                                </p>
+                                                <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+                                                    {removalData.votes.map(v => (
+                                                        <span key={v.admin_user_id} style={{
+                                                            fontSize: '0.72rem', padding: '2px 8px', borderRadius: '4px',
+                                                            background: v.vote === 'confirm' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(34, 197, 94, 0.15)',
+                                                            color: v.vote === 'confirm' ? '#F87171' : '#4ADE80',
+                                                        }}>
+                                                            {v.admin_name}: {v.vote}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                                {!removalData.has_voted && !removalData.is_initiator && (
+                                                    <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                                                        <button
+                                                            onClick={() => handleRemovalVote('confirm')}
+                                                            disabled={isRemovalAction}
+                                                            style={{
+                                                                padding: '5px 16px', borderRadius: '6px', border: 'none',
+                                                                background: '#EF4444', color: '#fff', fontSize: '0.8rem',
+                                                                fontWeight: 600, cursor: 'pointer', opacity: isRemovalAction ? 0.6 : 1,
+                                                            }}
+                                                        >
+                                                            Confirm Remove
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleRemovalVote('reject')}
+                                                            disabled={isRemovalAction}
+                                                            style={{
+                                                                padding: '5px 16px', borderRadius: '6px', border: '1px solid rgba(34, 197, 94, 0.3)',
+                                                                background: 'rgba(34, 197, 94, 0.1)', color: '#4ADE80',
+                                                                fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', opacity: isRemovalAction ? 0.6 : 1,
+                                                            }}
+                                                        >
+                                                            Reject
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <p style={{ color: '#aaa', fontSize: '0.8rem', margin: 0 }}>
+                                                A moderation action is in progress.
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
+
                                 {/* Group Messages Container */}
                                 <div className="messages-chat-messages">
                                     {isGroupLoading ? (
@@ -1007,6 +1342,29 @@ export default function MessagesIndex({
                                                 const isEditing = editingMessageId === message.id;
                                                 const isShowingDeleteConfirm = deletingMessageId === message.id;
                                                 const isSelected = selectedMessageIds.includes(message.id);
+
+                                                // Render system messages (null sender)
+                                                const isSystemMessage = !isBroadcast && !message.user_id && !message.user;
+                                                if (isSystemMessage) {
+                                                    return (
+                                                        <div key={message.id} style={{
+                                                            textAlign: 'center', padding: '8px 16px', margin: '6px 0',
+                                                        }}>
+                                                            <span style={{
+                                                                display: 'inline-block', padding: '6px 14px',
+                                                                background: 'rgba(255, 255, 255, 0.05)',
+                                                                border: '1px solid rgba(255, 255, 255, 0.08)',
+                                                                borderRadius: '20px', fontSize: '0.78rem',
+                                                                color: '#aaa', lineHeight: 1.4,
+                                                            }}>
+                                                                {message.message}
+                                                            </span>
+                                                            <div style={{ fontSize: '0.65rem', color: '#666', marginTop: '2px' }}>
+                                                                {formatTime(message.created_at)}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                }
 
                                                 // Render broadcast messages with distinctive styling
                                                 if (isBroadcast) {
@@ -1186,28 +1544,39 @@ export default function MessagesIndex({
                                 </div>
 
                                 {/* Group Message Input */}
-                                <form onSubmit={handleSendGroupMessage} className="messages-input-form">
-                                    <input
-                                        type="text"
-                                        value={newMessage}
-                                        onChange={(e) => setNewMessage(e.target.value)}
-                                        placeholder="Type a message..."
-                                        className="messages-input"
-                                        disabled={isSending}
-                                        maxLength={5000}
-                                    />
-                                    <button
-                                        type="submit"
-                                        className="messages-send-btn"
-                                        disabled={!newMessage.trim() || isSending}
-                                    >
-                                        {isSending ? (
-                                            <div className="spinner-small"></div>
-                                        ) : (
-                                            <span style={{ fontSize: '20px', color: '#ffffff' }}>➤</span>
-                                        )}
-                                    </button>
-                                </form>
+                                {isMuted ? (
+                                    <div className="messages-input-form" style={{
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        padding: '12px 16px', color: '#F87171', fontSize: '0.85rem',
+                                        gap: '6px',
+                                    }}>
+                                        <AlertTriangle size={16} />
+                                        <span>You cannot send messages while a removal is pending.</span>
+                                    </div>
+                                ) : (
+                                    <form onSubmit={handleSendGroupMessage} className="messages-input-form">
+                                        <input
+                                            type="text"
+                                            value={newMessage}
+                                            onChange={(e) => setNewMessage(e.target.value)}
+                                            placeholder="Type a message..."
+                                            className="messages-input"
+                                            disabled={isSending}
+                                            maxLength={5000}
+                                        />
+                                        <button
+                                            type="submit"
+                                            className="messages-send-btn"
+                                            disabled={!newMessage.trim() || isSending}
+                                        >
+                                            {isSending ? (
+                                                <div className="spinner-small"></div>
+                                            ) : (
+                                                <span style={{ fontSize: '20px', color: '#ffffff' }}>➤</span>
+                                            )}
+                                        </button>
+                                    </form>
+                                )}
                             </>
                         ) : activeConversation ? (
                             <>

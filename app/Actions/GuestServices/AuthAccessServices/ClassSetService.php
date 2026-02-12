@@ -5,6 +5,7 @@ namespace App\Actions\GuestServices\AuthAccessServices;
 use App\Repositories\GuestRepositories\AuthAccessRepositories\ClassSetRepository;
 use App\Repositories\GuestRepositories\AuthAccessRepositories\ClassSetMessageRepository;
 use App\Actions\GuestServices\OrganizationFollowService;
+use App\Actions\GuestServices\AuthAccessServices\GroupElectionService;
 use Illuminate\Validation\ValidationException;
 
 class ClassSetService
@@ -12,7 +13,8 @@ class ClassSetService
     public function __construct(
         private ClassSetRepository $classSetRepository,
         private ClassSetMessageRepository $messageRepository,
-        private OrganizationFollowService $organizationFollowService
+        private OrganizationFollowService $organizationFollowService,
+        private GroupElectionService $electionService
     ) {
     }
 
@@ -53,6 +55,13 @@ class ClassSetService
             // Fire-and-forget: don't let follow failure block joining
         }
 
+        // Check if member count just hit 20 → trigger initial election
+        try {
+            $this->electionService->triggerInitialElection($classSet->id);
+        } catch (\Throwable $e) {
+            // Fire-and-forget: don't let election trigger failure block joining
+        }
+
         return [
             'success' => true,
             'message' => 'Successfully joined ' . $classSet->name,
@@ -78,6 +87,13 @@ class ClassSetService
             throw ValidationException::withMessages([
                 'class_set' => ['You are not a member of this class set.'],
             ]);
+        }
+
+        // Check if user was admin before removal
+        try {
+            $this->electionService->handleAdminLeft($classSet->id, $userId);
+        } catch (\Throwable $e) {
+            // Fire-and-forget
         }
 
         $this->classSetRepository->removeMember($classSet->id, $userId);

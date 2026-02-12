@@ -1,0 +1,83 @@
+/* ===== Org Layout Custom Scrollbars ===== */
+
+/* Sidebar scrollbar */
+.org-sidebar {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+    transition: scrollbar-color 0.3s ease;
+}
+.org-sidebar:hover {
+    scrollbar-color: rgba(139, 92, 246, 0.3) transparent;
+}
+
+.org-sidebar::-webkit-scrollbar {
+    width: 5px;
+}
+.org-sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
+.org-sidebar::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 10px;
+    transition: background 0.3s ease;
+}
+.org-sidebar:hover::-webkit-scrollbar-thumb {
+    background: rgba(139, 92, 246, 0.3);
+}
+.org-sidebar::-webkit-scrollbar-thumb:hover {
+    background: rgba(139, 92, 246, 0.5);
+}
+
+/* Sidebar nav inner scroll */
+.org-sidebar-nav {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+}
+.org-sidebar-nav:hover {
+    scrollbar-color: rgba(139, 92, 246, 0.25) transparent;
+}
+
+.org-sidebar-nav::-webkit-scrollbar {
+    width: 4px;
+}
+.org-sidebar-nav::-webkit-scrollbar-track {
+    background: transparent;
+}
+.org-sidebar-nav::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 10px;
+}
+.org-sidebar-nav:hover::-webkit-scrollbar-thumb {
+    background: rgba(139, 92, 246, 0.25);
+}
+.org-sidebar-nav::-webkit-scrollbar-thumb:hover {
+    background: rgba(139, 92, 246, 0.45);
+}
+
+/* Main content scrollbar */
+.org-main-content {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+    transition: scrollbar-color 0.3s ease;
+}
+.org-main-content:hover {
+    scrollbar-color: rgba(139, 92, 246, 0.2) transparent;
+}
+
+.org-main-content::-webkit-scrollbar {
+    width: 6px;
+}
+.org-main-content::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 4px 0;
+}
+.org-main-content::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 10px;
+}
+.org-main-content:hover::-webkit-scrollbar-thumb {
+    background: rgba(139, 92, 246, 0.2);
+}
+.org-main-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(139, 92, 246, 0.4);
+}

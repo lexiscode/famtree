@@ -87,6 +87,9 @@ Route::group(['prefix' => 'org', 'as' => 'org.', 'middleware' => ['web']], funct
 
         // Groups
         Route::get('/groups', [GroupsController::class, 'index'])->name('groups.index');
+        Route::post('/groups/{classSetId}/members/{userId}/force-remove', [GroupsController::class, 'forceRemoveMember'])->name('groups.force-remove');
+        Route::post('/groups/{classSetId}/members/{userId}/appoint-admin', [GroupsController::class, 'appointAdmin'])->name('groups.appoint-admin');
+        Route::post('/groups/{classSetId}/members/{userId}/remove-admin', [GroupsController::class, 'removeAdmin'])->name('groups.remove-admin');
 
         // Followers
         Route::get('/followers', [FollowersController::class, 'index'])->name('followers.index');

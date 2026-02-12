@@ -1,7 +1,7 @@
 import OrgLayout from '@/Layouts/OrgLayout';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { router, usePage } from '@inertiajs/react';
-import { UserPlus, Trash2, Shield, X, Edit2 } from 'lucide-react';
+import { UserPlus, Trash2, Shield, X, Edit2, AlertTriangle, UserX } from 'lucide-react';
 
 interface OrgRole {
     id: number;
@@ -104,16 +104,64 @@ export default function StaffIndex({ staff, roles }: Props) {
         });
     };
 
-    const handleToggleActive = (member: StaffMember) => {
-        router.put(route('org.staff.update', { id: member.id }), {
-            is_active: !member.is_active,
-        });
+    const [confirmDialog, setConfirmDialog] = useState<{
+        type: 'delete' | 'toggle-active';
+        member: StaffMember;
+    } | null>(null);
+
+    const requestDelete = (member: StaffMember) => {
+        setConfirmDialog({ type: 'delete', member });
     };
 
-    const handleDelete = (id: number) => {
-        if (confirm('Are you sure you want to remove this staff member?')) {
-            router.delete(route('org.staff.destroy', { id }));
+    const requestToggleActive = (member: StaffMember) => {
+        setConfirmDialog({ type: 'toggle-active', member });
+    };
+
+    const dismissConfirm = useCallback(() => {
+        setConfirmDialog(null);
+    }, []);
+
+    const executeConfirm = useCallback(() => {
+        if (!confirmDialog) return;
+        const { type, member } = confirmDialog;
+        setConfirmDialog(null);
+
+        if (type === 'delete') {
+            router.delete(route('org.staff.destroy', { id: member.id }));
+        } else {
+            router.put(route('org.staff.update', { id: member.id }), {
+                is_active: !member.is_active,
+            });
         }
+    }, [confirmDialog]);
+
+    useEffect(() => {
+        if (!confirmDialog) return;
+        const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') dismissConfirm(); };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, [confirmDialog, dismissConfirm]);
+
+    const getConfirmInfo = (type: string, member: StaffMember) => {
+        const name = member.display_name || member.username;
+        if (type === 'delete') return {
+            title: 'Remove Staff Member',
+            message: `Are you sure you want to remove ${name}? They will lose all access to the organization dashboard.`,
+            confirmLabel: 'Remove',
+            confirmColor: '#EF4444',
+            confirmBg: 'rgba(239, 68, 68, 0.15)',
+            icon: Trash2,
+        };
+        return {
+            title: member.is_active ? 'Deactivate Staff' : 'Activate Staff',
+            message: member.is_active
+                ? `Are you sure you want to deactivate ${name}? They will not be able to log into the organization dashboard until reactivated.`
+                : `Are you sure you want to reactivate ${name}? They will regain access to the organization dashboard with their assigned role.`,
+            confirmLabel: member.is_active ? 'Deactivate' : 'Activate',
+            confirmColor: member.is_active ? '#EF4444' : '#22C55E',
+            confirmBg: member.is_active ? 'rgba(239, 68, 68, 0.15)' : 'rgba(34, 197, 94, 0.15)',
+            icon: member.is_active ? UserX : UserPlus,
+        };
     };
 
     const inputStyle: React.CSSProperties = {
@@ -432,7 +480,7 @@ export default function StaffIndex({ staff, roles }: Props) {
                                                     borderBottom: '1px solid rgba(255, 255, 255, 0.04)',
                                                 }}>
                                                     <button
-                                                        onClick={() => handleToggleActive(member)}
+                                                        onClick={() => requestToggleActive(member)}
                                                         disabled={memberIsOwner}
                                                         style={{
                                                             display: 'inline-flex',
@@ -491,7 +539,7 @@ export default function StaffIndex({ staff, roles }: Props) {
                                                         </button>
                                                         {!memberIsOwner && (
                                                             <button
-                                                                onClick={() => handleDelete(member.id)}
+                                                                onClick={() => requestDelete(member)}
                                                                 style={{
                                                                     background: 'rgba(239, 68, 68, 0.1)',
                                                                     border: 'none',
@@ -660,6 +708,112 @@ export default function StaffIndex({ staff, roles }: Props) {
                     true,
                 )}
             </div>
+
+            {/* Confirmation Dialog */}
+            {confirmDialog && (() => {
+                const info = getConfirmInfo(confirmDialog.type, confirmDialog.member);
+                const Icon = info.icon;
+                return (
+                    <div
+                        onClick={dismissConfirm}
+                        style={{
+                            position: 'fixed', inset: 0, zIndex: 9999,
+                            background: 'rgba(0, 0, 0, 0.6)',
+                            backdropFilter: 'blur(4px)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            padding: '1rem',
+                            animation: 'fadeIn 0.15s ease-out',
+                        }}
+                    >
+                        <div
+                            onClick={(e) => e.stopPropagation()}
+                            style={{
+                                background: '#1a1a2e',
+                                border: '1px solid rgba(255, 255, 255, 0.08)',
+                                borderRadius: '16px',
+                                padding: '1.75rem',
+                                width: '100%',
+                                maxWidth: '400px',
+                                boxShadow: '0 25px 60px rgba(0, 0, 0, 0.5)',
+                                animation: 'slideUp 0.2s ease-out',
+                            }}
+                        >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                                <div style={{
+                                    width: '44px', height: '44px', borderRadius: '12px',
+                                    background: info.confirmBg,
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                }}>
+                                    <Icon size={22} color={info.confirmColor} />
+                                </div>
+                                <button
+                                    onClick={dismissConfirm}
+                                    style={{
+                                        background: 'rgba(255, 255, 255, 0.05)', border: 'none',
+                                        borderRadius: '8px', padding: '6px', cursor: 'pointer',
+                                        color: '#888', display: 'flex', transition: 'all 0.15s ease',
+                                    }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'; e.currentTarget.style.color = '#ccc'; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'; e.currentTarget.style.color = '#888'; }}
+                                >
+                                    <X size={16} />
+                                </button>
+                            </div>
+
+                            <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.1rem', fontWeight: 600, color: '#ffffff' }}>
+                                {info.title}
+                            </h3>
+                            <p style={{ margin: '0 0 1.5rem', fontSize: '0.875rem', color: '#999', lineHeight: 1.5 }}>
+                                {info.message}
+                            </p>
+
+                            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                                <button
+                                    onClick={dismissConfirm}
+                                    style={{
+                                        padding: '0.6rem 1.25rem', borderRadius: '10px',
+                                        background: 'rgba(255, 255, 255, 0.06)',
+                                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                                        color: '#ccc', fontSize: '0.85rem', fontWeight: 500,
+                                        cursor: 'pointer', transition: 'all 0.15s ease',
+                                    }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)'; }}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={executeConfirm}
+                                    style={{
+                                        padding: '0.6rem 1.25rem', borderRadius: '10px',
+                                        background: info.confirmBg,
+                                        border: `1px solid ${info.confirmColor}33`,
+                                        color: info.confirmColor, fontSize: '0.85rem', fontWeight: 600,
+                                        cursor: 'pointer', transition: 'all 0.15s ease',
+                                        display: 'flex', alignItems: 'center', gap: '6px',
+                                    }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.background = `${info.confirmColor}30`; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.background = info.confirmBg; }}
+                                >
+                                    <Icon size={14} />
+                                    {info.confirmLabel}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            })()}
+
+            <style>{`
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                @keyframes slideUp {
+                    from { opacity: 0; transform: translateY(10px) scale(0.98); }
+                    to { opacity: 1; transform: translateY(0) scale(1); }
+                }
+            `}</style>
         </OrgLayout>
     );
 }

@@ -35,6 +35,14 @@ class ClassSetChatService
             ]);
         }
 
+        // Check if user is muted (pending removal)
+        $membership = $this->classSetRepository->getMembership($classSet->id, $userId);
+        if ($membership && $membership->is_muted) {
+            throw ValidationException::withMessages([
+                'message' => ['You cannot send messages while a removal is pending.'],
+            ]);
+        }
+
         $message = trim($message);
         if (empty($message)) {
             throw ValidationException::withMessages([
