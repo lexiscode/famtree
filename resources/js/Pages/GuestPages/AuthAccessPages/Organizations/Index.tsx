@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { Building2, MapPin, Search } from 'lucide-react';
+import { Building2, MapPin, Search, Check } from 'lucide-react';
 import './Organizations.css';
 
 interface Organization {
@@ -19,9 +19,10 @@ interface Organization {
 
 interface Props {
     organizations: Organization[];
+    followedIds: number[];
 }
 
-export default function OrganizationsIndex({ organizations }: Props) {
+export default function OrganizationsIndex({ organizations, followedIds }: Props) {
     const [searchTerm, setSearchTerm] = useState('');
 
     const filteredOrganizations = organizations.filter(org =>
@@ -84,6 +85,12 @@ export default function OrganizationsIndex({ organizations }: Props) {
                                         {org.logo_url && (
                                             <div className="organization-logo">
                                                 <img src={org.logo_url} alt={`${org.name} logo`} />
+                                            </div>
+                                        )}
+                                        {followedIds.includes(org.id) && (
+                                            <div className="organization-following-badge">
+                                                <Check size={12} />
+                                                Following
                                             </div>
                                         )}
                                     </div>

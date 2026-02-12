@@ -4,6 +4,7 @@ namespace App\Repositories\GuestRepositories;
 
 use App\Models\GuestModels\UserFollow;
 use App\Models\GuestModels\User;
+use App\Models\OrgModels\OrganizationFollow;
 
 class UserFollowRepository
 {
@@ -71,11 +72,14 @@ class UserFollowRepository
     }
 
     /**
-     * Count users this user is following
+     * Count users and organizations this user is following
      */
     public function getFollowingCount(int $userId): int
     {
-        return UserFollow::where('follower_user_id', $userId)->count();
+        $userFollows = UserFollow::where('follower_user_id', $userId)->count();
+        $orgFollows = OrganizationFollow::where('user_id', $userId)->count();
+
+        return $userFollows + $orgFollows;
     }
 
     /**

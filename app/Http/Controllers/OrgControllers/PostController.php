@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\OrgControllers;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\OrgControllers\Traits\AuthorizesOrgActions;
 use App\Actions\OrgServices\OrgPostService;
 use App\Models\OrgModels\OrgPost;
 use App\Models\OrgModels\OrgPostComment;
@@ -14,6 +15,7 @@ use Inertia\Inertia;
 
 class PostController extends Controller
 {
+    use AuthorizesOrgActions;
     public function __construct(
         private OrgPostService $postService,
     ) {}
@@ -24,22 +26,54 @@ class PostController extends Controller
 
         $posts = $this->postService->getPosts($orgAccount->organization_id);
 
-        // Format comments with org account context
-        $posts->getCollection()->transform(function ($post) use ($orgAccount) {
-            $post->formatted_comments = $this->formatCommentsForOrg($post, $orgAccount);
-            $post->org_has_reacted = OrgPostReaction::where('org_post_id', $post->id)
-                ->where('org_account_id', $orgAccount->id)
-                ->exists();
-            return $post;
-        });
-
         return Inertia::render('OrgPages/Posts/Index', [
             'posts' => $posts,
         ]);
     }
 
+    public function create()
+    {
+        return Inertia::render('OrgPages/Posts/Create');
+    }
+
+    public function show(int $id)
+    {
+        $orgAccount = Auth::guard('org')->user();
+
+        $post = $this->postService->getPostWithComments($id);
+
+        if (!$post || $post->organization_id !== $orgAccount->organization_id) {
+            return redirect()->route('org.posts.index')->with('error', 'Post not found.');
+        }
+
+        $post->formatted_comments = $this->formatCommentsForOrg($post, $orgAccount);
+        $post->org_has_reacted = OrgPostReaction::where('org_post_id', $post->id)
+            ->where('org_account_id', $orgAccount->id)
+            ->exists();
+
+        return Inertia::render('OrgPages/Posts/Show', [
+            'post' => $post,
+        ]);
+    }
+
+    public function edit(int $id)
+    {
+        $orgAccount = Auth::guard('org')->user();
+
+        $post = $this->postService->getPost($id);
+
+        if (!$post || $post->organization_id !== $orgAccount->organization_id) {
+            return redirect()->route('org.posts.index')->with('error', 'Post not found.');
+        }
+
+        return Inertia::render('OrgPages/Posts/Edit', [
+            'post' => $post,
+        ]);
+    }
+
     public function store(Request $request)
     {
+        $this->authorizeOrg('manage-posts');
         $orgAccount = Auth::guard('org')->user();
 
         $validated = $request->validate([
@@ -65,11 +99,12 @@ class PostController extends Controller
             'content' => $validated['content'],
         ], $imageUrls);
 
-        return redirect()->back()->with('success', 'Post created successfully.');
+        return redirect()->route('org.posts.index')->with('success', 'Post created successfully.');
     }
 
     public function update(Request $request, int $id)
     {
+        $this->authorizeOrg('manage-posts');
         $orgAccount = Auth::guard('org')->user();
 
         $validated = $request->validate([
@@ -82,22 +117,24 @@ class PostController extends Controller
             return redirect()->back()->with('error', 'Post not found.');
         }
 
-        return redirect()->back()->with('success', 'Post updated successfully.');
+        return redirect()->route('org.posts.show', $id)->with('success', 'Post updated successfully.');
     }
 
     public function destroy(int $id)
     {
+        $this->authorizeOrg('manage-posts');
         $orgAccount = Auth::guard('org')->user();
 
         if (!$this->postService->deletePost($id, $orgAccount->organization_id)) {
             return redirect()->back()->with('error', 'Post not found.');
         }
 
-        return redirect()->back()->with('success', 'Post deleted successfully.');
+        return redirect()->route('org.posts.index')->with('success', 'Post deleted successfully.');
     }
 
     public function togglePin(int $id)
     {
+        $this->authorizeOrg('manage-posts');
         $orgAccount = Auth::guard('org')->user();
 
         $post = $this->postService->togglePin($id, $orgAccount->organization_id);
@@ -116,6 +153,7 @@ class PostController extends Controller
     public function addComment(Request $request, int $postId)
     {
         try {
+            $this->authorizeOrg('manage-posts');
             $orgAccount = Auth::guard('org')->user();
             $data = $request->validate([
                 'content' => 'required|string|max:1000',
@@ -182,6 +220,7 @@ class PostController extends Controller
     public function deleteComment(int $commentId)
     {
         try {
+            $this->authorizeOrg('manage-posts');
             $orgAccount = Auth::guard('org')->user();
             $comment = OrgPostComment::findOrFail($commentId);
 
@@ -207,6 +246,7 @@ class PostController extends Controller
     public function toggleCommentLike(int $commentId)
     {
         try {
+            $this->authorizeOrg('manage-posts');
             $orgAccount = Auth::guard('org')->user();
             $comment = OrgPostComment::findOrFail($commentId);
 
@@ -245,6 +285,7 @@ class PostController extends Controller
     public function toggleReaction(int $postId)
     {
         try {
+            $this->authorizeOrg('manage-posts');
             $orgAccount = Auth::guard('org')->user();
 
             $post = OrgPost::where('id', $postId)

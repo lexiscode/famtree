@@ -29,7 +29,7 @@ interface Props {
 }
 
 const chartTooltipStyle = {
-    backgroundColor: '#1a1a24',
+    backgroundColor: '#1e1e35',
     border: '1px solid rgba(139, 92, 246, 0.3)',
     borderRadius: '8px',
     color: '#e0e0e0',
@@ -57,7 +57,7 @@ export default function AnalyticsIndex({ followerGrowth, postEngagement, broadca
     };
 
     const chartContainerStyle: React.CSSProperties = {
-        background: '#111118',
+        background: '#141425',
         border: '1px solid rgba(255, 255, 255, 0.06)',
         borderRadius: '12px',
         padding: '1.5rem',
@@ -95,7 +95,7 @@ export default function AnalyticsIndex({ followerGrowth, postEngagement, broadca
                         const Icon = card.icon;
                         return (
                             <div key={index} style={{
-                                background: '#111118',
+                                background: '#141425',
                                 border: '1px solid rgba(255, 255, 255, 0.06)',
                                 borderRadius: '12px',
                                 padding: '1.25rem',

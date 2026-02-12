@@ -56,7 +56,7 @@ export default function FollowersIndex({ followers }: Props) {
                             <div
                                 key={follower.id}
                                 style={{
-                                    background: '#111118',
+                                    background: '#141425',
                                     border: '1px solid rgba(255, 255, 255, 0.06)',
                                     borderRadius: '12px',
                                     padding: '1.5rem',
@@ -141,7 +141,7 @@ export default function FollowersIndex({ followers }: Props) {
                     <div style={{
                         textAlign: 'center',
                         padding: '3rem',
-                        background: '#111118',
+                        background: '#141425',
                         borderRadius: '12px',
                         border: '1px solid rgba(255, 255, 255, 0.06)',
                     }}>

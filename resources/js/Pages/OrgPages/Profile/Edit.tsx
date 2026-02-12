@@ -1,7 +1,7 @@
 import OrgLayout from '@/Layouts/OrgLayout';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { router } from '@inertiajs/react';
-import { Save, Building2 } from 'lucide-react';
+import { Save, Building2, Pencil, User } from 'lucide-react';
 
 interface Organization {
     id: number;
@@ -22,6 +22,7 @@ interface Organization {
     leader_qualifications: string | null;
     logo_url: string | null;
     cover_image_url: string | null;
+    leader_image_url: string | null;
 }
 
 interface Props {
@@ -47,9 +48,27 @@ export default function ProfileEdit({ organization }: Props) {
         leader_qualifications: organization.leader_qualifications || '',
     });
     const [submitting, setSubmitting] = useState(false);
+    const [uploadingType, setUploadingType] = useState<string | null>(null);
+
+    const logoInputRef = useRef<HTMLInputElement>(null);
+    const coverInputRef = useRef<HTMLInputElement>(null);
+    const leaderInputRef = useRef<HTMLInputElement>(null);
 
     const handleChange = (field: string, value: string) => {
         setForm((prev) => ({ ...prev, [field]: value }));
+    };
+
+    const handleImageUpload = (type: 'logo' | 'cover_image' | 'leader_image', file: File) => {
+        setUploadingType(type);
+        const formData = new FormData();
+        formData.append('type', type);
+        formData.append('image', file);
+
+        router.post(route('org.profile.uploadImage'), formData, {
+            forceFormData: true,
+            onSuccess: () => setUploadingType(null),
+            onError: () => setUploadingType(null),
+        });
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -63,7 +82,7 @@ export default function ProfileEdit({ organization }: Props) {
 
     const inputStyle: React.CSSProperties = {
         width: '100%',
-        background: '#1a1a24',
+        background: '#1e1e35',
         border: '1px solid rgba(139, 92, 246, 0.2)',
         borderRadius: '8px',
         padding: '0.875rem',
@@ -93,9 +112,59 @@ export default function ProfileEdit({ organization }: Props) {
         borderBottom: '1px solid rgba(139, 92, 246, 0.15)',
     };
 
+    const penButtonStyle: React.CSSProperties = {
+        position: 'absolute',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '32px',
+        height: '32px',
+        borderRadius: '50%',
+        background: 'rgba(139, 92, 246, 0.9)',
+        border: '2px solid #141425',
+        cursor: 'pointer',
+        transition: 'all 0.2s ease',
+        zIndex: 5,
+    };
+
     return (
         <OrgLayout>
             <div>
+                {/* Hidden file inputs */}
+                <input
+                    ref={logoInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/jpg,image/gif,image/webp"
+                    style={{ display: 'none' }}
+                    onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleImageUpload('logo', file);
+                        e.target.value = '';
+                    }}
+                />
+                <input
+                    ref={coverInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/jpg,image/gif,image/webp"
+                    style={{ display: 'none' }}
+                    onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleImageUpload('cover_image', file);
+                        e.target.value = '';
+                    }}
+                />
+                <input
+                    ref={leaderInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/jpg,image/gif,image/webp"
+                    style={{ display: 'none' }}
+                    onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleImageUpload('leader_image', file);
+                        e.target.value = '';
+                    }}
+                />
+
                 {/* Header */}
                 <div style={{
                     display: 'flex',
@@ -115,47 +184,93 @@ export default function ProfileEdit({ organization }: Props) {
 
                 {/* Cover & Logo Preview */}
                 <div style={{
-                    background: '#111118',
+                    background: '#141425',
                     border: '1px solid rgba(255, 255, 255, 0.06)',
                     borderRadius: '12px',
                     overflow: 'hidden',
                     marginBottom: '1.5rem',
                 }}>
+                    {/* Cover Image */}
                     <div style={{
-                        height: '160px',
+                        height: '180px',
                         background: organization.cover_image_url
                             ? `url(${organization.cover_image_url}) center/cover`
                             : 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
                         position: 'relative',
                     }}>
+                        {/* Cover pen button */}
+                        <div
+                            style={{
+                                ...penButtonStyle,
+                                bottom: '12px',
+                                right: '12px',
+                                opacity: uploadingType === 'cover_image' ? 0.5 : 1,
+                            }}
+                            onClick={() => !uploadingType && coverInputRef.current?.click()}
+                            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(139, 92, 246, 1)'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(139, 92, 246, 0.9)'; }}
+                            title="Change cover image"
+                        >
+                            <Pencil size={14} color="#fff" />
+                        </div>
+
+                        {/* Logo */}
                         <div style={{
                             position: 'absolute',
-                            bottom: '-30px',
+                            bottom: '-36px',
                             left: '2rem',
-                            width: '72px',
-                            height: '72px',
+                            width: '80px',
+                            height: '80px',
                             borderRadius: '16px',
-                            border: '3px solid #111118',
-                            overflow: 'hidden',
-                            background: '#111118',
+                            border: '3px solid #141425',
+                            overflow: 'visible',
+                            background: '#141425',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                         }}>
-                            {organization.logo_url ? (
-                                <img
-                                    src={organization.logo_url}
-                                    alt={organization.name}
-                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                />
-                            ) : (
-                                <Building2 size={28} color="#8B5CF6" />
-                            )}
+                            <div style={{
+                                width: '100%',
+                                height: '100%',
+                                borderRadius: '13px',
+                                overflow: 'hidden',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                background: '#1e1e35',
+                            }}>
+                                {organization.logo_url ? (
+                                    <img
+                                        src={organization.logo_url}
+                                        alt={organization.name}
+                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                    />
+                                ) : (
+                                    <Building2 size={28} color="#8B5CF6" />
+                                )}
+                            </div>
+                            {/* Logo pen button */}
+                            <div
+                                style={{
+                                    ...penButtonStyle,
+                                    bottom: '-4px',
+                                    right: '-4px',
+                                    width: '26px',
+                                    height: '26px',
+                                    opacity: uploadingType === 'logo' ? 0.5 : 1,
+                                }}
+                                onClick={() => !uploadingType && logoInputRef.current?.click()}
+                                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(139, 92, 246, 1)'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(139, 92, 246, 0.9)'; }}
+                                title="Change logo"
+                            >
+                                <Pencil size={11} color="#fff" />
+                            </div>
                         </div>
                     </div>
-                    <div style={{ padding: '2.5rem 2rem 1rem' }}>
-                        <p style={{ color: '#666', fontSize: '0.8rem', margin: 0 }}>
-                            Logo and cover image uploads are managed separately.
+                    <div style={{ padding: '2.75rem 2rem 1.25rem' }}>
+                        <p style={{ color: '#888', fontSize: '0.85rem', margin: 0 }}>
+                            {organization.name}
                         </p>
                     </div>
                 </div>
@@ -164,7 +279,7 @@ export default function ProfileEdit({ organization }: Props) {
                 <form onSubmit={handleSubmit}>
                     {/* Basic Info */}
                     <div style={{
-                        background: '#111118',
+                        background: '#141425',
                         border: '1px solid rgba(255, 255, 255, 0.06)',
                         borderRadius: '12px',
                         padding: '2rem',
@@ -224,7 +339,7 @@ export default function ProfileEdit({ organization }: Props) {
 
                     {/* Contact & Location */}
                     <div style={{
-                        background: '#111118',
+                        background: '#141425',
                         border: '1px solid rgba(255, 255, 255, 0.06)',
                         borderRadius: '12px',
                         padding: '2rem',
@@ -303,31 +418,79 @@ export default function ProfileEdit({ organization }: Props) {
 
                     {/* Leadership */}
                     <div style={{
-                        background: '#111118',
+                        background: '#141425',
                         border: '1px solid rgba(255, 255, 255, 0.06)',
                         borderRadius: '12px',
                         padding: '2rem',
                         marginBottom: '1.5rem',
                     }}>
                         <h3 style={sectionTitleStyle}>Leadership</h3>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                            <div style={fieldGroupStyle}>
-                                <label style={labelStyle}>Leader Name</label>
-                                <input
-                                    type="text"
-                                    value={form.leader_name}
-                                    onChange={(e) => handleChange('leader_name', e.target.value)}
-                                    style={inputStyle}
-                                />
+                        <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
+                            {/* Leader Image */}
+                            <div style={{ position: 'relative', flexShrink: 0 }}>
+                                <div style={{
+                                    width: '90px',
+                                    height: '90px',
+                                    borderRadius: '50%',
+                                    overflow: 'hidden',
+                                    background: '#1e1e35',
+                                    border: '2px solid rgba(139, 92, 246, 0.2)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                }}>
+                                    {organization.leader_image_url ? (
+                                        <img
+                                            src={organization.leader_image_url}
+                                            alt={organization.leader_name || 'Leader'}
+                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                        />
+                                    ) : (
+                                        <User size={32} color="#555" />
+                                    )}
+                                </div>
+                                {/* Leader image pen button */}
+                                <div
+                                    style={{
+                                        ...penButtonStyle,
+                                        bottom: '0px',
+                                        right: '0px',
+                                        width: '26px',
+                                        height: '26px',
+                                        opacity: uploadingType === 'leader_image' ? 0.5 : 1,
+                                    }}
+                                    onClick={() => !uploadingType && leaderInputRef.current?.click()}
+                                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(139, 92, 246, 1)'; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(139, 92, 246, 0.9)'; }}
+                                    title="Change leader image"
+                                >
+                                    <Pencil size={11} color="#fff" />
+                                </div>
                             </div>
-                            <div style={fieldGroupStyle}>
-                                <label style={labelStyle}>Leader Title</label>
-                                <input
-                                    type="text"
-                                    value={form.leader_title}
-                                    onChange={(e) => handleChange('leader_title', e.target.value)}
-                                    style={inputStyle}
-                                />
+                            <div style={{ flex: 1 }}>
+                                <p style={{ color: '#888', fontSize: '0.8rem', margin: '0 0 0.75rem' }}>
+                                    {organization.leader_name ? `${organization.leader_name}` : 'Leader photo'}
+                                </p>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                    <div>
+                                        <label style={labelStyle}>Leader Name</label>
+                                        <input
+                                            type="text"
+                                            value={form.leader_name}
+                                            onChange={(e) => handleChange('leader_name', e.target.value)}
+                                            style={inputStyle}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={labelStyle}>Leader Title</label>
+                                        <input
+                                            type="text"
+                                            value={form.leader_title}
+                                            onChange={(e) => handleChange('leader_title', e.target.value)}
+                                            style={inputStyle}
+                                        />
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div style={fieldGroupStyle}>

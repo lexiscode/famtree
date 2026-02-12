@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\OrgControllers;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\OrgControllers\Traits\AuthorizesOrgActions;
 use App\Models\GuestModels\Organization;
 use App\Models\GuestModels\ClassSetMember;
 use Illuminate\Support\Facades\Auth;
@@ -10,8 +11,10 @@ use Inertia\Inertia;
 
 class GroupsController extends Controller
 {
+    use AuthorizesOrgActions;
     public function index()
     {
+        $this->authorizeOrg('manage-groups');
         $orgAccount = Auth::guard('org')->user();
         $org = Organization::with('faculties.departments.classSets')
             ->find($orgAccount->organization_id);

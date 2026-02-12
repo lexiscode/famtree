@@ -1,6 +1,6 @@
 import OrgLayout from '@/Layouts/OrgLayout';
 import { router } from '@inertiajs/react';
-import { ArrowLeft, XCircle, Calendar, Users, Clock, Repeat } from 'lucide-react';
+import { ArrowLeft, XCircle, Pencil, Calendar, Users, Clock, Repeat } from 'lucide-react';
 
 interface BroadcastCreator {
     display_name: string | null;
@@ -113,35 +113,59 @@ export default function BroadcastsShow({ broadcast }: Props) {
                             </span>
                         </div>
                         {canCancel && (
-                            <button
-                                onClick={handleCancel}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.5rem',
-                                    padding: '0.75rem 1.5rem',
-                                    background: 'rgba(239, 68, 68, 0.1)',
-                                    color: '#EF4444',
-                                    border: '1px solid rgba(239, 68, 68, 0.3)',
-                                    borderRadius: '8px',
-                                    fontWeight: 600,
-                                    fontSize: '0.9rem',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s ease',
-                                }}
-                                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'; }}
-                                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'; }}
-                            >
-                                <XCircle size={16} />
-                                Cancel Broadcast
-                            </button>
+                            <div style={{ display: 'flex', gap: '0.75rem' }}>
+                                <button
+                                    onClick={() => router.visit(route('org.broadcasts.edit', broadcast.id))}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem',
+                                        padding: '0.75rem 1.5rem',
+                                        background: 'rgba(139, 92, 246, 0.1)',
+                                        color: '#8B5CF6',
+                                        border: '1px solid rgba(139, 92, 246, 0.3)',
+                                        borderRadius: '8px',
+                                        fontWeight: 600,
+                                        fontSize: '0.9rem',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
+                                    }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(139, 92, 246, 0.2)'; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(139, 92, 246, 0.1)'; }}
+                                >
+                                    <Pencil size={16} />
+                                    Edit
+                                </button>
+                                <button
+                                    onClick={handleCancel}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem',
+                                        padding: '0.75rem 1.5rem',
+                                        background: 'rgba(239, 68, 68, 0.1)',
+                                        color: '#EF4444',
+                                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                                        borderRadius: '8px',
+                                        fontWeight: 600,
+                                        fontSize: '0.9rem',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
+                                    }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'; }}
+                                >
+                                    <XCircle size={16} />
+                                    Cancel
+                                </button>
+                            </div>
                         )}
                     </div>
                 </div>
 
                 {/* Message Card */}
                 <div style={{
-                    background: '#111118',
+                    background: '#141425',
                     border: '1px solid rgba(255, 255, 255, 0.06)',
                     borderRadius: '12px',
                     padding: '2rem',
@@ -157,20 +181,21 @@ export default function BroadcastsShow({ broadcast }: Props) {
                     }}>
                         Message
                     </h3>
-                    <p style={{
-                        color: '#e0e0e0',
-                        fontSize: '1rem',
-                        lineHeight: 1.7,
-                        margin: 0,
-                        whiteSpace: 'pre-wrap',
-                    }}>
-                        {broadcast.message}
-                    </p>
+                    <div
+                        dangerouslySetInnerHTML={{ __html: broadcast.message }}
+                        style={{
+                            color: '#e0e0e0',
+                            fontSize: '1rem',
+                            lineHeight: 1.7,
+                            margin: 0,
+                            wordBreak: 'break-word',
+                        }}
+                    />
                 </div>
 
                 {/* Details Card */}
                 <div style={{
-                    background: '#111118',
+                    background: '#141425',
                     border: '1px solid rgba(255, 255, 255, 0.06)',
                     borderRadius: '12px',
                     padding: '2rem',

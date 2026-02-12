@@ -444,7 +444,9 @@ class PrivateMessageController extends Controller
                 'lastMessage' => $latestMessage ? [
                     'message' => $latestMessage->message,
                     'sender_id' => $latestMessage->sender_id,
-                    'sender_name' => $latestMessage->sender ? trim($latestMessage->sender->first_name . ' ' . $latestMessage->sender->last_name) : 'Unknown',
+                    'sender_name' => $latestMessage->is_org_broadcast
+                        ? ($latestMessage->organization->short_name ?? $latestMessage->organization->name ?? 'Organization')
+                        : ($latestMessage->sender ? trim($latestMessage->sender->first_name . ' ' . $latestMessage->sender->last_name) : 'Unknown'),
                     'created_at' => $latestMessage->created_at->toISOString(),
                 ] : null,
                 'last_message_at' => $latestMessage ? $latestMessage->created_at->toISOString() : $classSet->created_at->toISOString(),

@@ -9,6 +9,7 @@ use App\Http\Controllers\OrgControllers\BroadcastController;
 use App\Http\Controllers\OrgControllers\AnalyticsController;
 use App\Http\Controllers\OrgControllers\ProfileController;
 use App\Http\Controllers\OrgControllers\StaffController;
+use App\Http\Controllers\OrgControllers\RoleController;
 use App\Http\Controllers\OrgControllers\GroupsController;
 use App\Http\Controllers\OrgControllers\FollowersController;
 
@@ -35,7 +36,10 @@ Route::group(['prefix' => 'org', 'as' => 'org.', 'middleware' => ['web']], funct
 
         // Posts
         Route::get('/posts', [PostController::class, 'index'])->name('posts.index');
+        Route::get('/posts/create', [PostController::class, 'create'])->name('posts.create');
         Route::post('/posts', [PostController::class, 'store'])->name('posts.store');
+        Route::get('/posts/{id}', [PostController::class, 'show'])->name('posts.show');
+        Route::get('/posts/{id}/edit', [PostController::class, 'edit'])->name('posts.edit');
         Route::put('/posts/{id}', [PostController::class, 'update'])->name('posts.update');
         Route::delete('/posts/{id}', [PostController::class, 'destroy'])->name('posts.destroy');
         Route::post('/posts/{id}/toggle-pin', [PostController::class, 'togglePin'])->name('posts.togglePin');
@@ -49,6 +53,8 @@ Route::group(['prefix' => 'org', 'as' => 'org.', 'middleware' => ['web']], funct
         Route::get('/broadcasts/create', [BroadcastController::class, 'create'])->name('broadcasts.create');
         Route::post('/broadcasts', [BroadcastController::class, 'store'])->name('broadcasts.store');
         Route::get('/broadcasts/{id}', [BroadcastController::class, 'show'])->name('broadcasts.show');
+        Route::get('/broadcasts/{id}/edit', [BroadcastController::class, 'edit'])->name('broadcasts.edit');
+        Route::put('/broadcasts/{id}', [BroadcastController::class, 'update'])->name('broadcasts.update');
         Route::post('/broadcasts/{id}/cancel', [BroadcastController::class, 'cancel'])->name('broadcasts.cancel');
 
         // Analytics
@@ -57,12 +63,19 @@ Route::group(['prefix' => 'org', 'as' => 'org.', 'middleware' => ['web']], funct
         // Profile
         Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
         Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+        Route::post('/profile/image', [ProfileController::class, 'uploadImage'])->name('profile.uploadImage');
 
         // Staff
         Route::get('/staff', [StaffController::class, 'index'])->name('staff.index');
         Route::post('/staff', [StaffController::class, 'store'])->name('staff.store');
         Route::put('/staff/{id}', [StaffController::class, 'update'])->name('staff.update');
         Route::delete('/staff/{id}', [StaffController::class, 'destroy'])->name('staff.destroy');
+
+        // Roles
+        Route::get('/roles', [RoleController::class, 'index'])->name('roles.index');
+        Route::post('/roles', [RoleController::class, 'store'])->name('roles.store');
+        Route::put('/roles/{id}', [RoleController::class, 'update'])->name('roles.update');
+        Route::delete('/roles/{id}', [RoleController::class, 'destroy'])->name('roles.destroy');
 
         // Groups
         Route::get('/groups', [GroupsController::class, 'index'])->name('groups.index');

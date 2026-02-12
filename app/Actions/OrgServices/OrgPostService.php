@@ -17,6 +17,16 @@ class OrgPostService
         return $this->postRepo->getByOrganization($organizationId, $perPage);
     }
 
+    public function getPost(int $id): ?\App\Models\OrgModels\OrgPost
+    {
+        return $this->postRepo->findById($id);
+    }
+
+    public function getPostWithComments(int $id): ?\App\Models\OrgModels\OrgPost
+    {
+        return $this->postRepo->findByIdWithComments($id);
+    }
+
     public function createPost(array $data, array $imageUrls = []): \App\Models\OrgModels\OrgPost
     {
         $post = $this->postRepo->create($data);

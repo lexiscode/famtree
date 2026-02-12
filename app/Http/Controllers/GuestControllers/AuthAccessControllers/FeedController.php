@@ -109,8 +109,8 @@ class FeedController extends Controller
         $suggestedData = $this->suggestedConnectionService->getSuggestedMembers($user->id);
         $suggestedUsers = $suggestedData['suggestions'] ?? [];
 
-        // Get following/followers count
-        $followingCount = collect($followingList)->count();
+        // Get following/followers count (users + organizations)
+        $followingCount = collect($followingList)->count() + count($followedOrgIds);
         $followersList = $this->followService->getFollowersList($user->id, $user->id);
         $followersCount = collect($followersList)->count();
 

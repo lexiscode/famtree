@@ -548,7 +548,7 @@
 }
 
 .lightbox-close {
-    position: absolute;
+    position: absolute !important;
     top: 16px;
     right: 16px;
     background: rgba(255, 255, 255, 0.1);
@@ -563,6 +563,7 @@
     justify-content: center;
     transition: background 0.2s;
     z-index: 10001;
+    overflow: visible !important;
 }
 
 .lightbox-close:hover {
@@ -598,7 +599,7 @@
 }
 
 .lightbox-nav {
-    position: absolute;
+    position: absolute !important;
     top: 50%;
     transform: translateY(-50%);
     background: rgba(255, 255, 255, 0.1);
@@ -613,6 +614,7 @@
     justify-content: center;
     transition: background 0.2s;
     z-index: 10001;
+    overflow: visible !important;
 }
 
 .lightbox-nav:hover {
@@ -838,6 +840,7 @@
     max-width: 600px;
     max-height: 85vh;
     overflow-y: auto;
+    scrollbar-width: none;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
     animation: slideUp 0.3s ease-out;
 }

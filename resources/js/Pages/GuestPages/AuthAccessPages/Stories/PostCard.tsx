@@ -758,7 +758,7 @@ export default function PostCard({ post, onPostDeleted, isOwnPost = false, defau
             {lightboxOpen && post.images.length > 0 && createPortal(
                 <div className="lightbox-overlay" onClick={() => setLightboxOpen(false)}>
                     <button className="lightbox-close" onClick={() => setLightboxOpen(false)}>
-                        <X size={28} />
+                        <span style={{ color: '#fff', fontSize: '28px', fontWeight: 300, lineHeight: 1 }}>&times;</span>
                     </button>
                     <div className="lightbox-counter">{lightboxIndex + 1} / {post.images.length}</div>
                     <div className="lightbox-content" onClick={(e) => e.stopPropagation()}>
@@ -767,7 +767,7 @@ export default function PostCard({ post, onPostDeleted, isOwnPost = false, defau
                                 className="lightbox-nav lightbox-prev"
                                 onClick={() => setLightboxIndex((lightboxIndex - 1 + post.images.length) % post.images.length)}
                             >
-                                <ChevronLeft size={32} />
+                                <span style={{ color: '#fff', fontSize: '28px', fontWeight: 700, lineHeight: 1 }}>&lsaquo;</span>
                             </button>
                         )}
                         <img
@@ -781,7 +781,7 @@ export default function PostCard({ post, onPostDeleted, isOwnPost = false, defau
                                 className="lightbox-nav lightbox-next"
                                 onClick={() => setLightboxIndex((lightboxIndex + 1) % post.images.length)}
                             >
-                                <ChevronRight size={32} />
+                                <span style={{ color: '#fff', fontSize: '28px', fontWeight: 700, lineHeight: 1 }}>&rsaquo;</span>
                             </button>
                         )}
                     </div>

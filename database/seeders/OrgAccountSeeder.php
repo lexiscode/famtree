@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\GuestModels\Organization;
 use App\Models\OrgModels\OrgAccount;
+use App\Models\OrgModels\OrgRole;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -52,14 +53,26 @@ class OrgAccountSeeder extends Seeder
                 continue;
             }
 
+            // Create system Owner role if it doesn't exist
+            $ownerRole = OrgRole::firstOrCreate(
+                [
+                    'organization_id' => $org->id,
+                    'slug' => 'owner',
+                ],
+                [
+                    'name' => 'Owner',
+                    'is_system' => true,
+                    'permissions' => [],
+                ]
+            );
+
             OrgAccount::firstOrCreate(
                 ['email' => $orgData['email']],
                 [
                     'organization_id' => $org->id,
                     'username' => $orgData['username'],
                     'password' => Hash::make('OrgPassword123'),
-                    'role' => 'owner',
-                    'permissions' => json_encode(['*']),
+                    'org_role_id' => $ownerRole->id,
                     'display_name' => $orgData['display_name'],
                     'is_active' => true,
                 ]

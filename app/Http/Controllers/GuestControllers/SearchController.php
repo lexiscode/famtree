@@ -29,34 +29,16 @@ class SearchController extends Controller
         $currentUserId = auth()->id();
 
         try {
-            // Get users with mutual connections info
-            $users = $this->searchRepository->searchUsersWithMutualConnections(
-                $query,
-                $currentUserId,
-                $limit
-            );
+            $users = $this->searchRepository->searchUsers($query, $limit, $currentUserId);
 
-            // Format results with connection status
-            $results = $users->map(function ($user) use ($currentUserId) {
-                $connectionStatus = $this->searchRepository->getConnectionStatus(
-                    $currentUserId,
-                    $user->id
-                );
-
-                $mutualCount = max(
-                    $user->connections_as_requester_count ?? 0,
-                    $user->connections_as_recipient_count ?? 0
-                );
-
+            $results = $users->map(function ($user) {
                 return [
                     'id' => $user->id,
-                    'name' => $user->full_name,
+                    'name' => trim($user->first_name . ' ' . $user->last_name),
                     'username' => $user->username,
                     'email' => $user->email,
                     'profile_image_url' => $user->profile_image_url,
                     'bio' => $user->bio ?? '',
-                    'mutual_connections' => $mutualCount,
-                    'connection_status' => $connectionStatus,
                 ];
             })->toArray();
 

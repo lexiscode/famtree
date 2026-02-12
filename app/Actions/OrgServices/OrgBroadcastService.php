@@ -139,6 +139,47 @@ class OrgBroadcastService
         return $broadcast;
     }
 
+    public function updateBroadcast(int $id, int $organizationId, array $data): ?OrgBroadcast
+    {
+        $broadcast = $this->broadcastRepo->findById($id);
+
+        if (!$broadcast || $broadcast->organization_id !== $organizationId) {
+            return null;
+        }
+
+        if (in_array($broadcast->status, ['sent', 'cancelled'])) {
+            return null;
+        }
+
+        // Recalculate next_send_at based on new schedule settings
+        if ($data['schedule_type'] === 'immediate') {
+            $data['status'] = 'pending';
+            $data['next_send_at'] = null;
+            $data['recurrence_type'] = null;
+            $data['recurrence_count'] = null;
+            $data['recurrences_sent'] = 0;
+        } elseif ($data['schedule_type'] === 'scheduled' && isset($data['scheduled_at'])) {
+            $data['next_send_at'] = $data['scheduled_at'];
+            $data['status'] = 'pending';
+            $data['recurrence_type'] = null;
+            $data['recurrence_count'] = null;
+            $data['recurrences_sent'] = 0;
+        } elseif ($data['schedule_type'] === 'recurring') {
+            $data['next_send_at'] = $data['scheduled_at'] ?? now();
+            $data['recurrences_sent'] = 0;
+            $data['status'] = 'pending';
+        }
+
+        $updated = $this->broadcastRepo->update($id, $data);
+
+        // Send immediately if changed to immediate
+        if ($updated && $updated->schedule_type === 'immediate') {
+            $this->sendBroadcast($updated);
+        }
+
+        return $updated;
+    }
+
     public function cancelBroadcast(int $id, int $organizationId): ?OrgBroadcast
     {
         $broadcast = $this->broadcastRepo->findById($id);

@@ -2,9 +2,9 @@ import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { router, Link } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
 import {
-    Home, TrendingUp, Users, Bell, Plus, Heart, MessageCircle, Mail,
+    Home, TrendingUp, Users, Plus, Heart, MessageCircle, Mail,
     User, Settings, UserPlus, UserCheck, Globe, FileText, Loader, Image as ImageIcon, Video, ArrowUp,
-    GraduationCap, Bookmark
+    GraduationCap, Bookmark, Search, X
 } from 'lucide-react';
 import CreatePostModal from '../Stories/CreatePostModal';
 import PostCard from '../Stories/PostCard';
@@ -138,6 +138,17 @@ export default function Feed({
     const [isChatMinimized, setIsChatMinimized] = useState(false);
     const [showScrollTop, setShowScrollTop] = useState(false);
 
+    // Live search state
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState<Array<{
+        id: number;
+        name: string;
+        username: string;
+        profile_image_url: string | null;
+    }>>([]);
+    const [isSearching, setIsSearching] = useState(false);
+    const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
     // Client-side post viewing: keeps the feed mounted so scroll position is preserved
     const [viewingPost, setViewingPost] = useState<Post | null>(null);
     const scrollPositionRef = useRef(0);
@@ -245,6 +256,53 @@ export default function Feed({
         window.addEventListener('scroll', handleWindowScroll);
         return () => window.removeEventListener('scroll', handleWindowScroll);
     }, [fetchMorePosts, activeTab, hasMore]);
+
+    // Live search handler with debounce
+    const handleSearchInput = useCallback((value: string) => {
+        setSearchQuery(value);
+
+        if (searchDebounceRef.current) {
+            clearTimeout(searchDebounceRef.current);
+        }
+
+        if (!value.trim()) {
+            setSearchResults([]);
+            setIsSearching(false);
+            return;
+        }
+
+        setIsSearching(true);
+        searchDebounceRef.current = setTimeout(async () => {
+            try {
+                const response = await fetch(`/search/users?q=${encodeURIComponent(value.trim())}&limit=8`, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    credentials: 'same-origin',
+                });
+                const data = await response.json();
+                if (data.success && data.data) {
+                    setSearchResults(data.data);
+                } else {
+                    setSearchResults([]);
+                }
+            } catch {
+                setSearchResults([]);
+            } finally {
+                setIsSearching(false);
+            }
+        }, 300);
+    }, []);
+
+    // Cleanup debounce on unmount
+    useEffect(() => {
+        return () => {
+            if (searchDebounceRef.current) {
+                clearTimeout(searchDebounceRef.current);
+            }
+        };
+    }, []);
 
     const scrollToTop = useCallback(() => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -458,37 +516,74 @@ export default function Feed({
                         {/* RIGHT SIDEBAR - Widgets */}
                         <div className="col-lg-3">
                             <div className="right-sidebar">
-                                {/* Notifications Widget */}
+                                {/* Live Search Widget */}
                                 <div className="sidebar-widget">
                                     <div className="widget-header">
                                         <h6 className="widget-title">
-                                            <Bell size={20} />
-                                            Notifications
+                                            <Search size={20} />
+                                            Find People
                                         </h6>
-                                        {unreadNotificationCount > 0 && (
-                                            <span className="badge badge-danger">{unreadNotificationCount}</span>
-                                        )}
                                     </div>
-                                    <div className="widget-body">
-                                        {recentNotifications.slice(0, 5).map((notification) => (
-                                            <div
-                                                key={notification.id}
-                                                className={`widget-item notification-item ${!notification.read_at ? 'unread' : ''}`}
-                                            >
-                                                <div className="notification-content">
-                                                    <p className="notification-text">{notification.data?.message || 'New notification'}</p>
-                                                    <span className="notification-time">{new Date(notification.created_at).toLocaleDateString()}</span>
-                                                </div>
+                                    <div className="widget-body" style={{ padding: 0 }}>
+                                        <div className="live-search-container">
+                                            <div className="live-search-input-wrapper">
+                                                <Search size={16} className="live-search-icon" />
+                                                <input
+                                                    type="text"
+                                                    placeholder="Search by name or username..."
+                                                    value={searchQuery}
+                                                    onChange={(e) => handleSearchInput(e.target.value)}
+                                                    className="live-search-input"
+                                                />
+                                                {searchQuery && (
+                                                    <button
+                                                        className="live-search-clear"
+                                                        onClick={() => {
+                                                            setSearchQuery('');
+                                                            setSearchResults([]);
+                                                        }}
+                                                    >
+                                                        <X size={14} />
+                                                    </button>
+                                                )}
                                             </div>
-                                        ))}
-                                        {recentNotifications.length === 0 && (
-                                            <div className="widget-item text-center">
-                                                <small className="text-muted">No notifications yet</small>
+                                            <div className="live-search-results">
+                                                {isSearching && (
+                                                    <div className="live-search-loading">
+                                                        <Loader size={16} className="spinning" />
+                                                        <span>Searching...</span>
+                                                    </div>
+                                                )}
+                                                {!isSearching && searchQuery.trim() && searchResults.length === 0 && (
+                                                    <div className="live-search-empty">
+                                                        No users found
+                                                    </div>
+                                                )}
+                                                {searchResults.map((result) => (
+                                                    <Link
+                                                        key={result.id}
+                                                        href={`/profile/${result.username}`}
+                                                        className="live-search-result-item"
+                                                    >
+                                                        {result.profile_image_url ? (
+                                                            <img
+                                                                src={result.profile_image_url}
+                                                                alt={result.name}
+                                                                className="live-search-avatar"
+                                                            />
+                                                        ) : (
+                                                            <div className="live-search-avatar-fallback">
+                                                                {result.name.charAt(0)}
+                                                            </div>
+                                                        )}
+                                                        <div className="live-search-info">
+                                                            <span className="live-search-name">{result.name}</span>
+                                                            <span className="live-search-username">@{result.username}</span>
+                                                        </div>
+                                                    </Link>
+                                                ))}
                                             </div>
-                                        )}
-                                    </div>
-                                    <div className="widget-footer">
-                                        <Link href="/notifications">View All</Link>
+                                        </div>
                                     </div>
                                 </div>
 

@@ -30,6 +30,20 @@ class OrgPostRepository
         return OrgPost::with(['creator', 'images'])->find($id);
     }
 
+    public function findByIdWithComments(int $id): ?OrgPost
+    {
+        return OrgPost::with([
+            'creator',
+            'images',
+            'comments' => function ($q) {
+                $q->whereNull('parent_comment_id')
+                  ->with(['user', 'orgAccount', 'replies.user', 'replies.orgAccount', 'likes'])
+                  ->orderBy('created_at', 'desc');
+            },
+            'reactions',
+        ])->find($id);
+    }
+
     public function create(array $data): OrgPost
     {
         return OrgPost::create($data);
