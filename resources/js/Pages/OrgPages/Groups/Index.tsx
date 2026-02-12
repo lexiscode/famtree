@@ -93,7 +93,7 @@ export default function GroupsIndex({ hierarchy }: Props) {
 
                         return (
                             <div key={faculty.id} style={{
-                                background: '#111118',
+                                background: '#141425',
                                 border: '1px solid rgba(255, 255, 255, 0.06)',
                                 borderRadius: '12px',
                                 overflow: 'hidden',
@@ -272,7 +272,7 @@ export default function GroupsIndex({ hierarchy }: Props) {
                         <div style={{
                             textAlign: 'center',
                             padding: '3rem',
-                            background: '#111118',
+                            background: '#141425',
                             borderRadius: '12px',
                             border: '1px solid rgba(255, 255, 255, 0.06)',
                         }}>

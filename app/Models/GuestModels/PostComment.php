@@ -5,6 +5,7 @@ namespace App\Models\GuestModels;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class PostComment extends Model
 {
@@ -16,6 +17,9 @@ class PostComment extends Model
         'post_id',
         'user_id',
         'content',
+        'uuid',
+        'parent_comment_id',
+        'likes_count',
     ];
 
     protected $casts = [
@@ -24,19 +28,44 @@ class PostComment extends Model
         'deleted_at' => 'datetime',
     ];
 
-    /**
-     * Get the post this comment belongs to
-     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($comment) {
+            if (empty($comment->uuid)) {
+                $comment->uuid = (string) Str::uuid();
+            }
+        });
+    }
+
     public function post()
     {
         return $this->belongsTo(Post::class);
     }
 
-    /**
-     * Get the user who created this comment
-     */
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function parent()
+    {
+        return $this->belongsTo(self::class, 'parent_comment_id');
+    }
+
+    public function replies()
+    {
+        return $this->hasMany(self::class, 'parent_comment_id')->orderBy('created_at', 'asc');
+    }
+
+    public function likes()
+    {
+        return $this->hasMany(PostCommentLike::class, 'comment_id');
+    }
+
+    public function isReply(): bool
+    {
+        return !is_null($this->parent_comment_id);
     }
 }

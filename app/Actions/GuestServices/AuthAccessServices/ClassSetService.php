@@ -113,7 +113,10 @@ class ClassSetService
                 ],
                 'latest_message' => $latestMessage ? [
                     'message' => $latestMessage->message,
-                    'sender_name' => $latestMessage->sender->first_name . ' ' . $latestMessage->sender->last_name,
+                    'sender_name' => $latestMessage->is_org_broadcast
+                        ? ($latestMessage->organization->short_name ?? $latestMessage->organization->name ?? 'Organization')
+                        : ($latestMessage->sender ? $latestMessage->sender->first_name . ' ' . $latestMessage->sender->last_name : 'Unknown'),
+                    'is_org_broadcast' => (bool) $latestMessage->is_org_broadcast,
                     'created_at' => $latestMessage->created_at,
                 ] : null,
             ];

@@ -68,7 +68,7 @@ class OrganizationSeeder extends Seeder
                 'description' => 'The University of Lagos, popularly known as UNILAG, is a public research university located in Lagos, Nigeria. Founded in 1962, it is one of Nigeria\'s oldest and most prestigious universities.',
                 'vision' => 'To be a top-class institution for the pursuit of excellence in knowledge through teaching, research and public service delivery.',
                 'mission' => 'To provide a conducive environment for teaching and learning, undertake research and development activities relevant to the needs of the nation, and promote good governance and service delivery.',
-                'logo' => '/unilag/unilag-logo.png',
+                'logo' => '/unilag/unilag-logo.jpg',
                 'cover_image' => '/unilag/senate-building.jpg',
                 'address' => 'University Road, Akoka',
                 'city' => 'Lagos',

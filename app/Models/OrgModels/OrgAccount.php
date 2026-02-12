@@ -20,8 +20,7 @@ class OrgAccount extends Authenticatable
         'username',
         'email',
         'password',
-        'role',
-        'permissions',
+        'org_role_id',
         'display_name',
         'is_active',
         'last_login_at',
@@ -33,7 +32,6 @@ class OrgAccount extends Authenticatable
     ];
 
     protected $casts = [
-        'permissions' => 'json',
         'password' => 'hashed',
         'is_active' => 'boolean',
         'last_login_at' => 'datetime',
@@ -70,19 +68,23 @@ class OrgAccount extends Authenticatable
         return $this->hasMany(OrgBroadcast::class);
     }
 
+    public function orgRole()
+    {
+        return $this->belongsTo(OrgRole::class, 'org_role_id');
+    }
+
     public function isOwner(): bool
     {
-        return $this->role === 'owner';
+        return $this->orgRole?->isOwnerRole() ?? false;
     }
 
     public function hasPermission(string $permission): bool
     {
-        if ($this->role === 'owner') {
-            return true;
-        }
+        return $this->orgRole?->hasPermission($permission) ?? false;
+    }
 
-        $permissions = $this->permissions ?? [];
-
-        return !empty($permissions[$permission]) || !empty($permissions['*']);
+    public function getRoleNameAttribute(): string
+    {
+        return $this->orgRole?->name ?? 'Unknown';
     }
 }

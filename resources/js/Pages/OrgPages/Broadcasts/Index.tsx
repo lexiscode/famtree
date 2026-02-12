@@ -38,6 +38,12 @@ const statusConfig: Record<string, { color: string; bg: string; label: string }>
     cancelled: { color: '#EF4444', bg: 'rgba(239, 68, 68, 0.15)', label: 'Cancelled' },
 };
 
+function stripHtml(html: string): string {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    return (tmp.textContent || tmp.innerText || '').trim();
+}
+
 export default function BroadcastsIndex({ broadcasts }: Props) {
     const handlePageChange = (page: number) => {
         router.visit(route('org.broadcasts.index', { page }));
@@ -93,7 +99,7 @@ export default function BroadcastsIndex({ broadcasts }: Props) {
                             <div
                                 key={broadcast.id}
                                 style={{
-                                    background: '#111118',
+                                    background: '#141425',
                                     border: '1px solid rgba(255, 255, 255, 0.06)',
                                     borderRadius: '12px',
                                     padding: '1.5rem',
@@ -125,17 +131,16 @@ export default function BroadcastsIndex({ broadcasts }: Props) {
                                         }}>
                                             {broadcast.title || 'Untitled Broadcast'}
                                         </h3>
-                                        <p style={{
-                                            color: '#888',
-                                            fontSize: '0.875rem',
-                                            margin: 0,
-                                            overflow: 'hidden',
-                                            textOverflow: 'ellipsis',
-                                            whiteSpace: 'nowrap',
-                                            maxWidth: '600px',
-                                        }}>
-                                            {broadcast.message}
-                                        </p>
+                                        <div
+                                            dangerouslySetInnerHTML={{ __html: broadcast.message }}
+                                            style={{
+                                                color: '#888',
+                                                fontSize: '0.875rem',
+                                                margin: 0,
+                                                lineHeight: 1.6,
+                                                wordBreak: 'break-word',
+                                            }}
+                                        />
                                     </div>
                                     <span style={{
                                         display: 'inline-block',
@@ -172,7 +177,7 @@ export default function BroadcastsIndex({ broadcasts }: Props) {
                         <div style={{
                             textAlign: 'center',
                             padding: '3rem',
-                            background: '#111118',
+                            background: '#141425',
                             borderRadius: '12px',
                             border: '1px solid rgba(255, 255, 255, 0.06)',
                         }}>

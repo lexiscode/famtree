@@ -164,6 +164,12 @@ interface Props {
     currentUserId: number;
 }
 
+function stripHtml(html: string): string {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    return (tmp.textContent || tmp.innerText || '').trim();
+}
+
 export default function MessagesIndex({
     conversations: initialConversations = [],
     groupChats: initialGroupChats = [],
@@ -808,9 +814,7 @@ export default function MessagesIndex({
                                                         <>
                                                             <span className="conversation-you">{group.lastMessage.sender_name.split(' ')[0]}: </span>
                                                             <span className={group.unread_count > 0 ? 'unread-text' : ''}>
-                                                                {group.lastMessage.message.length > 30
-                                                                    ? group.lastMessage.message.substring(0, 30) + '...'
-                                                                    : group.lastMessage.message}
+                                                                {(() => { const t = stripHtml(group.lastMessage.message); return t.length > 30 ? t.substring(0, 30) + '...' : t; })()}
                                                             </span>
                                                         </>
                                                     ) : (
@@ -879,9 +883,7 @@ export default function MessagesIndex({
                                                             <span className="conversation-you">You: </span>
                                                         )}
                                                         <span className={conv.unread_count > 0 ? 'unread-text' : ''}>
-                                                            {conv.lastMessage.message.length > 40
-                                                                ? conv.lastMessage.message.substring(0, 40) + '...'
-                                                                : conv.lastMessage.message}
+                                                            {(() => { const t = stripHtml(conv.lastMessage.message); return t.length > 40 ? t.substring(0, 40) + '...' : t; })()}
                                                         </span>
                                                     </>
                                                 ) : (
@@ -1044,9 +1046,11 @@ export default function MessagesIndex({
                                                                     Broadcast
                                                                 </span>
                                                             </div>
-                                                            <p style={{ margin: '0 0 4px', fontSize: '0.875rem', color: '#e0e0e0', lineHeight: 1.5 }}>
-                                                                {message.message}
-                                                            </p>
+                                                            <div
+                                                                className="broadcast-message-content"
+                                                                dangerouslySetInnerHTML={{ __html: message.message }}
+                                                                style={{ margin: '0 0 4px', fontSize: '0.875rem', color: '#e0e0e0', lineHeight: 1.5, wordBreak: 'break-word' }}
+                                                            />
                                                             <span style={{ fontSize: '0.7rem', color: '#888' }}>
                                                                 {formatTime(message.created_at)}
                                                             </span>

@@ -29,6 +29,9 @@ class ProcessOrgBroadcasts extends Command
             try {
                 $this->info("Processing broadcast #{$broadcast->id}: {$broadcast->title}");
 
+                // Remember the original next_send_at to preserve the time for recurring
+                $originalNextSendAt = $broadcast->next_send_at->copy();
+
                 $broadcastService->sendBroadcast($broadcast);
 
                 // Handle recurring broadcasts
@@ -37,6 +40,7 @@ class ProcessOrgBroadcasts extends Command
                     $maxRecurrences = $freshBroadcast->recurrence_count;
                     $sent = $freshBroadcast->recurrences_sent;
 
+                    // Check if max recurrences reached
                     if ($maxRecurrences && $sent >= $maxRecurrences) {
                         $freshBroadcast->update([
                             'status' => 'sent',
@@ -44,10 +48,11 @@ class ProcessOrgBroadcasts extends Command
                         ]);
                         $this->info("  Recurring broadcast completed ({$sent}/{$maxRecurrences} sends).");
                     } else {
-                        // Schedule the next occurrence
+                        // Calculate the next send time (preserving original time of day)
                         $nextSend = match ($freshBroadcast->recurrence_type) {
-                            'daily' => now()->addDay(),
-                            'weekly' => now()->addWeek(),
+                            'daily' => $originalNextSendAt->addDay(),
+                            'weekly' => $originalNextSendAt->addWeek(),
+                            'monthly' => $originalNextSendAt->addMonth(),
                             default => null,
                         };
 

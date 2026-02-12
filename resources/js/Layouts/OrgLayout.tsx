@@ -1,5 +1,8 @@
 import { ReactNode, useState } from 'react';
 import { usePage, router } from '@inertiajs/react';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { useFlashToast } from '@/hooks/useFlashToast';
 import {
     Menu,
     X,
@@ -9,11 +12,11 @@ import {
     BarChart3,
     Building2,
     Users,
+    Shield,
     FolderTree,
     Heart,
     LogOut,
     ChevronDown,
-    Bell,
 } from 'lucide-react';
 
 interface OrgLayoutProps {
@@ -35,6 +38,8 @@ interface OrgAccount {
     email: string;
     role: string;
     display_name: string | null;
+    is_owner: boolean;
+    permissions: Record<string, boolean>;
     organization: OrgOrganization | null;
 }
 
@@ -53,7 +58,14 @@ export default function OrgLayout({ children }: OrgLayoutProps) {
     const org = auth?.org;
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
-    const [showFlash, setShowFlash] = useState(true);
+
+    useFlashToast();
+
+    const canAccess = (permission: string): boolean => {
+        if (!org) return false;
+        if (org.is_owner) return true;
+        return !!org.permissions?.[permission];
+    };
 
     const handleLogout = () => {
         router.post(route('org.logout'));
@@ -97,6 +109,12 @@ export default function OrgLayout({ children }: OrgLayoutProps) {
             active: route().current('org.staff.*'),
         },
         {
+            label: 'Roles',
+            icon: Shield,
+            href: route('org.roles.index'),
+            active: route().current('org.roles.*'),
+        },
+        {
             label: 'Groups',
             icon: FolderTree,
             href: route('org.groups.index'),
@@ -114,14 +132,14 @@ export default function OrgLayout({ children }: OrgLayoutProps) {
         <div style={{
             display: 'flex',
             minHeight: '100vh',
-            background: '#0a0a0f',
+            background: '#0c0c1d',
             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", sans-serif',
             color: '#e0e0e0',
         }}>
             {/* Sidebar */}
             <aside style={{
                 width: sidebarOpen ? '260px' : '80px',
-                background: 'linear-gradient(180deg, #111118 0%, #0d0d14 100%)',
+                background: 'linear-gradient(180deg, #141425 0%, #0e0e1e 100%)',
                 borderRight: '1px solid rgba(255, 255, 255, 0.06)',
                 transition: 'width 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                 position: 'fixed',
@@ -353,7 +371,7 @@ export default function OrgLayout({ children }: OrgLayoutProps) {
                         <div style={{
                             marginTop: '0.75rem',
                             borderRadius: '10px',
-                            background: '#1a1a24',
+                            background: '#1e1e35',
                             border: '1px solid rgba(255, 255, 255, 0.08)',
                             overflow: 'hidden',
                         }}>
@@ -396,7 +414,7 @@ export default function OrgLayout({ children }: OrgLayoutProps) {
             }}>
                 {/* Top Bar */}
                 <header style={{
-                    background: '#111118',
+                    background: '#141425',
                     borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
                     padding: '1rem 2rem',
                     display: 'flex',
@@ -417,53 +435,8 @@ export default function OrgLayout({ children }: OrgLayoutProps) {
                         </h2>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        <button style={{
-                            background: 'none',
-                            border: 'none',
-                            cursor: 'pointer',
-                            padding: '0.5rem',
-                            color: '#888',
-                            display: 'flex',
-                            alignItems: 'center',
-                            position: 'relative',
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.color = '#8B5CF6'}
-                        onMouseLeave={(e) => e.currentTarget.style.color = '#888'}
-                        >
-                            <Bell size={20} />
-                        </button>
                     </div>
                 </header>
-
-                {/* Flash Messages */}
-                {showFlash && (flash?.success || flash?.error) && (
-                    <div style={{
-                        margin: '1rem 2rem 0',
-                        padding: '0.875rem 1.25rem',
-                        borderRadius: '10px',
-                        background: flash?.success ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                        border: `1px solid ${flash?.success ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
-                        color: flash?.success ? '#22C55E' : '#EF4444',
-                        fontSize: '0.9rem',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                    }}>
-                        <span>{flash?.success || flash?.error}</span>
-                        <button
-                            onClick={() => setShowFlash(false)}
-                            style={{
-                                background: 'none',
-                                border: 'none',
-                                color: 'inherit',
-                                cursor: 'pointer',
-                                padding: '0.25rem',
-                            }}
-                        >
-                            <X size={16} />
-                        </button>
-                    </div>
-                )}
 
                 {/* Page Content */}
                 <div style={{
@@ -475,6 +448,18 @@ export default function OrgLayout({ children }: OrgLayoutProps) {
                     {children}
                 </div>
             </main>
+
+            <ToastContainer
+                position="top-right"
+                autoClose={3000}
+                hideProgressBar={true}
+                newestOnTop
+                closeOnClick
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme="dark"
+            />
         </div>
     );
 }

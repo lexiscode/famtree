@@ -456,6 +456,24 @@
     opacity: 0.5;
 }
 
+.organization-following-badge {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.3rem 0.65rem;
+    border-radius: 20px;
+    background: rgba(139, 92, 246, 0.85);
+    backdrop-filter: blur(8px);
+    color: #ffffff;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
 .organization-logo {
     position: absolute;
     bottom: -35px;

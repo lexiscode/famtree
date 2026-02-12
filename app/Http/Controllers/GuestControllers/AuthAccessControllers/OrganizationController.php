@@ -4,24 +4,29 @@ namespace App\Http\Controllers\GuestControllers\AuthAccessControllers;
 
 use App\Http\Controllers\Controller;
 use App\Actions\GuestServices\AuthAccessServices\OrganizationService;
+use App\Actions\GuestServices\OrganizationFollowService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class OrganizationController extends Controller
 {
-    public function __construct(private OrganizationService $organizationService)
-    {
+    public function __construct(
+        private OrganizationService $organizationService,
+        private OrganizationFollowService $followService,
+    ) {
     }
 
     /**
      * Display all organizations
      */
-    public function index()
+    public function index(Request $request)
     {
         $organizations = $this->organizationService->getAllOrganizations();
+        $followedIds = $this->followService->getFollowedOrganizationIds($request->user()->id);
 
         return Inertia::render('GuestPages/AuthAccessPages/Organizations/Index', [
             'organizations' => $organizations,
+            'followedIds' => $followedIds,
         ]);
     }
 

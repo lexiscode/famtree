@@ -261,7 +261,7 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::get('/general', [FeedController::class, 'getGeneralPosts'])->name('api.feed.general');
         Route::get('/followers', [FeedController::class, 'getFollowersPosts'])->name('api.feed.followers');
         Route::get('/all', [FeedController::class, 'getAllPosts'])->name('api.feed.all');
-        Route::get('/mystories', [FeedController::class, 'getMyPosts'])->name('api.feed.mystories');
+        Route::get('/saved', [FeedController::class, 'getSavedPosts'])->name('api.feed.saved');
     });
 
     // Stories / Posts routes
@@ -271,17 +271,37 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::get('/search', [PostController::class, 'search'])->name('stories.search');
         Route::get('/filter', [PostController::class, 'filterByType'])->name('stories.filter');
         Route::get('/user/{userId}', [PostController::class, 'viewUser'])->name('stories.view-user');
-        Route::get('/{postId}', [PostController::class, 'show'])->name('stories.show');
+        Route::get('/org/{orgPostId}', [FeedController::class, 'showOrgPost'])->name('stories.org.show');
+        Route::get('/{postId}', [FeedController::class, 'showPost'])->name('stories.show');
         Route::put('/{postId}', [PostController::class, 'update'])->name('stories.update');
         Route::delete('/{postId}', [PostController::class, 'destroy'])->name('stories.destroy');
 
         // Comments
         Route::post('/{postId}/comments', [PostController::class, 'addComment'])->name('stories.comments.store');
         Route::delete('/comments/{commentId}', [PostController::class, 'deleteComment'])->name('stories.comments.destroy');
+        Route::post('/comments/{commentId}/like', [PostController::class, 'toggleCommentLike'])->name('stories.comments.like');
+
+        // Shareable comment thread
+        Route::get('/comments/{uuid}', [PostController::class, 'showCommentThread'])->name('stories.comments.thread');
 
         // Reactions
         Route::post('/{postId}/reactions', [PostController::class, 'addReaction'])->name('stories.reactions.store');
         Route::delete('/{postId}/reactions', [PostController::class, 'removeReaction'])->name('stories.reactions.destroy');
+
+        // Refam (reshare)
+        Route::post('/{postId}/refam', [PostController::class, 'toggleRefam'])->name('stories.refam.toggle');
+        Route::post('/org/{orgPostId}/refam', [PostController::class, 'toggleOrgRefam'])->name('stories.org.refam.toggle');
+
+        // Save (bookmark)
+        Route::post('/{postId}/save', [PostController::class, 'toggleSave'])->name('stories.save.toggle');
+        Route::post('/org/{orgPostId}/save', [PostController::class, 'toggleOrgSave'])->name('stories.org.save.toggle');
+
+        // Org Post Comments & Reactions (for users interacting with org posts in feed)
+        Route::post('/org/{orgPostId}/comments', [PostController::class, 'addOrgComment'])->name('stories.org.comments.store');
+        Route::delete('/org/comments/{commentId}', [PostController::class, 'deleteOrgComment'])->name('stories.org.comments.destroy');
+        Route::post('/org/comments/{commentId}/like', [PostController::class, 'toggleOrgCommentLike'])->name('stories.org.comments.like');
+        Route::post('/org/{orgPostId}/reactions', [PostController::class, 'addOrgReaction'])->name('stories.org.reactions.store');
+        Route::delete('/org/{orgPostId}/reactions', [PostController::class, 'removeOrgReaction'])->name('stories.org.reactions.destroy');
     });
 
     // Settings routes

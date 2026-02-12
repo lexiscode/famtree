@@ -79,14 +79,16 @@ class HandleInertiaRequests extends Middleware
         $orgAccount = auth()->guard('org')->user();
         $orgData = null;
         if ($orgAccount) {
-            $orgAccount->load('organization');
+            $orgAccount->load(['organization', 'orgRole']);
             $orgData = [
                 'id' => $orgAccount->id,
                 'uuid' => $orgAccount->uuid,
                 'username' => $orgAccount->username,
                 'email' => $orgAccount->email,
-                'role' => $orgAccount->role,
+                'role' => $orgAccount->orgRole?->name ?? 'Unknown',
                 'display_name' => $orgAccount->display_name,
+                'is_owner' => $orgAccount->isOwner(),
+                'permissions' => $orgAccount->orgRole?->permissions ?? [],
                 'organization' => $orgAccount->organization ? [
                     'id' => $orgAccount->organization->id,
                     'name' => $orgAccount->organization->name,

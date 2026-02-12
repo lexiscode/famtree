@@ -1,7 +1,8 @@
 import OrgLayout from '@/Layouts/OrgLayout';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { router } from '@inertiajs/react';
-import { ArrowLeft, Send } from 'lucide-react';
+import { ArrowLeft, Send, Search, Loader } from 'lucide-react';
+import RichTextEditor from '@/Components/RichTextEditor';
 
 interface Group {
     id: number;
@@ -24,6 +25,40 @@ export default function BroadcastsCreate({ groups }: Props) {
     const [recurrenceType, setRecurrenceType] = useState('daily');
     const [recurrenceCount, setRecurrenceCount] = useState(1);
     const [submitting, setSubmitting] = useState(false);
+    const [groupSearch, setGroupSearch] = useState('');
+    const [facultyFilter, setFacultyFilter] = useState('');
+
+    const faculties = useMemo(() => {
+        const set = new Set<string>();
+        groups.forEach(g => { if (g.faculty) set.add(g.faculty); });
+        return Array.from(set).sort();
+    }, [groups]);
+
+    const filteredGroups = useMemo(() => {
+        const search = groupSearch.toLowerCase().trim();
+        return groups.filter(g => {
+            if (facultyFilter && g.faculty !== facultyFilter) return false;
+            if (!search) return true;
+            return (
+                g.name.toLowerCase().includes(search) ||
+                (g.faculty && g.faculty.toLowerCase().includes(search)) ||
+                (g.department && g.department.toLowerCase().includes(search))
+            );
+        });
+    }, [groups, groupSearch, facultyFilter]);
+
+    const allFilteredSelected = filteredGroups.length > 0 && filteredGroups.every(g => selectedGroupIds.includes(g.id));
+
+    const toggleSelectAllFiltered = () => {
+        if (allFilteredSelected) {
+            const filteredIds = new Set(filteredGroups.map(g => g.id));
+            setSelectedGroupIds(prev => prev.filter(id => !filteredIds.has(id)));
+        } else {
+            const currentSet = new Set(selectedGroupIds);
+            filteredGroups.forEach(g => currentSet.add(g.id));
+            setSelectedGroupIds(Array.from(currentSet));
+        }
+    };
 
     const toggleGroup = (id: number) => {
         setSelectedGroupIds((prev) =>
@@ -31,9 +66,17 @@ export default function BroadcastsCreate({ groups }: Props) {
         );
     };
 
+    const getTextContent = (html: string) => {
+        const tmp = document.createElement('div');
+        tmp.innerHTML = html;
+        return (tmp.textContent || tmp.innerText || '').trim();
+    };
+
+    const hasMessage = getTextContent(message).length > 0;
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!message.trim()) return;
+        if (!hasMessage) return;
         setSubmitting(true);
         router.post(route('org.broadcasts.store'), {
             title: title || null,
@@ -41,7 +84,7 @@ export default function BroadcastsCreate({ groups }: Props) {
             target_type: targetType,
             target_class_set_ids: targetType === 'selected_groups' ? selectedGroupIds : [],
             schedule_type: scheduleType,
-            scheduled_at: scheduleType === 'scheduled' ? scheduledAt : null,
+            scheduled_at: (scheduleType === 'scheduled' || scheduleType === 'recurring') && scheduledAt ? new Date(scheduledAt).toISOString() : null,
             recurrence_type: scheduleType === 'recurring' ? recurrenceType : null,
             recurrence_count: scheduleType === 'recurring' ? recurrenceCount : null,
         }, {
@@ -52,7 +95,7 @@ export default function BroadcastsCreate({ groups }: Props) {
 
     const inputStyle: React.CSSProperties = {
         width: '100%',
-        background: '#1a1a24',
+        background: '#1e1e35',
         border: '1px solid rgba(139, 92, 246, 0.2)',
         borderRadius: '8px',
         padding: '0.875rem',
@@ -74,7 +117,7 @@ export default function BroadcastsCreate({ groups }: Props) {
         alignItems: 'center',
         gap: '0.5rem',
         padding: '0.75rem 1rem',
-        background: '#1a1a24',
+        background: '#1e1e35',
         border: '1px solid rgba(255, 255, 255, 0.06)',
         borderRadius: '8px',
         cursor: 'pointer',
@@ -119,11 +162,59 @@ export default function BroadcastsCreate({ groups }: Props) {
 
                 {/* Form */}
                 <form onSubmit={handleSubmit} style={{
-                    background: '#111118',
+                    background: '#141425',
                     border: '1px solid rgba(255, 255, 255, 0.06)',
                     borderRadius: '12px',
                     padding: '2rem',
+                    position: 'relative',
                 }}>
+                    {/* Sending Overlay */}
+                    {submitting && (
+                        <div style={{
+                            position: 'absolute', inset: 0, zIndex: 10,
+                            background: 'rgba(17, 17, 24, 0.92)',
+                            borderRadius: '12px',
+                            display: 'flex', flexDirection: 'column',
+                            alignItems: 'center', justifyContent: 'center',
+                            gap: '1.25rem',
+                        }}>
+                            <Loader
+                                size={36}
+                                color="#8B5CF6"
+                                style={{ animation: 'spin 1.2s linear infinite' }}
+                            />
+                            <p style={{
+                                color: '#e0e0e0', fontSize: '1.05rem',
+                                fontWeight: 600, margin: 0,
+                            }}>
+                                Sending broadcast...
+                            </p>
+                            <p style={{ color: '#888', fontSize: '0.85rem', margin: 0, textAlign: 'center', maxWidth: '320px' }}>
+                                Delivering to {targetType === 'all_groups' ? 'all groups' : `${selectedGroupIds.length} selected group${selectedGroupIds.length !== 1 ? 's' : ''}`}. This may take a moment.
+                            </p>
+                            {/* Indeterminate progress bar */}
+                            <div style={{
+                                width: '220px', height: '4px',
+                                background: 'rgba(139, 92, 246, 0.15)',
+                                borderRadius: '2px', overflow: 'hidden',
+                            }}>
+                                <div style={{
+                                    width: '40%', height: '100%',
+                                    background: 'linear-gradient(90deg, #8B5CF6, #6D28D9)',
+                                    borderRadius: '2px',
+                                    animation: 'progressSlide 1.5s ease-in-out infinite',
+                                }} />
+                            </div>
+                            <style>{`
+                                @keyframes spin { to { transform: rotate(360deg); } }
+                                @keyframes progressSlide {
+                                    0% { transform: translateX(-100%); }
+                                    100% { transform: translateX(350%); }
+                                }
+                            `}</style>
+                        </div>
+                    )}
+
                     {/* Title */}
                     <div style={{ marginBottom: '1.5rem' }}>
                         <label style={labelStyle}>Title (optional)</label>
@@ -139,12 +230,12 @@ export default function BroadcastsCreate({ groups }: Props) {
                     {/* Message */}
                     <div style={{ marginBottom: '1.5rem' }}>
                         <label style={labelStyle}>Message *</label>
-                        <textarea
+                        <RichTextEditor
                             value={message}
-                            onChange={(e) => setMessage(e.target.value)}
+                            onChange={setMessage}
                             placeholder="Write your broadcast message..."
-                            rows={5}
-                            style={{ ...inputStyle, resize: 'vertical' }}
+                            maxLength={5000}
+                            disabled={submitting}
                         />
                     </div>
 
@@ -159,7 +250,7 @@ export default function BroadcastsCreate({ groups }: Props) {
                                     value="all_groups"
                                     checked={targetType === 'all_groups'}
                                     onChange={() => setTargetType('all_groups')}
-                                    style={{ accentColor: '#8B5CF6' }}
+                                    style={{ accentColor: '#8B5CF6', width: 16, height: 16, flexShrink: 0 }}
                                 />
                                 All Groups
                             </label>
@@ -170,7 +261,7 @@ export default function BroadcastsCreate({ groups }: Props) {
                                     value="selected_groups"
                                     checked={targetType === 'selected_groups'}
                                     onChange={() => setTargetType('selected_groups')}
-                                    style={{ accentColor: '#8B5CF6' }}
+                                    style={{ accentColor: '#8B5CF6', width: 16, height: 16, flexShrink: 0 }}
                                 />
                                 Selected Groups
                             </label>
@@ -181,7 +272,7 @@ export default function BroadcastsCreate({ groups }: Props) {
                     {targetType === 'selected_groups' && (
                         <div style={{
                             marginBottom: '1.5rem',
-                            background: '#0d0d14',
+                            background: '#0e0e1e',
                             border: '1px solid rgba(255, 255, 255, 0.04)',
                             borderRadius: '10px',
                             padding: '1.25rem',
@@ -189,6 +280,65 @@ export default function BroadcastsCreate({ groups }: Props) {
                             <label style={{ ...labelStyle, marginBottom: '1rem' }}>
                                 Select Groups ({selectedGroupIds.length} selected)
                             </label>
+
+                            {/* Search & Filter Bar */}
+                            <div style={{
+                                display: 'flex', gap: '0.75rem', marginBottom: '0.75rem',
+                                flexWrap: 'wrap', alignItems: 'center',
+                            }}>
+                                <div style={{ position: 'relative', flex: '1 1 220px', minWidth: '180px' }}>
+                                    <Search size={15} style={{
+                                        position: 'absolute', left: '10px', top: '50%',
+                                        transform: 'translateY(-50%)', color: '#666',
+                                    }} />
+                                    <input
+                                        type="text"
+                                        value={groupSearch}
+                                        onChange={(e) => setGroupSearch(e.target.value)}
+                                        placeholder="Search groups..."
+                                        style={{
+                                            ...inputStyle,
+                                            padding: '0.6rem 0.75rem 0.6rem 2rem',
+                                            fontSize: '0.85rem',
+                                        }}
+                                    />
+                                </div>
+                                {faculties.length > 1 && (
+                                    <select
+                                        value={facultyFilter}
+                                        onChange={(e) => setFacultyFilter(e.target.value)}
+                                        style={{
+                                            ...inputStyle,
+                                            width: 'auto', flex: '0 1 200px',
+                                            padding: '0.6rem 0.75rem',
+                                            fontSize: '0.85rem', cursor: 'pointer',
+                                        }}
+                                    >
+                                        <option value="">All Faculties</option>
+                                        {faculties.map(f => (
+                                            <option key={f} value={f}>{f}</option>
+                                        ))}
+                                    </select>
+                                )}
+                                <button
+                                    type="button"
+                                    onClick={toggleSelectAllFiltered}
+                                    style={{
+                                        background: 'rgba(139, 92, 246, 0.1)',
+                                        border: '1px solid rgba(139, 92, 246, 0.2)',
+                                        borderRadius: '8px',
+                                        padding: '0.6rem 1rem',
+                                        color: '#8B5CF6',
+                                        fontSize: '0.8rem',
+                                        fontWeight: 500,
+                                        cursor: 'pointer',
+                                        whiteSpace: 'nowrap',
+                                    }}
+                                >
+                                    {allFilteredSelected ? 'Deselect All' : 'Select All'}
+                                </button>
+                            </div>
+
                             <div style={{
                                 display: 'grid',
                                 gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
@@ -196,7 +346,7 @@ export default function BroadcastsCreate({ groups }: Props) {
                                 maxHeight: '300px',
                                 overflowY: 'auto',
                             }}>
-                                {groups.map((group) => (
+                                {filteredGroups.length > 0 ? filteredGroups.map((group) => (
                                     <label
                                         key={group.id}
                                         style={{
@@ -217,7 +367,7 @@ export default function BroadcastsCreate({ groups }: Props) {
                                             type="checkbox"
                                             checked={selectedGroupIds.includes(group.id)}
                                             onChange={() => toggleGroup(group.id)}
-                                            style={{ accentColor: '#8B5CF6' }}
+                                            style={{ accentColor: '#8B5CF6', width: 16, height: 16, flexShrink: 0 }}
                                         />
                                         <div>
                                             <p style={{ margin: 0, color: '#e0e0e0', fontSize: '0.875rem', fontWeight: 500 }}>
@@ -230,7 +380,11 @@ export default function BroadcastsCreate({ groups }: Props) {
                                             )}
                                         </div>
                                     </label>
-                                ))}
+                                )) : (
+                                    <p style={{ color: '#555', fontSize: '0.85rem', padding: '1rem', gridColumn: '1 / -1', textAlign: 'center' }}>
+                                        No groups match your search.
+                                    </p>
+                                )}
                             </div>
                         </div>
                     )}
@@ -250,7 +404,7 @@ export default function BroadcastsCreate({ groups }: Props) {
                                         value={type}
                                         checked={scheduleType === type}
                                         onChange={() => setScheduleType(type)}
-                                        style={{ accentColor: '#8B5CF6' }}
+                                        style={{ accentColor: '#8B5CF6', width: 16, height: 16, flexShrink: 0 }}
                                     />
                                     {type.charAt(0).toUpperCase() + type.slice(1)}
                                 </label>
@@ -273,34 +427,49 @@ export default function BroadcastsCreate({ groups }: Props) {
 
                     {/* Recurrence Settings */}
                     {scheduleType === 'recurring' && (
-                        <div style={{
-                            marginBottom: '1.5rem',
-                            display: 'flex',
-                            gap: '1.5rem',
-                            alignItems: 'flex-end',
-                        }}>
-                            <div style={{ flex: 1 }}>
-                                <label style={labelStyle}>Recurrence Type</label>
-                                <select
-                                    value={recurrenceType}
-                                    onChange={(e) => setRecurrenceType(e.target.value)}
-                                    style={{ ...inputStyle, cursor: 'pointer' }}
-                                >
-                                    <option value="daily">Daily</option>
-                                    <option value="weekly">Weekly</option>
-                                    <option value="monthly">Monthly</option>
-                                </select>
-                            </div>
-                            <div style={{ flex: 1 }}>
-                                <label style={labelStyle}>Number of Recurrences</label>
+                        <div style={{ marginBottom: '1.5rem' }}>
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <label style={labelStyle}>First Send Date & Time *</label>
                                 <input
-                                    type="number"
-                                    min={1}
-                                    max={100}
-                                    value={recurrenceCount}
-                                    onChange={(e) => setRecurrenceCount(parseInt(e.target.value) || 1)}
-                                    style={inputStyle}
+                                    type="datetime-local"
+                                    value={scheduledAt}
+                                    onChange={(e) => setScheduledAt(e.target.value)}
+                                    required
+                                    style={{ ...inputStyle, maxWidth: '320px', colorScheme: 'dark' }}
                                 />
+                                <p style={{ margin: '0.4rem 0 0', color: '#666', fontSize: '0.78rem' }}>
+                                    The first broadcast will be sent at this date and time. Subsequent sends will occur at the same time.
+                                </p>
+                            </div>
+                            <div style={{
+                                display: 'flex',
+                                gap: '1.5rem',
+                                alignItems: 'flex-end',
+                                marginBottom: '1.5rem',
+                            }}>
+                                <div style={{ flex: 1 }}>
+                                    <label style={labelStyle}>Recurrence Type</label>
+                                    <select
+                                        value={recurrenceType}
+                                        onChange={(e) => setRecurrenceType(e.target.value)}
+                                        style={{ ...inputStyle, cursor: 'pointer' }}
+                                    >
+                                        <option value="daily">Daily</option>
+                                        <option value="weekly">Weekly</option>
+                                        <option value="monthly">Monthly</option>
+                                    </select>
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                    <label style={labelStyle}>Number of Recurrences</label>
+                                    <input
+                                        type="number"
+                                        min={1}
+                                        max={100}
+                                        value={recurrenceCount}
+                                        onChange={(e) => setRecurrenceCount(parseInt(e.target.value) || 1)}
+                                        style={inputStyle}
+                                    />
+                                </div>
                             </div>
                         </div>
                     )}
@@ -314,7 +483,7 @@ export default function BroadcastsCreate({ groups }: Props) {
                     }}>
                         <button
                             type="submit"
-                            disabled={submitting || !message.trim()}
+                            disabled={submitting || !hasMessage}
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
@@ -326,8 +495,8 @@ export default function BroadcastsCreate({ groups }: Props) {
                                 borderRadius: '8px',
                                 fontWeight: 600,
                                 fontSize: '0.9rem',
-                                cursor: submitting || !message.trim() ? 'not-allowed' : 'pointer',
-                                opacity: submitting || !message.trim() ? 0.6 : 1,
+                                cursor: submitting || !hasMessage ? 'not-allowed' : 'pointer',
+                                opacity: submitting || !hasMessage ? 0.6 : 1,
                                 transition: 'opacity 0.2s ease',
                             }}
                         >

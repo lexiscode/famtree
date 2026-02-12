@@ -23,6 +23,7 @@ class OrgBroadcast extends Model
         'scheduled_at',
         'recurrence_type',
         'recurrence_count',
+        'recurrence_ends_at',
         'recurrences_sent',
         'next_send_at',
         'status',
@@ -33,6 +34,7 @@ class OrgBroadcast extends Model
     protected $casts = [
         'target_class_set_ids' => 'json',
         'scheduled_at' => 'datetime',
+        'recurrence_ends_at' => 'datetime',
         'next_send_at' => 'datetime',
         'sent_at' => 'datetime',
         'recurrence_count' => 'integer',

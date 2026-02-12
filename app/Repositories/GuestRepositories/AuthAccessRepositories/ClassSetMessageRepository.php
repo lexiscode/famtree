@@ -69,7 +69,7 @@ class ClassSetMessageRepository
     public function getLatestMessage(int $classSetId): ?ClassSetMessage
     {
         return ClassSetMessage::where('class_set_id', $classSetId)
-            ->with(['sender:id,uuid,first_name,last_name,username'])
+            ->with(['sender:id,uuid,first_name,last_name,username', 'organization:id,name,short_name'])
             ->latest()
             ->first();
     }

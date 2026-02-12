@@ -10,7 +10,16 @@ class OrgPostRepository
     public function getByOrganization(int $organizationId, int $perPage = 15): LengthAwarePaginator
     {
         return OrgPost::where('organization_id', $organizationId)
-            ->with(['creator', 'images'])
+            ->with([
+                'creator',
+                'images',
+                'comments' => function ($q) {
+                    $q->whereNull('parent_comment_id')
+                      ->with(['user', 'orgAccount', 'replies.user', 'replies.orgAccount', 'likes'])
+                      ->orderBy('created_at', 'desc');
+                },
+                'reactions',
+            ])
             ->orderByDesc('is_pinned')
             ->orderByDesc('created_at')
             ->paginate($perPage);
@@ -19,6 +28,20 @@ class OrgPostRepository
     public function findById(int $id): ?OrgPost
     {
         return OrgPost::with(['creator', 'images'])->find($id);
+    }
+
+    public function findByIdWithComments(int $id): ?OrgPost
+    {
+        return OrgPost::with([
+            'creator',
+            'images',
+            'comments' => function ($q) {
+                $q->whereNull('parent_comment_id')
+                  ->with(['user', 'orgAccount', 'replies.user', 'replies.orgAccount', 'likes'])
+                  ->orderBy('created_at', 'desc');
+            },
+            'reactions',
+        ])->find($id);
     }
 
     public function create(array $data): OrgPost
@@ -46,7 +69,7 @@ class OrgPostRepository
     public function getByOrganizationIds(array $organizationIds, int $limit = 20, int $offset = 0)
     {
         return OrgPost::whereIn('organization_id', $organizationIds)
-            ->with(['organization', 'creator', 'images'])
+            ->with(['organization', 'creator', 'images', 'comments.user'])
             ->orderByDesc('created_at')
             ->offset($offset)
             ->limit($limit)

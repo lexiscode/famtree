@@ -3,6 +3,8 @@
 namespace App\Models\OrgModels;
 
 use App\Models\GuestModels\Organization;
+use App\Models\GuestModels\PostRefam;
+use App\Models\GuestModels\PostSave;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -23,6 +25,7 @@ class OrgPost extends Model
         'views_count',
         'comments_count',
         'reactions_count',
+        'refams_count',
         'is_pinned',
     ];
 
@@ -58,5 +61,25 @@ class OrgPost extends Model
     public function images()
     {
         return $this->hasMany(OrgPostImage::class)->orderBy('order');
+    }
+
+    public function reactions()
+    {
+        return $this->hasMany(OrgPostReaction::class);
+    }
+
+    public function comments()
+    {
+        return $this->hasMany(OrgPostComment::class)->orderBy('created_at', 'asc');
+    }
+
+    public function refams()
+    {
+        return $this->hasMany(PostRefam::class, 'org_post_id');
+    }
+
+    public function saves()
+    {
+        return $this->hasMany(PostSave::class, 'org_post_id');
     }
 }

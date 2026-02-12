@@ -72,7 +72,6 @@ class Kernel extends ConsoleKernel
         // Runs every minute to check for broadcasts ready to send
         $schedule->command('org:process-broadcasts')
             ->everyMinute()
-            ->onOneServer()
             ->withoutOverlapping()
             ->name('org-process-broadcasts');
     }

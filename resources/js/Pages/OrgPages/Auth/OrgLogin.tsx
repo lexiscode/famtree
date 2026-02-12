@@ -44,7 +44,7 @@ export default function OrgLogin() {
     return (
         <div style={{
             minHeight: '100vh',
-            background: 'linear-gradient(135deg, #0a0a0f 0%, #1a0a2e 50%, #0a0a0f 100%)',
+            background: 'linear-gradient(135deg, #0c0c1d 0%, #1a0a2e 50%, #0c0c1d 100%)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -85,7 +85,7 @@ export default function OrgLogin() {
 
                 {/* Login Card */}
                 <div style={{
-                    background: '#111118',
+                    background: '#141425',
                     borderRadius: '12px',
                     border: '1px solid rgba(139, 92, 246, 0.2)',
                     padding: '2.5rem',
@@ -144,7 +144,7 @@ export default function OrgLogin() {
                                         paddingBottom: '10px',
                                         border: '1px solid rgba(139, 92, 246, 0.3)',
                                         borderRadius: '8px',
-                                        background: '#1a1a24',
+                                        background: '#1e1e35',
                                         color: '#FFFFFF',
                                         fontSize: '0.95rem',
                                         transition: 'all 0.3s ease',
@@ -188,7 +188,7 @@ export default function OrgLogin() {
                                         paddingBottom: '10px',
                                         border: '1px solid rgba(139, 92, 246, 0.3)',
                                         borderRadius: '8px',
-                                        background: '#1a1a24',
+                                        background: '#1e1e35',
                                         color: '#FFFFFF',
                                         fontSize: '0.95rem',
                                         transition: 'all 0.3s ease',

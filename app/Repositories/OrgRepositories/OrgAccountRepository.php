@@ -9,7 +9,7 @@ class OrgAccountRepository
 {
     public function findById(int $id): ?OrgAccount
     {
-        return OrgAccount::find($id);
+        return OrgAccount::with('orgRole')->find($id);
     }
 
     public function findByEmail(string $email): ?OrgAccount
@@ -19,8 +19,8 @@ class OrgAccountRepository
 
     public function getByOrganization(int $organizationId): Collection
     {
-        return OrgAccount::where('organization_id', $organizationId)
-            ->orderBy('role')
+        return OrgAccount::with('orgRole')
+            ->where('organization_id', $organizationId)
             ->orderBy('created_at')
             ->get();
     }

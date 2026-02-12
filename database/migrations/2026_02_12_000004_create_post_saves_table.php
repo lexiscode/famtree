@@ -1,0 +1,31 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('post_saves', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('post_id')->nullable();
+            $table->unsignedBigInteger('org_post_id')->nullable();
+            $table->unsignedBigInteger('user_id');
+            $table->timestamps();
+
+            $table->foreign('post_id')->references('id')->on('posts')->cascadeOnDelete();
+            $table->foreign('org_post_id')->references('id')->on('org_posts')->cascadeOnDelete();
+            $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
+
+            $table->unique(['post_id', 'user_id']);
+            $table->unique(['org_post_id', 'user_id']);
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('post_saves');
+    }
+};

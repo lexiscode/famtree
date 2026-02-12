@@ -68,12 +68,22 @@ class FeedController extends Controller
         $followingIds = collect($followingList)->pluck('id')->toArray();
         $followingPosts = !empty($followingIds) ? $this->getPostsFromFollowedUsers($followingIds, $user->id) : [];
 
+        // Merge refammed posts from followed users into following feed
+        if (!empty($followingIds)) {
+            $refammedPosts = $this->getRefammedPostsFromUsers($followingIds, $user->id);
+            $followingPosts = collect(array_merge($followingPosts, $refammedPosts))
+                ->unique('id')
+                ->sortByDesc('created_at')
+                ->values()
+                ->toArray();
+        }
+
         // Get posts from followed organizations and merge into following feed
         $followedOrgIds = $this->organizationFollowRepo->getFollowedOrgIds($user->id)->toArray();
         if (!empty($followedOrgIds)) {
             $orgPosts = $this->orgPostRepository->getByOrganizationIds($followedOrgIds, 20);
-            $formattedOrgPosts = $orgPosts->map(function ($post) {
-                return $this->formatOrgPost($post);
+            $formattedOrgPosts = $orgPosts->map(function ($post) use ($user) {
+                return $this->formatOrgPost($post, $user->id);
             })->toArray();
 
             // Merge and sort by created_at descending
@@ -89,8 +99,8 @@ class FeedController extends Controller
         // Get general public posts (from everyone) - using connection posts for now
         $generalPosts = $connectionPosts;
 
-        // Get user's own posts for "My Stories" tab
-        $myPosts = $this->postService->getUserPosts($user->id, 50);
+        // Get user's saved/bookmarked posts for "Saved" tab
+        $savedPosts = $this->getSavedPostsForUser($user->id, 20);
 
         // Get trending posts for right sidebar
         $trendingPosts = $this->connectionFeedsService->getTopTrendingPosts($user, 10);
@@ -99,8 +109,8 @@ class FeedController extends Controller
         $suggestedData = $this->suggestedConnectionService->getSuggestedMembers($user->id);
         $suggestedUsers = $suggestedData['suggestions'] ?? [];
 
-        // Get following/followers count
-        $followingCount = collect($followingList)->count();
+        // Get following/followers count (users + organizations)
+        $followingCount = collect($followingList)->count() + count($followedOrgIds);
         $followersList = $this->followService->getFollowersList($user->id, $user->id);
         $followersCount = collect($followersList)->count();
 
@@ -147,12 +157,12 @@ class FeedController extends Controller
             });
 
         // Include org posts in the "all" tab as well
-        $allOrgPosts = \App\Models\OrgModels\OrgPost::with(['organization', 'creator', 'images'])
+        $allOrgPosts = \App\Models\OrgModels\OrgPost::with(['organization', 'creator', 'images', 'comments.user'])
             ->orderByDesc('created_at')
             ->limit(20)
             ->get()
-            ->map(function ($post) {
-                return $this->formatOrgPost($post);
+            ->map(function ($post) use ($user) {
+                return $this->formatOrgPost($post, $user->id);
             });
 
         $allPublicPosts = $allPublicPosts->concat($allOrgPosts)
@@ -183,7 +193,7 @@ class FeedController extends Controller
 
         // Get groups joined count and my stories count
         $groupsJoinedCount = count($userClassSets);
-        $myStoriesCount = count($myPosts);
+        $myStoriesCount = \App\Models\GuestModels\Post::where('user_id', $user->id)->count();
 
         return Inertia::render('GuestPages/AuthAccessPages/Feed/Index', [
             'user' => $userData,
@@ -193,7 +203,7 @@ class FeedController extends Controller
             'generalPosts' => $generalPosts,
             'followersPosts' => $followersPosts,
             'allPosts' => $allPublicPosts,
-            'myPosts' => $myPosts,
+            'savedPosts' => $savedPosts,
             'trendingPosts' => $trendingPosts,
             'recentNotifications' => $recentNotifications,
             'suggestedUsers' => $suggestedUsers,
@@ -232,6 +242,41 @@ class FeedController extends Controller
     }
 
     /**
+     * Get refammed posts from followed users
+     */
+    private function getRefammedPostsFromUsers(array $userIds, int $viewerId): array
+    {
+        $refams = \App\Models\GuestModels\PostRefam::whereIn('user_id', $userIds)
+            ->with(['user', 'post.user', 'post.images', 'orgPost.organization', 'orgPost.creator', 'orgPost.images'])
+            ->orderByDesc('created_at')
+            ->limit(20)
+            ->get();
+
+        $posts = [];
+        foreach ($refams as $refam) {
+            if ($refam->post_id && $refam->post) {
+                $formatted = $this->formatPost($refam->post, $viewerId);
+                $formatted['refammed_by'] = [
+                    'name' => trim($refam->user->first_name . ' ' . $refam->user->last_name),
+                    'username' => $refam->user->username,
+                ];
+                $formatted['created_at'] = $refam->created_at->format('Y-m-d H:i:s');
+                $posts[] = $formatted;
+            } elseif ($refam->org_post_id && $refam->orgPost) {
+                $formatted = $this->formatOrgPost($refam->orgPost, $viewerId);
+                $formatted['refammed_by'] = [
+                    'name' => trim($refam->user->first_name . ' ' . $refam->user->last_name),
+                    'username' => $refam->user->username,
+                ];
+                $formatted['created_at'] = $refam->created_at->format('Y-m-d H:i:s');
+                $posts[] = $formatted;
+            }
+        }
+
+        return $posts;
+    }
+
+    /**
      * Format a single post for response
      */
     private function formatPost($post, $currentUserId = null): array
@@ -244,6 +289,23 @@ class FeedController extends Controller
             $userReaction = $reaction ? $reaction->reaction_type : null;
         }
 
+        // Get threaded comments (top-level only with replies eager-loaded)
+        $threadedComments = \App\Models\GuestModels\PostComment::where('post_id', $post->id)
+            ->whereNull('parent_comment_id')
+            ->with(['user', 'replies.user', 'replies.likes'])
+            ->withCount('replies')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $userHasRefammed = false;
+        $userHasSaved = false;
+        if ($currentUserId) {
+            $userHasRefammed = \App\Models\GuestModels\PostRefam::where('post_id', $post->id)
+                ->where('user_id', $currentUserId)->exists();
+            $userHasSaved = \App\Models\GuestModels\PostSave::where('post_id', $post->id)
+                ->where('user_id', $currentUserId)->exists();
+        }
+
         return [
             'id' => $post->id,
             'type' => $post->type,
@@ -254,6 +316,9 @@ class FeedController extends Controller
             'views_count' => $post->views_count,
             'comments_count' => $post->comments_count,
             'reactions_count' => $post->reactions_count,
+            'refams_count' => $post->refams_count ?? 0,
+            'user_has_refammed' => $userHasRefammed,
+            'user_has_saved' => $userHasSaved,
             'user_reaction' => $userReaction,
             'images' => $post->images->map(function($img) {
                 // Fix double storage path issue: /storage/storage/ -> /storage/
@@ -266,18 +331,7 @@ class FeedController extends Controller
                     'order' => $img->order,
                 ];
             })->toArray(),
-            'comments' => $post->comments->map(fn($comment) => [
-                'id' => $comment->id,
-                'content' => $comment->content,
-                'user' => [
-                    'id' => $comment->user->id,
-                    'name' => trim($comment->user->first_name . ' ' . $comment->user->last_name),
-                    'username' => $comment->user->username,
-                    'profile_image_url' => $comment->user->profile_image_url,
-                ],
-                'created_at' => $comment->created_at->format('Y-m-d H:i:s'),
-                'created_at_human' => $comment->created_at->diffForHumans(),
-            ])->toArray(),
+            'comments' => $threadedComments->map(fn($comment) => $this->formatThreadedComment($comment, $currentUserId))->toArray(),
             'user' => [
                 'id' => $post->user->id,
                 'name' => trim($post->user->first_name . ' ' . $post->user->last_name),
@@ -290,14 +344,82 @@ class FeedController extends Controller
     }
 
     /**
+     * Format a threaded comment with replies
+     */
+    private function formatThreadedComment($comment, $currentUserId = null): array
+    {
+        $userHasLiked = false;
+        if ($currentUserId) {
+            $userHasLiked = \App\Models\GuestModels\PostCommentLike::where('comment_id', $comment->id)
+                ->where('user_id', $currentUserId)
+                ->exists();
+        }
+
+        $formatted = [
+            'id' => $comment->id,
+            'uuid' => $comment->uuid,
+            'content' => $comment->content,
+            'parent_comment_id' => $comment->parent_comment_id,
+            'likes_count' => $comment->likes_count ?? 0,
+            'user_has_liked' => $userHasLiked,
+            'replies_count' => $comment->replies_count ?? $comment->replies()->count(),
+            'is_reply' => !is_null($comment->parent_comment_id),
+            'user' => [
+                'id' => $comment->user->id,
+                'name' => trim($comment->user->first_name . ' ' . $comment->user->last_name),
+                'username' => $comment->user->username,
+                'profile_image_url' => $comment->user->profile_image_url,
+            ],
+            'created_at' => $comment->created_at->format('Y-m-d H:i:s'),
+            'created_at_human' => $comment->created_at->diffForHumans(),
+        ];
+
+        if (!$comment->parent_comment_id && $comment->relationLoaded('replies')) {
+            $formatted['replies'] = $comment->replies->map(fn($reply) => $this->formatThreadedComment($reply, $currentUserId))->values()->toArray();
+        } else {
+            $formatted['replies'] = [];
+        }
+
+        return $formatted;
+    }
+
+    /**
      * Format a single org post for the feed
      */
-    private function formatOrgPost($orgPost): array
+    private function formatOrgPost($orgPost, $currentUserId = null): array
     {
         $org = $orgPost->organization;
 
+        // Get user's reaction on this org post
+        $userReaction = null;
+        if ($currentUserId) {
+            $reaction = \App\Models\OrgModels\OrgPostReaction::where('org_post_id', $orgPost->id)
+                ->where('user_id', $currentUserId)
+                ->first();
+            $userReaction = $reaction ? $reaction->reaction_type : null;
+        }
+
+        // Get threaded comments for org post
+        $threadedComments = \App\Models\OrgModels\OrgPostComment::where('org_post_id', $orgPost->id)
+            ->whereNull('parent_comment_id')
+            ->with(['user', 'replies.user', 'replies.likes'])
+            ->withCount('replies')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $userHasRefammed = false;
+        $userHasSaved = false;
+        if ($currentUserId) {
+            $userHasRefammed = \App\Models\GuestModels\PostRefam::where('org_post_id', $orgPost->id)
+                ->where('user_id', $currentUserId)->exists();
+            $userHasSaved = \App\Models\GuestModels\PostSave::where('org_post_id', $orgPost->id)
+                ->where('user_id', $currentUserId)->exists();
+        }
+
         return [
             'id' => 'org_' . $orgPost->id,
+            'org_post_id' => $orgPost->id,
+            'uuid' => $orgPost->uuid,
             'type' => $orgPost->type,
             'title' => null,
             'content' => $orgPost->content,
@@ -306,13 +428,16 @@ class FeedController extends Controller
             'views_count' => $orgPost->views_count,
             'comments_count' => $orgPost->comments_count,
             'reactions_count' => $orgPost->reactions_count,
-            'user_reaction' => null,
+            'refams_count' => $orgPost->refams_count ?? 0,
+            'user_has_refammed' => $userHasRefammed,
+            'user_has_saved' => $userHasSaved,
+            'user_reaction' => $userReaction,
             'images' => $orgPost->images->map(fn($img) => [
                 'id' => $img->id,
                 'url' => $img->full_image_url ?? $img->image_url,
                 'order' => $img->order,
             ])->toArray(),
-            'comments' => [],
+            'comments' => $threadedComments->map(fn($comment) => $this->formatOrgThreadedComment($comment, $currentUserId))->toArray(),
             'user' => [
                 'id' => $org->id,
                 'name' => $org->short_name ?: $org->name,
@@ -324,6 +449,47 @@ class FeedController extends Controller
             'created_at' => $orgPost->created_at->format('Y-m-d H:i:s'),
             'created_at_human' => $orgPost->created_at->diffForHumans(),
         ];
+    }
+
+    /**
+     * Format a threaded org comment with replies
+     */
+    private function formatOrgThreadedComment($comment, $currentUserId = null): array
+    {
+        $userHasLiked = false;
+        if ($currentUserId) {
+            $userHasLiked = \App\Models\OrgModels\OrgPostCommentLike::where('comment_id', $comment->id)
+                ->where('user_id', $currentUserId)
+                ->exists();
+        }
+
+        $formatted = [
+            'id' => $comment->id,
+            'uuid' => $comment->uuid,
+            'content' => $comment->content,
+            'parent_comment_id' => $comment->parent_comment_id,
+            'likes_count' => $comment->likes_count ?? 0,
+            'user_has_liked' => $userHasLiked,
+            'replies_count' => $comment->replies_count ?? $comment->replies()->count(),
+            'is_reply' => !is_null($comment->parent_comment_id),
+            'is_org_comment' => true,
+            'user' => [
+                'id' => $comment->user->id,
+                'name' => trim($comment->user->first_name . ' ' . $comment->user->last_name),
+                'username' => $comment->user->username,
+                'profile_image_url' => $comment->user->profile_image_url,
+            ],
+            'created_at' => $comment->created_at->format('Y-m-d H:i:s'),
+            'created_at_human' => $comment->created_at->diffForHumans(),
+        ];
+
+        if (!$comment->parent_comment_id && $comment->relationLoaded('replies')) {
+            $formatted['replies'] = $comment->replies->map(fn($reply) => $this->formatOrgThreadedComment($reply, $currentUserId))->values()->toArray();
+        } else {
+            $formatted['replies'] = [];
+        }
+
+        return $formatted;
     }
 
     /**
@@ -356,8 +522,8 @@ class FeedController extends Controller
         $orgPosts = collect();
         if (!empty($followedOrgIds)) {
             $orgPosts = $this->orgPostRepository->getByOrganizationIds($followedOrgIds)
-                ->map(function ($post) {
-                    return $this->formatOrgPost($post);
+                ->map(function ($post) use ($user) {
+                    return $this->formatOrgPost($post, $user->id);
                 });
         }
 
@@ -498,34 +664,213 @@ class FeedController extends Controller
     }
 
     /**
-     * API: Get paginated user's own posts
+     * API: Get paginated saved/bookmarked posts
      */
-    public function getMyPosts(\Illuminate\Http\Request $request)
+    public function getSavedPosts(\Illuminate\Http\Request $request)
     {
         $user = auth()->user();
         $offset = $request->query('offset', 0);
         $limit = $request->query('limit', 10);
 
-        // Get user's own posts with pagination
-        $posts = \App\Models\GuestModels\Post::where('user_id', $user->id)
-            ->with(['user', 'images', 'comments.user'])
-            ->orderBy('created_at', 'desc')
+        $saves = \App\Models\GuestModels\PostSave::where('user_id', $user->id)
+            ->orderByDesc('created_at')
             ->offset($offset)
             ->limit($limit + 1)
             ->get();
 
-        $hasMore = $posts->count() > $limit;
-        if ($hasMore) {
-            $posts = $posts->slice(0, $limit);
-        }
+        $hasMore = $saves->count() > $limit;
+        $saves = $saves->take($limit);
 
-        $formattedPosts = $posts->map(function ($post) use ($user) {
-            return $this->formatPost($post, $user->id);
-        })->values()->toArray();
+        $formattedPosts = [];
+        foreach ($saves as $save) {
+            if ($save->post_id) {
+                $post = \App\Models\GuestModels\Post::with(['user', 'images', 'comments.user'])->find($save->post_id);
+                if ($post) {
+                    $formattedPosts[] = $this->formatPost($post, $user->id);
+                }
+            } elseif ($save->org_post_id) {
+                $orgPost = \App\Models\OrgModels\OrgPost::with(['organization', 'creator', 'images', 'comments.user'])->find($save->org_post_id);
+                if ($orgPost) {
+                    $formattedPosts[] = $this->formatOrgPost($orgPost, $user->id);
+                }
+            }
+        }
 
         return response()->json([
             'posts' => $formattedPosts,
             'hasMore' => $hasMore,
         ]);
+    }
+
+    /**
+     * Get saved posts for initial page load
+     */
+    private function getSavedPostsForUser(int $userId, int $limit = 20): array
+    {
+        $saves = \App\Models\GuestModels\PostSave::where('user_id', $userId)
+            ->orderByDesc('created_at')
+            ->limit($limit)
+            ->get();
+
+        $formattedPosts = [];
+        foreach ($saves as $save) {
+            if ($save->post_id) {
+                $post = \App\Models\GuestModels\Post::with(['user', 'images', 'comments.user'])->find($save->post_id);
+                if ($post) {
+                    $formattedPosts[] = $this->formatPost($post, $userId);
+                }
+            } elseif ($save->org_post_id) {
+                $orgPost = \App\Models\OrgModels\OrgPost::with(['organization', 'creator', 'images', 'comments.user'])->find($save->org_post_id);
+                if ($orgPost) {
+                    $formattedPosts[] = $this->formatOrgPost($orgPost, $userId);
+                }
+            }
+        }
+
+        return $formattedPosts;
+    }
+
+    /**
+     * Get common layout data (sidebars, user info, stats) for the feed page
+     */
+    private function getLayoutData($user): array
+    {
+        $connections = $this->connectionRepository->getConnections($user->id);
+        $connectionCount = count($connections);
+        $pendingRequests = $this->connectionRepository->getPendingRequests($user->id);
+        $sentRequests = $this->connectionRepository->getSentRequests($user->id);
+
+        $unreadNotificationCount = $this->notificationService->getUnreadCount($user->id);
+        $recentNotifications = $this->notificationService->getNotificationsWithRelations($user->id, 10);
+
+        $followingList = $this->followService->getFollowingList($user->id, $user->id);
+        $followingCount = collect($followingList)->count();
+        $followersList = $this->followService->getFollowersList($user->id, $user->id);
+        $followersCount = collect($followersList)->count();
+
+        $userData = [
+            'id' => $user->id,
+            'uuid' => $user->uuid,
+            'first_name' => $user->first_name,
+            'last_name' => $user->last_name,
+            'name' => trim($user->first_name . ' ' . $user->last_name),
+            'username' => $user->username,
+            'email' => $user->email,
+            'profile_image_url' => $user->profile_image_url,
+            'bio' => $user->bio,
+        ];
+
+        $stats = [
+            'connections' => $connectionCount,
+            'following' => $followingCount,
+            'followers' => $followersCount,
+        ];
+
+        $trendingPosts = $this->connectionFeedsService->getTopTrendingPosts($user, 10);
+
+        $suggestedData = $this->suggestedConnectionService->getSuggestedMembers($user->id);
+        $suggestedUsers = $suggestedData['suggestions'] ?? [];
+
+        $profileCompletion = $this->profileCompletionService->getProfileCompletion($user);
+
+        $userTrees = $this->familyTreeRepository->getUserMemberTrees($user->id);
+        $firstTree = $userTrees->first();
+        $treeForChat = $firstTree ? [
+            'id' => $firstTree->uuid,
+            'tree_name' => $firstTree->tree_name,
+        ] : null;
+
+        $dmUnreadCount = $this->messageService->getTotalUnreadCount($user->id);
+        $treeIds = $userTrees->pluck('id')->toArray();
+        $groupChatUnreadCount = $this->treeChatRepository->getTotalUnreadCount($user->id, $treeIds);
+        $userClassSets = $this->classSetRepository->getUserClassSets($user->id);
+        $classSetIds = $userClassSets->pluck('id')->toArray();
+        $classSetUnreadCount = $this->classSetMessageRepository->getTotalUnreadCount($user->id, $classSetIds);
+        $totalUnreadMessagesCount = $dmUnreadCount + $groupChatUnreadCount + $classSetUnreadCount;
+
+        $groupsJoinedCount = count($userClassSets);
+        $myStoriesCount = \App\Models\GuestModels\Post::where('user_id', $user->id)->count();
+
+        return [
+            'user' => $userData,
+            'stats' => $stats,
+            'trendingPosts' => $trendingPosts,
+            'recentNotifications' => $recentNotifications,
+            'suggestedUsers' => $suggestedUsers,
+            'connectionCount' => $connectionCount,
+            'pendingRequestCount' => count($pendingRequests),
+            'sentRequestCount' => count($sentRequests),
+            'unreadNotificationCount' => $unreadNotificationCount,
+            'unreadMessagesCount' => $totalUnreadMessagesCount,
+            'profileCompletion' => $profileCompletion,
+            'treeForChat' => $treeForChat,
+            'groupsJoinedCount' => $groupsJoinedCount,
+            'myStoriesCount' => $myStoriesCount,
+        ];
+    }
+
+    /**
+     * Display a single post within the feed layout
+     */
+    public function showPost(int $postId)
+    {
+        try {
+            $user = auth()->user()->load('familyInfo');
+            if (!$user) {
+                return redirect()->route('home');
+            }
+
+            $post = \App\Models\GuestModels\Post::with(['user', 'images', 'comments.user'])->findOrFail($postId);
+            $post->increment('views_count');
+            $post->refresh();
+
+            $formattedPost = $this->formatPost($post, $user->id);
+            $layoutData = $this->getLayoutData($user);
+
+            return Inertia::render('GuestPages/AuthAccessPages/Feed/Index', array_merge($layoutData, [
+                'followingPosts' => [],
+                'connectionPosts' => [],
+                'generalPosts' => [],
+                'followersPosts' => [],
+                'allPosts' => [],
+                'savedPosts' => [],
+                'showPost' => $formattedPost,
+            ]));
+        } catch (\Exception $e) {
+            return redirect('/')->with('error', 'Post not found');
+        }
+    }
+
+    /**
+     * Display a single org post within the feed layout
+     */
+    public function showOrgPost(int $orgPostId)
+    {
+        try {
+            $user = auth()->user()->load('familyInfo');
+            if (!$user) {
+                return redirect()->route('home');
+            }
+
+            $orgPost = \App\Models\OrgModels\OrgPost::with(['organization', 'creator', 'images', 'comments.user'])
+                ->findOrFail($orgPostId);
+            $orgPost->increment('views_count');
+            $orgPost->refresh();
+
+            $formattedPost = $this->formatOrgPost($orgPost, $user->id);
+            $layoutData = $this->getLayoutData($user);
+
+            return Inertia::render('GuestPages/AuthAccessPages/Feed/Index', array_merge($layoutData, [
+                'followingPosts' => [],
+                'connectionPosts' => [],
+                'generalPosts' => [],
+                'followersPosts' => [],
+                'allPosts' => [],
+                'savedPosts' => [],
+                'showPost' => $formattedPost,
+            ]));
+        } catch (\Exception $e) {
+            return redirect('/')->with('error', 'Post not found');
+        }
     }
 }

@@ -2,12 +2,13 @@ import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { router, Link } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
 import {
-    Home, TrendingUp, Users, Bell, Plus, Heart, MessageCircle, Mail,
+    Home, TrendingUp, Users, Plus, Heart, MessageCircle, Mail,
     User, Settings, UserPlus, UserCheck, Globe, FileText, Loader, Image as ImageIcon, Video, ArrowUp,
-    GraduationCap
+    GraduationCap, Bookmark, Search, X
 } from 'lucide-react';
 import CreatePostModal from '../Stories/CreatePostModal';
 import PostCard from '../Stories/PostCard';
+import CommentModal from '../Stories/CommentModal';
 import ProfileCompletionModal from '@/Components/Profile/ProfileCompletionModal';
 import TreeChatWindow from '@/Components/FamilyTree/TreeChatWindow';
 import { ProfileCompletion } from '@/types/inertia';
@@ -27,6 +28,7 @@ interface FeedUser {
 
 interface Post {
     id: number | string;
+    org_post_id?: number;
     type: string;
     title: string;
     content: string | null;
@@ -35,6 +37,9 @@ interface Post {
     views_count: number;
     comments_count: number;
     reactions_count: number;
+    refams_count: number;
+    user_has_refammed: boolean;
+    user_has_saved: boolean;
     user_reaction: string | null;
     images: Array<{ id: number; url: string; order: number }>;
     comments: any[];
@@ -46,6 +51,7 @@ interface Post {
         is_organization?: boolean;
     };
     is_organization?: boolean;
+    refammed_by?: { name: string; username: string } | null;
     created_at: string;
     created_at_human: string;
 }
@@ -84,7 +90,7 @@ interface FeedProps {
     generalPosts: Post[];
     followersPosts: Post[];
     allPosts: Post[];
-    myPosts: Post[];
+    savedPosts: Post[];
     trendingPosts: Post[];
     recentNotifications: Notification[];
     suggestedUsers: SuggestedUser[];
@@ -97,9 +103,10 @@ interface FeedProps {
     treeForChat: TreeForChat | null;
     groupsJoinedCount: number;
     myStoriesCount: number;
+    showPost?: Post;
 }
 
-type TabType = 'following' | 'connections' | 'general' | 'followers' | 'all' | 'mystories';
+type TabType = 'following' | 'connections' | 'general' | 'followers' | 'all' | 'saved';
 
 export default function Feed({
     user,
@@ -109,7 +116,7 @@ export default function Feed({
     generalPosts: initialGeneralPosts,
     followersPosts: initialFollowersPosts = [],
     allPosts: initialAllPosts = [],
-    myPosts: initialMyPosts = [],
+    savedPosts: initialSavedPosts = [],
     trendingPosts,
     recentNotifications,
     suggestedUsers,
@@ -122,6 +129,7 @@ export default function Feed({
     treeForChat,
     groupsJoinedCount = 0,
     myStoriesCount = 0,
+    showPost,
 }: FeedProps) {
     const [activeTab, setActiveTab] = useState<TabType>('following');
     const [showCreateModal, setShowCreateModal] = useState(false);
@@ -130,6 +138,44 @@ export default function Feed({
     const [isChatMinimized, setIsChatMinimized] = useState(false);
     const [showScrollTop, setShowScrollTop] = useState(false);
 
+    // Live search state
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState<Array<{
+        id: number;
+        name: string;
+        username: string;
+        profile_image_url: string | null;
+    }>>([]);
+    const [isSearching, setIsSearching] = useState(false);
+    const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    // Client-side post viewing: keeps the feed mounted so scroll position is preserved
+    const [viewingPost, setViewingPost] = useState<Post | null>(null);
+    const scrollPositionRef = useRef(0);
+    const activePost = viewingPost || showPost || null;
+
+    // Comment modal state (for feed view only)
+    const [commentModalPost, setCommentModalPost] = useState<Post | null>(null);
+
+    const handlePostClick = useCallback((post: Post) => {
+        scrollPositionRef.current = window.scrollY;
+        setViewingPost(post);
+        window.scrollTo(0, 0);
+    }, []);
+
+    const handleBackToFeed = useCallback(() => {
+        if (viewingPost) {
+            // Client-side: feed is still mounted, just restore scroll
+            setViewingPost(null);
+            requestAnimationFrame(() => {
+                window.scrollTo(0, scrollPositionRef.current);
+            });
+        } else if (showPost) {
+            // Direct URL visit: need actual navigation
+            router.visit('/');
+        }
+    }, [viewingPost, showPost]);
+
     // Separate state for each tab's posts
     const [tabPosts, setTabPosts] = useState({
         following: initialFollowingPosts,
@@ -137,7 +183,7 @@ export default function Feed({
         general: initialGeneralPosts,
         followers: initialFollowersPosts,
         all: initialAllPosts,
-        mystories: initialMyPosts,
+        saved: initialSavedPosts,
     });
 
     // Loading and pagination states
@@ -148,7 +194,7 @@ export default function Feed({
         general: true,
         followers: true,
         all: true,
-        mystories: true,
+        saved: true,
     });
 
     const isLoadingRef = useRef(false);
@@ -211,6 +257,53 @@ export default function Feed({
         return () => window.removeEventListener('scroll', handleWindowScroll);
     }, [fetchMorePosts, activeTab, hasMore]);
 
+    // Live search handler with debounce
+    const handleSearchInput = useCallback((value: string) => {
+        setSearchQuery(value);
+
+        if (searchDebounceRef.current) {
+            clearTimeout(searchDebounceRef.current);
+        }
+
+        if (!value.trim()) {
+            setSearchResults([]);
+            setIsSearching(false);
+            return;
+        }
+
+        setIsSearching(true);
+        searchDebounceRef.current = setTimeout(async () => {
+            try {
+                const response = await fetch(`/search/users?q=${encodeURIComponent(value.trim())}&limit=8`, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    credentials: 'same-origin',
+                });
+                const data = await response.json();
+                if (data.success && data.data) {
+                    setSearchResults(data.data);
+                } else {
+                    setSearchResults([]);
+                }
+            } catch {
+                setSearchResults([]);
+            } finally {
+                setIsSearching(false);
+            }
+        }, 300);
+    }, []);
+
+    // Cleanup debounce on unmount
+    useEffect(() => {
+        return () => {
+            if (searchDebounceRef.current) {
+                clearTimeout(searchDebounceRef.current);
+            }
+        };
+    }, []);
+
     const scrollToTop = useCallback(() => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }, []);
@@ -230,7 +323,7 @@ export default function Feed({
         { key: 'general' as TabType, label: 'Discover', icon: Home },
         { key: 'followers' as TabType, label: 'Followers', icon: UserCheck },
         { key: 'all' as TabType, label: 'All', icon: Globe },
-        { key: 'mystories' as TabType, label: 'My Stories', icon: FileText },
+        { key: 'saved' as TabType, label: 'Saved', icon: Bookmark },
     ];
 
     return (
@@ -345,8 +438,14 @@ export default function Feed({
                                         {tabs.map((tab) => (
                                             <button
                                                 key={tab.key}
-                                                className={`feed-tab ${activeTab === tab.key ? 'active' : ''}`}
-                                                onClick={() => setActiveTab(tab.key)}
+                                                className={`feed-tab ${!activePost && activeTab === tab.key ? 'active' : ''}`}
+                                                onClick={() => {
+                                                    if (activePost) {
+                                                        handleBackToFeed();
+                                                    } else {
+                                                        setActiveTab(tab.key);
+                                                    }
+                                                }}
                                             >
                                                 <tab.icon size={18} />
                                                 <span>{tab.label}</span>
@@ -357,11 +456,19 @@ export default function Feed({
 
                                 {/* Posts Container */}
                                 <div className="posts-container">
-                                    {currentPosts.length > 0 ? (
+                                    {activePost ? (
+                                        <>
+                                            <PostCard
+                                                post={activePost}
+                                                onPostDeleted={() => { setViewingPost(null); router.reload(); }}
+                                                defaultShowComments={true}
+                                            />
+                                        </>
+                                    ) : currentPosts.length > 0 ? (
                                         <>
                                             {currentPosts.map((post) => (
                                                 <div key={post.id} className="post-card">
-                                                    <PostCard post={post} currentUserId={user.id} onPostDeleted={handlePostDeleted} />
+                                                    <PostCard post={post as any} currentUserId={user.id} onPostDeleted={handlePostDeleted} onPostClick={handlePostClick} onCommentClick={() => setCommentModalPost(post)} />
                                                 </div>
                                             ))}
 
@@ -392,19 +499,13 @@ export default function Feed({
                                                 {activeTab === 'general' && "Discover posts from the community"}
                                                 {activeTab === 'followers' && "Posts from users who follow you (but you don't follow back) will appear here"}
                                                 {activeTab === 'all' && "All public posts will appear here"}
-                                                {activeTab === 'mystories' && "Your stories will appear here"}
+                                                {activeTab === 'saved' && "Posts you bookmark will appear here"}
                                             </p>
                                             {activeTab === 'following' && (
                                                 <Link href="/suggested-connections" className="btn btn-primary">
                                                     <UserPlus size={18} style={{ marginRight: '8px' }} />
                                                     Find People to Follow
                                                 </Link>
-                                            )}
-                                            {activeTab === 'mystories' && (
-                                                <button onClick={() => setShowCreateModal(true)} className="btn btn-primary">
-                                                    <Plus size={18} style={{ marginRight: '8px' }} />
-                                                    Create Your First Story
-                                                </button>
                                             )}
                                         </div>
                                     )}
@@ -415,37 +516,74 @@ export default function Feed({
                         {/* RIGHT SIDEBAR - Widgets */}
                         <div className="col-lg-3">
                             <div className="right-sidebar">
-                                {/* Notifications Widget */}
+                                {/* Live Search Widget */}
                                 <div className="sidebar-widget">
                                     <div className="widget-header">
                                         <h6 className="widget-title">
-                                            <Bell size={20} />
-                                            Notifications
+                                            <Search size={20} />
+                                            Find People
                                         </h6>
-                                        {unreadNotificationCount > 0 && (
-                                            <span className="badge badge-danger">{unreadNotificationCount}</span>
-                                        )}
                                     </div>
-                                    <div className="widget-body">
-                                        {recentNotifications.slice(0, 5).map((notification) => (
-                                            <div
-                                                key={notification.id}
-                                                className={`widget-item notification-item ${!notification.read_at ? 'unread' : ''}`}
-                                            >
-                                                <div className="notification-content">
-                                                    <p className="notification-text">{notification.data?.message || 'New notification'}</p>
-                                                    <span className="notification-time">{new Date(notification.created_at).toLocaleDateString()}</span>
-                                                </div>
+                                    <div className="widget-body" style={{ padding: 0 }}>
+                                        <div className="live-search-container">
+                                            <div className="live-search-input-wrapper">
+                                                <Search size={16} className="live-search-icon" />
+                                                <input
+                                                    type="text"
+                                                    placeholder="Search by name or username..."
+                                                    value={searchQuery}
+                                                    onChange={(e) => handleSearchInput(e.target.value)}
+                                                    className="live-search-input"
+                                                />
+                                                {searchQuery && (
+                                                    <button
+                                                        className="live-search-clear"
+                                                        onClick={() => {
+                                                            setSearchQuery('');
+                                                            setSearchResults([]);
+                                                        }}
+                                                    >
+                                                        <X size={14} />
+                                                    </button>
+                                                )}
                                             </div>
-                                        ))}
-                                        {recentNotifications.length === 0 && (
-                                            <div className="widget-item text-center">
-                                                <small className="text-muted">No notifications yet</small>
+                                            <div className="live-search-results">
+                                                {isSearching && (
+                                                    <div className="live-search-loading">
+                                                        <Loader size={16} className="spinning" />
+                                                        <span>Searching...</span>
+                                                    </div>
+                                                )}
+                                                {!isSearching && searchQuery.trim() && searchResults.length === 0 && (
+                                                    <div className="live-search-empty">
+                                                        No users found
+                                                    </div>
+                                                )}
+                                                {searchResults.map((result) => (
+                                                    <Link
+                                                        key={result.id}
+                                                        href={`/profile/${result.username}`}
+                                                        className="live-search-result-item"
+                                                    >
+                                                        {result.profile_image_url ? (
+                                                            <img
+                                                                src={result.profile_image_url}
+                                                                alt={result.name}
+                                                                className="live-search-avatar"
+                                                            />
+                                                        ) : (
+                                                            <div className="live-search-avatar-fallback">
+                                                                {result.name.charAt(0)}
+                                                            </div>
+                                                        )}
+                                                        <div className="live-search-info">
+                                                            <span className="live-search-name">{result.name}</span>
+                                                            <span className="live-search-username">@{result.username}</span>
+                                                        </div>
+                                                    </Link>
+                                                ))}
                                             </div>
-                                        )}
-                                    </div>
-                                    <div className="widget-footer">
-                                        <Link href="/notifications">View All</Link>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -688,6 +826,30 @@ export default function Feed({
                     onClose={() => setShowChat(false)}
                     isMinimized={isChatMinimized}
                     onToggleMinimize={() => setIsChatMinimized(!isChatMinimized)}
+                />
+            )}
+
+            {/* Comment Modal */}
+            {commentModalPost && (
+                <CommentModal
+                    post={commentModalPost as any}
+                    isOpen={!!commentModalPost}
+                    onClose={() => setCommentModalPost(null)}
+                    onCommentSubmitted={() => {
+                        const postId = commentModalPost!.id;
+                        setTabPosts(prev => {
+                            const updated = { ...prev };
+                            for (const tab of Object.keys(updated) as TabType[]) {
+                                updated[tab] = updated[tab].map(p =>
+                                    p.id === postId
+                                        ? { ...p, comments_count: p.comments_count + 1 }
+                                        : p
+                                );
+                            }
+                            return updated;
+                        });
+                        setCommentModalPost(null);
+                    }}
                 />
             )}
         </AuthAccessLayout>

@@ -105,7 +105,7 @@ export default function Dashboard({ stats, recentActivity }: Props) {
                             <div
                                 key={index}
                                 style={{
-                                    background: '#111118',
+                                    background: '#141425',
                                     border: '1px solid rgba(255, 255, 255, 0.06)',
                                     borderRadius: '12px',
                                     padding: '1.5rem',
@@ -166,7 +166,7 @@ export default function Dashboard({ stats, recentActivity }: Props) {
                 }}>
                     {/* Quick Actions */}
                     <div style={{
-                        background: '#111118',
+                        background: '#141425',
                         border: '1px solid rgba(255, 255, 255, 0.06)',
                         borderRadius: '12px',
                         padding: '1.5rem',
@@ -220,7 +220,7 @@ export default function Dashboard({ stats, recentActivity }: Props) {
 
                     {/* Recent Activity */}
                     <div style={{
-                        background: '#111118',
+                        background: '#141425',
                         border: '1px solid rgba(255, 255, 255, 0.06)',
                         borderRadius: '12px',
                         padding: '1.5rem',

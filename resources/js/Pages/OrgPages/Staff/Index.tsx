@@ -1,15 +1,23 @@
 import OrgLayout from '@/Layouts/OrgLayout';
 import { useState } from 'react';
-import { router } from '@inertiajs/react';
-import { Plus, UserPlus, Trash2, Shield, X, Settings, Edit2 } from 'lucide-react';
+import { router, usePage } from '@inertiajs/react';
+import { UserPlus, Trash2, Shield, X, Edit2 } from 'lucide-react';
+
+interface OrgRole {
+    id: number;
+    name: string;
+    slug: string;
+    is_system: boolean;
+    permissions: Record<string, boolean>;
+}
 
 interface StaffMember {
     id: number;
     username: string;
     email: string;
-    role: string;
+    org_role_id: number | null;
+    org_role: OrgRole | null;
     display_name: string | null;
-    permissions: Record<string, boolean> | null;
     is_active: boolean;
     last_login_at: string | null;
     created_at: string;
@@ -17,61 +25,44 @@ interface StaffMember {
 
 interface Props {
     staff: StaffMember[];
+    roles: OrgRole[];
 }
 
-const roleConfig: Record<string, { color: string; bg: string }> = {
-    owner: { color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.15)' },
-    admin: { color: '#8B5CF6', bg: 'rgba(139, 92, 246, 0.15)' },
-    editor: { color: '#3B82F6', bg: 'rgba(59, 130, 246, 0.15)' },
-    moderator: { color: '#10B981', bg: 'rgba(16, 185, 129, 0.15)' },
-};
-
-const AVAILABLE_PERMISSIONS = [
-    { key: 'manage_posts', label: 'Manage Posts' },
-    { key: 'manage_broadcasts', label: 'Manage Broadcasts' },
-    { key: 'manage_staff', label: 'Manage Staff' },
-    { key: 'view_analytics', label: 'View Analytics' },
-    { key: 'manage_groups', label: 'Manage Groups' },
-    { key: 'manage_profile', label: 'Manage Profile' },
-];
-
-export default function StaffIndex({ staff }: Props) {
+export default function StaffIndex({ staff, roles }: Props) {
+    const { auth } = usePage<{ auth: { org?: { is_owner: boolean } } }>().props;
+    const currentIsOwner = auth?.org?.is_owner ?? false;
     const [showAddModal, setShowAddModal] = useState(false);
     const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null);
     const [newUsername, setNewUsername] = useState('');
     const [newEmail, setNewEmail] = useState('');
     const [newPassword, setNewPassword] = useState('');
-    const [newRole, setNewRole] = useState('moderator');
+    const [newRoleId, setNewRoleId] = useState<number | ''>('');
     const [newDisplayName, setNewDisplayName] = useState('');
-    const [newPermissions, setNewPermissions] = useState<Record<string, boolean>>({});
     const [submitting, setSubmitting] = useState(false);
 
     // Edit modal state
-    const [editRole, setEditRole] = useState('');
+    const [editRoleId, setEditRoleId] = useState<number | ''>('');
     const [editDisplayName, setEditDisplayName] = useState('');
-    const [editPermissions, setEditPermissions] = useState<Record<string, boolean>>({});
     const [editPassword, setEditPassword] = useState('');
 
     const resetAddForm = () => {
         setNewUsername('');
         setNewEmail('');
         setNewPassword('');
-        setNewRole('moderator');
+        setNewRoleId(roles.length > 0 ? roles[0].id : '');
         setNewDisplayName('');
-        setNewPermissions({});
     };
 
     const handleAddStaff = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newUsername.trim() || !newEmail.trim() || !newPassword.trim()) return;
+        if (!newUsername.trim() || !newEmail.trim() || !newPassword.trim() || !newRoleId) return;
         setSubmitting(true);
         router.post(route('org.staff.store'), {
             username: newUsername,
             email: newEmail,
             password: newPassword,
-            role: newRole,
+            org_role_id: newRoleId,
             display_name: newDisplayName || null,
-            permissions: newPermissions,
         }, {
             onSuccess: () => {
                 setShowAddModal(false);
@@ -84,9 +75,8 @@ export default function StaffIndex({ staff }: Props) {
 
     const openEditModal = (member: StaffMember) => {
         setEditingStaff(member);
-        setEditRole(member.role);
+        setEditRoleId(member.org_role_id || '');
         setEditDisplayName(member.display_name || '');
-        setEditPermissions(member.permissions || {});
         setEditPassword('');
     };
 
@@ -95,12 +85,15 @@ export default function StaffIndex({ staff }: Props) {
         if (!editingStaff) return;
         setSubmitting(true);
 
-        const data = {
-            role: editRole,
+        const data: Record<string, unknown> = {
             display_name: editDisplayName || null,
-            permissions: editPermissions,
-            ...(editPassword.trim() ? { password: editPassword } : {}),
         };
+        if (currentIsOwner) {
+            data.org_role_id = editRoleId || undefined;
+        }
+        if (editPassword.trim()) {
+            data.password = editPassword;
+        }
 
         router.put(route('org.staff.update', { id: editingStaff.id }), data, {
             onSuccess: () => {
@@ -123,17 +116,9 @@ export default function StaffIndex({ staff }: Props) {
         }
     };
 
-    const togglePermission = (
-        perms: Record<string, boolean>,
-        setPerms: (p: Record<string, boolean>) => void,
-        key: string
-    ) => {
-        setPerms({ ...perms, [key]: !perms[key] });
-    };
-
     const inputStyle: React.CSSProperties = {
         width: '100%',
-        background: '#1a1a24',
+        background: '#1e1e35',
         border: '1px solid rgba(139, 92, 246, 0.2)',
         borderRadius: '8px',
         padding: '0.875rem',
@@ -149,60 +134,6 @@ export default function StaffIndex({ staff }: Props) {
         color: '#e0e0e0',
         marginBottom: '0.5rem',
     };
-
-    const renderPermissionToggles = (
-        perms: Record<string, boolean>,
-        setPerms: (p: Record<string, boolean>) => void,
-    ) => (
-        <div style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '0.5rem',
-        }}>
-            {AVAILABLE_PERMISSIONS.map(({ key, label }) => (
-                <button
-                    key={key}
-                    type="button"
-                    onClick={() => togglePermission(perms, setPerms, key)}
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        padding: '0.6rem 0.75rem',
-                        background: perms[key] ? 'rgba(139, 92, 246, 0.15)' : 'rgba(255, 255, 255, 0.03)',
-                        border: `1px solid ${perms[key] ? 'rgba(139, 92, 246, 0.4)' : 'rgba(255, 255, 255, 0.08)'}`,
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        color: perms[key] ? '#8B5CF6' : '#888',
-                        fontSize: '0.8rem',
-                        fontWeight: 500,
-                        transition: 'all 0.2s ease',
-                        textAlign: 'left',
-                    }}
-                >
-                    <div style={{
-                        width: '16px',
-                        height: '16px',
-                        borderRadius: '4px',
-                        border: `2px solid ${perms[key] ? '#8B5CF6' : '#555'}`,
-                        background: perms[key] ? '#8B5CF6' : 'transparent',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                        transition: 'all 0.2s ease',
-                    }}>
-                        {perms[key] && (
-                            <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-                                <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                        )}
-                    </div>
-                    {label}
-                </button>
-            ))}
-        </div>
-    );
 
     const renderModal = (
         title: string,
@@ -226,7 +157,7 @@ export default function StaffIndex({ staff }: Props) {
         }}
         >
             <div style={{
-                background: '#111118',
+                background: '#141425',
                 border: '1px solid rgba(255, 255, 255, 0.1)',
                 borderRadius: '16px',
                 padding: '2rem',
@@ -234,6 +165,7 @@ export default function StaffIndex({ staff }: Props) {
                 maxWidth: '520px',
                 maxHeight: '85vh',
                 overflowY: 'auto',
+                scrollbarWidth: 'none',
             }}>
                 <div style={{
                     display: 'flex',
@@ -303,6 +235,8 @@ export default function StaffIndex({ staff }: Props) {
         </div>
     );
 
+    const isOwner = (member: StaffMember) => member.org_role?.is_system && member.org_role?.slug === 'owner';
+
     return (
         <OrgLayout>
             <div>
@@ -322,7 +256,7 @@ export default function StaffIndex({ staff }: Props) {
                         </p>
                     </div>
                     <button
-                        onClick={() => setShowAddModal(true)}
+                        onClick={() => { resetAddForm(); setShowAddModal(true); }}
                         style={{
                             display: 'flex',
                             alignItems: 'center',
@@ -347,7 +281,7 @@ export default function StaffIndex({ staff }: Props) {
 
                 {/* Staff Table */}
                 <div style={{
-                    background: '#111118',
+                    background: '#141425',
                     border: '1px solid rgba(255, 255, 255, 0.06)',
                     borderRadius: '12px',
                     overflow: 'hidden',
@@ -379,11 +313,12 @@ export default function StaffIndex({ staff }: Props) {
                                 </thead>
                                 <tbody>
                                     {staff.map((member) => {
-                                        const role = roleConfig[member.role] || roleConfig.moderator;
-                                        const activePerms = member.permissions
-                                            ? Object.entries(member.permissions).filter(([, v]) => v).map(([k]) => k)
+                                        const memberIsOwner = isOwner(member);
+                                        const roleName = member.org_role?.name || 'No Role';
+                                        const roleIsSystem = member.org_role?.is_system ?? false;
+                                        const activePerms = member.org_role?.permissions
+                                            ? Object.entries(member.org_role.permissions).filter(([, v]) => v).map(([k]) => k)
                                             : [];
-                                        const isOwner = member.role === 'owner';
 
                                         return (
                                             <tr
@@ -446,19 +381,19 @@ export default function StaffIndex({ staff }: Props) {
                                                         borderRadius: '6px',
                                                         fontSize: '0.75rem',
                                                         fontWeight: 600,
-                                                        color: role.color,
-                                                        background: role.bg,
+                                                        color: roleIsSystem ? '#F59E0B' : '#8B5CF6',
+                                                        background: roleIsSystem ? 'rgba(245, 158, 11, 0.15)' : 'rgba(139, 92, 246, 0.15)',
                                                         textTransform: 'capitalize',
                                                     }}>
                                                         <Shield size={12} />
-                                                        {member.role}
+                                                        {roleName}
                                                     </span>
                                                 </td>
                                                 <td style={{
                                                     padding: '1rem',
                                                     borderBottom: '1px solid rgba(255, 255, 255, 0.04)',
                                                 }}>
-                                                    {isOwner ? (
+                                                    {memberIsOwner ? (
                                                         <span style={{ fontSize: '0.75rem', color: '#F59E0B', fontStyle: 'italic' }}>
                                                             All permissions
                                                         </span>
@@ -498,7 +433,7 @@ export default function StaffIndex({ staff }: Props) {
                                                 }}>
                                                     <button
                                                         onClick={() => handleToggleActive(member)}
-                                                        disabled={isOwner}
+                                                        disabled={memberIsOwner}
                                                         style={{
                                                             display: 'inline-flex',
                                                             alignItems: 'center',
@@ -510,8 +445,8 @@ export default function StaffIndex({ staff }: Props) {
                                                             color: member.is_active ? '#22C55E' : '#EF4444',
                                                             background: member.is_active ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)',
                                                             border: 'none',
-                                                            cursor: isOwner ? 'default' : 'pointer',
-                                                            opacity: isOwner ? 0.5 : 1,
+                                                            cursor: memberIsOwner ? 'default' : 'pointer',
+                                                            opacity: memberIsOwner ? 0.5 : 1,
                                                             transition: 'opacity 0.2s ease',
                                                         }}
                                                     >
@@ -534,7 +469,7 @@ export default function StaffIndex({ staff }: Props) {
                                                     borderBottom: '1px solid rgba(255, 255, 255, 0.04)',
                                                 }}>
                                                     <div style={{ display: 'flex', gap: '0.35rem' }}>
-                                                        {!isOwner && (
+                                                        {!memberIsOwner && (
                                                             <>
                                                                 <button
                                                                     onClick={() => openEditModal(member)}
@@ -649,28 +584,28 @@ export default function StaffIndex({ staff }: Props) {
                                 minLength={8}
                             />
                         </div>
-                        <div style={{ marginBottom: '1.25rem' }}>
-                            <label style={labelStyle}>Role</label>
-                            <select
-                                value={newRole}
-                                onChange={(e) => setNewRole(e.target.value)}
-                                style={{ ...inputStyle, cursor: 'pointer' }}
-                            >
-                                <option value="admin">Admin</option>
-                                <option value="editor">Editor</option>
-                                <option value="moderator">Moderator</option>
-                            </select>
-                        </div>
                         <div>
-                            <label style={labelStyle}>
-                                <Settings size={14} style={{ verticalAlign: 'middle', marginRight: '0.35rem' }} />
-                                Permissions
-                            </label>
-                            {renderPermissionToggles(newPermissions, setNewPermissions)}
+                            <label style={labelStyle}>Role *</label>
+                            {roles.length > 0 ? (
+                                <select
+                                    value={newRoleId}
+                                    onChange={(e) => setNewRoleId(Number(e.target.value))}
+                                    style={{ ...inputStyle, cursor: 'pointer' }}
+                                >
+                                    <option value="">Select a role...</option>
+                                    {roles.map((role) => (
+                                        <option key={role.id} value={role.id}>{role.name}</option>
+                                    ))}
+                                </select>
+                            ) : (
+                                <p style={{ color: '#888', fontSize: '0.85rem', margin: 0 }}>
+                                    No roles available. Create a role first in the Roles page.
+                                </p>
+                            )}
                         </div>
                     </>,
                     'Add Staff',
-                    !!(newUsername.trim() && newEmail.trim() && newPassword.trim()),
+                    !!(newUsername.trim() && newEmail.trim() && newPassword.trim() && newRoleId),
                 )}
 
                 {/* Edit Staff Modal */}
@@ -691,17 +626,27 @@ export default function StaffIndex({ staff }: Props) {
                         </div>
                         <div style={{ marginBottom: '1.25rem' }}>
                             <label style={labelStyle}>Role</label>
-                            <select
-                                value={editRole}
-                                onChange={(e) => setEditRole(e.target.value)}
-                                style={{ ...inputStyle, cursor: 'pointer' }}
-                            >
-                                <option value="admin">Admin</option>
-                                <option value="editor">Editor</option>
-                                <option value="moderator">Moderator</option>
-                            </select>
+                            {currentIsOwner ? (
+                                <select
+                                    value={editRoleId}
+                                    onChange={(e) => setEditRoleId(Number(e.target.value))}
+                                    style={{ ...inputStyle, cursor: 'pointer' }}
+                                >
+                                    <option value="">Select a role...</option>
+                                    {roles.map((role) => (
+                                        <option key={role.id} value={role.id}>{role.name}</option>
+                                    ))}
+                                </select>
+                            ) : (
+                                <input
+                                    type="text"
+                                    value={editingStaff?.org_role?.name || 'No Role'}
+                                    readOnly
+                                    style={{ ...inputStyle, cursor: 'not-allowed', opacity: 0.6 }}
+                                />
+                            )}
                         </div>
-                        <div style={{ marginBottom: '1.25rem' }}>
+                        <div>
                             <label style={labelStyle}>New Password (leave blank to keep current)</label>
                             <input
                                 type="password"
@@ -711,13 +656,6 @@ export default function StaffIndex({ staff }: Props) {
                                 style={inputStyle}
                                 minLength={8}
                             />
-                        </div>
-                        <div>
-                            <label style={labelStyle}>
-                                <Settings size={14} style={{ verticalAlign: 'middle', marginRight: '0.35rem' }} />
-                                Permissions
-                            </label>
-                            {renderPermissionToggles(editPermissions, setEditPermissions)}
                         </div>
                     </>,
                     'Save Changes',
