@@ -235,6 +235,19 @@ export default function OrgLogin() {
                                 />
                                 Remember me
                             </label>
+                            <a
+                                href={route('org.forgot-password')}
+                                style={{
+                                    color: '#8B5CF6',
+                                    textDecoration: 'none',
+                                    fontWeight: 600,
+                                    transition: 'color 0.3s ease',
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.color = '#A78BFA'}
+                                onMouseLeave={(e) => e.currentTarget.style.color = '#8B5CF6'}
+                            >
+                                Forgot Password?
+                            </a>
                         </div>
 
                         {/* Login Button */}

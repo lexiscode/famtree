@@ -5,6 +5,7 @@ namespace App\Http\Controllers\OrgControllers;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\OrgControllers\Traits\AuthorizesOrgActions;
 use App\Actions\OrgServices\OrgPostService;
+use App\Repositories\OrgRepositories\OrgActivityLogRepository;
 use App\Models\OrgModels\OrgPost;
 use App\Models\OrgModels\OrgPostComment;
 use App\Models\OrgModels\OrgPostCommentLike;
@@ -18,6 +19,7 @@ class PostController extends Controller
     use AuthorizesOrgActions;
     public function __construct(
         private OrgPostService $postService,
+        private OrgActivityLogRepository $activityLogRepo,
     ) {}
 
     public function index()
@@ -92,12 +94,22 @@ class PostController extends Controller
             }
         }
 
-        $this->postService->createPost([
+        $post = $this->postService->createPost([
             'organization_id' => $orgAccount->organization_id,
             'org_account_id' => $orgAccount->id,
             'type' => $validated['type'] ?? 'text',
             'content' => $validated['content'],
         ], $imageUrls);
+
+        $this->activityLogRepo->create([
+            'org_account_id' => $orgAccount->id,
+            'organization_id' => $orgAccount->organization_id,
+            'action_type' => 'post_created',
+            'resource_type' => 'post',
+            'description' => 'Created a new post',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
 
         return redirect()->route('org.posts.index')->with('success', 'Post created successfully.');
     }
@@ -117,10 +129,20 @@ class PostController extends Controller
             return redirect()->back()->with('error', 'Post not found.');
         }
 
+        $this->activityLogRepo->create([
+            'org_account_id' => $orgAccount->id,
+            'organization_id' => $orgAccount->organization_id,
+            'action_type' => 'post_updated',
+            'resource_type' => 'post',
+            'description' => 'Updated a post',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
         return redirect()->route('org.posts.show', $id)->with('success', 'Post updated successfully.');
     }
 
-    public function destroy(int $id)
+    public function destroy(Request $request, int $id)
     {
         $this->authorizeOrg('manage-posts');
         $orgAccount = Auth::guard('org')->user();
@@ -129,10 +151,20 @@ class PostController extends Controller
             return redirect()->back()->with('error', 'Post not found.');
         }
 
+        $this->activityLogRepo->create([
+            'org_account_id' => $orgAccount->id,
+            'organization_id' => $orgAccount->organization_id,
+            'action_type' => 'post_deleted',
+            'resource_type' => 'post',
+            'description' => 'Deleted a post',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
         return redirect()->route('org.posts.index')->with('success', 'Post deleted successfully.');
     }
 
-    public function togglePin(int $id)
+    public function togglePin(Request $request, int $id)
     {
         $this->authorizeOrg('manage-posts');
         $orgAccount = Auth::guard('org')->user();
@@ -142,6 +174,16 @@ class PostController extends Controller
         if (!$post) {
             return redirect()->back()->with('error', 'Post not found.');
         }
+
+        $this->activityLogRepo->create([
+            'org_account_id' => $orgAccount->id,
+            'organization_id' => $orgAccount->organization_id,
+            'action_type' => 'post_updated',
+            'resource_type' => 'post',
+            'description' => $post->is_pinned ? 'Pinned a post' : 'Unpinned a post',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
 
         $message = $post->is_pinned ? 'Post pinned successfully.' : 'Post unpinned successfully.';
         return redirect()->back()->with('success', $message);

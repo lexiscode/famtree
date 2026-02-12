@@ -15,6 +15,7 @@ import {
     Shield,
     FolderTree,
     Heart,
+    ScrollText,
     LogOut,
     ChevronDown,
 } from 'lucide-react';
@@ -95,6 +96,12 @@ export default function OrgLayout({ children }: OrgLayoutProps) {
             icon: BarChart3,
             href: route('org.analytics.index'),
             active: route().current('org.analytics.*'),
+        },
+        {
+            label: 'Activity Logs',
+            icon: ScrollText,
+            href: route('org.activity-logs.index'),
+            active: route().current('org.activity-logs.*'),
         },
         {
             label: 'Profile',
