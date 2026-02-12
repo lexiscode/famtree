@@ -469,49 +469,47 @@ export default function StaffIndex({ staff, roles }: Props) {
                                                     borderBottom: '1px solid rgba(255, 255, 255, 0.04)',
                                                 }}>
                                                     <div style={{ display: 'flex', gap: '0.35rem' }}>
+                                                        <button
+                                                            onClick={() => openEditModal(member)}
+                                                            style={{
+                                                                background: 'rgba(139, 92, 246, 0.1)',
+                                                                border: 'none',
+                                                                borderRadius: '6px',
+                                                                padding: '0.5rem',
+                                                                cursor: 'pointer',
+                                                                color: '#8B5CF6',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                transition: 'background 0.2s ease',
+                                                            }}
+                                                            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(139, 92, 246, 0.2)'; }}
+                                                            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(139, 92, 246, 0.1)'; }}
+                                                            title="Edit"
+                                                        >
+                                                            <Edit2 size={14} />
+                                                        </button>
                                                         {!memberIsOwner && (
-                                                            <>
-                                                                <button
-                                                                    onClick={() => openEditModal(member)}
-                                                                    style={{
-                                                                        background: 'rgba(139, 92, 246, 0.1)',
-                                                                        border: 'none',
-                                                                        borderRadius: '6px',
-                                                                        padding: '0.5rem',
-                                                                        cursor: 'pointer',
-                                                                        color: '#8B5CF6',
-                                                                        display: 'flex',
-                                                                        alignItems: 'center',
-                                                                        justifyContent: 'center',
-                                                                        transition: 'background 0.2s ease',
-                                                                    }}
-                                                                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(139, 92, 246, 0.2)'; }}
-                                                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(139, 92, 246, 0.1)'; }}
-                                                                    title="Edit"
-                                                                >
-                                                                    <Edit2 size={14} />
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => handleDelete(member.id)}
-                                                                    style={{
-                                                                        background: 'rgba(239, 68, 68, 0.1)',
-                                                                        border: 'none',
-                                                                        borderRadius: '6px',
-                                                                        padding: '0.5rem',
-                                                                        cursor: 'pointer',
-                                                                        color: '#EF4444',
-                                                                        display: 'flex',
-                                                                        alignItems: 'center',
-                                                                        justifyContent: 'center',
-                                                                        transition: 'background 0.2s ease',
-                                                                    }}
-                                                                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'; }}
-                                                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'; }}
-                                                                    title="Delete"
-                                                                >
-                                                                    <Trash2 size={14} />
-                                                                </button>
-                                                            </>
+                                                            <button
+                                                                onClick={() => handleDelete(member.id)}
+                                                                style={{
+                                                                    background: 'rgba(239, 68, 68, 0.1)',
+                                                                    border: 'none',
+                                                                    borderRadius: '6px',
+                                                                    padding: '0.5rem',
+                                                                    cursor: 'pointer',
+                                                                    color: '#EF4444',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
+                                                                    transition: 'background 0.2s ease',
+                                                                }}
+                                                                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'; }}
+                                                                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'; }}
+                                                                title="Delete"
+                                                            >
+                                                                <Trash2 size={14} />
+                                                            </button>
                                                         )}
                                                     </div>
                                                 </td>
@@ -626,7 +624,7 @@ export default function StaffIndex({ staff, roles }: Props) {
                         </div>
                         <div style={{ marginBottom: '1.25rem' }}>
                             <label style={labelStyle}>Role</label>
-                            {currentIsOwner ? (
+                            {currentIsOwner && !isOwner(editingStaff!) ? (
                                 <select
                                     value={editRoleId}
                                     onChange={(e) => setEditRoleId(Number(e.target.value))}
