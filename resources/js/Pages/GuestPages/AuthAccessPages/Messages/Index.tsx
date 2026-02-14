@@ -297,6 +297,15 @@ export default function MessagesIndex({
     const [isLeaving, setIsLeaving] = useState(false);
     const [removalConfirmTarget, setRemovalConfirmTarget] = useState<{ id: number; first_name: string; last_name: string } | null>(null);
 
+    // League table panel state
+    const [showLeaguePanel, setShowLeaguePanel] = useState(false);
+    const [leagueStandings, setLeagueStandings] = useState<Array<{
+        rank: number; user_id: number; first_name: string; last_name: string;
+        username: string; profile_image_url: string | null;
+        total_points: number; predictions_made: number; correct_predictions: number;
+    }>>([]);
+    const [leagueLoading, setLeagueLoading] = useState(false);
+
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const isTypingRef = useRef(false);
@@ -528,16 +537,13 @@ export default function MessagesIndex({
         // Fetch prediction fixtures for football org groups
         try {
             const predRes = await axios.get(route('class-sets.predictions.open', groupUuid));
+            setPredictionOrgSlug(predRes.data.organizationSlug || '');
+            setPredictionOrgName(predRes.data.organizationName || '');
+            setPredictionOrgLogo(predRes.data.organizationLogo || null);
             if (predRes.data.fixtures && predRes.data.fixtures.length > 0) {
                 setPredictionFixtures(predRes.data.fixtures);
-                setPredictionOrgSlug(predRes.data.organizationSlug || '');
-                setPredictionOrgName(predRes.data.organizationName || '');
-                setPredictionOrgLogo(predRes.data.organizationLogo || null);
             } else {
                 setPredictionFixtures([]);
-                setPredictionOrgSlug('');
-                setPredictionOrgName('');
-                setPredictionOrgLogo(null);
             }
         } catch {
             setPredictionFixtures([]);
@@ -578,10 +584,36 @@ export default function MessagesIndex({
 
     const toggleMembersPanel = useCallback(() => {
         setShowMembersPanel(prev => {
-            if (!prev) fetchMembers();
+            if (!prev) {
+                setShowLeaguePanel(false);
+                fetchMembers();
+            }
             return !prev;
         });
     }, [fetchMembers]);
+
+    const fetchLeagueStandings = useCallback(async () => {
+        if (!activeGroupChat) return;
+        setLeagueLoading(true);
+        try {
+            const response = await axios.get(route('class-sets.predictions.standings', activeGroupChat.uuid));
+            setLeagueStandings(response.data || []);
+        } catch {
+            setLeagueStandings([]);
+        } finally {
+            setLeagueLoading(false);
+        }
+    }, [activeGroupChat]);
+
+    const toggleLeaguePanel = useCallback(() => {
+        setShowLeaguePanel(prev => {
+            if (!prev) {
+                setShowMembersPanel(false);
+                fetchLeagueStandings();
+            }
+            return !prev;
+        });
+    }, [fetchLeagueStandings]);
 
     const handleLeaveGroup = useCallback(() => {
         if (!activeGroupChat || isLeaving) return;
@@ -598,11 +630,13 @@ export default function MessagesIndex({
         });
     }, [activeGroupChat, isLeaving]);
 
-    // Close members panel and leave confirm when switching chats
+    // Close members panel, league panel and leave confirm when switching chats
     useEffect(() => {
         setShowMembersPanel(false);
         setMembersList([]);
         setShowLeaveConfirm(false);
+        setShowLeaguePanel(false);
+        setLeagueStandings([]);
     }, [activeGroupChat]);
 
     // Vote in an election
@@ -1230,13 +1264,34 @@ export default function MessagesIndex({
                                         >
                                             {isBulkSelectMode ? <X size={12} /> : <CheckSquare size={12} />}
                                         </button>
+                                        {activeGroupChat.type === 'class_set' && predictionOrgSlug && (
+                                            <button
+                                                onClick={toggleLeaguePanel}
+                                                title="League Table"
+                                                style={{
+                                                    width: '24px', height: '24px', minWidth: '24px', minHeight: '24px',
+                                                    maxWidth: '24px', maxHeight: '24px',
+                                                    borderRadius: '4px',
+                                                    background: showLeaguePanel ? 'rgba(139, 92, 246, 0.25)' : 'rgba(139, 92, 246, 0.08)',
+                                                    border: `1px solid ${showLeaguePanel ? 'rgba(139, 92, 246, 0.4)' : 'rgba(139, 92, 246, 0.15)'}`,
+                                                    color: '#8B5CF6',
+                                                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                    cursor: 'pointer', padding: 0, transition: 'all 0.2s ease',
+                                                    boxSizing: 'border-box', lineHeight: 1,
+                                                }}
+                                                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(139, 92, 246, 0.25)'; }}
+                                                onMouseLeave={(e) => { e.currentTarget.style.background = showLeaguePanel ? 'rgba(139, 92, 246, 0.25)' : 'rgba(139, 92, 246, 0.08)'; }}
+                                            >
+                                                <Trophy size={14} />
+                                            </button>
+                                        )}
                                         {activeGroupChat.type === 'class_set' && (
                                             <button
                                                 onClick={() => setShowLeaveConfirm(true)}
                                                 title="Leave group"
                                                 style={{
-                                                    width: '20px', height: '20px', minWidth: '20px', minHeight: '20px',
-                                                    maxWidth: '20px', maxHeight: '20px',
+                                                    width: '24px', height: '24px', minWidth: '24px', minHeight: '24px',
+                                                    maxWidth: '24px', maxHeight: '24px',
                                                     borderRadius: '4px',
                                                     background: 'rgba(239, 68, 68, 0.08)',
                                                     border: '1px solid rgba(239, 68, 68, 0.15)',
@@ -1248,7 +1303,7 @@ export default function MessagesIndex({
                                                 onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.18)'; }}
                                                 onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.08)'; }}
                                             >
-                                                <LogOut size={11} />
+                                                <LogOut size={14} />
                                             </button>
                                         )}
                                     </div>
@@ -2604,6 +2659,174 @@ export default function MessagesIndex({
                                         No members found.
                                     </div>
                                 )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* League Table Panel */}
+                    {showLeaguePanel && activeGroupChat?.type === 'class_set' && predictionOrgSlug && (
+                        <div style={{
+                            width: '280px', minWidth: '280px',
+                            background: 'rgba(15, 23, 42, 0.95)',
+                            borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
+                            display: 'flex', flexDirection: 'column',
+                            animation: 'slideInRight 0.2s ease-out',
+                        }}>
+                            {/* Panel Header */}
+                            <div style={{
+                                padding: '1rem 1.25rem',
+                                borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <Trophy size={16} color="#8B5CF6" />
+                                    <span style={{ fontWeight: 600, color: '#fff', fontSize: '0.9rem' }}>
+                                        League Table
+                                    </span>
+                                    <span style={{
+                                        fontSize: '0.7rem', color: '#888',
+                                        background: 'rgba(255, 255, 255, 0.06)',
+                                        padding: '2px 6px', borderRadius: '4px',
+                                    }}>
+                                        {leagueStandings.length}
+                                    </span>
+                                </div>
+                                <button
+                                    onClick={() => setShowLeaguePanel(false)}
+                                    style={{
+                                        background: 'rgba(255, 255, 255, 0.05)', border: 'none',
+                                        borderRadius: '6px', padding: '4px', cursor: 'pointer',
+                                        color: '#888', display: 'flex', transition: 'all 0.15s ease',
+                                    }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'; e.currentTarget.style.color = '#ccc'; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'; e.currentTarget.style.color = '#888'; }}
+                                >
+                                    <X size={14} />
+                                </button>
+                            </div>
+
+                            {/* Standings List */}
+                            <div className="election-candidates-list" style={{
+                                flex: 1, overflowY: 'auto', padding: '0.5rem',
+                            }}>
+                                {leagueLoading ? (
+                                    <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+                                        <div className="spinner" style={{ width: '24px', height: '24px', borderWidth: '2px' }}></div>
+                                    </div>
+                                ) : leagueStandings.length > 0 ? (
+                                    <>
+                                        {/* Column Headers */}
+                                        <div style={{
+                                            display: 'flex', alignItems: 'center', gap: '8px',
+                                            padding: '6px 10px', borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+                                            marginBottom: '4px',
+                                        }}>
+                                            <span style={{ width: '20px', fontSize: '0.65rem', fontWeight: 600, color: '#666', textAlign: 'center' }}>#</span>
+                                            <span style={{ flex: 1, fontSize: '0.65rem', fontWeight: 600, color: '#666', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Player</span>
+                                            <span style={{ fontSize: '0.65rem', fontWeight: 600, color: '#666', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Pts</span>
+                                        </div>
+
+                                        {/* Standing Rows */}
+                                        {leagueStandings.map((standing) => {
+                                            const isCurrentUser = standing.user_id === currentUserId;
+                                            const rankColor = standing.rank === 1 ? '#FFD700' : standing.rank === 2 ? '#C0C0C0' : standing.rank === 3 ? '#CD7F32' : '#666';
+                                            return (
+                                                <div
+                                                    key={standing.user_id}
+                                                    style={{
+                                                        display: 'flex', alignItems: 'center', gap: '8px',
+                                                        padding: '6px 10px', borderRadius: '8px',
+                                                        transition: 'background 0.15s',
+                                                        cursor: !isCurrentUser ? 'pointer' : 'default',
+                                                        background: isCurrentUser ? 'rgba(139, 92, 246, 0.08)' : 'transparent',
+                                                        borderLeft: isCurrentUser ? '2px solid #8B5CF6' : '2px solid transparent',
+                                                    }}
+                                                    onClick={() => { if (!isCurrentUser) router.post(route('messages.start'), { user_id: standing.user_id }, { preserveState: false }); }}
+                                                    onMouseEnter={(e) => { e.currentTarget.style.background = isCurrentUser ? 'rgba(139, 92, 246, 0.12)' : 'rgba(255, 255, 255, 0.04)'; }}
+                                                    onMouseLeave={(e) => { e.currentTarget.style.background = isCurrentUser ? 'rgba(139, 92, 246, 0.08)' : 'transparent'; }}
+                                                >
+                                                    {/* Rank */}
+                                                    <span style={{
+                                                        width: '20px', textAlign: 'center',
+                                                        fontSize: '0.75rem', fontWeight: 700, color: rankColor,
+                                                    }}>
+                                                        {standing.rank}
+                                                    </span>
+
+                                                    {/* Avatar */}
+                                                    <div style={{
+                                                        width: '32px', height: '32px', borderRadius: '10px',
+                                                        background: 'rgba(139, 92, 246, 0.2)', display: 'flex',
+                                                        alignItems: 'center', justifyContent: 'center',
+                                                        fontSize: '0.75rem', fontWeight: 600, color: '#8B5CF6',
+                                                        overflow: 'hidden', flexShrink: 0,
+                                                    }}>
+                                                        {standing.profile_image_url
+                                                            ? <img src={standing.profile_image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                            : standing.first_name?.charAt(0)}
+                                                    </div>
+
+                                                    {/* Name & Stats */}
+                                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                                        <div style={{ fontSize: '0.82rem', color: '#e0e0e0', fontWeight: 500 }}>
+                                                            {standing.first_name} {standing.last_name}
+                                                            {isCurrentUser && <span style={{ fontSize: '0.7rem', color: '#8B5CF6', marginLeft: '4px' }}>(You)</span>}
+                                                        </div>
+                                                        <div style={{ fontSize: '0.7rem', color: '#666' }}>
+                                                            {standing.predictions_made} preds &middot; {standing.correct_predictions} correct
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Points Badge */}
+                                                    <span style={{
+                                                        fontSize: '0.75rem', fontWeight: 700,
+                                                        color: standing.rank <= 3 ? rankColor : '#a78bfa',
+                                                        background: standing.rank <= 3
+                                                            ? `${rankColor}18`
+                                                            : 'rgba(139, 92, 246, 0.12)',
+                                                        padding: '2px 8px', borderRadius: '6px', flexShrink: 0,
+                                                    }}>
+                                                        {standing.total_points}
+                                                    </span>
+                                                </div>
+                                            );
+                                        })}
+                                    </>
+                                ) : (
+                                    <div style={{ textAlign: 'center', padding: '2rem', color: '#555' }}>
+                                        <Trophy size={32} color="#444" style={{ marginBottom: '8px' }} />
+                                        <div style={{ fontSize: '0.85rem', fontWeight: 500, color: '#777', marginBottom: '4px' }}>
+                                            No standings yet
+                                        </div>
+                                        <div style={{ fontSize: '0.75rem', color: '#555' }}>
+                                            Make predictions to climb the league!
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Footer */}
+                            <div style={{
+                                padding: '0.75rem 1rem',
+                                borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+                            }}>
+                                <button
+                                    onClick={() => router.visit(`/organizations/${predictionOrgSlug}/predictions`)}
+                                    style={{
+                                        width: '100%', padding: '8px 12px',
+                                        background: 'rgba(139, 92, 246, 0.15)',
+                                        border: '1px solid rgba(139, 92, 246, 0.25)',
+                                        borderRadius: '8px', color: '#a78bfa',
+                                        fontSize: '0.8rem', fontWeight: 600,
+                                        cursor: 'pointer', transition: 'all 0.2s ease',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                                    }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(139, 92, 246, 0.25)'; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(139, 92, 246, 0.15)'; }}
+                                >
+                                    <Trophy size={14} />
+                                    View Full League
+                                </button>
                             </div>
                         </div>
                     )}
