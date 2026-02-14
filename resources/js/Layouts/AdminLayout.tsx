@@ -13,7 +13,21 @@ import {
     Bell,
     Search,
     Zap,
-    Command,
+    Building2,
+    Image,
+    AlertTriangle,
+    BookOpen,
+    Mail,
+    Heart,
+    MessageSquare,
+    GitBranch,
+    Vote,
+    Shield,
+    BellRing,
+    Server,
+    Globe,
+    UserCog,
+    ChevronRight,
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -39,6 +53,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         router.post(route('admin.logout'));
     };
 
+    const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+
+    const toggleSection = (key: string) => {
+        setExpandedSections(prev => ({ ...prev, [key]: !prev[key] }));
+    };
+
     const navigationItems = [
         {
             label: 'Dashboard',
@@ -51,26 +71,102 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             icon: Users,
             href: route('admin.users.index'),
             active: route().current('admin.users.*'),
-            badge: null,
+        },
+        {
+            label: 'Organizations',
+            icon: Building2,
+            href: route('admin.organizations.index'),
+            active: route().current('admin.organizations.*') || route().current('admin.orgCategories.*'),
+        },
+        {
+            label: 'Content',
+            icon: Image,
+            href: route('admin.content.posts'),
+            active: route().current('admin.content.*'),
         },
         {
             label: 'Reports',
-            icon: FileText,
-            href: '#',
-            active: false,
-            badge: '3',
+            icon: AlertTriangle,
+            href: route('admin.reports.index'),
+            active: route().current('admin.reports.*') || route().current('admin.blocks.*'),
+        },
+        {
+            label: 'Blog',
+            icon: BookOpen,
+            href: route('admin.blog.index'),
+            active: route().current('admin.blog.*'),
+        },
+        {
+            label: 'Contact',
+            icon: Mail,
+            href: route('admin.contact.index'),
+            active: route().current('admin.contact.*'),
+        },
+        {
+            label: 'Memorial',
+            icon: Heart,
+            href: route('admin.memorial.verifications'),
+            active: route().current('admin.memorial.*'),
+        },
+        {
+            label: 'Messaging',
+            icon: MessageSquare,
+            href: route('admin.messaging.conversations'),
+            active: route().current('admin.messaging.*'),
+        },
+        {
+            label: 'Family Trees',
+            icon: GitBranch,
+            href: route('admin.familyTrees.index'),
+            active: route().current('admin.familyTrees.*') || route().current('admin.connections.*'),
+        },
+        {
+            label: 'Groups',
+            icon: Vote,
+            href: route('admin.elections.index'),
+            active: route().current('admin.elections.*') || route().current('admin.removals.*'),
         },
         {
             label: 'Analytics',
             icon: BarChart3,
-            href: '#',
-            active: false,
+            href: route('admin.analytics.overview'),
+            active: route().current('admin.analytics.*'),
+        },
+        {
+            label: 'Security',
+            icon: Shield,
+            href: route('admin.security.dashboard'),
+            active: route().current('admin.security.*'),
+        },
+        {
+            label: 'Notifications',
+            icon: BellRing,
+            href: route('admin.notifications.broadcast'),
+            active: route().current('admin.notifications.*') || route().current('admin.emails.*'),
+        },
+        {
+            label: 'System',
+            icon: Server,
+            href: route('admin.system.health'),
+            active: route().current('admin.system.*'),
+        },
+        {
+            label: 'Public Pages',
+            icon: Globe,
+            href: route('admin.publicPages.index'),
+            active: route().current('admin.publicPages.*'),
         },
         {
             label: 'Settings',
             icon: Settings,
-            href: '#',
-            active: false,
+            href: route('admin.settings.index'),
+            active: route().current('admin.settings.*'),
+        },
+        {
+            label: 'Team',
+            icon: UserCog,
+            href: route('admin.team.index'),
+            active: route().current('admin.team.*'),
         },
     ];
 
