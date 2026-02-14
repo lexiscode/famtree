@@ -80,43 +80,41 @@ interface Props {
     election: Election;
 }
 
-const THEME = {
-    primary: '#0d6efd',
-    success: '#198754',
-    danger: '#dc3545',
-    warning: '#ffc107',
-    info: '#0dcaf0',
-    secondary: '#6c757d',
-};
+function getStatusBadgeClass(status: string): string {
+    switch (status) {
+        case 'active': return 'ap-badge ap-badge-success';
+        case 'completed': return 'ap-badge ap-badge-info';
+        case 'cancelled': return 'ap-badge ap-badge-danger';
+        case 'tiebreaker': return 'ap-badge ap-badge-warning';
+        default: return 'ap-badge ap-badge-neutral';
+    }
+}
 
-const statusColors: Record<string, { bg: string; border: string; text: string }> = {
-    active: { bg: '#e8f5e9', border: '#198754', text: '#155724' },
-    completed: { bg: '#e0f7fa', border: '#0dcaf0', text: '#0c5460' },
-    cancelled: { bg: '#ffebee', border: '#dc3545', text: '#842029' },
-    tiebreaker: { bg: '#fff8e1', border: '#ffc107', text: '#856404' },
-};
+function getVoteBadgeClass(vote: string): string {
+    switch (vote) {
+        case 'confirm': return 'ap-badge ap-badge-success';
+        case 'reject': return 'ap-badge ap-badge-danger';
+        default: return 'ap-badge ap-badge-neutral';
+    }
+}
 
 function UserAvatar({ imageUrl, name }: { imageUrl: string | null; name: string }) {
     const [imageError, setImageError] = useState(false);
 
     if (imageUrl && !imageError) {
         return (
-            <img
-                src={imageUrl}
-                alt={name}
-                style={{ width: '40px', height: '40px', borderRadius: '10px', objectFit: 'cover', display: 'block' }}
-                onError={() => setImageError(true)}
-            />
+            <div className="ap-avatar ap-avatar-lg ap-avatar-indigo">
+                <img
+                    src={imageUrl}
+                    alt={name}
+                    onError={() => setImageError(true)}
+                />
+            </div>
         );
     }
 
     return (
-        <div style={{
-            width: '40px', height: '40px', borderRadius: '10px',
-            background: 'linear-gradient(135deg, #0052E8 0%, #0040B8 100%)',
-            color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontWeight: 700, fontSize: '0.9rem',
-        }}>
+        <div className="ap-avatar ap-avatar-lg ap-avatar-indigo">
             {name.charAt(0).toUpperCase()}
         </div>
     );
@@ -128,19 +126,6 @@ export default function ElectionDetail({ election }: Props) {
     const [extendHours, setExtendHours] = useState(24);
 
     const sortedCandidates = [...election.candidates].sort((a, b) => b.votes_count - a.votes_count);
-
-    const getStatusBadge = (status: string) => {
-        const config = statusColors[status] || { bg: '#f3f4f6', border: '#6c757d', text: '#6c757d' };
-        return (
-            <span style={{
-                display: 'inline-block', paddingLeft: '0.6rem', paddingRight: '0.6rem', paddingTop: '0.45rem', paddingBottom: '0.45rem',
-                borderRadius: '8px', fontSize: '0.82rem', fontWeight: 700, backgroundColor: config.bg, color: config.text,
-                border: `1.5px solid ${config.border}`, textTransform: 'capitalize',
-            }}>
-                {status.replace(/_/g, ' ')}
-            </span>
-        );
-    };
 
     const handleCancel = () => {
         if (confirm('Are you sure you want to cancel this election? This action cannot be undone.')) {
@@ -155,124 +140,98 @@ export default function ElectionDetail({ election }: Props) {
         }
     };
 
-    const getRankIndicator = (index: number) => {
-        if (index === 0) return { icon: Trophy, color: '#FFD700', label: '1st' };
-        if (index === 1) return { icon: Award, color: '#C0C0C0', label: '2nd' };
-        if (index === 2) return { icon: Award, color: '#CD7F32', label: '3rd' };
-        return { icon: User, color: THEME.secondary, label: `${index + 1}th` };
-    };
-
     return (
         <AdminLayout>
             <div>
                 {/* Flash Messages */}
-                {(flash?.success || flash?.error) && (
-                    <div style={{
-                        marginBottom: '2rem', padding: '1.25rem 1.5rem', borderRadius: '12px',
-                        background: flash?.error ? 'linear-gradient(135deg, rgba(220, 38, 38, 0.1) 0%, rgba(220, 38, 38, 0.05) 100%)' : 'linear-gradient(135deg, rgba(22, 163, 74, 0.1) 0%, rgba(22, 163, 74, 0.05) 100%)',
-                        border: `1px solid ${flash?.error ? 'rgba(220, 38, 38, 0.3)' : 'rgba(22, 163, 74, 0.3)'}`,
-                        color: flash?.error ? '#DC2626' : '#16A34A', fontSize: '0.95rem', fontWeight: 500,
-                    }}>
-                        {flash?.success || flash?.error}
-                    </div>
+                {flash?.success && (
+                    <div className="ap-flash ap-flash-success">{flash.success}</div>
+                )}
+                {flash?.error && (
+                    <div className="ap-flash ap-flash-error">{flash.error}</div>
                 )}
 
+                {/* Back Button */}
+                <button
+                    className="ap-back-btn"
+                    onClick={() => router.get(route('admin.elections.index'))}
+                >
+                    <ArrowLeft size={16} /> Back to Elections
+                </button>
+
                 {/* Header */}
-                <div style={{ marginBottom: '2.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-                        <button
-                            onClick={() => router.get(route('admin.elections.index'))}
-                            style={{
-                                background: '#E7F5FF', border: '2px solid #cfe2ff', padding: '0.65rem', borderRadius: '12px',
-                                cursor: 'pointer', display: 'flex', alignItems: 'center', color: THEME.primary,
-                                transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)', boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
-                            }}
-                            onMouseEnter={(e) => { e.currentTarget.style.background = THEME.primary; e.currentTarget.style.color = '#FFFFFF'; e.currentTarget.style.borderColor = THEME.primary; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.background = '#E7F5FF'; e.currentTarget.style.color = THEME.primary; e.currentTarget.style.borderColor = '#cfe2ff'; }}
-                        >
-                            <ArrowLeft size={20} strokeWidth={2.5} />
-                        </button>
+                <div className="ap-page-header">
+                    <div className="ap-page-header-row">
                         <div>
-                            <h1 style={{ fontSize: '2.25rem', fontWeight: 800, color: '#0a0e27', margin: 0, letterSpacing: '-0.5px' }}>Election Details</h1>
-                            <p style={{ fontSize: '0.98rem', color: '#6B7280', margin: 0, marginTop: '0.35rem', fontWeight: 500 }}>Review election information, candidates, and votes</p>
+                            <h1 className="ap-page-title">Election Details</h1>
+                            <p className="ap-page-subtitle">Review election information, candidates, and votes</p>
                         </div>
+                        {election.is_active && (
+                            <div className="ap-page-header-actions">
+                                <button
+                                    className="ap-btn ap-btn-danger"
+                                    onClick={handleCancel}
+                                >
+                                    <XCircle size={16} /> Cancel Election
+                                </button>
+                            </div>
+                        )}
                     </div>
-                    {election.is_active && (
-                        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                            <button
-                                onClick={handleCancel}
-                                style={{
-                                    padding: '0.75rem 1.5rem', background: '#ffebee', color: THEME.danger,
-                                    border: '2px solid #ffcdd2', borderRadius: '12px', fontWeight: 700, cursor: 'pointer',
-                                    transition: 'all 0.3s', fontSize: '0.92rem', display: 'flex', alignItems: 'center', gap: '0.5rem',
-                                }}
-                                onMouseEnter={(e) => { e.currentTarget.style.background = THEME.danger; e.currentTarget.style.color = '#FFFFFF'; e.currentTarget.style.borderColor = THEME.danger; }}
-                                onMouseLeave={(e) => { e.currentTarget.style.background = '#ffebee'; e.currentTarget.style.color = THEME.danger; e.currentTarget.style.borderColor = '#ffcdd2'; }}
-                            >
-                                <XCircle size={16} /> Cancel Election
-                            </button>
-                        </div>
-                    )}
                 </div>
 
                 {/* Election Info Card */}
-                <div style={{ background: '#FFFFFF', borderRadius: '20px', border: '2px solid #E5E7EB', padding: '2.5rem', marginBottom: '2.5rem', boxShadow: '0 8px 28px rgba(0, 0, 0, 0.08)' }}>
-                    <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0a0e27', margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <Vote size={20} color={THEME.primary} /> Election Information
-                    </h3>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
-                        <div style={{ padding: '1.25rem', background: '#F9FAFB', borderRadius: '14px', border: '1.5px solid #E5E7EB' }}>
-                            <p style={{ fontSize: '0.8rem', color: '#6c757d', margin: 0, marginBottom: '0.5rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Type</p>
-                            <span style={{
-                                display: 'inline-block', paddingLeft: '0.6rem', paddingRight: '0.6rem', paddingTop: '0.45rem', paddingBottom: '0.45rem',
-                                borderRadius: '8px', fontSize: '0.88rem', fontWeight: 700, backgroundColor: '#e7f1ff', color: '#084298', border: '1.5px solid #cfe2ff', textTransform: 'capitalize',
-                            }}>
-                                {election.type.replace(/_/g, ' ')}
-                            </span>
+                <div className="ap-card ap-card-lg ap-mb-xl">
+                    <div className="ap-card-header">
+                        <h3 className="ap-card-title ap-flex ap-items-center ap-gap-sm">
+                            <Vote size={18} className="ap-icon-primary" /> Election Information
+                        </h3>
+                    </div>
+                    <div className="ap-grid-3">
+                        <div className="ap-detail-row ap-flex-col">
+                            <span className="ap-detail-label">Type</span>
+                            <span className="ap-badge ap-badge-primary ap-capitalize">{election.type.replace(/_/g, ' ')}</span>
                         </div>
-                        <div style={{ padding: '1.25rem', background: '#F9FAFB', borderRadius: '14px', border: '1.5px solid #E5E7EB' }}>
-                            <p style={{ fontSize: '0.8rem', color: '#6c757d', margin: 0, marginBottom: '0.5rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Status</p>
-                            {getStatusBadge(election.status)}
+                        <div className="ap-detail-row ap-flex-col">
+                            <span className="ap-detail-label">Status</span>
+                            <span className={getStatusBadgeClass(election.status) + ' ap-capitalize'}>{election.status.replace(/_/g, ' ')}</span>
                         </div>
-                        <div style={{ padding: '1.25rem', background: '#F9FAFB', borderRadius: '14px', border: '1.5px solid #E5E7EB' }}>
-                            <p style={{ fontSize: '0.8rem', color: '#6c757d', margin: 0, marginBottom: '0.5rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Positions to Fill</p>
-                            <p style={{ fontSize: '1.5rem', fontWeight: 800, color: THEME.primary, margin: 0 }}>{election.positions_to_fill}</p>
+                        <div className="ap-detail-row ap-flex-col">
+                            <span className="ap-detail-label">Positions to Fill</span>
+                            <span className="ap-stat-value">{election.positions_to_fill}</span>
                         </div>
-                        <div style={{ padding: '1.25rem', background: '#F9FAFB', borderRadius: '14px', border: '1.5px solid #E5E7EB' }}>
-                            <p style={{ fontSize: '0.8rem', color: '#6c757d', margin: 0, marginBottom: '0.5rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Class Set</p>
-                            <p style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0a0e27', margin: 0 }}>
-                                {election.class_set?.name || 'N/A'}
-                            </p>
+                        <div className="ap-detail-row ap-flex-col">
+                            <span className="ap-detail-label">Class Set</span>
+                            <span className="ap-detail-value">{election.class_set?.name || 'N/A'}</span>
                             {election.class_set?.department && (
-                                <p style={{ fontSize: '0.82rem', color: '#9CA3AF', margin: 0, marginTop: '0.25rem', fontWeight: 500 }}>
+                                <span className="ap-text-sm ap-text-secondary">
                                     {election.class_set.department.name}{election.class_set.year ? ` - ${election.class_set.year}` : ''}
-                                </p>
+                                </span>
                             )}
                         </div>
-                        <div style={{ padding: '1.25rem', background: '#F9FAFB', borderRadius: '14px', border: '1.5px solid #E5E7EB' }}>
-                            <p style={{ fontSize: '0.8rem', color: '#6c757d', margin: 0, marginBottom: '0.5rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Started At</p>
-                            <p style={{ fontSize: '0.95rem', fontWeight: 600, color: '#0a0e27', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <Calendar size={14} color={THEME.secondary} />
+                        <div className="ap-detail-row ap-flex-col">
+                            <span className="ap-detail-label">Started At</span>
+                            <span className="ap-detail-value ap-flex ap-items-center ap-gap-xs">
+                                <Calendar size={14} className="ap-text-secondary" />
                                 {election.started_at_formatted || 'N/A'}
-                            </p>
+                            </span>
                         </div>
-                        <div style={{ padding: '1.25rem', background: '#F9FAFB', borderRadius: '14px', border: '1.5px solid #E5E7EB' }}>
-                            <p style={{ fontSize: '0.8rem', color: '#6c757d', margin: 0, marginBottom: '0.5rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Ends At</p>
-                            <p style={{ fontSize: '0.95rem', fontWeight: 600, color: '#0a0e27', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <Clock size={14} color={election.is_active ? THEME.warning : THEME.secondary} />
+                        <div className="ap-detail-row ap-flex-col">
+                            <span className="ap-detail-label">Ends At</span>
+                            <span className="ap-detail-value ap-flex ap-items-center ap-gap-xs">
+                                <Clock size={14} className={election.is_active ? 'ap-icon-warning' : 'ap-text-secondary'} />
                                 {election.ends_at_formatted || 'N/A'}
-                            </p>
+                            </span>
                         </div>
-                        <div style={{ padding: '1.25rem', background: '#F9FAFB', borderRadius: '14px', border: '1.5px solid #E5E7EB' }}>
-                            <p style={{ fontSize: '0.8rem', color: '#6c757d', margin: 0, marginBottom: '0.5rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Created At</p>
-                            <p style={{ fontSize: '0.95rem', fontWeight: 600, color: '#0a0e27', margin: 0 }}>{election.created_at_formatted}</p>
+                        <div className="ap-detail-row ap-flex-col">
+                            <span className="ap-detail-label">Created At</span>
+                            <span className="ap-detail-value">{election.created_at_formatted}</span>
                         </div>
                         {election.parent_election && (
-                            <div style={{ padding: '1.25rem', background: '#fff8e1', borderRadius: '14px', border: '1.5px solid #ffc107' }}>
-                                <p style={{ fontSize: '0.8rem', color: '#856404', margin: 0, marginBottom: '0.5rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Parent Election</p>
-                                <p style={{ fontSize: '0.95rem', fontWeight: 700, color: '#856404', margin: 0 }}>
+                            <div className="ap-detail-row ap-flex-col">
+                                <span className="ap-detail-label">Parent Election</span>
+                                <span className="ap-detail-value">
                                     #{election.parent_election.id} - {election.parent_election.type.replace(/_/g, ' ')} ({election.parent_election.status})
-                                </p>
+                                </span>
                             </div>
                         )}
                     </div>
@@ -280,35 +239,26 @@ export default function ElectionDetail({ election }: Props) {
 
                 {/* Extend Election (Active only) */}
                 {election.is_active && (
-                    <div style={{ background: '#FFFFFF', borderRadius: '20px', border: '2px solid #E5E7EB', padding: '2rem', marginBottom: '2.5rem', boxShadow: '0 8px 28px rgba(0, 0, 0, 0.08)' }}>
-                        <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0a0e27', margin: 0, marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                            <Timer size={20} color={THEME.warning} /> Extend Election
-                        </h3>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <label style={{ fontSize: '0.92rem', fontWeight: 600, color: '#4B5563' }}>Hours:</label>
+                    <div className="ap-card ap-card-lg ap-mb-xl">
+                        <div className="ap-card-header">
+                            <h3 className="ap-card-title ap-flex ap-items-center ap-gap-sm">
+                                <Timer size={18} className="ap-icon-warning" /> Extend Election
+                            </h3>
+                        </div>
+                        <div className="ap-flex ap-items-center ap-gap-lg ap-flex-wrap">
+                            <div className="ap-flex ap-items-center ap-gap-sm">
+                                <label className="ap-form-label ap-mb-0">Hours:</label>
                                 <input
                                     type="number"
                                     min={1}
                                     value={extendHours}
                                     onChange={(e) => setExtendHours(Math.max(1, parseInt(e.target.value) || 1))}
-                                    style={{
-                                        width: '100px', padding: '0.65rem 1rem', border: '2px solid #E5E7EB', borderRadius: '10px',
-                                        fontSize: '0.95rem', color: '#0a0e27', fontWeight: 600, backgroundColor: '#FFFFFF',
-                                    }}
-                                    onFocus={(e) => { e.currentTarget.style.borderColor = THEME.primary; e.currentTarget.style.boxShadow = `0 0 0 3px ${THEME.primary}15`; }}
-                                    onBlur={(e) => { e.currentTarget.style.borderColor = '#E5E7EB'; e.currentTarget.style.boxShadow = 'none'; }}
+                                    className="ap-form-input ap-w-input-sm"
                                 />
                             </div>
                             <button
+                                className="ap-btn ap-btn-warning"
                                 onClick={handleExtend}
-                                style={{
-                                    padding: '0.75rem 1.5rem', background: '#fff8e1', color: '#856404',
-                                    border: '2px solid #ffc107', borderRadius: '12px', fontWeight: 700, cursor: 'pointer',
-                                    transition: 'all 0.3s', fontSize: '0.92rem', display: 'flex', alignItems: 'center', gap: '0.5rem',
-                                }}
-                                onMouseEnter={(e) => { e.currentTarget.style.background = THEME.warning; e.currentTarget.style.color = '#000'; e.currentTarget.style.borderColor = THEME.warning; }}
-                                onMouseLeave={(e) => { e.currentTarget.style.background = '#fff8e1'; e.currentTarget.style.color = '#856404'; e.currentTarget.style.borderColor = '#ffc107'; }}
                             >
                                 <Timer size={16} /> Extend Election
                             </button>
@@ -317,116 +267,96 @@ export default function ElectionDetail({ election }: Props) {
                 )}
 
                 {/* Candidates Table */}
-                <div style={{ background: '#FFFFFF', borderRadius: '20px', border: '2px solid #E5E7EB', padding: '2rem', marginBottom: '2.5rem', boxShadow: '0 8px 28px rgba(0, 0, 0, 0.08)' }}>
-                    <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0a0e27', margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <Users size={20} color={THEME.success} /> Candidates ({election.candidates_count})
-                    </h3>
+                <div className="ap-table-wrap ap-mb-xl">
+                    <div className="ap-card-header">
+                        <h3 className="ap-card-title ap-flex ap-items-center ap-gap-sm">
+                            <Users size={18} className="ap-icon-success" /> Candidates ({election.candidates_count})
+                        </h3>
+                    </div>
                     {sortedCandidates.length > 0 ? (
-                        <div style={{ overflowX: 'auto' }}>
-                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                        <div className="ap-table-scroll">
+                            <table className="ap-table">
                                 <thead>
-                                    <tr style={{ background: 'linear-gradient(135deg, #F9FAFB 0%, #F3F4F6 100%)', borderBottom: '2px solid #E5E7EB' }}>
-                                        {['Rank', 'Name', 'Username', 'Email', 'Votes'].map((header) => (
-                                            <th key={header} style={{ padding: '1.1rem 1rem', textAlign: 'left', fontSize: '0.85rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                                {header}
-                                            </th>
-                                        ))}
+                                    <tr>
+                                        <th>Rank</th>
+                                        <th>Name</th>
+                                        <th>Username</th>
+                                        <th>Email</th>
+                                        <th>Votes</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {sortedCandidates.map((candidate, index) => {
-                                        const rank = getRankIndicator(index);
-                                        const RankIcon = rank.icon;
-                                        return (
-                                            <tr
-                                                key={candidate.id}
-                                                style={{ borderBottom: '1.5px solid #E5E7EB', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', background: index === 0 ? '#FFFBEB' : '#FFFFFF' }}
-                                                onMouseEnter={(e) => { e.currentTarget.style.background = index === 0 ? '#FFF3CD' : '#F9FAFB'; }}
-                                                onMouseLeave={(e) => { e.currentTarget.style.background = index === 0 ? '#FFFBEB' : '#FFFFFF'; }}
-                                            >
-                                                <td style={{ padding: '1.2rem 1rem' }}>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                        <RankIcon size={18} color={rank.color} strokeWidth={2} />
-                                                        <span style={{ fontSize: '0.92rem', fontWeight: 800, color: rank.color }}>{rank.label}</span>
-                                                    </div>
-                                                </td>
-                                                <td style={{ padding: '1.2rem 1rem' }}>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-                                                        <UserAvatar imageUrl={candidate.user?.profile_image_url || null} name={candidate.user?.full_name || 'Unknown'} />
-                                                        <p style={{ fontSize: '0.96rem', fontWeight: 700, color: '#0a0e27', margin: 0 }}>
-                                                            {candidate.user?.full_name || 'Unknown User'}
-                                                        </p>
-                                                    </div>
-                                                </td>
-                                                <td style={{ padding: '1.2rem 1rem', fontSize: '0.92rem', color: '#9CA3AF', fontWeight: 500 }}>
-                                                    @{candidate.user?.username || 'N/A'}
-                                                </td>
-                                                <td style={{ padding: '1.2rem 1rem', fontSize: '0.92rem', color: '#6B7280', fontWeight: 500 }}>
-                                                    {candidate.user?.email || 'N/A'}
-                                                </td>
-                                                <td style={{ padding: '1.2rem 1rem' }}>
-                                                    <span style={{
-                                                        display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-                                                        padding: '0.45rem 0.75rem', borderRadius: '8px', fontSize: '0.88rem', fontWeight: 800,
-                                                        backgroundColor: index === 0 ? '#e8f5e9' : '#f3f4f6',
-                                                        color: index === 0 ? THEME.success : '#0a0e27',
-                                                        border: `1.5px solid ${index === 0 ? '#a5d6a7' : '#E5E7EB'}`,
-                                                    }}>
-                                                        <Vote size={14} /> {candidate.votes_count}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
+                                    {sortedCandidates.map((candidate, index) => (
+                                        <tr key={candidate.id}>
+                                            <td>
+                                                <div className="ap-flex ap-items-center ap-gap-xs">
+                                                    {index === 0 && <Trophy size={16} className="ap-icon-warning" />}
+                                                    {index === 1 && <Award size={16} className="ap-text-secondary" />}
+                                                    {index === 2 && <Award size={16} className="ap-icon-warning" />}
+                                                    {index > 2 && <User size={16} className="ap-text-secondary" />}
+                                                    <span className="ap-font-semibold">{index + 1}{index === 0 ? 'st' : index === 1 ? 'nd' : index === 2 ? 'rd' : 'th'}</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div className="ap-user-cell">
+                                                    <UserAvatar imageUrl={candidate.user?.profile_image_url || null} name={candidate.user?.full_name || 'Unknown'} />
+                                                    <p className="ap-user-cell-name">
+                                                        {candidate.user?.full_name || 'Unknown User'}
+                                                    </p>
+                                                </div>
+                                            </td>
+                                            <td className="secondary">@{candidate.user?.username || 'N/A'}</td>
+                                            <td className="secondary">{candidate.user?.email || 'N/A'}</td>
+                                            <td>
+                                                <span className={index === 0 ? 'ap-badge ap-badge-success' : 'ap-badge ap-badge-neutral'}>
+                                                    <Vote size={14} /> {candidate.votes_count}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
                                 </tbody>
                             </table>
                         </div>
                     ) : (
-                        <div style={{ padding: '2rem', textAlign: 'center' }}>
-                            <Users size={40} color="#D1D5DB" strokeWidth={1.5} style={{ margin: '0 auto 1rem', display: 'block' }} />
-                            <p style={{ fontSize: '0.95rem', color: '#888', margin: 0 }}>No candidates registered for this election</p>
+                        <div className="ap-empty">
+                            <div className="ap-empty-icon">
+                                <Users size={24} />
+                            </div>
+                            <p className="ap-empty-title">No candidates</p>
+                            <p className="ap-empty-text">No candidates registered for this election</p>
                         </div>
                     )}
                 </div>
 
                 {/* Votes Table */}
-                <div style={{ background: '#FFFFFF', borderRadius: '20px', border: '2px solid #E5E7EB', padding: '2rem', boxShadow: '0 8px 28px rgba(0, 0, 0, 0.08)' }}>
-                    <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0a0e27', margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <Vote size={20} color={THEME.info} /> Votes ({election.votes_count})
-                    </h3>
+                <div className="ap-table-wrap">
+                    <div className="ap-card-header">
+                        <h3 className="ap-card-title ap-flex ap-items-center ap-gap-sm">
+                            <Vote size={18} className="ap-icon-info" /> Votes ({election.votes_count})
+                        </h3>
+                    </div>
                     {election.votes.length > 0 ? (
-                        <div style={{ overflowX: 'auto' }}>
-                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                        <div className="ap-table-scroll">
+                            <table className="ap-table">
                                 <thead>
-                                    <tr style={{ background: 'linear-gradient(135deg, #F9FAFB 0%, #F3F4F6 100%)', borderBottom: '2px solid #E5E7EB' }}>
-                                        {['Voter', 'Voted For', 'Date'].map((header) => (
-                                            <th key={header} style={{ padding: '1.1rem 1rem', textAlign: 'left', fontSize: '0.85rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                                {header}
-                                            </th>
-                                        ))}
+                                    <tr>
+                                        <th>Voter</th>
+                                        <th>Voted For</th>
+                                        <th>Date</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {election.votes.map((vote) => (
-                                        <tr
-                                            key={vote.id}
-                                            style={{ borderBottom: '1.5px solid #E5E7EB', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', background: '#FFFFFF' }}
-                                            onMouseEnter={(e) => { e.currentTarget.style.background = '#F9FAFB'; }}
-                                            onMouseLeave={(e) => { e.currentTarget.style.background = '#FFFFFF'; }}
-                                        >
-                                            <td style={{ padding: '1.2rem 1rem' }}>
-                                                <div>
-                                                    <p style={{ fontSize: '0.96rem', fontWeight: 700, color: '#0a0e27', margin: 0 }}>{vote.voter?.full_name || 'Unknown'}</p>
-                                                    <p style={{ fontSize: '0.82rem', color: '#9CA3AF', margin: 0, marginTop: '0.25rem', fontWeight: 500 }}>@{vote.voter?.username || 'N/A'}</p>
-                                                </div>
+                                        <tr key={vote.id}>
+                                            <td>
+                                                <p className="ap-user-cell-name">{vote.voter?.full_name || 'Unknown'}</p>
+                                                <p className="ap-user-cell-sub">@{vote.voter?.username || 'N/A'}</p>
                                             </td>
-                                            <td style={{ padding: '1.2rem 1rem' }}>
-                                                <div>
-                                                    <p style={{ fontSize: '0.96rem', fontWeight: 700, color: '#0a0e27', margin: 0 }}>{vote.candidate?.full_name || 'Unknown'}</p>
-                                                    <p style={{ fontSize: '0.82rem', color: '#9CA3AF', margin: 0, marginTop: '0.25rem', fontWeight: 500 }}>@{vote.candidate?.username || 'N/A'}</p>
-                                                </div>
+                                            <td>
+                                                <p className="ap-user-cell-name">{vote.candidate?.full_name || 'Unknown'}</p>
+                                                <p className="ap-user-cell-sub">@{vote.candidate?.username || 'N/A'}</p>
                                             </td>
-                                            <td style={{ padding: '1.2rem 1rem', fontSize: '0.92rem', color: '#6B7280', fontWeight: 500 }}>
+                                            <td className="secondary">
                                                 {vote.created_at ? new Date(vote.created_at).toLocaleDateString() + ' ' + new Date(vote.created_at).toLocaleTimeString() : 'N/A'}
                                             </td>
                                         </tr>
@@ -435,9 +365,12 @@ export default function ElectionDetail({ election }: Props) {
                             </table>
                         </div>
                     ) : (
-                        <div style={{ padding: '2rem', textAlign: 'center' }}>
-                            <Vote size={40} color="#D1D5DB" strokeWidth={1.5} style={{ margin: '0 auto 1rem', display: 'block' }} />
-                            <p style={{ fontSize: '0.95rem', color: '#888', margin: 0 }}>No votes have been cast yet</p>
+                        <div className="ap-empty">
+                            <div className="ap-empty-icon">
+                                <Vote size={24} />
+                            </div>
+                            <p className="ap-empty-title">No votes</p>
+                            <p className="ap-empty-text">No votes have been cast yet</p>
                         </div>
                     )}
                 </div>

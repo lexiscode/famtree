@@ -13,6 +13,7 @@ import '../css/notifications.css';
 import '../css/stories.css';
 import '../css/search.css';
 import '../css/settings.css';
+import '../css/admin-panel.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 
