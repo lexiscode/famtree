@@ -317,6 +317,24 @@ export default function OrganizationShow({ organization, facultiesCount, galleri
                         </div>
                     )}
 
+                    {/* Prediction League CTA (Football Clubs Only) */}
+                    {isFootballClub && (
+                        <div className="find-group-section" style={{ background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(59, 130, 246, 0.06))', borderColor: 'rgba(139, 92, 246, 0.2)' }}>
+                            <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <Trophy size={20} color="#FFD700" /> Prediction League
+                            </h3>
+                            <p>Predict match outcomes, earn points, and compete with fellow fans on the leaderboard.</p>
+                            <button
+                                className="btn-find-group"
+                                onClick={() => router.visit(`/organizations/${organization.slug}/predictions`)}
+                                style={{ background: 'linear-gradient(135deg, #8B5CF6, #3B82F6)' }}
+                            >
+                                Enter Prediction League
+                                <ChevronRight size={20} />
+                            </button>
+                        </div>
+                    )}
+
                     {/* Find Your Group CTA */}
                     <div className="find-group-section">
                         <h3>Ready to Connect?</h3>

@@ -28,6 +28,7 @@ use App\Http\Controllers\AdminControllers\EmailController;
 use App\Http\Controllers\AdminControllers\SystemController;
 use App\Http\Controllers\AdminControllers\PublicPageController;
 use App\Http\Controllers\AdminControllers\TeamController;
+use App\Http\Controllers\AdminControllers\PredictionController;
 
 
 Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], function () {
@@ -216,6 +217,24 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
         Route::put('/public-pages/{id}', [PublicPageController::class, 'update'])->name('publicPages.update');
         Route::delete('/public-pages/{id}', [PublicPageController::class, 'destroy'])->name('publicPages.destroy');
         Route::post('/public-pages/{id}/publish', [PublicPageController::class, 'publish'])->name('publicPages.publish');
+
+        // Phase 16: Prediction League Management
+        Route::get('/predictions', [PredictionController::class, 'index'])->name('predictions.index');
+        Route::get('/predictions/create', [PredictionController::class, 'create'])->name('predictions.create');
+        Route::post('/predictions/seasons', [PredictionController::class, 'storeSeason'])->name('predictions.storeSeason');
+        Route::get('/predictions/seasons/{id}', [PredictionController::class, 'show'])->name('predictions.show');
+        Route::get('/predictions/seasons/{id}/edit', [PredictionController::class, 'edit'])->name('predictions.edit');
+        Route::put('/predictions/seasons/{id}', [PredictionController::class, 'updateSeason'])->name('predictions.updateSeason');
+        Route::post('/predictions/seasons/{id}/activate', [PredictionController::class, 'activateSeason'])->name('predictions.activateSeason');
+        Route::post('/predictions/seasons/{id}/complete', [PredictionController::class, 'completeSeason'])->name('predictions.completeSeason');
+        Route::post('/predictions/seasons/{id}/gameweeks', [PredictionController::class, 'storeGameweek'])->name('predictions.storeGameweek');
+        Route::put('/predictions/gameweeks/{id}', [PredictionController::class, 'updateGameweek'])->name('predictions.updateGameweek');
+        Route::post('/predictions/seasons/{id}/fixtures', [PredictionController::class, 'storeFixture'])->name('predictions.storeFixture');
+        Route::put('/predictions/fixtures/{id}', [PredictionController::class, 'updateFixture'])->name('predictions.updateFixture');
+        Route::post('/predictions/fixtures/{id}/result', [PredictionController::class, 'enterResult'])->name('predictions.enterResult');
+        Route::post('/predictions/fixtures/{id}/cancel', [PredictionController::class, 'cancelFixture'])->name('predictions.cancelFixture');
+        Route::get('/predictions/seasons/{id}/standings', [PredictionController::class, 'standings'])->name('predictions.standings');
+        Route::get('/predictions/seasons/{id}/badges', [PredictionController::class, 'badges'])->name('predictions.badges');
 
         // Phase 15: Admin Team & Role Management
         Route::get('/team', [TeamController::class, 'index'])->name('team.index');

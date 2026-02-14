@@ -266,6 +266,12 @@ export default function MessagesIndex({
     const [electionExpanded, setElectionExpanded] = useState(true);
     const [removalExpanded, setRemovalExpanded] = useState(true);
 
+    // Prediction banner state
+    const [predictionFixtures, setPredictionFixtures] = useState<any[]>([]);
+    const [predictionOrgSlug, setPredictionOrgSlug] = useState<string>('');
+    const [predictionBannerExpanded, setPredictionBannerExpanded] = useState(true);
+    const [predictionSubmitting, setPredictionSubmitting] = useState(false);
+
     // Removal state
     const [removalData, setRemovalData] = useState<RemovalData | null>(null);
     const [isRemovalAction, setIsRemovalAction] = useState(false);
@@ -509,6 +515,21 @@ export default function MessagesIndex({
             setRemovalData(null);
             setIsMuted(false);
         }
+
+        // Fetch prediction fixtures for football org groups
+        try {
+            const predRes = await axios.get(route('class-sets.predictions.open', groupUuid));
+            if (predRes.data.fixtures && predRes.data.fixtures.length > 0) {
+                setPredictionFixtures(predRes.data.fixtures);
+                setPredictionOrgSlug(predRes.data.organizationSlug || '');
+            } else {
+                setPredictionFixtures([]);
+                setPredictionOrgSlug('');
+            }
+        } catch {
+            setPredictionFixtures([]);
+            setPredictionOrgSlug('');
+        }
     }, []);
 
     // Load group admin data when class_set group is selected
@@ -519,6 +540,8 @@ export default function MessagesIndex({
             setElectionData(null);
             setRemovalData(null);
             setIsMuted(false);
+            setPredictionFixtures([]);
+            setPredictionOrgSlug('');
         }
     }, [activeGroupChat, fetchGroupAdminData]);
 
@@ -1517,6 +1540,174 @@ export default function MessagesIndex({
                                                         <Check size={14} /> You have voted
                                                     </p>
                                                 )}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* Prediction Banner (Collapsible) */}
+                                {predictionFixtures.length > 0 && activeGroupChat?.type === 'class_set' && (
+                                    <div style={{
+                                        background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(59, 130, 246, 0.08))',
+                                        borderBottom: '1px solid rgba(139, 92, 246, 0.2)',
+                                    }}>
+                                        {/* Clickable Header */}
+                                        <div
+                                            onClick={() => setPredictionBannerExpanded(!predictionBannerExpanded)}
+                                            style={{
+                                                display: 'flex', alignItems: 'center', gap: '8px',
+                                                padding: '10px 16px',
+                                                cursor: 'pointer',
+                                                transition: 'background 0.15s ease',
+                                            }}
+                                            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)'; }}
+                                            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                                        >
+                                            <span style={{ fontSize: '14px' }}>🏆</span>
+                                            <span style={{ fontWeight: 600, color: '#ffffff', fontSize: '0.85rem' }}>
+                                                Predictions Open
+                                            </span>
+                                            <span style={{
+                                                fontSize: '0.65rem', fontWeight: 600, color: '#8B5CF6',
+                                                background: 'rgba(139, 92, 246, 0.12)',
+                                                padding: '2px 6px', borderRadius: '4px',
+                                            }}>
+                                                {predictionFixtures.length}
+                                            </span>
+                                            <span style={{ marginLeft: 'auto', fontSize: '0.72rem', color: '#888' }}>
+                                                {predictionOrgSlug && (
+                                                    <span
+                                                        onClick={(e) => { e.stopPropagation(); router.visit(`/organizations/${predictionOrgSlug}/predictions`); }}
+                                                        style={{ color: '#8B5CF6', cursor: 'pointer', textDecoration: 'underline' }}
+                                                    >
+                                                        Full League
+                                                    </span>
+                                                )}
+                                            </span>
+                                            <ChevronDown size={16} color="#888" style={{
+                                                transition: 'transform 0.2s ease',
+                                                transform: predictionBannerExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                                                flexShrink: 0,
+                                            }} />
+                                        </div>
+
+                                        {/* Collapsible Body — Scrollable fixture cards */}
+                                        {predictionBannerExpanded && (
+                                            <div style={{ padding: '0 16px 12px' }}>
+                                                <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '4px' }}>
+                                                    {predictionFixtures.map((fixture: any) => (
+                                                        <div key={fixture.id} style={{
+                                                            minWidth: '220px', maxWidth: '260px',
+                                                            background: 'rgba(255, 255, 255, 0.04)',
+                                                            border: '1px solid rgba(255, 255, 255, 0.08)',
+                                                            borderRadius: '10px', padding: '10px 12px', flexShrink: 0,
+                                                        }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                                                                <div style={{
+                                                                    width: '24px', height: '24px', borderRadius: '6px',
+                                                                    background: 'rgba(255, 255, 255, 0.08)', display: 'flex',
+                                                                    alignItems: 'center', justifyContent: 'center',
+                                                                    fontSize: '0.6rem', fontWeight: 700, color: '#888', overflow: 'hidden',
+                                                                }}>
+                                                                    {fixture.opponent_logo
+                                                                        ? <img src={fixture.opponent_logo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                                        : fixture.opponent_name?.charAt(0)}
+                                                                </div>
+                                                                <div style={{ flex: 1 }}>
+                                                                    <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#e0e0e0' }}>
+                                                                        vs {fixture.opponent_name}
+                                                                    </div>
+                                                                    <div style={{ fontSize: '0.68rem', color: '#888' }}>
+                                                                        {fixture.venue === 'home' ? 'H' : 'A'} · {new Date(fixture.match_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Already predicted */}
+                                                            {fixture.user_prediction ? (
+                                                                <div style={{
+                                                                    display: 'flex', alignItems: 'center', gap: '6px',
+                                                                    padding: '4px 8px', borderRadius: '6px',
+                                                                    background: 'rgba(16, 185, 129, 0.08)',
+                                                                    border: '1px solid rgba(16, 185, 129, 0.15)',
+                                                                    fontSize: '0.72rem', color: '#10B981',
+                                                                }}>
+                                                                    <Check size={11} />
+                                                                    {fixture.user_prediction.prediction_type === 'correct_score'
+                                                                        ? `${fixture.user_prediction.predicted_home_score}-${fixture.user_prediction.predicted_away_score}`
+                                                                        : fixture.user_prediction.prediction_value === 'home_win' ? 'Home Win'
+                                                                        : fixture.user_prediction.prediction_value === 'away_win' ? 'Away Win'
+                                                                        : fixture.user_prediction.prediction_value === 'draw' ? 'Draw'
+                                                                        : fixture.user_prediction.prediction_value === 'home_draw' ? 'Home/Draw'
+                                                                        : fixture.user_prediction.prediction_value === 'away_draw' ? 'Away/Draw'
+                                                                        : fixture.user_prediction.prediction_value === 'home_away' ? 'Home/Away'
+                                                                        : fixture.user_prediction.prediction_value}
+                                                                </div>
+                                                            ) : (
+                                                                /* Quick predict buttons — match result only for banner */
+                                                                <div style={{ display: 'flex', gap: '4px' }}>
+                                                                    {[
+                                                                        { value: 'home_win', label: 'H' },
+                                                                        { value: 'draw', label: 'D' },
+                                                                        { value: 'away_win', label: 'A' },
+                                                                    ].map(opt => (
+                                                                        <button
+                                                                            key={opt.value}
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                if (!predictionOrgSlug || predictionSubmitting) return;
+                                                                                setPredictionSubmitting(true);
+                                                                                axios.post(route('organizations.predictions.predict', predictionOrgSlug), {
+                                                                                    fixture_id: fixture.id,
+                                                                                    prediction_type: 'match_result',
+                                                                                    prediction_value: opt.value,
+                                                                                }).then(() => {
+                                                                                    // Update fixture in local state
+                                                                                    setPredictionFixtures(prev => prev.map(f =>
+                                                                                        f.id === fixture.id
+                                                                                            ? { ...f, user_prediction: { prediction_type: 'match_result', prediction_value: opt.value, is_correct: null, points_earned: 0, is_locked: false } }
+                                                                                            : f
+                                                                                    ));
+                                                                                }).catch(() => {}).finally(() => setPredictionSubmitting(false));
+                                                                            }}
+                                                                            disabled={predictionSubmitting}
+                                                                            style={{
+                                                                                flex: 1, padding: '4px 6px', borderRadius: '6px',
+                                                                                border: '1px solid rgba(139, 92, 246, 0.2)',
+                                                                                background: 'rgba(139, 92, 246, 0.06)',
+                                                                                color: '#b0a0e0', fontSize: '0.72rem', fontWeight: 600,
+                                                                                cursor: predictionSubmitting ? 'not-allowed' : 'pointer',
+                                                                                opacity: predictionSubmitting ? 0.5 : 1,
+                                                                                transition: 'all 0.15s ease',
+                                                                            }}
+                                                                            onMouseEnter={(e) => { if (!predictionSubmitting) { e.currentTarget.style.background = 'rgba(139, 92, 246, 0.15)'; e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.4)'; } }}
+                                                                            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(139, 92, 246, 0.06)'; e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.2)'; }}
+                                                                        >
+                                                                            {opt.label}
+                                                                        </button>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+
+                                                            {/* Completed result */}
+                                                            {fixture.status === 'completed' && (
+                                                                <div style={{ marginTop: '6px', fontSize: '0.72rem', color: '#aaa', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                                    Final: <strong style={{ color: '#fff' }}>{fixture.home_score} - {fixture.away_score}</strong>
+                                                                    {fixture.user_prediction?.is_correct !== null && (
+                                                                        <span style={{
+                                                                            marginLeft: '4px', padding: '1px 5px', borderRadius: '4px',
+                                                                            fontSize: '0.65rem', fontWeight: 600,
+                                                                            background: fixture.user_prediction.is_correct ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+                                                                            color: fixture.user_prediction.is_correct ? '#10B981' : '#EF4444',
+                                                                        }}>
+                                                                            {fixture.user_prediction.is_correct ? `+${fixture.user_prediction.points_earned}` : '0'} pts
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    ))}
+                                                </div>
                                             </div>
                                         )}
                                     </div>

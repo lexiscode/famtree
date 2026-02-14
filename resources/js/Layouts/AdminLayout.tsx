@@ -27,6 +27,7 @@ import {
     Server,
     Globe,
     UserCog,
+    Trophy,
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -64,6 +65,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         { label: 'Messaging', icon: MessageSquare, href: route('admin.messaging.conversations'), active: route().current('admin.messaging.*') },
         { label: 'Family Trees', icon: GitBranch, href: route('admin.familyTrees.index'), active: route().current('admin.familyTrees.*') || route().current('admin.connections.*') },
         { label: 'Groups', icon: Vote, href: route('admin.elections.index'), active: route().current('admin.elections.*') || route().current('admin.removals.*') },
+        { label: 'Predictions', icon: Trophy, href: route('admin.predictions.index'), active: route().current('admin.predictions.*') },
         { label: 'Analytics', icon: BarChart3, href: route('admin.analytics.overview'), active: route().current('admin.analytics.*') },
         { label: 'Security', icon: Shield, href: route('admin.security.dashboard'), active: route().current('admin.security.*') },
         { label: 'Notifications', icon: BellRing, href: route('admin.notifications.broadcast'), active: route().current('admin.notifications.*') || route().current('admin.emails.*') },

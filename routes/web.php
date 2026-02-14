@@ -42,6 +42,7 @@ use App\Http\Controllers\GuestControllers\AuthAccessControllers\ClassSetControll
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\ClassSetChatController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\GroupElectionController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\GroupRemovalController;
+use App\Http\Controllers\GuestControllers\AuthAccessControllers\PredictionController;
 use Inertia\Inertia;
 
 
@@ -398,6 +399,11 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::get('/{organizationSlug}/channels', [OrganizationController::class, 'channels'])->name('organizations.channels');
         Route::get('/faculty/{facultySlug}/departments', [OrganizationController::class, 'departments'])->name('organizations.departments');
         Route::get('/department/{departmentSlug}/class-sets', [OrganizationController::class, 'classSets'])->name('organizations.class-sets');
+
+        // Prediction League routes
+        Route::get('/{slug}/predictions', [PredictionController::class, 'index'])->name('organizations.predictions');
+        Route::post('/{slug}/predictions/predict', [PredictionController::class, 'predict'])->name('organizations.predictions.predict');
+        Route::get('/{slug}/predictions/history', [PredictionController::class, 'history'])->name('organizations.predictions.history');
     });
 
     // Class Set Actions routes
@@ -420,5 +426,9 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::get('/{classSetUuid}/removal', [GroupRemovalController::class, 'show'])->name('class-sets.removal.show');
         Route::post('/{classSetUuid}/removal/initiate', [GroupRemovalController::class, 'initiate'])->name('class-sets.removal.initiate');
         Route::post('/{classSetUuid}/removal/vote', [GroupRemovalController::class, 'vote'])->name('class-sets.removal.vote');
+
+        // Prediction Banner routes
+        Route::get('/{classSetUuid}/predictions/open', [PredictionController::class, 'openFixtures'])->name('class-sets.predictions.open');
+        Route::get('/{classSetUuid}/predictions/standings', [PredictionController::class, 'groupStandings'])->name('class-sets.predictions.standings');
     });
 });

@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             TwoFamiliesUserSeeder::class,
             OrganizationSeeder::class,
             OrgAccountSeeder::class,
+            PredictionBadgeSeeder::class,
         ]);
     }
 }
