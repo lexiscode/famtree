@@ -2,15 +2,7 @@ import { useCallback } from 'react';
 import { usePage, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import {
-    Trophy,
-    Calendar,
-    Target,
-    TrendingUp,
-    Plus,
-    Eye,
-    Pencil,
-    ChevronLeft,
-    ChevronRight,
+    Trophy, Calendar, Target, TrendingUp, Plus, Eye, Pencil,
 } from 'lucide-react';
 
 interface Organization {
@@ -67,30 +59,10 @@ export default function Index({ seasons, statistics, perPage }: Props) {
         [perPage]
     );
 
-    const getStatusBadge = (status: string) => {
-        const styles: Record<string, { bg: string; color: string }> = {
-            upcoming: { bg: 'rgba(59, 130, 246, 0.15)', color: '#3B82F6' },
-            active: { bg: 'rgba(16, 185, 129, 0.15)', color: '#10B981' },
-            completed: { bg: 'rgba(107, 114, 128, 0.15)', color: '#9CA3AF' },
-        };
-        const s = styles[status] || styles.upcoming;
-        return (
-            <span style={{ padding: '2px 8px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 600, background: s.bg, color: s.color }}>
-                {status.charAt(0).toUpperCase() + status.slice(1)}
-            </span>
-        );
-    };
-
-    const generatePageNumbers = () => {
-        const pages: number[] = [];
-        const current = seasons.current_page;
-        const last = seasons.last_page;
-        let start = Math.max(1, current - 2);
-        let end = Math.min(last, current + 2);
-        if (current <= 3) end = Math.min(last, 5);
-        if (current >= last - 2) start = Math.max(1, last - 4);
-        for (let i = start; i <= end; i++) pages.push(i);
-        return pages;
+    const statusBadgeMap: Record<string, string> = {
+        upcoming: 'ap-badge-info',
+        active: 'ap-badge-success',
+        completed: 'ap-badge-neutral',
     };
 
     return (
@@ -100,154 +72,140 @@ export default function Index({ seasons, statistics, perPage }: Props) {
                 {flash?.error && <div className="ap-flash ap-flash-error">{flash.error}</div>}
 
                 <div className="ap-page-header">
-                    <div>
-                        <h1 className="ap-page-title">Prediction League</h1>
-                        <p className="ap-page-subtitle">Manage prediction seasons, fixtures, and standings</p>
+                    <div className="ap-page-header-row">
+                        <div>
+                            <h1 className="ap-page-title">Prediction League</h1>
+                            <p className="ap-page-subtitle">Manage prediction seasons, fixtures, and standings</p>
+                        </div>
+                        <div className="ap-page-header-actions">
+                            <button className="ap-btn ap-btn-primary" onClick={() => router.visit(route('admin.predictions.create'))}>
+                                <Plus size={16} /> New Season
+                            </button>
+                        </div>
                     </div>
-                    <button className="ap-btn ap-btn-primary" onClick={() => router.visit(route('admin.predictions.create'))}>
-                        <Plus size={16} /> New Season
-                    </button>
                 </div>
 
-                {/* Stats Cards */}
-                <div className="ap-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-                    <div className="ap-stat-card">
-                        <div className="ap-stat-icon" style={{ background: 'rgba(139, 92, 246, 0.15)' }}>
-                            <Trophy size={20} color="#8B5CF6" />
-                        </div>
-                        <div className="ap-stat-info">
-                            <span className="ap-stat-value">{statistics.total_seasons}</span>
-                            <span className="ap-stat-label">Total Seasons</span>
-                        </div>
-                    </div>
-                    <div className="ap-stat-card">
-                        <div className="ap-stat-icon" style={{ background: 'rgba(16, 185, 129, 0.15)' }}>
-                            <TrendingUp size={20} color="#10B981" />
-                        </div>
-                        <div className="ap-stat-info">
-                            <span className="ap-stat-value">{statistics.active_seasons}</span>
-                            <span className="ap-stat-label">Active Seasons</span>
-                        </div>
-                    </div>
-                    <div className="ap-stat-card">
-                        <div className="ap-stat-icon" style={{ background: 'rgba(59, 130, 246, 0.15)' }}>
-                            <Calendar size={20} color="#3B82F6" />
-                        </div>
-                        <div className="ap-stat-info">
-                            <span className="ap-stat-value">{statistics.total_fixtures}</span>
-                            <span className="ap-stat-label">Total Fixtures</span>
-                        </div>
-                    </div>
-                    <div className="ap-stat-card">
-                        <div className="ap-stat-icon" style={{ background: 'rgba(245, 158, 11, 0.15)' }}>
-                            <Target size={20} color="#F59E0B" />
-                        </div>
-                        <div className="ap-stat-info">
-                            <span className="ap-stat-value">{statistics.total_predictions}</span>
-                            <span className="ap-stat-label">Total Predictions</span>
-                        </div>
-                    </div>
+                {/* Stats Grid */}
+                <div className="ap-stats-grid ap-mb-lg">
+                    {[
+                        { label: 'Total Seasons', value: statistics.total_seasons, icon: Trophy, colorClass: 'purple' },
+                        { label: 'Active Seasons', value: statistics.active_seasons, icon: TrendingUp, colorClass: 'green' },
+                        { label: 'Total Fixtures', value: statistics.total_fixtures, icon: Calendar, colorClass: 'blue' },
+                        { label: 'Total Predictions', value: statistics.total_predictions, icon: Target, colorClass: 'amber' },
+                    ].map((stat, idx) => {
+                        const Icon = stat.icon;
+                        return (
+                            <div key={idx} className="ap-stat-card">
+                                <div className="ap-stat-card-header">
+                                    <p className="ap-stat-label">{stat.label}</p>
+                                    <div className={`ap-stat-icon ${stat.colorClass}`}>
+                                        <Icon size={20} strokeWidth={1.5} />
+                                    </div>
+                                </div>
+                                <p className="ap-stat-value">{stat.value}</p>
+                            </div>
+                        );
+                    })}
                 </div>
 
                 {/* Seasons Table */}
-                <div className="ap-card">
-                    <div className="ap-card-header">
-                        <h3>Seasons</h3>
-                    </div>
-                    <div className="ap-table-container">
-                        <table className="ap-table">
-                            <thead>
-                                <tr>
-                                    <th>Season</th>
-                                    <th>Organization</th>
-                                    <th>Status</th>
-                                    <th>Duration</th>
-                                    <th>Fixtures</th>
-                                    <th>Participants</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {seasons.data.length === 0 ? (
+                <div className="ap-table-wrap">
+                    {seasons.data.length > 0 ? (
+                        <div className="ap-table-scroll">
+                            <table className="ap-table">
+                                <thead>
                                     <tr>
-                                        <td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: '#888' }}>
-                                            No prediction seasons yet. Create your first season to get started.
-                                        </td>
+                                        <th>Season</th>
+                                        <th>Organization</th>
+                                        <th>Status</th>
+                                        <th>Duration</th>
+                                        <th className="center">Fixtures</th>
+                                        <th className="center">Participants</th>
+                                        <th className="center">Actions</th>
                                     </tr>
-                                ) : (
-                                    seasons.data.map((season) => (
+                                </thead>
+                                <tbody>
+                                    {seasons.data.map((season) => (
                                         <tr key={season.id}>
                                             <td>
-                                                <div style={{ fontWeight: 600 }}>{season.name}</div>
+                                                <span className="ap-font-semibold">{season.name}</span>
                                             </td>
                                             <td>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                    {season.organization?.logo_url && (
-                                                        <img src={season.organization.logo_url} alt="" style={{ width: '24px', height: '24px', borderRadius: '4px', objectFit: 'cover' }} />
+                                                <div className="ap-flex ap-items-center ap-gap-sm">
+                                                    {season.organization?.logo_url ? (
+                                                        <div className="ap-avatar ap-avatar-sm">
+                                                            <img src={season.organization.logo_url} alt="" />
+                                                        </div>
+                                                    ) : (
+                                                        <div className="ap-avatar ap-avatar-sm ap-avatar-indigo">
+                                                            {season.organization?.name?.charAt(0) || '?'}
+                                                        </div>
                                                     )}
                                                     <span>{season.organization?.name || 'N/A'}</span>
                                                 </div>
                                             </td>
-                                            <td>{getStatusBadge(season.status)}</td>
-                                            <td style={{ fontSize: '0.85rem', color: '#aaa' }}>
+                                            <td>
+                                                <span className={`ap-badge ${statusBadgeMap[season.status] || 'ap-badge-neutral'} ap-capitalize`}>
+                                                    {season.status}
+                                                </span>
+                                            </td>
+                                            <td className="ap-text-secondary ap-text-sm">
                                                 {season.start_date} — {season.end_date}
                                             </td>
-                                            <td>{season.fixtures_count}</td>
-                                            <td>{season.standings_count}</td>
-                                            <td>
-                                                <div style={{ display: 'flex', gap: '6px' }}>
+                                            <td className="center">{season.fixtures_count}</td>
+                                            <td className="center">{season.standings_count}</td>
+                                            <td className="center">
+                                                <div className="ap-flex ap-items-center ap-justify-center ap-gap-xs">
                                                     <button
-                                                        className="ap-btn ap-btn-sm ap-btn-ghost"
+                                                        className="ap-btn ap-btn-sm ap-btn-primary"
                                                         onClick={() => router.visit(route('admin.predictions.show', season.id))}
-                                                        title="View"
                                                     >
-                                                        <Eye size={14} />
+                                                        <Eye size={14} /> View
                                                     </button>
                                                     <button
-                                                        className="ap-btn ap-btn-sm ap-btn-ghost"
+                                                        className="ap-btn ap-btn-sm ap-btn-secondary"
                                                         onClick={() => router.visit(route('admin.predictions.edit', season.id))}
-                                                        title="Edit"
                                                     >
                                                         <Pencil size={14} />
                                                     </button>
                                                 </div>
                                             </td>
                                         </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    ) : (
+                        <div className="ap-empty">
+                            <div className="ap-empty-icon">
+                                <Trophy size={28} strokeWidth={1.5} />
+                            </div>
+                            <p className="ap-empty-title">No prediction seasons yet</p>
+                            <p className="ap-empty-text">Create your first season to get started with the prediction league.</p>
+                        </div>
+                    )}
+                </div>
 
-                    {/* Pagination */}
-                    {seasons.last_page > 1 && (
-                        <div className="ap-pagination">
-                            <button
-                                className="ap-btn ap-btn-sm ap-btn-ghost"
-                                onClick={() => handlePageChange(seasons.current_page - 1)}
-                                disabled={seasons.current_page === 1}
-                            >
-                                <ChevronLeft size={14} />
-                            </button>
-                            {generatePageNumbers().map((page) => (
+                {/* Pagination */}
+                {seasons.last_page > 1 && (
+                    <div className="ap-pagination">
+                        <p className="ap-pagination-info">
+                            Showing <strong>{seasons.from}</strong> to <strong>{seasons.to}</strong> of <strong>{seasons.total}</strong> seasons
+                        </p>
+                        <div className="ap-pagination-btns">
+                            {Array.from({ length: seasons.last_page }, (_, i) => i + 1).map((page) => (
                                 <button
                                     key={page}
-                                    className={`ap-btn ap-btn-sm ${page === seasons.current_page ? 'ap-btn-primary' : 'ap-btn-ghost'}`}
                                     onClick={() => handlePageChange(page)}
+                                    disabled={seasons.current_page === page}
+                                    className={`ap-page-btn ${seasons.current_page === page ? 'active' : ''}`}
                                 >
                                     {page}
                                 </button>
                             ))}
-                            <button
-                                className="ap-btn ap-btn-sm ap-btn-ghost"
-                                onClick={() => handlePageChange(seasons.current_page + 1)}
-                                disabled={seasons.current_page === seasons.last_page}
-                            >
-                                <ChevronRight size={14} />
-                            </button>
                         </div>
-                    )}
-                </div>
+                    </div>
+                )}
             </div>
         </AdminLayout>
     );

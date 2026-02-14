@@ -3,7 +3,7 @@ import { router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import {
     ArrowLeft, Pencil, Trophy, Calendar, Target, Users, Award,
-    Plus, Check, X, AlertTriangle, Flame, ChevronDown, ChevronUp,
+    Plus, X, Flame,
 } from 'lucide-react';
 
 interface Gameweek {
@@ -49,7 +49,7 @@ interface Season {
 interface StandingEntry {
     rank: number;
     user_id: number;
-    user: { id: number; first_name: string; last_name: string; username: string; profile_image: string | null } | null;
+    user: { id: number; first_name: string; last_name: string; username: string; profile_image_url: string | null } | null;
     total_points: number;
     predictions_made: number;
     correct_predictions: number;
@@ -72,9 +72,26 @@ interface Props {
     badges: BadgeEntry[];
 }
 
+function AdminAvatar({ imageUrl, name }: { imageUrl: string | null; name: string }) {
+    const [imgError, setImgError] = useState(false);
+    if (imageUrl && !imgError) {
+        return (
+            <div className="ap-avatar ap-avatar-sm">
+                <img src={imageUrl} alt={name} onError={() => setImgError(true)} />
+            </div>
+        );
+    }
+    return (
+        <div className="ap-avatar ap-avatar-sm ap-avatar-purple">
+            {name.charAt(0).toUpperCase()}
+        </div>
+    );
+}
+
 export default function Show({ season, standings, badges }: Props) {
     const { props } = usePage();
     const flash = (props as any).flash;
+    const errors = (props as any).errors || {};
 
     const [activeTab, setActiveTab] = useState<'overview' | 'gameweeks' | 'fixtures' | 'standings' | 'badges'>('overview');
     const [showResultModal, setShowResultModal] = useState<number | null>(null);
@@ -143,28 +160,19 @@ export default function Show({ season, standings, badges }: Props) {
         });
     }, [season.id, fixtureForm]);
 
-    const getStatusBadge = (status: string) => {
-        const styles: Record<string, { bg: string; color: string }> = {
-            upcoming: { bg: 'rgba(59, 130, 246, 0.15)', color: '#3B82F6' },
-            active: { bg: 'rgba(16, 185, 129, 0.15)', color: '#10B981' },
-            completed: { bg: 'rgba(107, 114, 128, 0.15)', color: '#9CA3AF' },
-            live: { bg: 'rgba(239, 68, 68, 0.15)', color: '#EF4444' },
-            cancelled: { bg: 'rgba(245, 158, 11, 0.15)', color: '#F59E0B' },
-        };
-        const s = styles[status] || styles.upcoming;
-        return (
-            <span style={{ padding: '2px 8px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 600, background: s.bg, color: s.color }}>
-                {status.charAt(0).toUpperCase() + status.slice(1)}
-            </span>
-        );
+    const statusBadgeMap: Record<string, string> = {
+        upcoming: 'ap-badge-info',
+        active: 'ap-badge-success',
+        completed: 'ap-badge-neutral',
+        live: 'ap-badge-danger',
+        cancelled: 'ap-badge-warning',
     };
 
-    const getRankStyle = (rank: number) => {
-        if (rank === 1) return { color: '#FFD700', fontWeight: 700 };
-        if (rank === 2) return { color: '#C0C0C0', fontWeight: 700 };
-        if (rank === 3) return { color: '#CD7F32', fontWeight: 700 };
-        if (rank === 4) return { color: '#8B5CF6', fontWeight: 600 };
-        return { color: '#aaa' };
+    const getRankClass = (rank: number) => {
+        if (rank === 1) return 'gold';
+        if (rank === 2) return 'silver';
+        if (rank === 3) return 'bronze';
+        return '';
     };
 
     const tabs = [
@@ -175,6 +183,8 @@ export default function Show({ season, standings, badges }: Props) {
         { key: 'badges', label: 'Badges', icon: Award },
     ] as const;
 
+    const resultFixture = season.fixtures.find(f => f.id === showResultModal);
+
     return (
         <AdminLayout>
             <div>
@@ -182,45 +192,45 @@ export default function Show({ season, standings, badges }: Props) {
                 {flash?.error && <div className="ap-flash ap-flash-error">{flash.error}</div>}
 
                 {/* Header */}
+                <button className="ap-back-btn ap-mb-md" onClick={() => router.visit(route('admin.predictions.index'))}>
+                    <ArrowLeft size={16} /> Back to Predictions
+                </button>
+
                 <div className="ap-page-header">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <button className="ap-btn ap-btn-ghost" onClick={() => router.visit(route('admin.predictions.index'))}>
-                            <ArrowLeft size={16} />
-                        </button>
+                    <div className="ap-page-header-row">
                         <div>
                             <h1 className="ap-page-title">{season.name}</h1>
                             <p className="ap-page-subtitle">
-                                {season.organization?.name} &middot; {getStatusBadge(season.status)} &middot; {season.start_date} to {season.end_date}
+                                {season.organization?.name} &middot;{' '}
+                                <span className={`ap-badge ${statusBadgeMap[season.status] || 'ap-badge-neutral'} ap-capitalize`}>
+                                    {season.status}
+                                </span>
+                                {' '}&middot; {season.start_date} to {season.end_date}
                             </p>
                         </div>
-                    </div>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                        {season.status === 'upcoming' && (
-                            <button className="ap-btn ap-btn-primary" onClick={handleActivate}>Activate Season</button>
-                        )}
-                        {season.status === 'active' && (
-                            <button className="ap-btn ap-btn-warning" onClick={handleComplete}>Complete Season</button>
-                        )}
-                        <button className="ap-btn ap-btn-ghost" onClick={() => router.visit(route('admin.predictions.edit', season.id))}>
-                            <Pencil size={14} /> Edit
-                        </button>
+                        <div className="ap-page-header-actions">
+                            {season.status === 'upcoming' && (
+                                <button className="ap-btn ap-btn-success" onClick={handleActivate}>Activate Season</button>
+                            )}
+                            {season.status === 'active' && (
+                                <button className="ap-btn ap-btn-warning" onClick={handleComplete}>Complete Season</button>
+                            )}
+                            <button className="ap-btn ap-btn-secondary" onClick={() => router.visit(route('admin.predictions.edit', season.id))}>
+                                <Pencil size={14} /> Edit
+                            </button>
+                        </div>
                     </div>
                 </div>
 
                 {/* Tabs */}
-                <div style={{ display: 'flex', gap: '4px', marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '0' }}>
+                <div className="ap-tabs">
                     {tabs.map((tab) => {
                         const Icon = tab.icon;
                         return (
                             <button
                                 key={tab.key}
                                 onClick={() => setActiveTab(tab.key)}
-                                style={{
-                                    padding: '10px 16px', border: 'none', background: 'transparent', color: activeTab === tab.key ? '#8B5CF6' : '#888',
-                                    borderBottom: activeTab === tab.key ? '2px solid #8B5CF6' : '2px solid transparent',
-                                    cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', fontWeight: 500,
-                                    transition: 'color 0.15s ease',
-                                }}
+                                className={`ap-tab ${activeTab === tab.key ? 'active' : ''}`}
                             >
                                 <Icon size={15} /> {tab.label}
                             </button>
@@ -230,298 +240,386 @@ export default function Show({ season, standings, badges }: Props) {
 
                 {/* Overview Tab */}
                 {activeTab === 'overview' && (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-                        <div className="ap-stat-card">
-                            <div className="ap-stat-info">
-                                <span className="ap-stat-value">{season.fixtures_count}</span>
-                                <span className="ap-stat-label">Total Fixtures</span>
-                            </div>
-                        </div>
-                        <div className="ap-stat-card">
-                            <div className="ap-stat-info">
-                                <span className="ap-stat-value">{season.gameweeks.length}</span>
-                                <span className="ap-stat-label">Gameweeks</span>
-                            </div>
-                        </div>
-                        <div className="ap-stat-card">
-                            <div className="ap-stat-info">
-                                <span className="ap-stat-value">{season.standings_count}</span>
-                                <span className="ap-stat-label">Participants</span>
-                            </div>
-                        </div>
-                        <div className="ap-stat-card">
-                            <div className="ap-stat-info">
-                                <span className="ap-stat-value">{season.fixtures.filter(f => f.status === 'completed').length}</span>
-                                <span className="ap-stat-label">Completed Fixtures</span>
-                            </div>
-                        </div>
+                    <div className="ap-stats-grid">
+                        {[
+                            { label: 'Total Fixtures', value: season.fixtures_count, icon: Target, colorClass: 'blue' },
+                            { label: 'Gameweeks', value: season.gameweeks.length, icon: Calendar, colorClass: 'purple' },
+                            { label: 'Participants', value: season.standings_count, icon: Users, colorClass: 'green' },
+                            { label: 'Completed', value: season.fixtures.filter(f => f.status === 'completed').length, icon: Trophy, colorClass: 'amber' },
+                        ].map((stat, idx) => {
+                            const Icon = stat.icon;
+                            return (
+                                <div key={idx} className="ap-stat-card">
+                                    <div className="ap-stat-card-header">
+                                        <p className="ap-stat-label">{stat.label}</p>
+                                        <div className={`ap-stat-icon ${stat.colorClass}`}>
+                                            <Icon size={20} strokeWidth={1.5} />
+                                        </div>
+                                    </div>
+                                    <p className="ap-stat-value">{stat.value}</p>
+                                </div>
+                            );
+                        })}
                     </div>
                 )}
 
                 {/* Gameweeks Tab */}
                 {activeTab === 'gameweeks' && (
-                    <div className="ap-card">
-                        <div className="ap-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <h3>Gameweeks</h3>
+                    <div className="ap-table-wrap">
+                        <div className="ap-card-header">
+                            <h3 className="ap-card-title ap-flex ap-items-center ap-gap-sm">
+                                <Calendar size={18} /> Gameweeks
+                            </h3>
                             <button className="ap-btn ap-btn-sm ap-btn-primary" onClick={() => setShowGwForm(!showGwForm)}>
                                 <Plus size={14} /> Add Gameweek
                             </button>
                         </div>
+
                         {showGwForm && (
-                            <form onSubmit={handleCreateGameweek} style={{ padding: '16px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', gap: '12px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
-                                <div className="ap-form-group" style={{ flex: 1, minWidth: '150px' }}>
-                                    <label className="ap-label">Label</label>
-                                    <input type="text" className="ap-input" placeholder="e.g. Matchday 1" value={gwForm.label} onChange={(e) => setGwForm({ ...gwForm, label: e.target.value })} />
+                            <form onSubmit={handleCreateGameweek} className="ap-card-body">
+                                <div className="ap-form-row">
+                                    <div className="ap-form-group">
+                                        <label className="ap-form-label">Label</label>
+                                        <input type="text" className="ap-form-input" placeholder="e.g. Matchday 1" value={gwForm.label} onChange={(e) => setGwForm({ ...gwForm, label: e.target.value })} />
+                                        {errors.label && <p className="ap-form-error">{errors.label}</p>}
+                                    </div>
+                                    <div className="ap-form-group">
+                                        <label className="ap-form-label">Start Date</label>
+                                        <input type="date" className="ap-form-input" value={gwForm.start_date} onChange={(e) => setGwForm({ ...gwForm, start_date: e.target.value })} required />
+                                        {errors.start_date && <p className="ap-form-error">{errors.start_date}</p>}
+                                    </div>
+                                    <div className="ap-form-group">
+                                        <label className="ap-form-label">End Date</label>
+                                        <input type="date" className="ap-form-input" value={gwForm.end_date} onChange={(e) => setGwForm({ ...gwForm, end_date: e.target.value })} required />
+                                        {errors.end_date && <p className="ap-form-error">{errors.end_date}</p>}
+                                    </div>
                                 </div>
-                                <div className="ap-form-group" style={{ flex: 1, minWidth: '150px' }}>
-                                    <label className="ap-label">Start Date</label>
-                                    <input type="date" className="ap-input" value={gwForm.start_date} onChange={(e) => setGwForm({ ...gwForm, start_date: e.target.value })} required />
+                                <div className="ap-flex ap-justify-end ap-gap-sm ap-mt-md">
+                                    <button type="button" className="ap-btn ap-btn-secondary" onClick={() => setShowGwForm(false)}>Cancel</button>
+                                    <button type="submit" className="ap-btn ap-btn-primary" disabled={submitting}>{submitting ? 'Creating...' : 'Create'}</button>
                                 </div>
-                                <div className="ap-form-group" style={{ flex: 1, minWidth: '150px' }}>
-                                    <label className="ap-label">End Date</label>
-                                    <input type="date" className="ap-input" value={gwForm.end_date} onChange={(e) => setGwForm({ ...gwForm, end_date: e.target.value })} required />
-                                </div>
-                                <button type="submit" className="ap-btn ap-btn-primary" disabled={submitting}>{submitting ? 'Creating...' : 'Create'}</button>
                             </form>
                         )}
-                        <div className="ap-table-container">
-                            <table className="ap-table">
-                                <thead>
-                                    <tr><th>#</th><th>Label</th><th>Start</th><th>End</th><th>Fixtures</th></tr>
-                                </thead>
-                                <tbody>
-                                    {season.gameweeks.length === 0 ? (
-                                        <tr><td colSpan={5} style={{ textAlign: 'center', padding: '30px', color: '#888' }}>No gameweeks yet</td></tr>
-                                    ) : season.gameweeks.map((gw) => (
-                                        <tr key={gw.id}>
-                                            <td style={{ fontWeight: 600 }}>{gw.number}</td>
-                                            <td>{gw.label || `Gameweek ${gw.number}`}</td>
-                                            <td style={{ color: '#aaa', fontSize: '0.85rem' }}>{gw.start_date}</td>
-                                            <td style={{ color: '#aaa', fontSize: '0.85rem' }}>{gw.end_date}</td>
-                                            <td>{gw.fixtures_count}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+
+                        {season.gameweeks.length > 0 ? (
+                            <div className="ap-table-scroll">
+                                <table className="ap-table">
+                                    <thead>
+                                        <tr><th>#</th><th>Label</th><th>Start</th><th>End</th><th className="center">Fixtures</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        {season.gameweeks.map((gw) => (
+                                            <tr key={gw.id}>
+                                                <td><span className="ap-font-semibold">{gw.number}</span></td>
+                                                <td>{gw.label || `Gameweek ${gw.number}`}</td>
+                                                <td className="ap-text-secondary ap-text-sm">{gw.start_date}</td>
+                                                <td className="ap-text-secondary ap-text-sm">{gw.end_date}</td>
+                                                <td className="center">{gw.fixtures_count}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ) : (
+                            <div className="ap-empty">
+                                <div className="ap-empty-icon"><Calendar size={28} strokeWidth={1.5} /></div>
+                                <p className="ap-empty-title">No gameweeks yet</p>
+                                <p className="ap-empty-text">Click "Add Gameweek" to create your first gameweek.</p>
+                            </div>
+                        )}
                     </div>
                 )}
 
                 {/* Fixtures Tab */}
                 {activeTab === 'fixtures' && (
-                    <div className="ap-card">
-                        <div className="ap-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <h3>Fixtures</h3>
+                    <div className="ap-table-wrap">
+                        <div className="ap-card-header">
+                            <h3 className="ap-card-title ap-flex ap-items-center ap-gap-sm">
+                                <Target size={18} /> Fixtures
+                            </h3>
                             <button className="ap-btn ap-btn-sm ap-btn-primary" onClick={() => setShowFixtureForm(!showFixtureForm)}>
                                 <Plus size={14} /> Add Fixture
                             </button>
                         </div>
+
                         {showFixtureForm && (
-                            <form onSubmit={handleCreateFixture} style={{ padding: '16px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
+                            <form onSubmit={handleCreateFixture} className="ap-card-body">
+                                <div className="ap-form-row">
                                     <div className="ap-form-group">
-                                        <label className="ap-label">Opponent</label>
-                                        <input type="text" className="ap-input" placeholder="e.g. Manchester City" value={fixtureForm.opponent_name} onChange={(e) => setFixtureForm({ ...fixtureForm, opponent_name: e.target.value })} required />
+                                        <label className="ap-form-label">Opponent</label>
+                                        <input type="text" className="ap-form-input" placeholder="e.g. Manchester City" value={fixtureForm.opponent_name} onChange={(e) => setFixtureForm({ ...fixtureForm, opponent_name: e.target.value })} required />
+                                        {errors.opponent_name && <p className="ap-form-error">{errors.opponent_name}</p>}
                                     </div>
                                     <div className="ap-form-group">
-                                        <label className="ap-label">Opponent Logo URL</label>
-                                        <input type="text" className="ap-input" placeholder="https://..." value={fixtureForm.opponent_logo} onChange={(e) => setFixtureForm({ ...fixtureForm, opponent_logo: e.target.value })} />
+                                        <label className="ap-form-label">Opponent Logo URL</label>
+                                        <input type="text" className="ap-form-input" placeholder="https://..." value={fixtureForm.opponent_logo} onChange={(e) => setFixtureForm({ ...fixtureForm, opponent_logo: e.target.value })} />
                                     </div>
                                     <div className="ap-form-group">
-                                        <label className="ap-label">Venue</label>
-                                        <select className="ap-input" value={fixtureForm.venue} onChange={(e) => setFixtureForm({ ...fixtureForm, venue: e.target.value })}>
+                                        <label className="ap-form-label">Venue</label>
+                                        <select className="ap-form-select" value={fixtureForm.venue} onChange={(e) => setFixtureForm({ ...fixtureForm, venue: e.target.value })}>
                                             <option value="home">Home</option>
                                             <option value="away">Away</option>
                                         </select>
                                     </div>
+                                </div>
+                                <div className="ap-form-row ap-mt-md">
                                     <div className="ap-form-group">
-                                        <label className="ap-label">Competition</label>
-                                        <input type="text" className="ap-input" placeholder="e.g. Premier League" value={fixtureForm.competition} onChange={(e) => setFixtureForm({ ...fixtureForm, competition: e.target.value })} />
+                                        <label className="ap-form-label">Competition</label>
+                                        <input type="text" className="ap-form-input" placeholder="e.g. Premier League" value={fixtureForm.competition} onChange={(e) => setFixtureForm({ ...fixtureForm, competition: e.target.value })} />
                                     </div>
                                     <div className="ap-form-group">
-                                        <label className="ap-label">Match Date & Time</label>
-                                        <input type="datetime-local" className="ap-input" value={fixtureForm.match_date} onChange={(e) => setFixtureForm({ ...fixtureForm, match_date: e.target.value })} required />
+                                        <label className="ap-form-label">Match Date & Time</label>
+                                        <input type="datetime-local" className="ap-form-input" value={fixtureForm.match_date} min={new Date().toISOString().slice(0, 16)} onChange={(e) => setFixtureForm({ ...fixtureForm, match_date: e.target.value })} required />
+                                        {errors.match_date && <p className="ap-form-error">{errors.match_date}</p>}
                                     </div>
                                     <div className="ap-form-group">
-                                        <label className="ap-label">Gameweek</label>
-                                        <select className="ap-input" value={fixtureForm.gameweek_id} onChange={(e) => setFixtureForm({ ...fixtureForm, gameweek_id: e.target.value })}>
+                                        <label className="ap-form-label">Gameweek</label>
+                                        <select className="ap-form-select" value={fixtureForm.gameweek_id} onChange={(e) => setFixtureForm({ ...fixtureForm, gameweek_id: e.target.value })}>
                                             <option value="">None</option>
                                             {season.gameweeks.map((gw) => (
-                                                <option key={gw.id} value={gw.id}>GW {gw.number}{gw.label ? ` - ${gw.label}` : ''}</option>
+                                                <option key={gw.id} value={gw.id}>GW {gw.number}{gw.label ? ` — ${gw.label}` : ''}</option>
                                             ))}
                                         </select>
                                     </div>
                                 </div>
-                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                    <button type="button" className="ap-btn ap-btn-ghost" onClick={() => setShowFixtureForm(false)}>Cancel</button>
+                                <div className="ap-flex ap-justify-end ap-gap-sm ap-mt-md">
+                                    <button type="button" className="ap-btn ap-btn-secondary" onClick={() => setShowFixtureForm(false)}>Cancel</button>
                                     <button type="submit" className="ap-btn ap-btn-primary" disabled={submitting}>{submitting ? 'Creating...' : 'Create Fixture'}</button>
                                 </div>
                             </form>
                         )}
-                        <div className="ap-table-container">
-                            <table className="ap-table">
-                                <thead>
-                                    <tr><th>Opponent</th><th>Venue</th><th>Competition</th><th>Date</th><th>GW</th><th>Status</th><th>Score</th><th>Predictions</th><th>Actions</th></tr>
-                                </thead>
-                                <tbody>
-                                    {season.fixtures.length === 0 ? (
-                                        <tr><td colSpan={9} style={{ textAlign: 'center', padding: '30px', color: '#888' }}>No fixtures yet</td></tr>
-                                    ) : season.fixtures.map((fixture) => (
-                                        <tr key={fixture.id}>
-                                            <td>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                    {fixture.opponent_logo && <img src={fixture.opponent_logo} alt="" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />}
-                                                    <span style={{ fontWeight: 500 }}>{fixture.opponent_name}</span>
-                                                </div>
-                                            </td>
-                                            <td style={{ textTransform: 'capitalize' }}>{fixture.venue}</td>
-                                            <td style={{ color: '#aaa', fontSize: '0.85rem' }}>{fixture.competition || '—'}</td>
-                                            <td style={{ fontSize: '0.85rem' }}>{fixture.match_date}</td>
-                                            <td>{fixture.gameweek ? `GW${fixture.gameweek.number}` : '—'}</td>
-                                            <td>{getStatusBadge(fixture.status)}</td>
-                                            <td style={{ fontWeight: 600 }}>
-                                                {fixture.status === 'completed' ? `${fixture.home_score} - ${fixture.away_score}` : '—'}
-                                            </td>
-                                            <td>{fixture.entries_count}</td>
-                                            <td>
-                                                <div style={{ display: 'flex', gap: '4px' }}>
+
+                        {season.fixtures.length > 0 ? (
+                            <div className="ap-table-scroll">
+                                <table className="ap-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Opponent</th>
+                                            <th>Venue</th>
+                                            <th>Competition</th>
+                                            <th>Date</th>
+                                            <th>GW</th>
+                                            <th>Status</th>
+                                            <th className="center">Score</th>
+                                            <th className="center">Predictions</th>
+                                            <th className="center">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {season.fixtures.map((fixture) => (
+                                            <tr key={fixture.id}>
+                                                <td>
+                                                    <div className="ap-flex ap-items-center ap-gap-sm">
+                                                        {fixture.opponent_logo ? (
+                                                            <div className="ap-avatar ap-avatar-sm">
+                                                                <img src={fixture.opponent_logo} alt="" />
+                                                            </div>
+                                                        ) : null}
+                                                        <span className="ap-font-semibold">{fixture.opponent_name}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="ap-capitalize">{fixture.venue}</td>
+                                                <td className="ap-text-secondary ap-text-sm">{fixture.competition || '—'}</td>
+                                                <td className="ap-text-sm">{fixture.match_date}</td>
+                                                <td>{fixture.gameweek ? `GW${fixture.gameweek.number}` : '—'}</td>
+                                                <td>
+                                                    <span className={`ap-badge ${statusBadgeMap[fixture.status] || 'ap-badge-neutral'} ap-capitalize`}>
+                                                        {fixture.status}
+                                                    </span>
+                                                </td>
+                                                <td className="center ap-font-semibold">
+                                                    {fixture.status === 'completed' ? `${fixture.home_score} - ${fixture.away_score}` : '—'}
+                                                </td>
+                                                <td className="center">{fixture.entries_count}</td>
+                                                <td className="center">
                                                     {fixture.status === 'upcoming' && (
-                                                        <>
+                                                        <div className="ap-flex ap-items-center ap-justify-center ap-gap-xs">
                                                             <button className="ap-btn ap-btn-sm ap-btn-primary" onClick={() => { setShowResultModal(fixture.id); setResultForm({ home_score: '', away_score: '' }); }}>
                                                                 Result
                                                             </button>
-                                                            <button className="ap-btn ap-btn-sm ap-btn-ghost" style={{ color: '#F59E0B' }} onClick={() => handleCancelFixture(fixture.id)}>
+                                                            <button className="ap-btn ap-btn-sm ap-btn-danger-outline" onClick={() => handleCancelFixture(fixture.id)}>
                                                                 <X size={12} />
                                                             </button>
-                                                        </>
+                                                        </div>
                                                     )}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ) : (
+                            <div className="ap-empty">
+                                <div className="ap-empty-icon"><Target size={28} strokeWidth={1.5} /></div>
+                                <p className="ap-empty-title">No fixtures yet</p>
+                                <p className="ap-empty-text">Click "Add Fixture" to create your first fixture.</p>
+                            </div>
+                        )}
                     </div>
                 )}
 
                 {/* Standings Tab */}
                 {activeTab === 'standings' && (
-                    <div className="ap-card">
-                        <div className="ap-card-header"><h3>Season Standings</h3></div>
-                        <div className="ap-table-container">
-                            <table className="ap-table">
-                                <thead>
-                                    <tr><th>#</th><th>Player</th><th>Points</th><th>Predictions</th><th>Correct</th><th>Accuracy</th><th>Streak</th><th>Best</th></tr>
-                                </thead>
-                                <tbody>
-                                    {standings.length === 0 ? (
-                                        <tr><td colSpan={8} style={{ textAlign: 'center', padding: '30px', color: '#888' }}>No standings yet</td></tr>
-                                    ) : standings.map((entry) => (
-                                        <tr key={entry.user_id} style={entry.rank <= 4 ? { background: 'rgba(139, 92, 246, 0.04)' } : {}}>
-                                            <td style={getRankStyle(entry.rank)}>{entry.rank}</td>
-                                            <td>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                    <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'rgba(139, 92, 246, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 600, color: '#8B5CF6', overflow: 'hidden' }}>
-                                                        {entry.user?.profile_image
-                                                            ? <img src={entry.user.profile_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                                            : entry.user?.first_name?.charAt(0) || '?'}
-                                                    </div>
-                                                    <span>{entry.user?.first_name} {entry.user?.last_name}</span>
-                                                </div>
-                                            </td>
-                                            <td style={{ fontWeight: 700, color: '#8B5CF6' }}>{entry.total_points}</td>
-                                            <td>{entry.predictions_made}</td>
-                                            <td>{entry.correct_predictions}</td>
-                                            <td>{entry.accuracy}%</td>
-                                            <td>
-                                                {entry.current_streak > 0 && (
-                                                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#F97316' }}>
-                                                        <Flame size={14} /> {entry.current_streak}
-                                                    </span>
-                                                )}
-                                            </td>
-                                            <td style={{ color: '#aaa' }}>{entry.best_streak}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                    <div className="ap-table-wrap">
+                        <div className="ap-card-header">
+                            <h3 className="ap-card-title ap-flex ap-items-center ap-gap-sm">
+                                <Users size={18} /> Season Standings
+                            </h3>
                         </div>
+
+                        {standings.length > 0 ? (
+                            <div className="ap-table-scroll">
+                                <table className="ap-table">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Player</th>
+                                            <th className="center">Points</th>
+                                            <th className="center">Predictions</th>
+                                            <th className="center">Correct</th>
+                                            <th className="center">Accuracy</th>
+                                            <th className="center">Streak</th>
+                                            <th className="center">Best</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {standings.map((entry) => (
+                                            <tr key={entry.user_id}>
+                                                <td>
+                                                    <span className={`ap-font-semibold ap-rank-${getRankClass(entry.rank)}`}>
+                                                        {entry.rank}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <div className="ap-flex ap-items-center ap-gap-sm">
+                                                        <AdminAvatar
+                                                            imageUrl={entry.user?.profile_image_url || null}
+                                                            name={entry.user?.first_name || '?'}
+                                                        />
+                                                        <span>{entry.user?.first_name} {entry.user?.last_name}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="center ap-font-semibold ap-text-primary">{entry.total_points}</td>
+                                                <td className="center">{entry.predictions_made}</td>
+                                                <td className="center">{entry.correct_predictions}</td>
+                                                <td className="center">{entry.accuracy}%</td>
+                                                <td className="center">
+                                                    {entry.current_streak > 0 && (
+                                                        <span className="ap-flex ap-items-center ap-justify-center ap-gap-xs ap-text-warning">
+                                                            <Flame size={14} /> {entry.current_streak}
+                                                        </span>
+                                                    )}
+                                                </td>
+                                                <td className="center ap-text-secondary">{entry.best_streak}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ) : (
+                            <div className="ap-empty">
+                                <div className="ap-empty-icon"><Users size={28} strokeWidth={1.5} /></div>
+                                <p className="ap-empty-title">No standings yet</p>
+                                <p className="ap-empty-text">Standings will appear once users make predictions and results are entered.</p>
+                            </div>
+                        )}
                     </div>
                 )}
 
                 {/* Badges Tab */}
                 {activeTab === 'badges' && (
-                    <div className="ap-card">
-                        <div className="ap-card-header"><h3>Badge Awards</h3></div>
-                        <div className="ap-table-container">
-                            <table className="ap-table">
-                                <thead>
-                                    <tr><th>Badge</th><th>Player</th><th>Times Earned</th><th>Earned At</th></tr>
-                                </thead>
-                                <tbody>
-                                    {badges.length === 0 ? (
-                                        <tr><td colSpan={4} style={{ textAlign: 'center', padding: '30px', color: '#888' }}>No badges awarded yet</td></tr>
-                                    ) : badges.map((entry) => (
-                                        <tr key={entry.id}>
-                                            <td>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                    <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: `${entry.badge?.color}22`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                        <Award size={14} color={entry.badge?.color} />
-                                                    </div>
-                                                    <div>
-                                                        <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{entry.badge?.name}</div>
-                                                        <div style={{ fontSize: '0.75rem', color: '#888' }}>{entry.badge?.description}</div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>{entry.user?.first_name} {entry.user?.last_name}</td>
-                                            <td>{entry.times_earned}x</td>
-                                            <td style={{ color: '#aaa', fontSize: '0.85rem' }}>{entry.earned_at}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                    <div className="ap-table-wrap">
+                        <div className="ap-card-header">
+                            <h3 className="ap-card-title ap-flex ap-items-center ap-gap-sm">
+                                <Award size={18} /> Badge Awards
+                            </h3>
                         </div>
+
+                        {badges.length > 0 ? (
+                            <div className="ap-table-scroll">
+                                <table className="ap-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Badge</th>
+                                            <th>Player</th>
+                                            <th className="center">Times Earned</th>
+                                            <th>Earned At</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {badges.map((entry) => (
+                                            <tr key={entry.id}>
+                                                <td>
+                                                    <div className="ap-flex ap-items-center ap-gap-sm">
+                                                        <div className="ap-avatar ap-avatar-sm" style={{ background: `${entry.badge?.color}22` }}>
+                                                            <Award size={14} color={entry.badge?.color} />
+                                                        </div>
+                                                        <div>
+                                                            <div className="ap-font-semibold">{entry.badge?.name}</div>
+                                                            <div className="ap-text-secondary ap-text-xs">{entry.badge?.description}</div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>{entry.user?.first_name} {entry.user?.last_name}</td>
+                                                <td className="center">
+                                                    <span className="ap-badge ap-badge-primary">{entry.times_earned}x</span>
+                                                </td>
+                                                <td className="ap-text-secondary ap-text-sm">{entry.earned_at}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ) : (
+                            <div className="ap-empty">
+                                <div className="ap-empty-icon"><Award size={28} strokeWidth={1.5} /></div>
+                                <p className="ap-empty-title">No badges awarded yet</p>
+                                <p className="ap-empty-text">Badges will be awarded as users earn achievements through predictions.</p>
+                            </div>
+                        )}
                     </div>
                 )}
 
                 {/* Enter Result Modal */}
-                {showResultModal !== null && (
-                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
-                        onClick={() => setShowResultModal(null)}>
-                        <div style={{ background: '#1a1a2e', borderRadius: '12px', padding: '24px', width: '360px', border: '1px solid rgba(255,255,255,0.1)' }}
-                            onClick={(e) => e.stopPropagation()}>
-                            <h3 style={{ margin: '0 0 16px', color: '#fff', fontSize: '1.1rem' }}>Enter Match Result</h3>
-                            <p style={{ color: '#aaa', fontSize: '0.85rem', margin: '0 0 16px' }}>
-                                {season.fixtures.find(f => f.id === showResultModal)?.opponent_name
-                                    ? `vs ${season.fixtures.find(f => f.id === showResultModal)?.opponent_name}`
-                                    : ''}
+                {showResultModal !== null && (() => {
+                    const orgName = season.organization?.name || 'Home Team';
+                    const homeName = resultFixture?.venue === 'away' ? resultFixture.opponent_name : orgName;
+                    const awayName = resultFixture?.venue === 'away' ? orgName : (resultFixture?.opponent_name || 'Away Team');
+                    return (
+                    <div className="ap-modal-overlay" onClick={() => setShowResultModal(null)}>
+                        <div className="ap-modal" onClick={(e) => e.stopPropagation()}>
+                            <h3 className="ap-modal-title">Enter Match Result</h3>
+                            <p className="ap-modal-subtitle">
+                                {homeName} vs {awayName}
                             </p>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '12px', alignItems: 'center', marginBottom: '20px' }}>
-                                <div>
-                                    <label style={{ fontSize: '0.75rem', color: '#888', display: 'block', marginBottom: '4px' }}>Home</label>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '0.5rem' }}>
+                                <div style={{ flex: 1 }}>
+                                    <label className="ap-form-label">{homeName}</label>
                                     <input
-                                        type="number" min="0" max="99" className="ap-input"
+                                        type="number" min="0" max="99"
+                                        className="ap-form-input"
                                         style={{ textAlign: 'center', fontSize: '1.5rem', fontWeight: 700 }}
                                         value={resultForm.home_score}
                                         onChange={(e) => setResultForm({ ...resultForm, home_score: e.target.value })}
                                         autoFocus
                                     />
                                 </div>
-                                <span style={{ color: '#888', fontSize: '1.2rem', paddingTop: '20px' }}>—</span>
-                                <div>
-                                    <label style={{ fontSize: '0.75rem', color: '#888', display: 'block', marginBottom: '4px' }}>Away</label>
+                                <span className="ap-text-secondary" style={{ fontSize: '1.4rem', fontWeight: 600, marginTop: '1.4rem' }}>–</span>
+                                <div style={{ flex: 1 }}>
+                                    <label className="ap-form-label">{awayName}</label>
                                     <input
-                                        type="number" min="0" max="99" className="ap-input"
+                                        type="number" min="0" max="99"
+                                        className="ap-form-input"
                                         style={{ textAlign: 'center', fontSize: '1.5rem', fontWeight: 700 }}
                                         value={resultForm.away_score}
                                         onChange={(e) => setResultForm({ ...resultForm, away_score: e.target.value })}
                                     />
                                 </div>
                             </div>
-                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                <button className="ap-btn ap-btn-ghost" onClick={() => setShowResultModal(null)}>Cancel</button>
+
+                            <div className="ap-modal-footer">
+                                <button className="ap-btn ap-btn-secondary" onClick={() => setShowResultModal(null)}>Cancel</button>
                                 <button
                                     className="ap-btn ap-btn-primary"
                                     onClick={handleEnterResult}
@@ -532,7 +630,8 @@ export default function Show({ season, standings, badges }: Props) {
                             </div>
                         </div>
                     </div>
-                )}
+                    );
+                })()}
             </div>
         </AdminLayout>
     );

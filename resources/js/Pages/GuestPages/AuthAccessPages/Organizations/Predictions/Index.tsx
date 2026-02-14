@@ -72,7 +72,7 @@ interface StandingEntry {
     first_name: string;
     last_name: string;
     username: string;
-    profile_image: string | null;
+    profile_image_url: string | null;
     total_points: number;
     predictions_made: number;
     correct_predictions: number;
@@ -122,6 +122,21 @@ interface Props {
     isEligible: boolean;
 }
 
+function PlayerAvatar({ imageUrl, firstName, lastName }: { imageUrl: string | null; firstName: string; lastName: string }) {
+    const [imgError, setImgError] = useState(false);
+    const initials = (firstName?.charAt(0) || '') + (lastName?.charAt(0) || '');
+
+    return (
+        <div className="pred-player-avatar">
+            {imageUrl && !imgError ? (
+                <img src={imageUrl} alt="" onError={() => setImgError(true)} />
+            ) : (
+                <span className="pred-avatar-fallback">{initials || '?'}</span>
+            )}
+        </div>
+    );
+}
+
 export default function PredictionsIndex({
     organization, seasons, activeSeason, standings, fixtures,
     upcomingFixtures, userStanding, badges, userBadges, isEligible,
@@ -155,20 +170,22 @@ export default function PredictionsIndex({
         }));
     };
 
-    const handleSubmitPrediction = useCallback((fixtureId: number) => {
+    const handleSubmitPrediction = useCallback((fixtureId: number, overrideType?: string, overrideValue?: string) => {
         const form = getPredForm(fixtureId);
+        const type = overrideType || form.type;
+        const value = overrideValue || form.value;
         setSubmitting(true);
 
         const data: any = {
             fixture_id: fixtureId,
-            prediction_type: form.type,
+            prediction_type: type,
         };
 
-        if (form.type === 'correct_score') {
+        if (type === 'correct_score') {
             data.predicted_home_score = parseInt(form.homeScore);
             data.predicted_away_score = parseInt(form.awayScore);
         } else {
-            data.prediction_value = form.value;
+            data.prediction_value = value;
         }
 
         router.post(route('organizations.predictions.predict', organization.slug), data, {
@@ -195,12 +212,61 @@ export default function PredictionsIndex({
         }
     };
 
-    const formatPredictionLabel = (type: string, value: string | null) => {
+    const orgName = organization.short_name || organization.name;
+
+    const getTeams = (fixture: Fixture) => {
+        if (fixture.venue === 'home') {
+            return {
+                homeName: orgName,
+                homeLogo: organization.logo_url,
+                awayName: fixture.opponent_name,
+                awayLogo: fixture.opponent_logo,
+            };
+        }
+        return {
+            homeName: fixture.opponent_name,
+            homeLogo: fixture.opponent_logo,
+            awayName: orgName,
+            awayLogo: organization.logo_url,
+        };
+    };
+
+    const renderTeamLogo = (logo: string | null, name: string) => (
+        logo ? (
+            <img src={logo} alt="" className="pred-team-logo" />
+        ) : (
+            <div className="pred-team-logo-placeholder">{name.charAt(0)}</div>
+        )
+    );
+
+    const renderMatchup = (fixture: Fixture) => {
+        const teams = getTeams(fixture);
+        return (
+            <div className="pred-fixture-matchup">
+                <div className="pred-team">
+                    {renderTeamLogo(teams.homeLogo, teams.homeName)}
+                    <span className="pred-team-name">{teams.homeName}</span>
+                </div>
+                <span className="pred-vs">vs</span>
+                <div className="pred-team">
+                    {renderTeamLogo(teams.awayLogo, teams.awayName)}
+                    <span className="pred-team-name">{teams.awayName}</span>
+                </div>
+            </div>
+        );
+    };
+
+    const formatPredictionLabel = (type: string, value: string | null, fixture?: Fixture) => {
+        const teams = fixture ? getTeams(fixture) : null;
         if (type === 'match_result') {
-            return value === 'home_win' ? 'Home Win' : value === 'away_win' ? 'Away Win' : 'Draw';
+            if (value === 'home_win') return teams ? `${teams.homeName} Win` : 'Home Win';
+            if (value === 'away_win') return teams ? `${teams.awayName} Win` : 'Away Win';
+            return 'Draw';
         }
         if (type === 'double_chance') {
-            return value === 'home_draw' ? 'Home/Draw' : value === 'away_draw' ? 'Away/Draw' : 'Home/Away';
+            if (value === 'home_draw') return teams ? `${teams.homeName}/Draw` : 'Home/Draw';
+            if (value === 'away_draw') return teams ? `${teams.awayName}/Draw` : 'Away/Draw';
+            if (value === 'home_away') return teams ? `${teams.homeName}/${teams.awayName}` : 'Home/Away';
         }
         return 'Correct Score';
     };
@@ -322,30 +388,15 @@ export default function PredictionsIndex({
                                     <div className="pred-fixtures-grid">
                                         {upcomingFixtures.map(fixture => {
                                             const form = getPredForm(fixture.id);
+                                            const teams = getTeams(fixture);
                                             return (
                                                 <div key={fixture.id} className="pred-fixture-card">
                                                     <div className="pred-fixture-header">
-                                                        <div className="pred-fixture-opponent">
-                                                            {fixture.opponent_logo ? (
-                                                                <img src={fixture.opponent_logo} alt="" />
-                                                            ) : (
-                                                                <div className="pred-fixture-opponent-placeholder">
-                                                                    {fixture.opponent_name.charAt(0)}
-                                                                </div>
-                                                            )}
-                                                            <div>
-                                                                <div style={{ fontWeight: 600, color: '#fff', fontSize: '0.92rem' }}>
-                                                                    vs {fixture.opponent_name}
-                                                                </div>
-                                                                <div className="pred-fixture-meta">
-                                                                    <MapPin size={11} /> {fixture.venue === 'home' ? 'Home' : 'Away'}
-                                                                    {fixture.competition && <> &middot; {fixture.competition}</>}
-                                                                </div>
-                                                            </div>
-                                                        </div>
+                                                        {renderMatchup(fixture)}
                                                         <div className="pred-fixture-meta">
                                                             <Clock size={11} />
                                                             {new Date(fixture.match_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                                            {fixture.competition && <> &middot; {fixture.competition}</>}
                                                         </div>
                                                     </div>
 
@@ -356,8 +407,8 @@ export default function PredictionsIndex({
                                                             <span>
                                                                 Your prediction: <strong>
                                                                     {fixture.user_prediction.prediction_type === 'correct_score'
-                                                                        ? `${fixture.user_prediction.predicted_home_score}-${fixture.user_prediction.predicted_away_score}`
-                                                                        : formatPredictionLabel(fixture.user_prediction.prediction_type, fixture.user_prediction.prediction_value)}
+                                                                        ? `${teams.homeName} ${fixture.user_prediction.predicted_home_score} - ${fixture.user_prediction.predicted_away_score} ${teams.awayName}`
+                                                                        : formatPredictionLabel(fixture.user_prediction.prediction_type, fixture.user_prediction.prediction_value, fixture)}
                                                                 </strong>
                                                                 <span style={{ marginLeft: '6px', opacity: 0.7, fontSize: '0.75rem' }}>
                                                                     ({fixture.user_prediction.prediction_type === 'correct_score' ? '15pts' : fixture.user_prediction.prediction_type === 'match_result' ? '5pts' : '2pts'})
@@ -366,36 +417,38 @@ export default function PredictionsIndex({
                                                         </div>
                                                     ) : (
                                                         <>
-                                                            {/* Bet Type Selector */}
+                                                            {/* Bet Type Segmented Control */}
                                                             <div className="pred-bet-types">
                                                                 <button className={`pred-bet-type ${form.type === 'match_result' ? 'active' : ''}`}
                                                                     onClick={() => updatePredForm(fixture.id, { type: 'match_result', value: '' })}>
-                                                                    Result (5pts)
+                                                                    Result · 5pts
                                                                 </button>
                                                                 <button className={`pred-bet-type ${form.type === 'double_chance' ? 'active' : ''}`}
                                                                     onClick={() => updatePredForm(fixture.id, { type: 'double_chance', value: '' })}>
-                                                                    Double (2pts)
+                                                                    Double · 2pts
                                                                 </button>
                                                                 <button className={`pred-bet-type ${form.type === 'correct_score' ? 'active' : ''}`}
                                                                     onClick={() => updatePredForm(fixture.id, { type: 'correct_score', value: '' })}>
-                                                                    Score (15pts)
+                                                                    Score · 15pts
                                                                 </button>
                                                             </div>
+
+                                                            <p className="pred-pick-label">Pick your prediction</p>
 
                                                             {/* Match Result Options */}
                                                             {form.type === 'match_result' && (
                                                                 <div className="pred-options">
                                                                     {[
-                                                                        { value: 'home_win', label: 'Home Win' },
+                                                                        { value: 'home_win', label: `${teams.homeName} Win` },
                                                                         { value: 'draw', label: 'Draw' },
-                                                                        { value: 'away_win', label: 'Away Win' },
+                                                                        { value: 'away_win', label: `${teams.awayName} Win` },
                                                                     ].map(opt => (
                                                                         <button
                                                                             key={opt.value}
                                                                             className={`pred-option-btn ${form.value === opt.value ? 'selected' : ''}`}
                                                                             onClick={() => {
                                                                                 updatePredForm(fixture.id, { value: opt.value });
-                                                                                setTimeout(() => handleSubmitPrediction(fixture.id), 0);
+                                                                                handleSubmitPrediction(fixture.id, 'match_result', opt.value);
                                                                             }}
                                                                             disabled={submitting}
                                                                         >
@@ -409,16 +462,16 @@ export default function PredictionsIndex({
                                                             {form.type === 'double_chance' && (
                                                                 <div className="pred-options">
                                                                     {[
-                                                                        { value: 'home_draw', label: 'Home/Draw' },
-                                                                        { value: 'away_draw', label: 'Away/Draw' },
-                                                                        { value: 'home_away', label: 'Home/Away' },
+                                                                        { value: 'home_draw', label: `${teams.homeName}/Draw` },
+                                                                        { value: 'away_draw', label: `${teams.awayName}/Draw` },
+                                                                        { value: 'home_away', label: `${teams.homeName}/${teams.awayName}` },
                                                                     ].map(opt => (
                                                                         <button
                                                                             key={opt.value}
                                                                             className={`pred-option-btn ${form.value === opt.value ? 'selected' : ''}`}
                                                                             onClick={() => {
                                                                                 updatePredForm(fixture.id, { value: opt.value });
-                                                                                setTimeout(() => handleSubmitPrediction(fixture.id), 0);
+                                                                                handleSubmitPrediction(fixture.id, 'double_chance', opt.value);
                                                                             }}
                                                                             disabled={submitting}
                                                                         >
@@ -431,10 +484,11 @@ export default function PredictionsIndex({
                                                             {/* Correct Score Inputs */}
                                                             {form.type === 'correct_score' && (
                                                                 <div className="pred-score-inputs">
+                                                                    <span className="pred-score-team-label">{teams.homeName}</span>
                                                                     <input
                                                                         type="number" min="0" max="99"
                                                                         className="pred-score-input"
-                                                                        placeholder="H"
+                                                                        placeholder="0"
                                                                         value={form.homeScore}
                                                                         onChange={(e) => updatePredForm(fixture.id, { homeScore: e.target.value })}
                                                                     />
@@ -442,10 +496,11 @@ export default function PredictionsIndex({
                                                                     <input
                                                                         type="number" min="0" max="99"
                                                                         className="pred-score-input"
-                                                                        placeholder="A"
+                                                                        placeholder="0"
                                                                         value={form.awayScore}
                                                                         onChange={(e) => updatePredForm(fixture.id, { awayScore: e.target.value })}
                                                                     />
+                                                                    <span className="pred-score-team-label">{teams.awayName}</span>
                                                                     <button
                                                                         className="pred-score-submit"
                                                                         onClick={() => handleSubmitPrediction(fixture.id)}
@@ -505,11 +560,11 @@ export default function PredictionsIndex({
                                                         <td style={getRankStyle(entry.rank)}>{entry.rank}</td>
                                                         <td>
                                                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                                                <div className="pred-player-avatar">
-                                                                    {entry.profile_image
-                                                                        ? <img src={entry.profile_image} alt="" />
-                                                                        : entry.first_name?.charAt(0) || '?'}
-                                                                </div>
+                                                                <PlayerAvatar
+                                                                    imageUrl={entry.profile_image_url}
+                                                                    firstName={entry.first_name}
+                                                                    lastName={entry.last_name}
+                                                                />
                                                                 <span style={{ fontWeight: entry.user_id === currentUserId ? 600 : 400, color: '#e2e8f0' }}>
                                                                     {entry.first_name} {entry.last_name}
                                                                     {entry.user_id === currentUserId && <span style={{ fontSize: '0.72rem', color: '#a78bfa', marginLeft: '5px' }}>(You)</span>}
@@ -559,39 +614,30 @@ export default function PredictionsIndex({
                                         <div className="pred-empty">No fixtures in this gameweek</div>
                                     ) : (
                                         <div className="pred-fixtures-grid">
-                                            {gameweekFixtures.map(fixture => (
+                                            {gameweekFixtures.map(fixture => {
+                                                const teams = getTeams(fixture);
+                                                return (
                                                 <div key={fixture.id} className="pred-fixture-card">
                                                     <div className="pred-fixture-header">
-                                                        <div className="pred-fixture-opponent">
-                                                            {fixture.opponent_logo ? (
-                                                                <img src={fixture.opponent_logo} alt="" />
-                                                            ) : (
-                                                                <div className="pred-fixture-opponent-placeholder">
-                                                                    {fixture.opponent_name.charAt(0)}
-                                                                </div>
-                                                            )}
-                                                            <div>
-                                                                <div style={{ fontWeight: 600, color: '#fff', fontSize: '0.92rem' }}>
-                                                                    vs {fixture.opponent_name}
-                                                                </div>
-                                                                <div className="pred-fixture-meta">
-                                                                    {fixture.venue === 'home' ? 'Home' : 'Away'} &middot; {fixture.competition || ''}
-                                                                </div>
-                                                            </div>
-                                                        </div>
+                                                        {renderMatchup(fixture)}
                                                         {fixture.status === 'completed' && (
                                                             <div className="pred-score-display">
                                                                 {fixture.home_score} - {fixture.away_score}
                                                             </div>
                                                         )}
                                                     </div>
+                                                    <div className="pred-fixture-meta" style={{ marginBottom: fixture.user_prediction ? '8px' : '0' }}>
+                                                        <Clock size={11} />
+                                                        {new Date(fixture.match_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                                        {fixture.competition && <> &middot; {fixture.competition}</>}
+                                                    </div>
                                                     {fixture.user_prediction && (
                                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem' }}>
                                                             <span style={{ color: '#94a3b8' }}>Your prediction:</span>
                                                             <span style={{ color: '#e2e8f0', fontWeight: 500 }}>
                                                                 {fixture.user_prediction.prediction_type === 'correct_score'
-                                                                    ? `${fixture.user_prediction.predicted_home_score}-${fixture.user_prediction.predicted_away_score}`
-                                                                    : formatPredictionLabel(fixture.user_prediction.prediction_type, fixture.user_prediction.prediction_value)}
+                                                                    ? `${teams.homeName} ${fixture.user_prediction.predicted_home_score} - ${fixture.user_prediction.predicted_away_score} ${teams.awayName}`
+                                                                    : formatPredictionLabel(fixture.user_prediction.prediction_type, fixture.user_prediction.prediction_value, fixture)}
                                                             </span>
                                                             {fixture.user_prediction.is_correct !== null && (
                                                                 <span className={`pred-result-badge ${fixture.user_prediction.is_correct ? 'pred-result-correct' : 'pred-result-incorrect'}`}>
@@ -601,7 +647,8 @@ export default function PredictionsIndex({
                                                         </div>
                                                     )}
                                                 </div>
-                                            ))}
+                                                );
+                                            })}
                                         </div>
                                     )}
                                 </div>
@@ -641,30 +688,20 @@ export default function PredictionsIndex({
                                             <div className="pred-empty">No predictions made yet</div>
                                         ) : (
                                             <div className="pred-fixtures-grid">
-                                                {fixtures.filter(f => f.user_prediction).map(fixture => (
+                                                {fixtures.filter(f => f.user_prediction).map(fixture => {
+                                                    const teams = getTeams(fixture);
+                                                    return (
                                                     <div key={fixture.id} className="pred-fixture-card">
                                                         <div className="pred-fixture-header">
-                                                            <div className="pred-fixture-opponent">
-                                                                {fixture.opponent_logo ? (
-                                                                    <img src={fixture.opponent_logo} alt="" />
-                                                                ) : (
-                                                                    <div className="pred-fixture-opponent-placeholder">
-                                                                        {fixture.opponent_name.charAt(0)}
-                                                                    </div>
-                                                                )}
-                                                                <div>
-                                                                    <div style={{ fontWeight: 600, color: '#fff', fontSize: '0.92rem' }}>
-                                                                        vs {fixture.opponent_name}
-                                                                    </div>
-                                                                    <div className="pred-fixture-meta">
-                                                                        {new Date(fixture.match_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                                                                        {fixture.competition && <> &middot; {fixture.competition}</>}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
+                                                            {renderMatchup(fixture)}
                                                             {fixture.status === 'completed' && (
                                                                 <div className="pred-score-display">{fixture.home_score} - {fixture.away_score}</div>
                                                             )}
+                                                        </div>
+                                                        <div className="pred-fixture-meta" style={{ marginBottom: '8px' }}>
+                                                            <Clock size={11} />
+                                                            {new Date(fixture.match_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                                                            {fixture.competition && <> &middot; {fixture.competition}</>}
                                                         </div>
                                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', flexWrap: 'wrap' }}>
                                                             <span className="pred-type-badge">
@@ -672,8 +709,8 @@ export default function PredictionsIndex({
                                                             </span>
                                                             <span style={{ color: '#e2e8f0' }}>
                                                                 {fixture.user_prediction!.prediction_type === 'correct_score'
-                                                                    ? `${fixture.user_prediction!.predicted_home_score}-${fixture.user_prediction!.predicted_away_score}`
-                                                                    : formatPredictionLabel(fixture.user_prediction!.prediction_type, fixture.user_prediction!.prediction_value)}
+                                                                    ? `${teams.homeName} ${fixture.user_prediction!.predicted_home_score} - ${fixture.user_prediction!.predicted_away_score} ${teams.awayName}`
+                                                                    : formatPredictionLabel(fixture.user_prediction!.prediction_type, fixture.user_prediction!.prediction_value, fixture)}
                                                             </span>
                                                             {fixture.user_prediction!.is_correct !== null && (
                                                                 <span className={`pred-result-badge ${fixture.user_prediction!.is_correct ? 'pred-result-correct' : 'pred-result-incorrect'}`}>
@@ -682,7 +719,8 @@ export default function PredictionsIndex({
                                                             )}
                                                         </div>
                                                     </div>
-                                                ))}
+                                                    );
+                                                })}
                                             </div>
                                         )}
                                     </div>

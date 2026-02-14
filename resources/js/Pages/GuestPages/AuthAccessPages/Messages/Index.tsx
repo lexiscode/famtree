@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { MessageCircle, Search, ArrowLeft, Users, GraduationCap, Pencil, Trash2, X, Check, CheckSquare, Square, Shield, Vote, UserMinus, Clock, AlertTriangle, ChevronDown, LogOut } from 'lucide-react';
+import { MessageCircle, Search, ArrowLeft, Users, GraduationCap, Pencil, Trash2, X, Check, CheckSquare, Square, Shield, Vote, UserMinus, Clock, AlertTriangle, ChevronDown, LogOut, Trophy } from 'lucide-react';
+import '../../../../../css/predictions.css';
 
 // Custom Leaf Indicator Components for message status
 const LeafOutline = ({ size = 14, className = '' }: { size?: number; className?: string }) => (
@@ -269,8 +270,16 @@ export default function MessagesIndex({
     // Prediction banner state
     const [predictionFixtures, setPredictionFixtures] = useState<any[]>([]);
     const [predictionOrgSlug, setPredictionOrgSlug] = useState<string>('');
+    const [predictionOrgName, setPredictionOrgName] = useState<string>('');
+    const [predictionOrgLogo, setPredictionOrgLogo] = useState<string | null>(null);
     const [predictionBannerExpanded, setPredictionBannerExpanded] = useState(true);
     const [predictionSubmitting, setPredictionSubmitting] = useState(false);
+    const [bannerPredForms, setBannerPredForms] = useState<Record<number, { type: string; value: string; homeScore: string; awayScore: string }>>({});
+
+    const getBannerPredForm = (fixtureId: number) => bannerPredForms[fixtureId] || { type: 'match_result', value: '', homeScore: '', awayScore: '' };
+    const updateBannerPredForm = (fixtureId: number, updates: Partial<{ type: string; value: string; homeScore: string; awayScore: string }>) => {
+        setBannerPredForms(prev => ({ ...prev, [fixtureId]: { ...getBannerPredForm(fixtureId), ...updates } }));
+    };
 
     // Removal state
     const [removalData, setRemovalData] = useState<RemovalData | null>(null);
@@ -522,13 +531,19 @@ export default function MessagesIndex({
             if (predRes.data.fixtures && predRes.data.fixtures.length > 0) {
                 setPredictionFixtures(predRes.data.fixtures);
                 setPredictionOrgSlug(predRes.data.organizationSlug || '');
+                setPredictionOrgName(predRes.data.organizationName || '');
+                setPredictionOrgLogo(predRes.data.organizationLogo || null);
             } else {
                 setPredictionFixtures([]);
                 setPredictionOrgSlug('');
+                setPredictionOrgName('');
+                setPredictionOrgLogo(null);
             }
         } catch {
             setPredictionFixtures([]);
             setPredictionOrgSlug('');
+            setPredictionOrgName('');
+            setPredictionOrgLogo(null);
         }
     }, []);
 
@@ -542,6 +557,8 @@ export default function MessagesIndex({
             setIsMuted(false);
             setPredictionFixtures([]);
             setPredictionOrgSlug('');
+            setPredictionOrgName('');
+            setPredictionOrgLogo(null);
         }
     }, [activeGroupChat, fetchGroupAdminData]);
 
@@ -1547,166 +1564,191 @@ export default function MessagesIndex({
 
                                 {/* Prediction Banner (Collapsible) */}
                                 {predictionFixtures.length > 0 && activeGroupChat?.type === 'class_set' && (
-                                    <div style={{
-                                        background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(59, 130, 246, 0.08))',
-                                        borderBottom: '1px solid rgba(139, 92, 246, 0.2)',
-                                    }}>
+                                    <div className="pred-banner">
                                         {/* Clickable Header */}
-                                        <div
-                                            onClick={() => setPredictionBannerExpanded(!predictionBannerExpanded)}
-                                            style={{
-                                                display: 'flex', alignItems: 'center', gap: '8px',
-                                                padding: '10px 16px',
-                                                cursor: 'pointer',
-                                                transition: 'background 0.15s ease',
-                                            }}
-                                            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)'; }}
-                                            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                                        >
-                                            <span style={{ fontSize: '14px' }}>🏆</span>
-                                            <span style={{ fontWeight: 600, color: '#ffffff', fontSize: '0.85rem' }}>
-                                                Predictions Open
-                                            </span>
-                                            <span style={{
-                                                fontSize: '0.65rem', fontWeight: 600, color: '#8B5CF6',
-                                                background: 'rgba(139, 92, 246, 0.12)',
-                                                padding: '2px 6px', borderRadius: '4px',
-                                            }}>
-                                                {predictionFixtures.length}
-                                            </span>
-                                            <span style={{ marginLeft: 'auto', fontSize: '0.72rem', color: '#888' }}>
-                                                {predictionOrgSlug && (
-                                                    <span
-                                                        onClick={(e) => { e.stopPropagation(); router.visit(`/organizations/${predictionOrgSlug}/predictions`); }}
-                                                        style={{ color: '#8B5CF6', cursor: 'pointer', textDecoration: 'underline' }}
-                                                    >
-                                                        Full League
-                                                    </span>
-                                                )}
-                                            </span>
-                                            <ChevronDown size={16} color="#888" style={{
-                                                transition: 'transform 0.2s ease',
-                                                transform: predictionBannerExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                                                flexShrink: 0,
-                                            }} />
+                                        <div className="pred-banner-header" onClick={() => setPredictionBannerExpanded(!predictionBannerExpanded)}>
+                                            <Trophy size={14} color="#a78bfa" />
+                                            <span className="pred-banner-title">Predictions Open</span>
+                                            <span className="pred-banner-count">{predictionFixtures.length}</span>
+                                            {predictionOrgSlug && (
+                                                <span className="pred-banner-link" onClick={(e) => { e.stopPropagation(); router.visit(`/organizations/${predictionOrgSlug}/predictions`); }}>
+                                                    Full League
+                                                </span>
+                                            )}
+                                            <ChevronDown size={16} className="pred-banner-chevron" style={{ transform: predictionBannerExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }} />
                                         </div>
 
                                         {/* Collapsible Body — Scrollable fixture cards */}
                                         {predictionBannerExpanded && (
-                                            <div style={{ padding: '0 16px 12px' }}>
-                                                <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '4px' }}>
-                                                    {predictionFixtures.map((fixture: any) => (
-                                                        <div key={fixture.id} style={{
-                                                            minWidth: '220px', maxWidth: '260px',
-                                                            background: 'rgba(255, 255, 255, 0.04)',
-                                                            border: '1px solid rgba(255, 255, 255, 0.08)',
-                                                            borderRadius: '10px', padding: '10px 12px', flexShrink: 0,
-                                                        }}>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                                                                <div style={{
-                                                                    width: '24px', height: '24px', borderRadius: '6px',
-                                                                    background: 'rgba(255, 255, 255, 0.08)', display: 'flex',
-                                                                    alignItems: 'center', justifyContent: 'center',
-                                                                    fontSize: '0.6rem', fontWeight: 700, color: '#888', overflow: 'hidden',
-                                                                }}>
-                                                                    {fixture.opponent_logo
-                                                                        ? <img src={fixture.opponent_logo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                                                        : fixture.opponent_name?.charAt(0)}
-                                                                </div>
-                                                                <div style={{ flex: 1 }}>
-                                                                    <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#e0e0e0' }}>
-                                                                        vs {fixture.opponent_name}
+                                            <div className="pred-banner-body">
+                                                <div className="pred-banner-scroll">
+                                                    {predictionFixtures.map((fixture: any) => {
+                                                        const homeName = fixture.venue === 'home' ? predictionOrgName : fixture.opponent_name;
+                                                        const awayName = fixture.venue === 'home' ? fixture.opponent_name : predictionOrgName;
+                                                        const homeLogo = fixture.venue === 'home' ? predictionOrgLogo : fixture.opponent_logo;
+                                                        const awayLogo = fixture.venue === 'home' ? fixture.opponent_logo : predictionOrgLogo;
+                                                        const form = getBannerPredForm(fixture.id);
+
+                                                        const submitBannerPrediction = (type: string, value: string, homeScore?: string, awayScore?: string) => {
+                                                            if (!predictionOrgSlug || predictionSubmitting) return;
+                                                            setPredictionSubmitting(true);
+                                                            const data: any = { fixture_id: fixture.id, prediction_type: type, prediction_value: value };
+                                                            if (type === 'correct_score') {
+                                                                data.predicted_home_score = parseInt(homeScore || '0');
+                                                                data.predicted_away_score = parseInt(awayScore || '0');
+                                                            }
+                                                            axios.post(route('organizations.predictions.predict', predictionOrgSlug), data).then(() => {
+                                                                setPredictionFixtures(prev => prev.map(f =>
+                                                                    f.id === fixture.id
+                                                                        ? { ...f, user_prediction: { prediction_type: type, prediction_value: value, predicted_home_score: data.predicted_home_score ?? null, predicted_away_score: data.predicted_away_score ?? null, is_correct: null, points_earned: 0, is_locked: false } }
+                                                                        : f
+                                                                ));
+                                                            }).catch(() => {}).finally(() => setPredictionSubmitting(false));
+                                                        };
+
+                                                        return (
+                                                        <div key={fixture.id} className="pred-banner-card">
+                                                            {/* Matchup */}
+                                                            <div className="pred-banner-matchup">
+                                                                <div className="pred-banner-team">
+                                                                    <div className="pred-banner-team-logo">
+                                                                        {homeLogo
+                                                                            ? <img src={homeLogo} alt="" />
+                                                                            : <span className="pred-banner-team-logo-fallback">{homeName?.charAt(0)}</span>}
                                                                     </div>
-                                                                    <div style={{ fontSize: '0.68rem', color: '#888' }}>
-                                                                        {fixture.venue === 'home' ? 'H' : 'A'} · {new Date(fixture.match_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                                                                    </div>
+                                                                    <span className="pred-banner-team-name">{homeName}</span>
                                                                 </div>
+                                                                <span className="pred-banner-vs">vs</span>
+                                                                <div className="pred-banner-team away">
+                                                                    <div className="pred-banner-team-logo">
+                                                                        {awayLogo
+                                                                            ? <img src={awayLogo} alt="" />
+                                                                            : <span className="pred-banner-team-logo-fallback">{awayName?.charAt(0)}</span>}
+                                                                    </div>
+                                                                    <span className="pred-banner-team-name">{awayName}</span>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Meta */}
+                                                            <div className="pred-banner-meta">
+                                                                {new Date(fixture.match_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                                                {fixture.competition && <> · {fixture.competition}</>}
                                                             </div>
 
                                                             {/* Already predicted */}
                                                             {fixture.user_prediction ? (
-                                                                <div style={{
-                                                                    display: 'flex', alignItems: 'center', gap: '6px',
-                                                                    padding: '4px 8px', borderRadius: '6px',
-                                                                    background: 'rgba(16, 185, 129, 0.08)',
-                                                                    border: '1px solid rgba(16, 185, 129, 0.15)',
-                                                                    fontSize: '0.72rem', color: '#10B981',
-                                                                }}>
-                                                                    <Check size={11} />
-                                                                    {fixture.user_prediction.prediction_type === 'correct_score'
-                                                                        ? `${fixture.user_prediction.predicted_home_score}-${fixture.user_prediction.predicted_away_score}`
-                                                                        : fixture.user_prediction.prediction_value === 'home_win' ? 'Home Win'
-                                                                        : fixture.user_prediction.prediction_value === 'away_win' ? 'Away Win'
-                                                                        : fixture.user_prediction.prediction_value === 'draw' ? 'Draw'
-                                                                        : fixture.user_prediction.prediction_value === 'home_draw' ? 'Home/Draw'
-                                                                        : fixture.user_prediction.prediction_value === 'away_draw' ? 'Away/Draw'
-                                                                        : fixture.user_prediction.prediction_value === 'home_away' ? 'Home/Away'
-                                                                        : fixture.user_prediction.prediction_value}
+                                                                <div className="pred-banner-confirmed">
+                                                                    <Check size={12} />
+                                                                    <span>
+                                                                        {fixture.user_prediction.prediction_type === 'correct_score'
+                                                                            ? `${homeName} ${fixture.user_prediction.predicted_home_score} - ${fixture.user_prediction.predicted_away_score} ${awayName}`
+                                                                            : fixture.user_prediction.prediction_value === 'home_win' ? `${homeName} Win`
+                                                                            : fixture.user_prediction.prediction_value === 'away_win' ? `${awayName} Win`
+                                                                            : fixture.user_prediction.prediction_value === 'draw' ? 'Draw'
+                                                                            : fixture.user_prediction.prediction_value === 'home_draw' ? `${homeName}/Draw`
+                                                                            : fixture.user_prediction.prediction_value === 'away_draw' ? `${awayName}/Draw`
+                                                                            : fixture.user_prediction.prediction_value === 'home_away' ? `${homeName}/${awayName}`
+                                                                            : fixture.user_prediction.prediction_value}
+                                                                    </span>
                                                                 </div>
                                                             ) : (
-                                                                /* Quick predict buttons — match result only for banner */
-                                                                <div style={{ display: 'flex', gap: '4px' }}>
-                                                                    {[
-                                                                        { value: 'home_win', label: 'H' },
-                                                                        { value: 'draw', label: 'D' },
-                                                                        { value: 'away_win', label: 'A' },
-                                                                    ].map(opt => (
-                                                                        <button
-                                                                            key={opt.value}
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                if (!predictionOrgSlug || predictionSubmitting) return;
-                                                                                setPredictionSubmitting(true);
-                                                                                axios.post(route('organizations.predictions.predict', predictionOrgSlug), {
-                                                                                    fixture_id: fixture.id,
-                                                                                    prediction_type: 'match_result',
-                                                                                    prediction_value: opt.value,
-                                                                                }).then(() => {
-                                                                                    // Update fixture in local state
-                                                                                    setPredictionFixtures(prev => prev.map(f =>
-                                                                                        f.id === fixture.id
-                                                                                            ? { ...f, user_prediction: { prediction_type: 'match_result', prediction_value: opt.value, is_correct: null, points_earned: 0, is_locked: false } }
-                                                                                            : f
-                                                                                    ));
-                                                                                }).catch(() => {}).finally(() => setPredictionSubmitting(false));
-                                                                            }}
-                                                                            disabled={predictionSubmitting}
-                                                                            style={{
-                                                                                flex: 1, padding: '4px 6px', borderRadius: '6px',
-                                                                                border: '1px solid rgba(139, 92, 246, 0.2)',
-                                                                                background: 'rgba(139, 92, 246, 0.06)',
-                                                                                color: '#b0a0e0', fontSize: '0.72rem', fontWeight: 600,
-                                                                                cursor: predictionSubmitting ? 'not-allowed' : 'pointer',
-                                                                                opacity: predictionSubmitting ? 0.5 : 1,
-                                                                                transition: 'all 0.15s ease',
-                                                                            }}
-                                                                            onMouseEnter={(e) => { if (!predictionSubmitting) { e.currentTarget.style.background = 'rgba(139, 92, 246, 0.15)'; e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.4)'; } }}
-                                                                            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(139, 92, 246, 0.06)'; e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.2)'; }}
-                                                                        >
-                                                                            {opt.label}
+                                                                <>
+                                                                    {/* Bet Type Selector */}
+                                                                    <div className="pred-bet-types">
+                                                                        <button className={`pred-bet-type ${form.type === 'match_result' ? 'active' : ''}`}
+                                                                            onClick={() => updateBannerPredForm(fixture.id, { type: 'match_result', value: '' })}>
+                                                                            Result · 5pts
                                                                         </button>
-                                                                    ))}
-                                                                </div>
+                                                                        <button className={`pred-bet-type ${form.type === 'double_chance' ? 'active' : ''}`}
+                                                                            onClick={() => updateBannerPredForm(fixture.id, { type: 'double_chance', value: '' })}>
+                                                                            Double · 2pts
+                                                                        </button>
+                                                                        <button className={`pred-bet-type ${form.type === 'correct_score' ? 'active' : ''}`}
+                                                                            onClick={() => updateBannerPredForm(fixture.id, { type: 'correct_score', value: '' })}>
+                                                                            Score · 15pts
+                                                                        </button>
+                                                                    </div>
+
+                                                                    <p className="pred-pick-label">Pick your prediction</p>
+
+                                                                    {/* Match Result Options */}
+                                                                    {form.type === 'match_result' && (
+                                                                        <div className="pred-options">
+                                                                            {[
+                                                                                { value: 'home_win', label: `${homeName} Win` },
+                                                                                { value: 'draw', label: 'Draw' },
+                                                                                { value: 'away_win', label: `${awayName} Win` },
+                                                                            ].map(opt => (
+                                                                                <button key={opt.value}
+                                                                                    className={`pred-option-btn ${form.value === opt.value ? 'selected' : ''}`}
+                                                                                    onClick={() => {
+                                                                                        updateBannerPredForm(fixture.id, { value: opt.value });
+                                                                                        submitBannerPrediction('match_result', opt.value);
+                                                                                    }}
+                                                                                    disabled={predictionSubmitting}>
+                                                                                    {opt.label}
+                                                                                </button>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+
+                                                                    {/* Double Chance Options */}
+                                                                    {form.type === 'double_chance' && (
+                                                                        <div className="pred-options">
+                                                                            {[
+                                                                                { value: 'home_draw', label: `${homeName}/Draw` },
+                                                                                { value: 'away_draw', label: `${awayName}/Draw` },
+                                                                                { value: 'home_away', label: `${homeName}/${awayName}` },
+                                                                            ].map(opt => (
+                                                                                <button key={opt.value}
+                                                                                    className={`pred-option-btn ${form.value === opt.value ? 'selected' : ''}`}
+                                                                                    onClick={() => {
+                                                                                        updateBannerPredForm(fixture.id, { value: opt.value });
+                                                                                        submitBannerPrediction('double_chance', opt.value);
+                                                                                    }}
+                                                                                    disabled={predictionSubmitting}>
+                                                                                    {opt.label}
+                                                                                </button>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+
+                                                                    {/* Correct Score Inputs */}
+                                                                    {form.type === 'correct_score' && (
+                                                                        <div className="pred-score-inputs">
+                                                                            <span className="pred-score-team-label">{homeName}</span>
+                                                                            <input type="number" min="0" max="99" className="pred-score-input" placeholder="0"
+                                                                                value={form.homeScore}
+                                                                                onChange={(e) => updateBannerPredForm(fixture.id, { homeScore: e.target.value })} />
+                                                                            <span className="pred-score-separator">—</span>
+                                                                            <input type="number" min="0" max="99" className="pred-score-input" placeholder="0"
+                                                                                value={form.awayScore}
+                                                                                onChange={(e) => updateBannerPredForm(fixture.id, { awayScore: e.target.value })} />
+                                                                            <span className="pred-score-team-label">{awayName}</span>
+                                                                            <button className="pred-score-submit"
+                                                                                onClick={() => submitBannerPrediction('correct_score', `${form.homeScore}-${form.awayScore}`, form.homeScore, form.awayScore)}
+                                                                                disabled={predictionSubmitting || form.homeScore === '' || form.awayScore === ''}>
+                                                                                {predictionSubmitting ? '...' : 'Submit'}
+                                                                            </button>
+                                                                        </div>
+                                                                    )}
+                                                                </>
                                                             )}
 
                                                             {/* Completed result */}
                                                             {fixture.status === 'completed' && (
-                                                                <div style={{ marginTop: '6px', fontSize: '0.72rem', color: '#aaa', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                                    Final: <strong style={{ color: '#fff' }}>{fixture.home_score} - {fixture.away_score}</strong>
+                                                                <div className="pred-banner-result">
+                                                                    Final: <strong>{homeName} {fixture.home_score} - {fixture.away_score} {awayName}</strong>
                                                                     {fixture.user_prediction?.is_correct !== null && (
-                                                                        <span style={{
-                                                                            marginLeft: '4px', padding: '1px 5px', borderRadius: '4px',
-                                                                            fontSize: '0.65rem', fontWeight: 600,
-                                                                            background: fixture.user_prediction.is_correct ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
-                                                                            color: fixture.user_prediction.is_correct ? '#10B981' : '#EF4444',
-                                                                        }}>
+                                                                        <span className={`pred-banner-pts ${fixture.user_prediction.is_correct ? 'correct' : 'wrong'}`}>
                                                                             {fixture.user_prediction.is_correct ? `+${fixture.user_prediction.points_earned}` : '0'} pts
                                                                         </span>
                                                                     )}
                                                                 </div>
                                                             )}
                                                         </div>
-                                                    ))}
+                                                        );
+                                                    })}
                                                 </div>
                                             </div>
                                         )}

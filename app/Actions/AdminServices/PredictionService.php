@@ -259,7 +259,7 @@ class PredictionService
                 'first_name' => $s->user->first_name,
                 'last_name' => $s->user->last_name,
                 'username' => $s->user->username,
-                'profile_image' => $s->user->profile_image,
+                'profile_image_url' => $s->user->profile_image_url,
             ] : null,
             'total_points' => $s->total_points,
             'predictions_made' => $s->predictions_made,

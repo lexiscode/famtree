@@ -138,6 +138,6 @@ class PredictionRepository
     {
         return Organization::whereHas('category', function ($q) {
             $q->where('slug', 'football-fans');
-        })->select('id', 'name', 'slug', 'logo_url')->get();
+        })->select('id', 'name', 'slug', 'logo')->get();
     }
 }

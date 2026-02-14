@@ -87,7 +87,7 @@ class PredictionService
                 'first_name' => $s->user?->first_name,
                 'last_name' => $s->user?->last_name,
                 'username' => $s->user?->username,
-                'profile_image' => $s->user?->profile_image,
+                'profile_image_url' => $s->user?->profile_image_url,
                 'total_points' => $s->total_points,
                 'predictions_made' => $s->predictions_made,
                 'correct_predictions' => $s->correct_predictions,
@@ -239,6 +239,8 @@ class PredictionService
         return [
             'fixtures' => $fixtures->map(fn($f) => $this->formatFixture($f, $userPredictions))->toArray(),
             'organizationSlug' => $org->slug,
+            'organizationName' => $org->short_name ?: $org->name,
+            'organizationLogo' => $org->logo_url,
         ];
     }
 
@@ -269,7 +271,7 @@ class PredictionService
             'first_name' => $s->user?->first_name,
             'last_name' => $s->user?->last_name,
             'username' => $s->user?->username,
-            'profile_image' => $s->user?->profile_image,
+            'profile_image_url' => $s->user?->profile_image_url,
             'total_points' => $s->total_points,
             'predictions_made' => $s->predictions_made,
             'correct_predictions' => $s->correct_predictions,

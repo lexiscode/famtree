@@ -40,28 +40,26 @@ export default function Create({ organizations }: Props) {
             <div>
                 {flash?.error && <div className="ap-flash ap-flash-error">{flash.error}</div>}
 
+                <button className="ap-back-btn ap-mb-md" onClick={() => router.visit(route('admin.predictions.index'))}>
+                    <ArrowLeft size={16} /> Back to Predictions
+                </button>
+
                 <div className="ap-page-header">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <button className="ap-btn ap-btn-ghost" onClick={() => router.visit(route('admin.predictions.index'))}>
-                            <ArrowLeft size={16} />
-                        </button>
-                        <div>
-                            <h1 className="ap-page-title">Create Prediction Season</h1>
-                            <p className="ap-page-subtitle">Set up a new prediction league season for a football organization</p>
-                        </div>
-                    </div>
+                    <h1 className="ap-page-title">Create Prediction Season</h1>
+                    <p className="ap-page-subtitle">Set up a new prediction league season for a football organization</p>
                 </div>
 
-                <div className="ap-card" style={{ maxWidth: '600px' }}>
+                <div className="ap-card ap-card-lg" style={{ maxWidth: '600px' }}>
                     <div className="ap-card-header">
-                        <Trophy size={18} />
-                        <h3>Season Details</h3>
+                        <h3 className="ap-card-title ap-flex ap-items-center ap-gap-sm">
+                            <Trophy size={18} /> Season Details
+                        </h3>
                     </div>
-                    <form onSubmit={handleSubmit} style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <form onSubmit={handleSubmit}>
                         <div className="ap-form-group">
-                            <label className="ap-label">Organization</label>
+                            <label className="ap-form-label">Organization</label>
                             <select
-                                className="ap-input"
+                                className="ap-form-select"
                                 value={form.organization_id}
                                 onChange={(e) => setForm({ ...form, organization_id: e.target.value })}
                                 required
@@ -71,49 +69,49 @@ export default function Create({ organizations }: Props) {
                                     <option key={org.id} value={org.id}>{org.name}</option>
                                 ))}
                             </select>
-                            {errors.organization_id && <span className="ap-error">{errors.organization_id}</span>}
+                            {errors.organization_id && <p className="ap-form-error">{errors.organization_id}</p>}
                         </div>
 
                         <div className="ap-form-group">
-                            <label className="ap-label">Season Name</label>
+                            <label className="ap-form-label">Season Name</label>
                             <input
                                 type="text"
-                                className="ap-input"
+                                className="ap-form-input"
                                 value={form.name}
                                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                                 placeholder="e.g. 2025/26 Premier League Season"
                                 required
                             />
-                            {errors.name && <span className="ap-error">{errors.name}</span>}
+                            {errors.name && <p className="ap-form-error">{errors.name}</p>}
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                        <div className="ap-form-row">
                             <div className="ap-form-group">
-                                <label className="ap-label">Start Date</label>
+                                <label className="ap-form-label">Start Date</label>
                                 <input
                                     type="date"
-                                    className="ap-input"
+                                    className="ap-form-input"
                                     value={form.start_date}
                                     onChange={(e) => setForm({ ...form, start_date: e.target.value })}
                                     required
                                 />
-                                {errors.start_date && <span className="ap-error">{errors.start_date}</span>}
+                                {errors.start_date && <p className="ap-form-error">{errors.start_date}</p>}
                             </div>
                             <div className="ap-form-group">
-                                <label className="ap-label">End Date</label>
+                                <label className="ap-form-label">End Date</label>
                                 <input
                                     type="date"
-                                    className="ap-input"
+                                    className="ap-form-input"
                                     value={form.end_date}
                                     onChange={(e) => setForm({ ...form, end_date: e.target.value })}
                                     required
                                 />
-                                {errors.end_date && <span className="ap-error">{errors.end_date}</span>}
+                                {errors.end_date && <p className="ap-form-error">{errors.end_date}</p>}
                             </div>
                         </div>
 
-                        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '8px' }}>
-                            <button type="button" className="ap-btn ap-btn-ghost" onClick={() => router.visit(route('admin.predictions.index'))}>
+                        <div className="ap-flex ap-justify-end ap-gap-sm ap-mt-lg">
+                            <button type="button" className="ap-btn ap-btn-secondary" onClick={() => router.visit(route('admin.predictions.index'))}>
                                 Cancel
                             </button>
                             <button type="submit" className="ap-btn ap-btn-primary" disabled={submitting}>
