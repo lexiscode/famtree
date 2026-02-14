@@ -254,6 +254,9 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::delete('/{galleryId}', [GalleryController::class, 'destroy'])->name('galleries.destroy');
     });
 
+    // Trending Posts page
+    Route::get('/trending', [FeedController::class, 'trendingPosts'])->name('trending.index');
+
     // Connection Feeds routes
     Route::get('/connection-feeds', [ConnectionFeedsController::class, 'index'])->name('connection-feeds.index');
 

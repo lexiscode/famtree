@@ -159,6 +159,27 @@ class ConnectionFeedsRepository
     }
 
     /**
+     * Get all platform posts from the last X days (no user filter)
+     *
+     * @param int $days
+     * @return Collection
+     */
+    public function getAllPlatformPosts(int $days = 30): Collection
+    {
+        $cutoffDate = Carbon::now()->subDays($days);
+
+        return Post::where('created_at', '>=', $cutoffDate)
+            ->with([
+                'user',
+                'images',
+                'reactions',
+                'comments'
+            ])
+            ->orderBy('created_at', 'desc')
+            ->get();
+    }
+
+    /**
      * Get posts from indirect connections only
      *
      * @param User $user

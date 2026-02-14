@@ -8,6 +8,7 @@ use App\Repositories\GuestRepositories\AuthAccessRepositories\ConnectionFeedsRep
 use App\Repositories\GuestRepositories\UserConnectionRepository;
 use App\Repositories\GuestRepositories\PostReactionRepository;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Http\Request;
 
 class ConnectionFeedsService
 {
@@ -171,8 +172,8 @@ class ConnectionFeedsService
      */
     public function getTopTrendingPosts(User $user, int $limit = 5): array
     {
-        // Get all posts from connections
-        $posts = $this->feedRepository->getConnectionsPosts($user);
+        // Get all posts from the entire platform
+        $posts = $this->feedRepository->getAllPlatformPosts();
 
         // Filter by privacy settings
         $visiblePosts = $this->filterPostsByPrivacy($posts, $user);
@@ -184,5 +185,42 @@ class ConnectionFeedsService
 
         // Format and return
         return $this->formatPosts($sortedPosts, $user->id);
+    }
+
+    /**
+     * Get paginated trending posts from the entire platform
+     *
+     * @param User $user
+     * @param int $perPage
+     * @return array
+     */
+    public function getPaginatedTrendingPosts(User $user, int $perPage = 15): array
+    {
+        $posts = $this->feedRepository->getAllPlatformPosts();
+
+        // Filter by privacy settings
+        $visiblePosts = $this->filterPostsByPrivacy($posts, $user);
+
+        // Sort by engagement score
+        $sortedPosts = $visiblePosts->sortByDesc(function (Post $post) {
+            return ($post->reactions_count * 2) + ($post->comments_count * 1.5) + ($post->views_count * 0.1);
+        })->values();
+
+        // Manual pagination
+        $currentPage = (int) request()->get('page', 1);
+        $total = $sortedPosts->count();
+        $lastPage = max(1, (int) ceil($total / $perPage));
+        $currentPage = min($currentPage, $lastPage);
+        $offset = ($currentPage - 1) * $perPage;
+
+        $paginated = $sortedPosts->slice($offset, $perPage)->values();
+
+        return [
+            'posts' => $this->formatPosts($paginated, $user->id),
+            'current_page' => $currentPage,
+            'last_page' => $lastPage,
+            'per_page' => $perPage,
+            'total' => $total,
+        ];
     }
 }

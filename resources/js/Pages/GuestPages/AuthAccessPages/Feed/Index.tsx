@@ -618,6 +618,9 @@ export default function Feed({
                                             </div>
                                         )}
                                     </div>
+                                    <div className="widget-footer">
+                                        <Link href="/trending">View All</Link>
+                                    </div>
                                 </div>
 
                                 {/* Suggested Users Widget */}
