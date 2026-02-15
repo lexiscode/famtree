@@ -5,6 +5,7 @@ import { Mail, Phone, MapPin, Cake, FileText, Users, Send, Clock, CheckCircle, L
 
 interface Profile {
     id: number;
+    uuid: string;
     name: string;
     username: string;
     email: string | null;
@@ -94,7 +95,7 @@ export default function ViewProfile({
         try {
             if (isFollowing) {
                 // Unfollow
-                router.post(route('users.unfollow', profile.id), {}, {
+                router.post(route('users.unfollow', profile.uuid), {}, {
                     preserveState: false,
                     onSuccess: () => {
                         setIsFollowing(false);
@@ -107,7 +108,7 @@ export default function ViewProfile({
                 });
             } else {
                 // Follow
-                router.post(route('users.follow', profile.id), {}, {
+                router.post(route('users.follow', profile.uuid), {}, {
                     preserveState: false,
                     onSuccess: () => {
                         setIsFollowing(true);
@@ -326,7 +327,7 @@ export default function ViewProfile({
                                 <div className="profile-stats" style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem', justifyContent: 'center' }}>
                                     <div
                                         className="stat-item"
-                                        onClick={() => router.visit(route('users.followers', profile.id))}
+                                        onClick={() => router.visit(route('users.followers', profile.uuid))}
                                         style={{ cursor: 'pointer', textAlign: 'center', padding: '0.75rem', backgroundColor: '#F3F4F6', borderRadius: '8px', flex: 1 }}
                                         title="View followers"
                                     >
@@ -335,7 +336,7 @@ export default function ViewProfile({
                                     </div>
                                     <div
                                         className="stat-item"
-                                        onClick={() => router.visit(route('users.following', profile.id))}
+                                        onClick={() => router.visit(route('users.following', profile.uuid))}
                                         style={{ cursor: 'pointer', textAlign: 'center', padding: '0.75rem', backgroundColor: '#F3F4F6', borderRadius: '8px', flex: 1 }}
                                         title="View following"
                                     >

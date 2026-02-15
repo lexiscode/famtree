@@ -3,9 +3,11 @@ import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
 import UserProfileSidebar from '@/Components/Profile/UserProfileSidebar';
 import { ArrowLeft, Users, UserPlus, UserMinus, Search, UserCheck } from 'lucide-react';
+import './Follow.css';
 
 interface User {
     id: number;
+    uuid: string;
     first_name: string;
     last_name: string;
     name: string;
@@ -19,6 +21,7 @@ interface User {
 
 interface Profile {
     id: number;
+    uuid: string;
     name: string;
     username: string;
     profile_image_url: string | null;
@@ -72,7 +75,7 @@ export default function FollowersList({
 
         try {
             if (follower.is_following) {
-                router.post(route('users.unfollow', follower.id), {}, {
+                router.post(route('users.unfollow', follower.uuid), {}, {
                     preserveState: true,
                     preserveScroll: true,
                     onSuccess: () => {
@@ -86,7 +89,7 @@ export default function FollowersList({
                     }
                 });
             } else {
-                router.post(route('users.follow', follower.id), {}, {
+                router.post(route('users.follow', follower.uuid), {}, {
                     preserveState: true,
                     preserveScroll: true,
                     onSuccess: () => {
@@ -138,388 +141,150 @@ export default function FollowersList({
 
                     {/* Center Content */}
                     <div className="connections-center-content">
-                        <div style={{
-                            background: 'linear-gradient(135deg, #F8F9FA 0%, #E8F0FF 100%)',
-                            minHeight: '100vh',
-                            paddingTop: '2rem',
-                            paddingBottom: '4rem',
-                            fontFamily: 'Inter, sans-serif'
-                        }}>
-                            <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '0 1.5rem' }}>
-                    {/* Header Section */}
-                    <div style={{
-                        background: '#FFFFFF',
-                        borderRadius: '20px',
-                        padding: '2rem',
-                        marginBottom: '2rem',
-                        boxShadow: '0 10px 40px rgba(0, 82, 232, 0.08)',
-                        border: '1px solid rgba(0, 82, 232, 0.1)'
-                    }}>
-                        {/* Back Button */}
-                        <button
-                            onClick={() => router.visit(route('profile.view', { username: profile.username }))}
-                            style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '0.5rem',
-                                padding: '0.625rem 1.25rem',
-                                background: 'linear-gradient(135deg, #F8F9FA 0%, #E8F0FF 100%)',
-                                border: '1px solid #E5E7EB',
-                                borderRadius: '10px',
-                                cursor: 'pointer',
-                                fontWeight: '500',
-                                fontSize: '0.875rem',
-                                color: '#3D4450',
-                                marginBottom: '1.5rem',
-                                transition: 'all 0.2s ease'
-                            }}
-                            onMouseEnter={(e) => {
-                                e.currentTarget.style.transform = 'translateX(-4px)';
-                                e.currentTarget.style.borderColor = '#0052E8';
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.transform = 'translateX(0)';
-                                e.currentTarget.style.borderColor = '#E5E7EB';
-                            }}
-                        >
-                            <ArrowLeft size={16} />
-                            Back to Profile
-                        </button>
-
-                        {/* User Info */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '2rem' }}>
-                            <div style={{ position: 'relative' }}>
-                                <div style={{
-                                    position: 'absolute',
-                                    inset: '-4px',
-                                    background: 'linear-gradient(135deg, #0052E8, #00D4FF)',
-                                    borderRadius: '50%',
-                                    opacity: 0.2
-                                }} />
-                                <img
-                                    src={profile.profile_image_url || 'https://via.placeholder.com/100'}
-                                    alt={profile.name}
-                                    style={{
-                                        width: '100px',
-                                        height: '100px',
-                                        borderRadius: '50%',
-                                        objectFit: 'cover',
-                                        border: '4px solid #FFFFFF',
-                                        position: 'relative',
-                                        boxShadow: '0 8px 24px rgba(0, 82, 232, 0.15)'
-                                    }}
-                                />
-                            </div>
-                            <div style={{ flex: 1 }}>
-                                <h1 style={{
-                                    fontSize: '2rem',
-                                    fontWeight: '700',
-                                    marginBottom: '0.5rem',
-                                    background: 'linear-gradient(135deg, #0052E8, #00D4FF)',
-                                    WebkitBackgroundClip: 'text',
-                                    WebkitTextFillColor: 'transparent',
-                                    fontFamily: 'Poppins, sans-serif'
-                                }}>
-                                    {profile.name}
-                                </h1>
-                                <p style={{ color: '#6B7280', fontSize: '1rem', marginBottom: '1rem' }}>@{profile.username}</p>
-
-                                {/* Tab Navigation */}
-                                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                    <div
-                                        style={{
-                                            padding: '0.75rem 1.5rem',
-                                            background: 'linear-gradient(135deg, #0052E8, #00D4FF)',
-                                            color: '#FFFFFF',
-                                            borderRadius: '12px',
-                                            fontWeight: '600',
-                                            fontSize: '0.875rem',
-                                            cursor: 'pointer',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '0.5rem',
-                                            boxShadow: '0 4px 12px rgba(0, 82, 232, 0.3)'
-                                        }}
+                        <div className="follow-center-wrapper">
+                            <div className="follow-center-inner">
+                                {/* Header Section */}
+                                <div className="follow-header-card">
+                                    {/* Back Button */}
+                                    <button
+                                        className="follow-back-btn"
+                                        onClick={() => router.visit(route('profile.view', { username: profile.username }))}
                                     >
-                                        <Users size={16} />
-                                        {followerCount} Followers
-                                    </div>
-                                    <div
-                                        onClick={() => router.visit(route('users.following', profile.id))}
-                                        style={{
-                                            padding: '0.75rem 1.5rem',
-                                            background: '#F8F9FA',
-                                            color: '#3D4450',
-                                            borderRadius: '12px',
-                                            fontWeight: '600',
-                                            fontSize: '0.875rem',
-                                            cursor: 'pointer',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '0.5rem',
-                                            transition: 'all 0.2s ease',
-                                            border: '2px solid transparent'
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            e.currentTarget.style.background = '#E8F0FF';
-                                            e.currentTarget.style.borderColor = '#0052E8';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.background = '#F8F9FA';
-                                            e.currentTarget.style.borderColor = 'transparent';
-                                        }}
-                                    >
-                                        <UserCheck size={16} />
-                                        {followingCount} Following
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                                        <ArrowLeft size={16} />
+                                        Back to Profile
+                                    </button>
 
-                        {/* Search Bar */}
-                        <div style={{ position: 'relative' }}>
-                            <Search
-                                size={20}
-                                style={{
-                                    position: 'absolute',
-                                    left: '1rem',
-                                    top: '50%',
-                                    transform: 'translateY(-50%)',
-                                    color: '#9CA3AF'
-                                }}
-                            />
-                            <input
-                                type="text"
-                                placeholder="Search followers..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                style={{
-                                    width: '100%',
-                                    padding: '0.875rem 1rem 0.875rem 3rem',
-                                    border: '2px solid #E5E7EB',
-                                    borderRadius: '12px',
-                                    fontSize: '0.9375rem',
-                                    outline: 'none',
-                                    transition: 'all 0.2s ease',
-                                    fontFamily: 'Inter, sans-serif'
-                                }}
-                                onFocus={(e) => {
-                                    e.currentTarget.style.borderColor = '#0052E8';
-                                    e.currentTarget.style.boxShadow = '0 0 0 4px rgba(0, 82, 232, 0.1)';
-                                }}
-                                onBlur={(e) => {
-                                    e.currentTarget.style.borderColor = '#E5E7EB';
-                                    e.currentTarget.style.boxShadow = 'none';
-                                }}
-                            />
-                        </div>
-                    </div>
-
-                    {/* Followers List */}
-                    {filteredFollowers.length === 0 ? (
-                        <div style={{
-                            background: '#FFFFFF',
-                            borderRadius: '20px',
-                            padding: '4rem 2rem',
-                            textAlign: 'center',
-                            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)'
-                        }}>
-                            <div style={{
-                                width: '80px',
-                                height: '80px',
-                                background: 'linear-gradient(135deg, #E8F0FF, #F0F6FF)',
-                                borderRadius: '50%',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                margin: '0 auto 1.5rem'
-                            }}>
-                                <Users size={40} style={{ color: '#0052E8', opacity: 0.5 }} />
-                            </div>
-                            <h3 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#1F2937', marginBottom: '0.5rem' }}>
-                                {searchQuery ? 'No followers found' : (isOwnProfile ? 'No followers yet' : `${profile.name} has no followers yet`)}
-                            </h3>
-                            <p style={{ color: '#6B7280', fontSize: '0.9375rem' }}>
-                                {searchQuery ? 'Try a different search term' : 'Start building your network'}
-                            </p>
-                        </div>
-                    ) : (
-                        <div style={{ display: 'grid', gap: '1rem' }}>
-                            {filteredFollowers.map((follower) => (
-                                <div
-                                    key={follower.id}
-                                    style={{
-                                        background: '#FFFFFF',
-                                        borderRadius: '16px',
-                                        padding: '1.5rem',
-                                        border: '1px solid #E5E7EB',
-                                        transition: 'all 0.3s ease',
-                                        cursor: 'pointer',
-                                        position: 'relative',
-                                        overflow: 'hidden'
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        e.currentTarget.style.transform = 'translateY(-2px)';
-                                        e.currentTarget.style.boxShadow = '0 12px 32px rgba(0, 82, 232, 0.12)';
-                                        e.currentTarget.style.borderColor = '#0052E8';
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.transform = 'translateY(0)';
-                                        e.currentTarget.style.boxShadow = 'none';
-                                        e.currentTarget.style.borderColor = '#E5E7EB';
-                                    }}
-                                >
-                                    {follower.is_mutual && (
-                                        <div style={{
-                                            position: 'absolute',
-                                            top: 0,
-                                            right: 0,
-                                            background: 'linear-gradient(135deg, #FFD700, #FFA500)',
-                                            padding: '0.375rem 0.75rem',
-                                            borderBottomLeftRadius: '12px',
-                                            fontSize: '0.75rem',
-                                            fontWeight: '600',
-                                            color: '#FFFFFF',
-                                            boxShadow: '0 2px 8px rgba(255, 215, 0, 0.3)'
-                                        }}>
-                                            Mutual
-                                        </div>
-                                    )}
-
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-                                        <div
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                router.visit(route('profile.view', { username: follower.username }));
-                                            }}
-                                            style={{ position: 'relative', flexShrink: 0 }}
-                                        >
+                                    {/* User Info */}
+                                    <div className="follow-user-info">
+                                        <div className="follow-avatar-wrapper">
+                                            <div className="follow-avatar-ring" />
                                             <img
-                                                src={follower.profile_image_url || 'https://via.placeholder.com/70'}
-                                                alt={follower.name}
-                                                style={{
-                                                    width: '70px',
-                                                    height: '70px',
-                                                    borderRadius: '50%',
-                                                    objectFit: 'cover',
-                                                    border: '3px solid #F8F9FA',
-                                                    transition: 'all 0.3s ease'
-                                                }}
-                                                onMouseEnter={(e) => {
-                                                    e.currentTarget.style.transform = 'scale(1.05)';
-                                                    e.currentTarget.style.borderColor = '#0052E8';
-                                                }}
-                                                onMouseLeave={(e) => {
-                                                    e.currentTarget.style.transform = 'scale(1)';
-                                                    e.currentTarget.style.borderColor = '#F8F9FA';
-                                                }}
+                                                src={profile.profile_image_url || 'https://via.placeholder.com/100'}
+                                                alt={profile.name}
+                                                className="follow-avatar-img"
                                             />
                                         </div>
+                                        <div className="follow-profile-details">
+                                            <h1 className="follow-profile-name">
+                                                {profile.name}
+                                            </h1>
+                                            <p className="follow-profile-username">@{profile.username}</p>
 
-                                        <div
-                                            style={{ flex: 1, minWidth: 0 }}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                router.visit(route('profile.view', { username: follower.username }));
-                                            }}
-                                        >
-                                            <h3 style={{
-                                                fontWeight: '600',
-                                                fontSize: '1.0625rem',
-                                                marginBottom: '0.375rem',
-                                                color: '#1F2937',
-                                                fontFamily: 'Poppins, sans-serif'
-                                            }}>
-                                                {follower.name}
-                                            </h3>
-                                            <p style={{ color: '#0052E8', fontSize: '0.875rem', marginBottom: '0.625rem', fontWeight: '500' }}>
-                                                @{follower.username}
-                                            </p>
-                                            {follower.bio && (
-                                                <p style={{
-                                                    color: '#6B7280',
-                                                    fontSize: '0.875rem',
-                                                    lineHeight: '1.5',
-                                                    display: '-webkit-box',
-                                                    WebkitLineClamp: 2,
-                                                    WebkitBoxOrient: 'vertical',
-                                                    overflow: 'hidden'
-                                                }}>
-                                                    {follower.bio}
-                                                </p>
-                                            )}
+                                            {/* Tab Navigation */}
+                                            <div className="follow-tabs">
+                                                <div className="follow-tab-active">
+                                                    <Users size={16} />
+                                                    {followerCount} Followers
+                                                </div>
+                                                <div
+                                                    className="follow-tab-inactive"
+                                                    onClick={() => router.visit(route('users.following', profile.uuid))}
+                                                >
+                                                    <UserCheck size={16} />
+                                                    {followingCount} Following
+                                                </div>
+                                            </div>
                                         </div>
+                                    </div>
 
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleFollowToggle(follower);
-                                            }}
-                                            disabled={loadingUserId === follower.id}
-                                            style={{
-                                                padding: '0.625rem 1.5rem',
-                                                background: follower.is_following
-                                                    ? '#F3F4F6'
-                                                    : 'linear-gradient(135deg, #0052E8, #00D4FF)',
-                                                color: follower.is_following ? '#374151' : '#FFFFFF',
-                                                border: follower.is_following ? '2px solid #E5E7EB' : 'none',
-                                                borderRadius: '10px',
-                                                fontWeight: '600',
-                                                fontSize: '0.875rem',
-                                                cursor: loadingUserId === follower.id ? 'not-allowed' : 'pointer',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '0.5rem',
-                                                whiteSpace: 'nowrap',
-                                                transition: 'all 0.2s ease',
-                                                boxShadow: follower.is_following ? 'none' : '0 4px 12px rgba(0, 82, 232, 0.3)',
-                                                fontFamily: 'Poppins, sans-serif',
-                                                flexShrink: 0
-                                            }}
-                                            onMouseEnter={(e) => {
-                                                if (!follower.is_following && loadingUserId !== follower.id) {
-                                                    e.currentTarget.style.transform = 'translateY(-2px)';
-                                                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 82, 232, 0.4)';
-                                                }
-                                            }}
-                                            onMouseLeave={(e) => {
-                                                e.currentTarget.style.transform = 'translateY(0)';
-                                                e.currentTarget.style.boxShadow = follower.is_following ? 'none' : '0 4px 12px rgba(0, 82, 232, 0.3)';
-                                            }}
-                                        >
-                                            {loadingUserId === follower.id ? (
-                                                <div style={{
-                                                    width: '16px',
-                                                    height: '16px',
-                                                    border: '2px solid',
-                                                    borderColor: follower.is_following ? '#9CA3AF transparent transparent transparent' : '#FFFFFF transparent transparent transparent',
-                                                    borderRadius: '50%',
-                                                    animation: 'spin 1s linear infinite'
-                                                }} />
-                                            ) : (
-                                                <>
-                                                    {follower.is_following ? <UserMinus size={16} /> : <UserPlus size={16} />}
-                                                    {follower.is_following ? 'Unfollow' : 'Follow'}
-                                                </>
-                                            )}
-                                        </button>
+                                    {/* Search Bar */}
+                                    <div className="follow-search-wrapper">
+                                        <Search size={20} className="follow-search-icon" />
+                                        <input
+                                            type="text"
+                                            className="follow-search-input"
+                                            placeholder="Search followers..."
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                        />
                                     </div>
                                 </div>
-                            ))}
-                        </div>
-                    )}
+
+                                {/* Followers List */}
+                                {filteredFollowers.length === 0 ? (
+                                    <div className="follow-empty-state">
+                                        <div className="follow-empty-icon">
+                                            <Users size={40} />
+                                        </div>
+                                        <h3 className="follow-empty-heading">
+                                            {searchQuery ? 'No followers found' : (isOwnProfile ? 'No followers yet' : `${profile.name} has no followers yet`)}
+                                        </h3>
+                                        <p className="follow-empty-text">
+                                            {searchQuery ? 'Try a different search term' : 'Start building your network'}
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div className="follow-list-grid">
+                                        {filteredFollowers.map((follower) => (
+                                            <div key={follower.id} className="follow-user-card">
+                                                {follower.is_mutual && (
+                                                    <div className="follow-mutual-badge">
+                                                        Mutual
+                                                    </div>
+                                                )}
+
+                                                <div className="follow-card-content">
+                                                    <div
+                                                        className="follow-card-avatar-wrapper"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            router.visit(route('profile.view', { username: follower.username }));
+                                                        }}
+                                                    >
+                                                        <img
+                                                            src={follower.profile_image_url || 'https://via.placeholder.com/70'}
+                                                            alt={follower.name}
+                                                            className="follow-card-avatar"
+                                                        />
+                                                    </div>
+
+                                                    <div
+                                                        className="follow-card-info"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            router.visit(route('profile.view', { username: follower.username }));
+                                                        }}
+                                                    >
+                                                        <h3 className="follow-card-name">
+                                                            {follower.name}
+                                                        </h3>
+                                                        <p className="follow-card-username">
+                                                            @{follower.username}
+                                                        </p>
+                                                        {follower.bio && (
+                                                            <p className="follow-card-bio">
+                                                                {follower.bio}
+                                                            </p>
+                                                        )}
+                                                    </div>
+
+                                                    <button
+                                                        className={`follow-btn ${follower.is_following ? 'follow-btn-unfollow' : 'follow-btn-follow'}`}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleFollowToggle(follower);
+                                                        }}
+                                                        disabled={loadingUserId === follower.id}
+                                                    >
+                                                        {loadingUserId === follower.id ? (
+                                                            <div className={`follow-spinner ${follower.is_following ? 'follow-spinner-muted' : 'follow-spinner-light'}`} />
+                                                        ) : (
+                                                            <>
+                                                                {follower.is_following ? <UserMinus size={16} /> : <UserPlus size={16} />}
+                                                                {follower.is_following ? 'Unfollow' : 'Follow'}
+                                                            </>
+                                                        )}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <style>{`
-                @keyframes spin {
-                    0% { transform: rotate(0deg); }
-                    100% { transform: rotate(360deg); }
-                }
-            `}</style>
         </AuthAccessLayout>
     );
 }

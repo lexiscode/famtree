@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { MessageCircle, Search, ArrowLeft, Users, GraduationCap, Pencil, Trash2, X, Check, CheckSquare, Square, Shield, Vote, UserMinus, Clock, AlertTriangle, ChevronDown, LogOut, Trophy, Sparkles } from 'lucide-react';
+import { MessageCircle, Search, ArrowLeft, Users, GraduationCap, Pencil, Trash2, X, Check, CheckSquare, Square, Shield, Vote, UserMinus, Clock, AlertTriangle, ChevronDown, LogOut, Trophy, Sparkles, Reply } from 'lucide-react';
 import '../../../../../css/predictions.css';
 
 // Custom Leaf Indicator Components for message status
@@ -79,6 +79,12 @@ interface Message {
     conversation_id: number;
     sender_id: number;
     message: string;
+    reply_to_id: number | null;
+    replied_message: {
+        id: number;
+        message: string;
+        sender: { id: number; first_name: string; last_name: string } | null;
+    } | null;
     is_delivered: boolean;
     is_read: boolean;
     is_edited: boolean;
@@ -114,9 +120,11 @@ interface ActiveConversation {
 }
 
 interface GroupChat {
+    id?: number;
     uuid: string;
     type: 'family_tree' | 'class_set' | 'glam_squad';
     name: string;
+    gender_track?: string;
     member_count: number;
     unread_count: number;
     lastMessage: {
@@ -132,6 +140,12 @@ interface GroupMessage {
     id: number;
     user_id: number;
     message: string;
+    reply_to_id?: number | null;
+    replied_message?: {
+        id: number;
+        message: string;
+        sender: { id: number; first_name: string; last_name: string } | null;
+    } | null;
     is_edited?: boolean;
     edited_at?: string | null;
     is_org_broadcast?: boolean;
@@ -248,6 +262,9 @@ export default function MessagesIndex({
     const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
     const [isGroupLoading, setIsGroupLoading] = useState(false);
 
+    // Reply state
+    const [replyingTo, setReplyingTo] = useState<Message | GroupMessage | null>(null);
+
     // Edit/Delete state
     const [editingMessageId, setEditingMessageId] = useState<number | null>(null);
     const [editingText, setEditingText] = useState('');
@@ -306,6 +323,17 @@ export default function MessagesIndex({
     }>>([]);
     const [leagueLoading, setLeagueLoading] = useState(false);
 
+    // Glam squad panel state
+    const [glamStandings, setGlamStandings] = useState<Array<{
+        rank: number; user: { id: number; first_name: string; last_name: string; username: string; profile_image_url: string | null } | null;
+        total_points: number; challenges_entered: number; top_1_count: number; top_3_count: number; current_entry_streak: number;
+    }>>([]);
+    const [glamLeagueLoading, setGlamLeagueLoading] = useState(false);
+
+    // Sidebar resize state
+    const [sidebarWidth, setSidebarWidth] = useState(380);
+    const isResizingRef = useRef(false);
+
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const isTypingRef = useRef(false);
@@ -315,6 +343,34 @@ export default function MessagesIndex({
     // Scroll to bottom of messages
     const scrollToBottom = useCallback(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, []);
+
+    // Sidebar resize handlers
+    const handleResizeStart = useCallback((e: React.MouseEvent) => {
+        e.preventDefault();
+        isResizingRef.current = true;
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+
+        const onMouseMove = (ev: MouseEvent) => {
+            if (!isResizingRef.current) return;
+            const containerEl = (ev.target as HTMLElement).closest('.messages-container') || document.querySelector('.messages-container');
+            if (!containerEl) return;
+            const containerRect = containerEl.getBoundingClientRect();
+            const newWidth = Math.min(Math.max(ev.clientX - containerRect.left, 260), 600);
+            setSidebarWidth(newWidth);
+        };
+
+        const onMouseUp = () => {
+            isResizingRef.current = false;
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+        };
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
     }, []);
 
     // Update messages when activeConversation changes
@@ -476,6 +532,7 @@ export default function MessagesIndex({
     // Select a conversation (DM)
     const handleSelectConversation = (conversation: Conversation) => {
         setActiveGroupChat(null); // Clear group chat
+        setReplyingTo(null);
         router.visit(route('messages.show', conversation.uuid), {
             preserveScroll: true,
         });
@@ -484,6 +541,7 @@ export default function MessagesIndex({
     // Select a group chat
     const handleSelectGroupChat = useCallback(async (group: GroupChat) => {
         setActiveConversation(null); // Clear DM conversation
+        setReplyingTo(null);
         setActiveGroupChat(group);
         setIsGroupLoading(true);
         setGroupMessages([]);
@@ -576,10 +634,12 @@ export default function MessagesIndex({
 
     // Fetch members list for the panel
     const fetchMembers = useCallback(async () => {
-        if (!activeGroupChat || activeGroupChat.type !== 'class_set') return;
+        if (!activeGroupChat) return;
+        if (activeGroupChat.type !== 'class_set' && activeGroupChat.type !== 'glam_squad') return;
         setMembersLoading(true);
         try {
-            const response = await axios.get(route('class-sets.members', activeGroupChat.uuid));
+            const routeName = activeGroupChat.type === 'glam_squad' ? 'glam-squad.members' : 'class-sets.members';
+            const response = await axios.get(route(routeName, activeGroupChat.uuid));
             setMembersList(response.data.members || []);
         } catch {
             setMembersList([]);
@@ -600,14 +660,26 @@ export default function MessagesIndex({
 
     const fetchLeagueStandings = useCallback(async () => {
         if (!activeGroupChat) return;
-        setLeagueLoading(true);
-        try {
-            const response = await axios.get(route('class-sets.predictions.standings', activeGroupChat.uuid));
-            setLeagueStandings(response.data || []);
-        } catch {
-            setLeagueStandings([]);
-        } finally {
-            setLeagueLoading(false);
+        if (activeGroupChat.type === 'glam_squad') {
+            setGlamLeagueLoading(true);
+            try {
+                const response = await axios.get(route('glam-squad.squad-standings', activeGroupChat.uuid));
+                setGlamStandings(response.data || []);
+            } catch {
+                setGlamStandings([]);
+            } finally {
+                setGlamLeagueLoading(false);
+            }
+        } else {
+            setLeagueLoading(true);
+            try {
+                const response = await axios.get(route('class-sets.predictions.standings', activeGroupChat.uuid));
+                setLeagueStandings(response.data || []);
+            } catch {
+                setLeagueStandings([]);
+            } finally {
+                setLeagueLoading(false);
+            }
         }
     }, [activeGroupChat]);
 
@@ -624,7 +696,10 @@ export default function MessagesIndex({
     const handleLeaveGroup = useCallback(() => {
         if (!activeGroupChat || isLeaving) return;
         setIsLeaving(true);
-        router.post(route('class-sets.leave', activeGroupChat.uuid), {}, {
+        const leaveRoute = activeGroupChat.type === 'glam_squad'
+            ? route('glam-squad.leaveSquad', activeGroupChat.uuid)
+            : route('class-sets.leave', activeGroupChat.uuid);
+        router.post(leaveRoute, {}, {
             onSuccess: () => {
                 setShowLeaveConfirm(false);
                 setActiveGroupChat(null);
@@ -643,6 +718,7 @@ export default function MessagesIndex({
         setShowLeaveConfirm(false);
         setShowLeaguePanel(false);
         setLeagueStandings([]);
+        setGlamStandings([]);
     }, [activeGroupChat]);
 
     // Vote in an election
@@ -705,6 +781,28 @@ export default function MessagesIndex({
         }
     }, [activeGroupChat, isRemovalAction, fetchGroupAdminData]);
 
+    // Reply handlers
+    const handleReply = useCallback((message: Message | GroupMessage) => {
+        setReplyingTo(message);
+        // Focus the input
+        const input = document.querySelector('.messages-input') as HTMLInputElement;
+        if (input) input.focus();
+    }, []);
+
+    const handleCancelReply = useCallback(() => {
+        setReplyingTo(null);
+    }, []);
+
+    const scrollToMessage = useCallback((messageId: number | null) => {
+        if (!messageId) return;
+        const el = document.getElementById(`msg-${messageId}`);
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            el.classList.add('message-highlight');
+            setTimeout(() => el.classList.remove('message-highlight'), 2000);
+        }
+    }, []);
+
     // Send group message
     const handleSendGroupMessage = useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
@@ -722,6 +820,7 @@ export default function MessagesIndex({
                 : 'family-tree.chat.send';
             const response = await axios.post(route(routeName, activeGroupChat.uuid), {
                 message: newMessage.trim(),
+                reply_to_id: replyingTo?.id || null,
             });
 
             // Handle different response formats
@@ -730,6 +829,8 @@ export default function MessagesIndex({
                     id: response.data.message.id,
                     user_id: response.data.message.sender?.id || response.data.message.sender_id,
                     message: response.data.message.message,
+                    reply_to_id: response.data.message.reply_to_id || null,
+                    replied_message: response.data.message.replied_message || null,
                     is_org_broadcast: response.data.message.is_org_broadcast || false,
                     organization: response.data.message.organization || null,
                     created_at: response.data.message.created_at,
@@ -744,13 +845,14 @@ export default function MessagesIndex({
 
             setGroupMessages(prev => [...prev, newMsg]);
             setNewMessage('');
+            setReplyingTo(null);
             setTimeout(scrollToBottom, 100);
         } catch (error) {
             console.error('Error sending group message:', error);
         } finally {
             setIsSending(false);
         }
-    }, [newMessage, isSending, activeGroupChat, scrollToBottom]);
+    }, [newMessage, isSending, activeGroupChat, scrollToBottom, replyingTo]);
 
     // Send message
     const handleSendMessage = useCallback(async (e: React.FormEvent) => {
@@ -763,11 +865,13 @@ export default function MessagesIndex({
         try {
             const response = await axios.post(route('messages.send', activeConversation.uuid), {
                 message: newMessage.trim(),
+                reply_to_id: replyingTo?.id || null,
             });
 
             // Add message to local state
             setMessages(prev => [...prev, response.data.message]);
             setNewMessage('');
+            setReplyingTo(null);
             setTimeout(scrollToBottom, 100);
 
             // Update conversation in list
@@ -791,7 +895,7 @@ export default function MessagesIndex({
         } finally {
             setIsSending(false);
         }
-    }, [newMessage, isSending, activeConversation, scrollToBottom]);
+    }, [newMessage, isSending, activeConversation, scrollToBottom, replyingTo]);
 
     // Handle typing indicator
     const handleTyping = useCallback(() => {
@@ -1047,7 +1151,10 @@ export default function MessagesIndex({
             <div className="messages-page">
                 <div className="messages-container">
                     {/* Conversations Sidebar */}
-                    <div className={`messages-sidebar ${activeConversation || activeGroupChat ? 'mobile-hidden' : ''}`}>
+                    <div
+                        className={`messages-sidebar ${activeConversation || activeGroupChat ? 'mobile-hidden' : ''}`}
+                        style={{ width: sidebarWidth, minWidth: sidebarWidth }}
+                    >
                         <div className="messages-sidebar-header">
                             <h2 className="messages-sidebar-title">
                                 <MessageCircle size={24} />
@@ -1197,6 +1304,9 @@ export default function MessagesIndex({
                         </div>
                     </div>
 
+                    {/* Resize Handle */}
+                    <div className="sidebar-resize-handle" onMouseDown={handleResizeStart} />
+
                     {/* Chat Area */}
                     <div className={`messages-chat-area ${!activeConversation && !activeGroupChat ? 'mobile-hidden' : ''}`}>
                         {activeGroupChat ? (
@@ -1211,8 +1321,8 @@ export default function MessagesIndex({
                                     </button>
                                     <div
                                         className="chat-user-info"
-                                        onClick={activeGroupChat.type === 'class_set' ? toggleMembersPanel : undefined}
-                                        style={{ cursor: activeGroupChat.type === 'class_set' ? 'pointer' : 'default' }}
+                                        onClick={(activeGroupChat.type === 'class_set' || activeGroupChat.type === 'glam_squad') ? toggleMembersPanel : undefined}
+                                        style={{ cursor: (activeGroupChat.type === 'class_set' || activeGroupChat.type === 'glam_squad') ? 'pointer' : 'default' }}
                                     >
                                         <div className="chat-user-avatar group-avatar">
                                             <div className={`avatar-fallback group-fallback ${activeGroupChat.type === 'class_set' ? 'class-set-fallback' : activeGroupChat.type === 'glam_squad' ? 'glam-squad-fallback' : ''}`}>
@@ -1305,7 +1415,28 @@ export default function MessagesIndex({
                                                 <Trophy size={14} />
                                             </button>
                                         )}
-                                        {activeGroupChat.type === 'class_set' && (
+                                        {activeGroupChat.type === 'glam_squad' && (
+                                            <button
+                                                onClick={toggleLeaguePanel}
+                                                title="Leaderboard"
+                                                style={{
+                                                    width: '24px', height: '24px', minWidth: '24px', minHeight: '24px',
+                                                    maxWidth: '24px', maxHeight: '24px',
+                                                    borderRadius: '4px',
+                                                    background: showLeaguePanel ? 'rgba(236, 72, 153, 0.25)' : 'rgba(236, 72, 153, 0.08)',
+                                                    border: `1px solid ${showLeaguePanel ? 'rgba(236, 72, 153, 0.4)' : 'rgba(236, 72, 153, 0.15)'}`,
+                                                    color: '#ec4899',
+                                                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                    cursor: 'pointer', padding: 0, transition: 'all 0.2s ease',
+                                                    boxSizing: 'border-box', lineHeight: 1,
+                                                }}
+                                                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(236, 72, 153, 0.25)'; }}
+                                                onMouseLeave={(e) => { e.currentTarget.style.background = showLeaguePanel ? 'rgba(236, 72, 153, 0.25)' : 'rgba(236, 72, 153, 0.08)'; }}
+                                            >
+                                                <Trophy size={14} />
+                                            </button>
+                                        )}
+                                        {(activeGroupChat.type === 'class_set' || activeGroupChat.type === 'glam_squad') && (
                                             <button
                                                 onClick={() => setShowLeaveConfirm(true)}
                                                 title="Leave group"
@@ -1330,7 +1461,7 @@ export default function MessagesIndex({
                                 </div>
 
                                 {/* Leave Group Confirmation Dialog */}
-                                {showLeaveConfirm && activeGroupChat.type === 'class_set' && (
+                                {showLeaveConfirm && (activeGroupChat.type === 'class_set' || activeGroupChat.type === 'glam_squad') && (
                                     <div
                                         onClick={() => setShowLeaveConfirm(false)}
                                         style={{
@@ -2064,6 +2195,7 @@ export default function MessagesIndex({
                                                 return (
                                                     <div
                                                         key={message.id}
+                                                        id={`msg-${message.id}`}
                                                         className={`message-item ${isOwnMessage ? 'own-message' : 'other-message'} ${isSelected ? 'selected' : ''}`}
                                                     >
                                                         {/* Bulk select checkbox */}
@@ -2123,6 +2255,24 @@ export default function MessagesIndex({
                                                             )}
 
                                                             <div className={`message-bubble ${isEditing ? 'editing' : ''}`}>
+                                                                {/* Quoted replied message */}
+                                                                {message.replied_message && !isEditing && (
+                                                                    <div className="message-quote" onClick={() => scrollToMessage(message.reply_to_id ?? null)}>
+                                                                        <div className="message-quote-bar" />
+                                                                        <div className="message-quote-content">
+                                                                            <span className="message-quote-name">
+                                                                                {message.replied_message.sender
+                                                                                    ? `${message.replied_message.sender.first_name} ${message.replied_message.sender.last_name}`
+                                                                                    : 'Unknown'}
+                                                                            </span>
+                                                                            <span className="message-quote-text">
+                                                                                {message.replied_message.message.length > 120
+                                                                                    ? message.replied_message.message.substring(0, 120) + '...'
+                                                                                    : message.replied_message.message}
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                )}
                                                                 {isEditing ? (
                                                                     <>
                                                                         <textarea
@@ -2153,23 +2303,34 @@ export default function MessagesIndex({
                                                                     <p className="message-text">{message.message}</p>
                                                                 )}
 
-                                                                {/* Edit/Delete action icons */}
-                                                                {isOwnMessage && !isEditing && !isBulkSelectMode && (
+                                                                {/* Edit/Delete/Reply action icons */}
+                                                                {!isEditing && !isBulkSelectMode && (
                                                                     <div className="message-actions">
                                                                         <button
-                                                                            className="message-action-btn edit-btn"
-                                                                            onClick={() => handleStartGroupEdit(message)}
-                                                                            title="Edit message"
+                                                                            className="message-action-btn reply-btn"
+                                                                            onClick={() => handleReply(message)}
+                                                                            title="Reply"
                                                                         >
-                                                                            <Pencil size={11} />
+                                                                            <Reply size={11} />
                                                                         </button>
-                                                                        <button
-                                                                            className="message-action-btn delete-btn"
-                                                                            onClick={() => handleShowDeleteConfirm(message.id)}
-                                                                            title="Delete message"
-                                                                        >
-                                                                            <Trash2 size={11} />
-                                                                        </button>
+                                                                        {isOwnMessage && (
+                                                                            <>
+                                                                                <button
+                                                                                    className="message-action-btn edit-btn"
+                                                                                    onClick={() => handleStartGroupEdit(message)}
+                                                                                    title="Edit message"
+                                                                                >
+                                                                                    <Pencil size={11} />
+                                                                                </button>
+                                                                                <button
+                                                                                    className="message-action-btn delete-btn"
+                                                                                    onClick={() => handleShowDeleteConfirm(message.id)}
+                                                                                    title="Delete message"
+                                                                                >
+                                                                                    <Trash2 size={11} />
+                                                                                </button>
+                                                                            </>
+                                                                        )}
                                                                     </div>
                                                                 )}
                                                             </div>
@@ -2199,28 +2360,52 @@ export default function MessagesIndex({
                                         <span>You cannot send messages while a removal is pending.</span>
                                     </div>
                                 ) : (
-                                    <form onSubmit={handleSendGroupMessage} className="messages-input-form">
-                                        <input
-                                            type="text"
-                                            value={newMessage}
-                                            onChange={(e) => setNewMessage(e.target.value)}
-                                            placeholder="Type a message..."
-                                            className="messages-input"
-                                            disabled={isSending}
-                                            maxLength={5000}
-                                        />
-                                        <button
-                                            type="submit"
-                                            className="messages-send-btn"
-                                            disabled={!newMessage.trim() || isSending}
-                                        >
-                                            {isSending ? (
-                                                <div className="spinner-small"></div>
-                                            ) : (
-                                                <span style={{ fontSize: '20px', color: '#ffffff' }}>➤</span>
-                                            )}
-                                        </button>
-                                    </form>
+                                    <div>
+                                        {replyingTo && (
+                                            <div className="reply-preview">
+                                                <div className="reply-preview-bar" />
+                                                <div className="reply-preview-content">
+                                                    <span className="reply-preview-name">
+                                                        {'user' in replyingTo && replyingTo.user
+                                                            ? `${replyingTo.user.first_name} ${replyingTo.user.last_name}`
+                                                            : 'sender' in replyingTo && replyingTo.sender
+                                                            ? `${(replyingTo as Message).sender!.first_name} ${(replyingTo as Message).sender!.last_name}`
+                                                            : 'Unknown'}
+                                                    </span>
+                                                    <span className="reply-preview-text">
+                                                        {replyingTo.message.length > 100
+                                                            ? replyingTo.message.substring(0, 100) + '...'
+                                                            : replyingTo.message}
+                                                    </span>
+                                                </div>
+                                                <button className="reply-preview-close" onClick={handleCancelReply}>
+                                                    <X size={16} />
+                                                </button>
+                                            </div>
+                                        )}
+                                        <form onSubmit={handleSendGroupMessage} className="messages-input-form">
+                                            <input
+                                                type="text"
+                                                value={newMessage}
+                                                onChange={(e) => setNewMessage(e.target.value)}
+                                                placeholder="Type a message..."
+                                                className="messages-input"
+                                                disabled={isSending}
+                                                maxLength={5000}
+                                            />
+                                            <button
+                                                type="submit"
+                                                className="messages-send-btn"
+                                                disabled={!newMessage.trim() || isSending}
+                                            >
+                                                {isSending ? (
+                                                    <div className="spinner-small"></div>
+                                                ) : (
+                                                    <span style={{ fontSize: '20px', color: '#ffffff' }}>➤</span>
+                                                )}
+                                            </button>
+                                        </form>
+                                    </div>
                                 )}
                             </>
                         ) : activeConversation ? (
@@ -2328,6 +2513,7 @@ export default function MessagesIndex({
                                                 return (
                                                     <div
                                                         key={message.id}
+                                                        id={`msg-${message.id}`}
                                                         className={`message-item ${isOwnMessage ? 'own-message' : 'other-message'} ${isSelected ? 'selected' : ''}`}
                                                     >
                                                         {/* Bulk select checkbox */}
@@ -2381,6 +2567,24 @@ export default function MessagesIndex({
                                                             )}
 
                                                             <div className={`message-bubble ${isEditing ? 'editing' : ''}`}>
+                                                                {/* Quoted replied message */}
+                                                                {message.replied_message && !isEditing && (
+                                                                    <div className="message-quote" onClick={() => scrollToMessage(message.reply_to_id)}>
+                                                                        <div className="message-quote-bar" />
+                                                                        <div className="message-quote-content">
+                                                                            <span className="message-quote-name">
+                                                                                {message.replied_message.sender
+                                                                                    ? `${message.replied_message.sender.first_name} ${message.replied_message.sender.last_name}`
+                                                                                    : 'Unknown'}
+                                                                            </span>
+                                                                            <span className="message-quote-text">
+                                                                                {message.replied_message.message.length > 120
+                                                                                    ? message.replied_message.message.substring(0, 120) + '...'
+                                                                                    : message.replied_message.message}
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                )}
                                                                 {isEditing ? (
                                                                     <>
                                                                         <textarea
@@ -2411,23 +2615,34 @@ export default function MessagesIndex({
                                                                     <p className="message-text">{message.message}</p>
                                                                 )}
 
-                                                                {/* Edit/Delete action icons */}
-                                                                {isOwnMessage && !isEditing && !isBulkSelectMode && (
+                                                                {/* Edit/Delete/Reply action icons */}
+                                                                {!isEditing && !isBulkSelectMode && (
                                                                     <div className="message-actions">
                                                                         <button
-                                                                            className="message-action-btn edit-btn"
-                                                                            onClick={() => handleStartEdit(message)}
-                                                                            title="Edit message"
+                                                                            className="message-action-btn reply-btn"
+                                                                            onClick={() => handleReply(message)}
+                                                                            title="Reply"
                                                                         >
-                                                                            <Pencil size={11} />
+                                                                            <Reply size={11} />
                                                                         </button>
-                                                                        <button
-                                                                            className="message-action-btn delete-btn"
-                                                                            onClick={() => handleShowDeleteConfirm(message.id)}
-                                                                            title="Delete message"
-                                                                        >
-                                                                            <Trash2 size={11} />
-                                                                        </button>
+                                                                        {isOwnMessage && (
+                                                                            <>
+                                                                                <button
+                                                                                    className="message-action-btn edit-btn"
+                                                                                    onClick={() => handleStartEdit(message)}
+                                                                                    title="Edit message"
+                                                                                >
+                                                                                    <Pencil size={11} />
+                                                                                </button>
+                                                                                <button
+                                                                                    className="message-action-btn delete-btn"
+                                                                                    onClick={() => handleShowDeleteConfirm(message.id)}
+                                                                                    title="Delete message"
+                                                                                >
+                                                                                    <Trash2 size={11} />
+                                                                                </button>
+                                                                            </>
+                                                                        )}
                                                                     </div>
                                                                 )}
                                                             </div>
@@ -2472,31 +2687,55 @@ export default function MessagesIndex({
                                 </div>
 
                                 {/* Message Input */}
-                                <form onSubmit={handleSendMessage} className="messages-input-form">
-                                    <input
-                                        type="text"
-                                        value={newMessage}
-                                        onChange={(e) => {
-                                            setNewMessage(e.target.value);
-                                            handleTyping();
-                                        }}
-                                        placeholder="Type a message..."
-                                        className="messages-input"
-                                        disabled={isSending}
-                                        maxLength={5000}
-                                    />
-                                    <button
-                                        type="submit"
-                                        className="messages-send-btn"
-                                        disabled={!newMessage.trim() || isSending}
-                                    >
-                                        {isSending ? (
-                                            <div className="spinner-small"></div>
-                                        ) : (
-                                            <span style={{ fontSize: '20px', color: '#ffffff' }}>➤</span>
-                                        )}
-                                    </button>
-                                </form>
+                                <div>
+                                    {replyingTo && (
+                                        <div className="reply-preview">
+                                            <div className="reply-preview-bar" />
+                                            <div className="reply-preview-content">
+                                                <span className="reply-preview-name">
+                                                    {'sender' in replyingTo && replyingTo.sender
+                                                        ? `${(replyingTo as Message).sender!.first_name} ${(replyingTo as Message).sender!.last_name}`
+                                                        : 'user' in replyingTo && replyingTo.user
+                                                        ? `${replyingTo.user.first_name} ${replyingTo.user.last_name}`
+                                                        : 'Unknown'}
+                                                </span>
+                                                <span className="reply-preview-text">
+                                                    {replyingTo.message.length > 100
+                                                        ? replyingTo.message.substring(0, 100) + '...'
+                                                        : replyingTo.message}
+                                                </span>
+                                            </div>
+                                            <button className="reply-preview-close" onClick={handleCancelReply}>
+                                                <X size={16} />
+                                            </button>
+                                        </div>
+                                    )}
+                                    <form onSubmit={handleSendMessage} className="messages-input-form">
+                                        <input
+                                            type="text"
+                                            value={newMessage}
+                                            onChange={(e) => {
+                                                setNewMessage(e.target.value);
+                                                handleTyping();
+                                            }}
+                                            placeholder="Type a message..."
+                                            className="messages-input"
+                                            disabled={isSending}
+                                            maxLength={5000}
+                                        />
+                                        <button
+                                            type="submit"
+                                            className="messages-send-btn"
+                                            disabled={!newMessage.trim() || isSending}
+                                        >
+                                            {isSending ? (
+                                                <div className="spinner-small"></div>
+                                            ) : (
+                                                <span style={{ fontSize: '20px', color: '#ffffff' }}>➤</span>
+                                            )}
+                                        </button>
+                                    </form>
+                                </div>
                             </>
                         ) : (
                             <div className="messages-no-selection">
@@ -2508,7 +2747,7 @@ export default function MessagesIndex({
                     </div>
 
                     {/* Members Panel */}
-                    {showMembersPanel && activeGroupChat?.type === 'class_set' && (
+                    {showMembersPanel && (activeGroupChat?.type === 'class_set' || activeGroupChat?.type === 'glam_squad') && (
                         <div style={{
                             width: '280px', minWidth: '280px',
                             background: 'rgba(15, 23, 42, 0.95)',
@@ -2846,6 +3085,174 @@ export default function MessagesIndex({
                                 >
                                     <Trophy size={14} />
                                     View Full League
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Glam Squad Leaderboard Panel */}
+                    {showLeaguePanel && activeGroupChat?.type === 'glam_squad' && (
+                        <div style={{
+                            width: '280px', minWidth: '280px',
+                            background: 'rgba(15, 23, 42, 0.95)',
+                            borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
+                            display: 'flex', flexDirection: 'column',
+                            animation: 'slideInRight 0.2s ease-out',
+                        }}>
+                            {/* Panel Header */}
+                            <div style={{
+                                padding: '1rem 1.25rem',
+                                borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <Trophy size={16} color="#ec4899" />
+                                    <span style={{ fontWeight: 600, color: '#fff', fontSize: '0.9rem' }}>
+                                        Leaderboard
+                                    </span>
+                                    <span style={{
+                                        fontSize: '0.7rem', color: '#888',
+                                        background: 'rgba(255, 255, 255, 0.06)',
+                                        padding: '2px 6px', borderRadius: '4px',
+                                    }}>
+                                        {glamStandings.length}
+                                    </span>
+                                </div>
+                                <button
+                                    onClick={() => setShowLeaguePanel(false)}
+                                    style={{
+                                        background: 'rgba(255, 255, 255, 0.05)', border: 'none',
+                                        borderRadius: '6px', padding: '4px', cursor: 'pointer',
+                                        color: '#888', display: 'flex', transition: 'all 0.15s ease',
+                                    }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'; e.currentTarget.style.color = '#ccc'; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'; e.currentTarget.style.color = '#888'; }}
+                                >
+                                    <X size={14} />
+                                </button>
+                            </div>
+
+                            {/* Standings List */}
+                            <div className="election-candidates-list" style={{
+                                flex: 1, overflowY: 'auto', padding: '0.5rem',
+                            }}>
+                                {glamLeagueLoading ? (
+                                    <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+                                        <div className="spinner" style={{ width: '24px', height: '24px', borderWidth: '2px' }}></div>
+                                    </div>
+                                ) : glamStandings.length > 0 ? (
+                                    <>
+                                        {/* Column Headers */}
+                                        <div style={{
+                                            display: 'flex', alignItems: 'center', gap: '8px',
+                                            padding: '6px 10px', borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+                                            marginBottom: '4px',
+                                        }}>
+                                            <span style={{ width: '20px', fontSize: '0.65rem', fontWeight: 600, color: '#666', textAlign: 'center' }}>#</span>
+                                            <span style={{ flex: 1, fontSize: '0.65rem', fontWeight: 600, color: '#666', textTransform: 'uppercase', letterSpacing: '0.05em' }}>User</span>
+                                            <span style={{ fontSize: '0.65rem', fontWeight: 600, color: '#666', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Pts</span>
+                                        </div>
+
+                                        {/* Standing Rows */}
+                                        {glamStandings.map((standing) => {
+                                            const isCurrentUser = standing.user?.id === currentUserId;
+                                            const rankColor = standing.rank === 1 ? '#FFD700' : standing.rank === 2 ? '#C0C0C0' : standing.rank === 3 ? '#CD7F32' : '#666';
+                                            return (
+                                                <div
+                                                    key={standing.user?.id || standing.rank}
+                                                    style={{
+                                                        display: 'flex', alignItems: 'center', gap: '8px',
+                                                        padding: '6px 10px', borderRadius: '8px',
+                                                        transition: 'background 0.15s',
+                                                        cursor: !isCurrentUser && standing.user ? 'pointer' : 'default',
+                                                        background: isCurrentUser ? 'rgba(236, 72, 153, 0.08)' : 'transparent',
+                                                        borderLeft: isCurrentUser ? '2px solid #ec4899' : '2px solid transparent',
+                                                    }}
+                                                    onClick={() => { if (!isCurrentUser && standing.user) router.post(route('messages.start'), { user_id: standing.user.id }, { preserveState: false }); }}
+                                                    onMouseEnter={(e) => { e.currentTarget.style.background = isCurrentUser ? 'rgba(236, 72, 153, 0.12)' : 'rgba(255, 255, 255, 0.04)'; }}
+                                                    onMouseLeave={(e) => { e.currentTarget.style.background = isCurrentUser ? 'rgba(236, 72, 153, 0.08)' : 'transparent'; }}
+                                                >
+                                                    {/* Rank */}
+                                                    <span style={{
+                                                        width: '20px', textAlign: 'center',
+                                                        fontSize: '0.75rem', fontWeight: 700, color: rankColor,
+                                                    }}>
+                                                        {standing.rank}
+                                                    </span>
+
+                                                    {/* Avatar */}
+                                                    <div style={{
+                                                        width: '32px', height: '32px', borderRadius: '10px',
+                                                        background: 'rgba(236, 72, 153, 0.2)', display: 'flex',
+                                                        alignItems: 'center', justifyContent: 'center',
+                                                        fontSize: '0.75rem', fontWeight: 600, color: '#ec4899',
+                                                        overflow: 'hidden', flexShrink: 0,
+                                                    }}>
+                                                        {standing.user?.profile_image_url
+                                                            ? <img src={standing.user.profile_image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                            : standing.user?.first_name?.charAt(0)}
+                                                    </div>
+
+                                                    {/* Name & Stats */}
+                                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                                        <div style={{ fontSize: '0.82rem', color: '#e0e0e0', fontWeight: 500 }}>
+                                                            {standing.user?.first_name} {standing.user?.last_name}
+                                                            {isCurrentUser && <span style={{ fontSize: '0.7rem', color: '#ec4899', marginLeft: '4px' }}>(You)</span>}
+                                                        </div>
+                                                        <div style={{ fontSize: '0.7rem', color: '#666' }}>
+                                                            {standing.challenges_entered} entries &middot; {standing.top_1_count} wins
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Points Badge */}
+                                                    <span style={{
+                                                        fontSize: '0.75rem', fontWeight: 700,
+                                                        color: standing.rank <= 3 ? rankColor : '#f472b6',
+                                                        background: standing.rank <= 3
+                                                            ? `${rankColor}18`
+                                                            : 'rgba(236, 72, 153, 0.12)',
+                                                        padding: '2px 8px', borderRadius: '6px', flexShrink: 0,
+                                                    }}>
+                                                        {standing.total_points}
+                                                    </span>
+                                                </div>
+                                            );
+                                        })}
+                                    </>
+                                ) : (
+                                    <div style={{ textAlign: 'center', padding: '2rem', color: '#555' }}>
+                                        <Trophy size={32} color="#444" style={{ marginBottom: '8px' }} />
+                                        <div style={{ fontSize: '0.85rem', fontWeight: 500, color: '#777', marginBottom: '4px' }}>
+                                            No standings yet
+                                        </div>
+                                        <div style={{ fontSize: '0.75rem', color: '#555' }}>
+                                            Compete in challenges to climb the leaderboard!
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Footer */}
+                            <div style={{
+                                padding: '0.75rem 1rem',
+                                borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+                            }}>
+                                <button
+                                    onClick={() => router.visit('/glam-squad#leaderboard')}
+                                    style={{
+                                        width: '100%', padding: '8px 12px',
+                                        background: 'rgba(236, 72, 153, 0.15)',
+                                        border: '1px solid rgba(236, 72, 153, 0.25)',
+                                        borderRadius: '8px', color: '#f472b6',
+                                        fontSize: '0.8rem', fontWeight: 600,
+                                        cursor: 'pointer', transition: 'all 0.2s ease',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                                    }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(236, 72, 153, 0.25)'; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(236, 72, 153, 0.15)'; }}
+                                >
+                                    <Trophy size={14} />
+                                    View Full Leaderboard
                                 </button>
                             </div>
                         </div>

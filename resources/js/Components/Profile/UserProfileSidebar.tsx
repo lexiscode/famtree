@@ -4,6 +4,7 @@ import { Users, Send, Clock, CheckCircle, Undo2, Image, Newspaper, ArrowLeft, Ne
 
 interface UserProfile {
     id: number;
+    uuid: string;
     name: string;
     username: string;
     profile_image_url: string | null;
@@ -88,7 +89,7 @@ export default function UserProfileSidebar({
         setLoading(true);
         try {
             if (isFollowing) {
-                router.post(route('users.unfollow', profile.id), {}, {
+                router.post(route('users.unfollow', profile.uuid), {}, {
                     preserveState: false,
                     onSuccess: () => {
                         setIsFollowing(false);
@@ -100,7 +101,7 @@ export default function UserProfileSidebar({
                     }
                 });
             } else {
-                router.post(route('users.follow', profile.id), {}, {
+                router.post(route('users.follow', profile.uuid), {}, {
                     preserveState: false,
                     onSuccess: () => {
                         setIsFollowing(true);
@@ -251,7 +252,7 @@ export default function UserProfileSidebar({
                     <div className="profile-stats" style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem', justifyContent: 'center' }}>
                         <div
                             className="stat-item"
-                            onClick={() => router.visit(route('users.followers', profile.id))}
+                            onClick={() => router.visit(route('users.followers', profile.uuid))}
                             style={{ cursor: 'pointer', textAlign: 'center', padding: '0.75rem', backgroundColor: '#F3F4F6', borderRadius: '8px', flex: 1 }}
                             title="View followers"
                         >
@@ -260,7 +261,7 @@ export default function UserProfileSidebar({
                         </div>
                         <div
                             className="stat-item"
-                            onClick={() => router.visit(route('users.following', profile.id))}
+                            onClick={() => router.visit(route('users.following', profile.uuid))}
                             style={{ cursor: 'pointer', textAlign: 'center', padding: '0.75rem', backgroundColor: '#F3F4F6', borderRadius: '8px', flex: 1 }}
                             title="View following"
                         >

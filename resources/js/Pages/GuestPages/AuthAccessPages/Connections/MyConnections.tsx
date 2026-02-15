@@ -22,6 +22,16 @@ export default function MyConnections({
 
     const spousalTypes = ['wife', 'husband', 'partner'];
 
+    const pluralizeLabel = (label: string, count: number): string => {
+        if (count === 1) return label;
+        const lower = label.toLowerCase();
+        if (lower === 'wife') return 'Wives';
+        if (lower === 'ex wife') return 'Ex Wives';
+        if (lower === 'co-wife') return 'Co-wives';
+        if (lower === 'co-husband') return 'Co-husbands';
+        return label + 's';
+    };
+
     const handleDivorce = (connectionId: number) => {
         router.post(route('connections.divorce', { connection: connectionId }), {}, {
             preserveScroll: true,
@@ -141,7 +151,7 @@ export default function MyConnections({
                         Object.entries(groupedByRelationship).map(([relationshipType, group]) => (
                             <div key={relationshipType} className="connections-group">
                                 <h3 className="connections-group-title">
-                                    {relationshipType}s <span className="connections-group-count">({group.length})</span>
+                                    {pluralizeLabel(relationshipType, group.length)} <span className="connections-group-count">({group.length})</span>
                                 </h3>
 
                                 <div className="connections-grid">

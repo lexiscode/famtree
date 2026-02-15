@@ -4,6 +4,7 @@ namespace App\Models\GuestModels;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
 
 class ClassSetMessage extends Model
@@ -21,6 +22,7 @@ class ClassSetMessage extends Model
         'org_broadcast_id',
         'org_account_id',
         'organization_id',
+        'reply_to_id',
     ];
 
     protected $casts = [
@@ -65,5 +67,13 @@ class ClassSetMessage extends Model
     public function organization()
     {
         return $this->belongsTo(\App\Models\GuestModels\Organization::class);
+    }
+
+    /**
+     * Get the message this is a reply to
+     */
+    public function repliedMessage(): BelongsTo
+    {
+        return $this->belongsTo(ClassSetMessage::class, 'reply_to_id');
     }
 }

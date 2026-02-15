@@ -293,6 +293,8 @@ class UserConnectionRepository
             'great_great_grandson' => ['great_great_grandmother', 'great_great_grandfather'],
             'great_great_granddaughter' => ['great_great_grandmother', 'great_great_grandfather'],
             'great_great_grandchild' => ['great_great_grandmother', 'great_great_grandfather'],
+            'co_wife' => ['co_wife'],
+            'co_husband' => ['co_husband'],
         ];
 
         return $inverseMap[$relationshipType] ?? [];
@@ -621,6 +623,8 @@ class UserConnectionRepository
             'wife' => 'husband',
             'husband' => 'wife',
             'partner' => 'partner',
+            'co_wife' => 'co_wife',
+            'co_husband' => 'co_husband',
             'cousin' => 'cousin',
             'first_cousin' => 'first_cousin',
             'second_cousin' => 'second_cousin',

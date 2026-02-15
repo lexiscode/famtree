@@ -39,10 +39,11 @@ class ClassSetChatController extends Controller
 
         $request->validate([
             'message' => 'required|string|max:5000',
+            'reply_to_id' => 'nullable|integer|exists:class_set_messages,id',
         ]);
 
         try {
-            $result = $this->chatService->sendMessage($classSetUuid, $userId, $request->input('message'));
+            $result = $this->chatService->sendMessage($classSetUuid, $userId, $request->input('message'), $request->input('reply_to_id'));
 
             return response()->json($result);
         } catch (ValidationException $e) {

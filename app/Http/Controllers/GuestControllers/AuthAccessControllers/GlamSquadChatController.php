@@ -4,12 +4,16 @@ namespace App\Http\Controllers\GuestControllers\AuthAccessControllers;
 
 use App\Http\Controllers\Controller;
 use App\Actions\GuestServices\AuthAccessServices\GlamSquadChatService;
+use App\Actions\GuestServices\AuthAccessServices\GlamService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
 class GlamSquadChatController extends Controller
 {
-    public function __construct(private GlamSquadChatService $chatService) {}
+    public function __construct(
+        private GlamSquadChatService $chatService,
+        private GlamService $glamService,
+    ) {}
 
     /**
      * Get messages for a squad chat.
@@ -36,10 +40,11 @@ class GlamSquadChatController extends Controller
 
         $request->validate([
             'message' => 'required|string|max:5000',
+            'reply_to_id' => 'nullable|integer|exists:glam_squad_messages,id',
         ]);
 
         try {
-            $result = $this->chatService->sendMessage($squadUuid, $userId, $request->input('message'));
+            $result = $this->chatService->sendMessage($squadUuid, $userId, $request->input('message'), $request->input('reply_to_id'));
             return response()->json($result);
         } catch (ValidationException $e) {
             return response()->json(['errors' => $e->errors()], 422);
@@ -118,5 +123,23 @@ class GlamSquadChatController extends Controller
             'success' => true,
             'deleted_count' => $result['deleted_count'],
         ]);
+    }
+
+    /**
+     * Get squad members list.
+     */
+    public function members(string $squadUuid)
+    {
+        $members = $this->glamService->getSquadMembers($squadUuid);
+        return response()->json(['members' => $members]);
+    }
+
+    /**
+     * Get leaderboard standings for the squad's gender track.
+     */
+    public function standings(string $squadUuid)
+    {
+        $standings = $this->glamService->getSquadStandings($squadUuid);
+        return response()->json($standings);
     }
 }

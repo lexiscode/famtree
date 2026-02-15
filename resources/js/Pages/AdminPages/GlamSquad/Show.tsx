@@ -339,9 +339,11 @@ export default function Show({ season }: Props) {
                             <h3 className="ap-card-title ap-flex ap-items-center ap-gap-sm">
                                 <Image size={18} /> Challenges
                             </h3>
-                            <button className="ap-btn ap-btn-sm ap-btn-primary" onClick={() => setShowChallengeForm(!showChallengeForm)}>
-                                <Plus size={14} /> Add Challenge
-                            </button>
+                            {season.status !== 'completed' && (
+                                <button className="ap-btn ap-btn-sm ap-btn-primary" onClick={() => setShowChallengeForm(!showChallengeForm)}>
+                                    <Plus size={14} /> Add Challenge
+                                </button>
+                            )}
                         </div>
 
                         {showChallengeForm && (

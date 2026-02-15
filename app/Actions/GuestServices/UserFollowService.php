@@ -81,6 +81,7 @@ class UserFollowService
 
             return [
                 'id' => $follower->id,
+                'uuid' => $follower->uuid,
                 'first_name' => $follower->first_name,
                 'last_name' => $follower->last_name,
                 'name' => trim($follower->first_name . ' ' . $follower->last_name),
@@ -106,6 +107,7 @@ class UserFollowService
 
             return [
                 'id' => $user->id,
+                'uuid' => $user->uuid,
                 'first_name' => $user->first_name,
                 'last_name' => $user->last_name,
                 'name' => trim($user->first_name . ' ' . $user->last_name),

@@ -377,3 +377,25 @@ The 5-vote minimum was part of the original plan to ensure fair rankings — the
   more votes, but without a threshold, very low-vote entries can still rank unreasonably high
 
 
+Badge bonus points are now awarded on first earn only (repeat earns just increment times_earned). The point values
+  scaled to the existing system:
+
+  ┌─────────────────┬────────┬─────────────────────────────┐
+  │      Badge      │ Points │         Difficulty          │
+  ├─────────────────┼────────┼─────────────────────────────┤
+  │ Fashionista     │ 10     │ 5 entries in a season       │
+  ├─────────────────┼────────┼─────────────────────────────┤
+  │ Style Streak    │ 15     │ 5 consecutive entries       │
+  ├─────────────────┼────────┼─────────────────────────────┤
+  │ Critic Eye      │ 15     │ 100+ votes cast             │
+  ├─────────────────┼────────┼─────────────────────────────┤
+  │ Crowd Favorite  │ 20     │ 50+ votes on one entry      │
+  ├─────────────────┼────────┼─────────────────────────────┤
+  │ Rising Star     │ 20     │ Top 3 on first challenge    │
+  ├─────────────────┼────────┼─────────────────────────────┤
+  │ Top Model       │ 25     │ Win 1st place               │
+  ├─────────────────┼────────┼─────────────────────────────┤
+  │ Podium Regular  │ 30     │ Top 3 in 3 challenges       │
+  ├─────────────────┼────────┼─────────────────────────────┤
+  │ Season Champion │ 50     │ 1st on seasonal leaderboard │
+  └─────────────────┴────────┴─────────────────────────────┘

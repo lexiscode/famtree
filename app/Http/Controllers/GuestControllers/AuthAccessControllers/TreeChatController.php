@@ -67,9 +67,10 @@ class TreeChatController extends Controller
 
         $validated = $request->validate([
             'message' => 'required|string|max:5000',
+            'reply_to_id' => 'nullable|integer|exists:tree_chat_messages,id',
         ]);
 
-        $result = $this->chatService->sendMessage($familyTree->id, $user->id, $validated['message']);
+        $result = $this->chatService->sendMessage($familyTree->id, $user->id, $validated['message'], $validated['reply_to_id'] ?? null);
 
         if (!$result['success']) {
             return response()->json(['error' => $result['error']], 422);

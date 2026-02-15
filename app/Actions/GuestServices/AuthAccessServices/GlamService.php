@@ -14,10 +14,10 @@ class GlamService
     /**
      * Get main glam squad page data.
      */
-    public function getGlamData(int $userId, ?int $seasonId = null): array
+    public function getGlamData(int $userId, ?string $seasonUuid = null): array
     {
         $user = User::find($userId);
-        $season = $seasonId ? $this->repository->findSeason($seasonId) : $this->repository->getActiveSeason();
+        $season = $seasonUuid ? $this->repository->findSeasonByUuid($seasonUuid) : $this->repository->getActiveSeason();
 
         if (!$season) {
             return [
@@ -31,7 +31,7 @@ class GlamService
                 'userBadges' => [],
                 'allBadges' => $this->formatBadges(),
                 'seasons' => $this->repository->getAllSeasons()->map(fn($s) => [
-                    'id' => $s->id, 'name' => $s->name, 'status' => $s->status,
+                    'id' => $s->id, 'uuid' => $s->uuid, 'name' => $s->name, 'status' => $s->status,
                 ]),
             ];
         }
@@ -52,6 +52,7 @@ class GlamService
         return [
             'season' => [
                 'id' => $season->id,
+                'uuid' => $season->uuid,
                 'name' => $season->name,
                 'status' => $season->status,
                 'start_date' => $season->start_date->format('Y-m-d'),
@@ -75,6 +76,7 @@ class GlamService
             ] : null,
             'userEntry' => $userEntry ? [
                 'id' => $userEntry->id,
+                'uuid' => $userEntry->uuid,
                 'photo_1' => $userEntry->photo_1 ? Storage::url($userEntry->photo_1) : null,
                 'photo_2' => $userEntry->photo_2 ? Storage::url($userEntry->photo_2) : null,
                 'caption' => $userEntry->caption,
@@ -103,7 +105,7 @@ class GlamService
             ]),
             'allBadges' => $this->formatBadges(),
             'seasons' => $this->repository->getAllSeasons()->map(fn($s) => [
-                'id' => $s->id, 'name' => $s->name, 'status' => $s->status,
+                'id' => $s->id, 'uuid' => $s->uuid, 'name' => $s->name, 'status' => $s->status,
             ]),
         ];
     }
@@ -135,6 +137,11 @@ class GlamService
 
         $this->repository->addMember($squad->id, $userId);
 
+        // Auto-follow Glam Squad when joining a squad
+        if (!$this->repository->isFollowing($userId)) {
+            $this->repository->follow($userId);
+        }
+
         return ['success' => true, 'message' => "You've joined {$squad->name}!"];
     }
 
@@ -162,15 +169,24 @@ class GlamService
 
         $this->repository->addMember($squad->id, $userId);
 
+        // Auto-follow Glam Squad when joining a squad
+        if (!$this->repository->isFollowing($userId)) {
+            $this->repository->follow($userId);
+        }
+
         return ['success' => true, 'message' => "You've joined {$squad->name}!"];
     }
 
     /**
      * Leave a squad.
      */
-    public function leaveSquad(int $userId, int $squadId): array
+    public function leaveSquad(int $userId, string $squadUuid): array
     {
-        $removed = $this->repository->removeMember($squadId, $userId);
+        $squad = $this->repository->findSquadByUuid($squadUuid);
+        if (!$squad) {
+            return ['success' => false, 'message' => 'Squad not found'];
+        }
+        $removed = $this->repository->removeMember($squad->id, $userId);
         return [
             'success' => $removed,
             'message' => $removed ? "You've left the squad" : 'Could not leave squad',
@@ -180,9 +196,9 @@ class GlamService
     /**
      * Submit a challenge entry.
      */
-    public function submitEntry(int $userId, int $challengeId, array $data): array
+    public function submitEntry(int $userId, string $challengeUuid, array $data): array
     {
-        $challenge = $this->repository->findChallenge($challengeId);
+        $challenge = $this->repository->findChallengeByUuid($challengeUuid);
         if (!$challenge || !$challenge->isSubmissionsOpen()) {
             return ['success' => false, 'message' => 'Submissions are not open for this challenge'];
         }
@@ -194,7 +210,7 @@ class GlamService
         }
 
         // Check no existing entry
-        $existing = $this->repository->getUserEntry($challengeId, $userId);
+        $existing = $this->repository->getUserEntry($challenge->id, $userId);
         if ($existing) {
             return ['success' => false, 'message' => 'You have already submitted an entry'];
         }
@@ -216,7 +232,7 @@ class GlamService
 
         $entry = $this->repository->createEntry([
             'uuid' => Str::uuid()->toString(),
-            'challenge_id' => $challengeId,
+            'challenge_id' => $challenge->id,
             'user_id' => $userId,
             'squad_id' => $membership->squad_id,
             'gender_track' => $membership->squad->gender_track,
@@ -231,9 +247,9 @@ class GlamService
     /**
      * Update an existing entry.
      */
-    public function updateEntry(int $userId, int $entryId, array $data): array
+    public function updateEntry(int $userId, string $entryUuid, array $data): array
     {
-        $entry = \App\Models\GuestModels\GlamEntry::find($entryId);
+        $entry = $this->repository->findEntryByUuid($entryUuid);
         if (!$entry || $entry->user_id !== $userId) {
             return ['success' => false, 'message' => 'Entry not found'];
         }
@@ -255,7 +271,7 @@ class GlamService
             $updateData['caption'] = $data['caption'];
         }
 
-        $this->repository->updateEntry($entryId, $updateData);
+        $this->repository->updateEntry($entry->id, $updateData);
 
         return ['success' => true, 'message' => 'Entry updated successfully'];
     }
@@ -263,8 +279,12 @@ class GlamService
     /**
      * Get next entry for voting.
      */
-    public function getNextEntryToVote(int $userId, int $challengeId): ?array
+    public function getNextEntryToVote(int $userId, string $challengeUuid): ?array
     {
+        $challenge = $this->repository->findChallengeByUuid($challengeUuid);
+        if (!$challenge) return null;
+        $challengeId = $challenge->id;
+
         // Verify voter has no entry in this challenge (non-submitters only)
         $userEntry = $this->repository->getUserEntry($challengeId, $userId);
         if ($userEntry) {
@@ -283,6 +303,7 @@ class GlamService
 
         return [
             'id' => $entry->id,
+            'uuid' => $entry->uuid,
             'photo_1' => $entry->photo_1 ? Storage::url($entry->photo_1) : null,
             'photo_2' => $entry->photo_2 ? Storage::url($entry->photo_2) : null,
             'caption' => $entry->caption,
@@ -297,13 +318,13 @@ class GlamService
     /**
      * Cast a vote.
      */
-    public function castVote(int $userId, int $entryId, int $stars): array
+    public function castVote(int $userId, string $entryUuid, int $stars): array
     {
         if ($stars < 1 || $stars > 5) {
             return ['success' => false, 'message' => 'Stars must be between 1 and 5'];
         }
 
-        $entry = \App\Models\GuestModels\GlamEntry::find($entryId);
+        $entry = $this->repository->findEntryByUuid($entryUuid);
         if (!$entry) {
             return ['success' => false, 'message' => 'Entry not found'];
         }
@@ -312,11 +333,11 @@ class GlamService
             return ['success' => false, 'message' => 'You cannot vote on your own entry'];
         }
 
-        if ($this->repository->hasVoted($entryId, $userId)) {
+        if ($this->repository->hasVoted($entry->id, $userId)) {
             return ['success' => false, 'message' => 'You have already voted on this entry'];
         }
 
-        $this->repository->castVote($entryId, $userId, $stars);
+        $this->repository->castVote($entry->id, $userId, $stars);
 
         // Update entry stats
         $allVotes = $entry->votes()->pluck('stars');
@@ -345,13 +366,13 @@ class GlamService
     /**
      * Get challenge results.
      */
-    public function getChallengeResults(int $challengeId, string $track): array
+    public function getChallengeResults(string $challengeUuid, string $track): array
     {
-        $challenge = $this->repository->findChallenge($challengeId);
+        $challenge = $this->repository->findChallengeByUuid($challengeUuid);
         if (!$challenge) return [];
 
         // Get ALL entries for this track — qualified (ranked) first, then unqualified by votes
-        $entries = $this->repository->getChallengeEntriesByTrack($challengeId, $track)
+        $entries = $this->repository->getChallengeEntriesByTrack($challenge->id, $track)
             ->sortBy([
                 fn($a, $b) => ($a->is_qualified ? 0 : 1) <=> ($b->is_qualified ? 0 : 1),
                 fn($a, $b) => ($a->rank ?? PHP_INT_MAX) <=> ($b->rank ?? PHP_INT_MAX),
@@ -363,6 +384,7 @@ class GlamService
             'challenge' => $this->formatChallenge($challenge),
             'entries' => $entries->map(fn($e) => [
                 'id' => $e->id,
+                'uuid' => $e->uuid,
                 'rank' => $e->rank,
                 'is_qualified' => (bool) $e->is_qualified,
                 'photo_1' => $e->photo_1 ? Storage::url($e->photo_1) : null,
@@ -406,11 +428,70 @@ class GlamService
     }
 
     /**
+     * Get season standings for a gender track (JSON).
+     */
+    public function getSeasonStandings(string $seasonUuid, string $track): array
+    {
+        $season = $this->repository->findSeasonByUuid($seasonUuid);
+        if (!$season) return [];
+        $standings = $this->repository->getStandings($season->id, $track);
+        return $standings->map(fn($s, $index) => [
+            'rank' => $index + 1,
+            'user' => $s->user ? [
+                'id' => $s->user->id,
+                'first_name' => $s->user->first_name,
+                'last_name' => $s->user->last_name,
+                'username' => $s->user->username,
+                'profile_image_url' => $s->user->profile_image_url,
+            ] : null,
+            'total_points' => $s->total_points,
+            'challenges_entered' => $s->challenges_entered,
+            'top_1_count' => $s->top_1_count,
+            'top_3_count' => $s->top_3_count,
+            'current_entry_streak' => $s->current_entry_streak,
+        ])->toArray();
+    }
+
+    /**
      * Get winners for feed sidebar.
      */
     public function getWinners(): array
     {
-        return $this->repository->getLatestWinners()->toArray();
+        return $this->repository->getLatestWinners();
+    }
+
+    /**
+     * Get squad members for the members panel.
+     */
+    public function getSquadMembers(string $squadUuid): array
+    {
+        $squad = $this->repository->findSquadByUuid($squadUuid);
+        if (!$squad) return [];
+
+        $members = $this->repository->getSquadMembers($squad->id);
+        return $members->map(fn($m) => [
+            'id' => $m->user->id,
+            'first_name' => $m->user->first_name,
+            'last_name' => $m->user->last_name,
+            'username' => $m->user->username,
+            'profile_image' => $m->user->profile_image_url,
+            'is_admin' => $m->is_admin,
+            'joined_at' => $m->joined_at?->toDateTimeString(),
+        ])->toArray();
+    }
+
+    /**
+     * Get leaderboard standings for a squad's gender track.
+     */
+    public function getSquadStandings(string $squadUuid): array
+    {
+        $squad = $this->repository->findSquadByUuid($squadUuid);
+        if (!$squad || $squad->gender_track === 'mixed') return [];
+
+        $season = $this->repository->getActiveSeason();
+        if (!$season) return [];
+
+        return $this->getSeasonStandings($season->uuid, $squad->gender_track);
     }
 
     // ── Private Helpers ──

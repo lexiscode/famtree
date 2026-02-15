@@ -24,11 +24,32 @@
 
 .messages-sidebar {
     width: 380px;
-    min-width: 380px;
     background: rgba(15, 23, 42, 0.8);
-    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    border-right: none;
     display: flex;
     flex-direction: column;
+    flex-shrink: 0;
+}
+
+/* Sidebar Resize Handle */
+.sidebar-resize-handle {
+    width: 4px;
+    cursor: col-resize;
+    background: transparent;
+    transition: background 0.2s ease;
+    flex-shrink: 0;
+    position: relative;
+}
+
+.sidebar-resize-handle::after {
+    content: '';
+    position: absolute;
+    inset: 0 -3px;
+}
+
+.sidebar-resize-handle:hover,
+.sidebar-resize-handle:active {
+    background: rgba(139, 92, 246, 0.5);
 }
 
 .messages-sidebar-header {
@@ -856,7 +877,6 @@
 @media (max-width: 992px) {
     .messages-sidebar {
         width: 320px;
-        min-width: 320px;
     }
 }
 
@@ -872,14 +892,18 @@
     }
 
     .messages-sidebar {
-        width: 100%;
-        min-width: 100%;
+        width: 100% !important;
+        min-width: 100% !important;
         position: absolute;
         inset: 0;
         z-index: 1;
     }
 
     .messages-sidebar.mobile-hidden {
+        display: none;
+    }
+
+    .sidebar-resize-handle {
         display: none;
     }
 
@@ -1309,5 +1333,143 @@
         padding: 0;
         width: 20px;
         justify-content: center;
+    }
+}
+
+/* ============================================
+   REPLY-TO-MESSAGE STYLES
+   ============================================ */
+
+/* Reply Preview (above input) */
+.reply-preview {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: rgba(139, 92, 246, 0.1);
+    border-left: 3px solid #8b5cf6;
+    border-radius: 8px 8px 0 0;
+    margin: 0 1.5rem;
+}
+
+.reply-preview-bar {
+    display: none;
+}
+
+.reply-preview-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.reply-preview-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: #8b5cf6;
+    display: block;
+}
+
+.reply-preview-text {
+    font-size: 12px;
+    color: #94a3b8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+}
+
+.reply-preview-close {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.reply-preview-close:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Quoted message inside bubble */
+.message-quote {
+    display: flex;
+    gap: 6px;
+    padding: 6px 8px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 6px;
+    margin-bottom: 4px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.message-quote:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.message-quote-bar {
+    width: 3px;
+    border-radius: 2px;
+    background: #8b5cf6;
+    flex-shrink: 0;
+}
+
+.message-quote-content {
+    min-width: 0;
+    flex: 1;
+}
+
+.message-quote-name {
+    font-size: 11px;
+    font-weight: 600;
+    color: #8b5cf6;
+    display: block;
+}
+
+.message-quote-text {
+    font-size: 11px;
+    color: #94a3b8;
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Highlight animation when scrolling to quoted message */
+.message-highlight {
+    animation: highlightPulse 2s ease;
+}
+
+@keyframes highlightPulse {
+    0%, 100% { background: transparent; }
+    25% { background: rgba(139, 92, 246, 0.15); }
+}
+
+/* Reply button in actions */
+.message-action-btn.reply-btn {
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    color: #ffffff;
+}
+
+.message-action-btn.reply-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.4);
+}
+
+/* Mobile adjustments for reply */
+@media (max-width: 768px) {
+    .reply-preview {
+        margin: 0 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .reply-preview {
+        margin: 0 1rem;
+        padding: 6px 10px;
     }
 }

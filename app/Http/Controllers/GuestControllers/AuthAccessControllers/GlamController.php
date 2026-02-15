@@ -19,8 +19,8 @@ class GlamController extends Controller
         $user = auth()->user();
         if (!$user) return redirect()->route('home');
 
-        $seasonId = $request->input('season_id');
-        $data = $this->glamService->getGlamData($user->id, $seasonId);
+        $seasonUuid = $request->input('season_uuid');
+        $data = $this->glamService->getGlamData($user->id, $seasonUuid);
 
         return Inertia::render('GuestPages/AuthAccessPages/GlamSquad/Index', $data);
     }
@@ -28,7 +28,7 @@ class GlamController extends Controller
     /**
      * Challenge detail page.
      */
-    public function challenge(int $id)
+    public function challenge(string $uuid)
     {
         $user = auth()->user();
         if (!$user) return redirect()->route('home');
@@ -36,7 +36,7 @@ class GlamController extends Controller
         $data = $this->glamService->getGlamData($user->id);
 
         return Inertia::render('GuestPages/AuthAccessPages/GlamSquad/Challenge', array_merge($data, [
-            'challengeId' => $id,
+            'challengeUuid' => $uuid,
         ]));
     }
 
@@ -69,10 +69,10 @@ class GlamController extends Controller
     /**
      * Leave a squad.
      */
-    public function leaveSquad(int $squadId)
+    public function leaveSquad(string $squadUuid)
     {
         $user = auth()->user();
-        $result = $this->glamService->leaveSquad($user->id, $squadId);
+        $result = $this->glamService->leaveSquad($user->id, $squadUuid);
 
         return redirect()->back()->with($result['success'] ? 'success' : 'error', $result['message']);
     }
@@ -80,7 +80,7 @@ class GlamController extends Controller
     /**
      * Submit a challenge entry.
      */
-    public function submitEntry(Request $request, int $challengeId)
+    public function submitEntry(Request $request, string $challengeUuid)
     {
         $user = auth()->user();
 
@@ -90,7 +90,7 @@ class GlamController extends Controller
             'caption' => 'nullable|string|max:200',
         ]);
 
-        $result = $this->glamService->submitEntry($user->id, $challengeId, $data);
+        $result = $this->glamService->submitEntry($user->id, $challengeUuid, $data);
 
         return redirect()->back()->with($result['success'] ? 'success' : 'error', $result['message']);
     }
@@ -98,7 +98,7 @@ class GlamController extends Controller
     /**
      * Update an existing entry.
      */
-    public function updateEntry(Request $request, int $entryId)
+    public function updateEntry(Request $request, string $entryUuid)
     {
         $user = auth()->user();
 
@@ -108,7 +108,7 @@ class GlamController extends Controller
             'caption' => 'nullable|string|max:200',
         ]);
 
-        $result = $this->glamService->updateEntry($user->id, $entryId, $data);
+        $result = $this->glamService->updateEntry($user->id, $entryUuid, $data);
 
         return redirect()->back()->with($result['success'] ? 'success' : 'error', $result['message']);
     }
@@ -116,7 +116,7 @@ class GlamController extends Controller
     /**
      * Cast a vote on an entry.
      */
-    public function vote(Request $request, int $entryId)
+    public function vote(Request $request, string $entryUuid)
     {
         $user = auth()->user();
 
@@ -124,7 +124,7 @@ class GlamController extends Controller
             'stars' => 'required|integer|min:1|max:5',
         ]);
 
-        $result = $this->glamService->castVote($user->id, $entryId, $data['stars']);
+        $result = $this->glamService->castVote($user->id, $entryUuid, $data['stars']);
 
         return redirect()->back()->with($result['success'] ? 'success' : 'error', $result['message']);
     }
@@ -132,10 +132,10 @@ class GlamController extends Controller
     /**
      * Get the next entry to vote on (JSON).
      */
-    public function nextVote(int $challengeId)
+    public function nextVote(string $challengeUuid)
     {
         $user = auth()->user();
-        $entry = $this->glamService->getNextEntryToVote($user->id, $challengeId);
+        $entry = $this->glamService->getNextEntryToVote($user->id, $challengeUuid);
 
         return response()->json($entry);
     }
@@ -154,12 +154,20 @@ class GlamController extends Controller
     /**
      * Challenge results page.
      */
-    public function results(int $challengeId, string $track)
+    public function results(string $challengeUuid, string $track)
     {
         $user = auth()->user();
-        $data = $this->glamService->getChallengeResults($challengeId, $track);
+        $data = $this->glamService->getChallengeResults($challengeUuid, $track);
 
         return Inertia::render('GuestPages/AuthAccessPages/GlamSquad/Results', $data);
+    }
+
+    /**
+     * Get season standings (JSON).
+     */
+    public function standings(string $seasonUuid, string $track)
+    {
+        return response()->json($this->glamService->getSeasonStandings($seasonUuid, $track));
     }
 
     /**

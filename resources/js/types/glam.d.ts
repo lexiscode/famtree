@@ -1,5 +1,6 @@
 export interface GlamSeason {
     id: number;
+    uuid: string;
     name: string;
     status: 'upcoming' | 'active' | 'completed';
     start_date: string;
@@ -33,6 +34,7 @@ export interface GlamSquad {
 
 export interface GlamEntry {
     id: number;
+    uuid: string;
     rank: number | null;
     is_qualified: boolean;
     photo_1: string | null;
@@ -78,6 +80,7 @@ export interface GlamUserBadge {
 
 export interface VotableEntry {
     id: number;
+    uuid: string;
     photo_1: string | null;
     photo_2: string | null;
     caption: string | null;
@@ -91,9 +94,15 @@ export interface VotableEntry {
 export interface GlamWinner {
     rank: number;
     user: GlamUser | null;
-    photo_1: string;
-    weighted_score: number;
-    challenge_title: string;
-    challenge_id: number;
+    photo_1: string | null;
+    score: number;
+    challenge_uuid: string | null;
     gender_track: string;
+}
+
+export interface GlamWinnersResponse {
+    type: 'challenge' | 'season';
+    title: string;
+    season_uuid?: string | null;
+    winners: GlamWinner[];
 }

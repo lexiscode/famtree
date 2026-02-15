@@ -157,6 +157,7 @@ class ProfileController extends Controller
 
         $profileData = [
             'id' => $owner->id,
+            'uuid' => $owner->uuid,
             'name' => $visibleName,
             'username' => $owner->username,
             'email' => $actualUserData['email'],

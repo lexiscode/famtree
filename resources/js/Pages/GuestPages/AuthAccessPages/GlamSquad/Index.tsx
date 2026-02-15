@@ -44,7 +44,7 @@ interface Props {
     userGender: string | null;
     userBadges: GlamUserBadge[];
     allBadges: GlamBadge[];
-    seasons: { id: number; name: string; status: string }[];
+    seasons: { id: number; uuid: string; name: string; status: string }[];
 }
 
 export default function Index({
@@ -52,18 +52,27 @@ export default function Index({
     userSquad, userMixedSquad, userEntry, userVoteCount,
     userStanding, isFollowing, userGender, userBadges, allBadges, seasons,
 }: Props) {
-    const [activeTab, setActiveTab] = useState<'challenges' | 'leaderboard' | 'squad' | 'badges'>('challenges');
+    const validTabs = ['challenges', 'leaderboard', 'squad', 'badges'] as const;
+    type Tab = typeof validTabs[number];
+    const getInitialTab = (): Tab => {
+        if (typeof window !== 'undefined') {
+            const hash = window.location.hash.replace('#', '') as Tab;
+            if (validTabs.includes(hash)) return hash;
+        }
+        return 'challenges';
+    };
+    const [activeTab, setActiveTab] = useState<Tab>(getInitialTab);
     const [genderTrack, setGenderTrack] = useState<'female' | 'male'>('female');
     const [standings, setStandings] = useState<GlamStanding[]>([]);
 
     useEffect(() => {
         if (activeTab === 'leaderboard' && season) {
-            fetch(route('admin.glam.standings', { id: season.id, track: genderTrack }))
+            fetch(route('glam-squad.standings', { seasonUuid: season.uuid, track: genderTrack }))
                 .then(r => r.json())
                 .then(data => setStandings(data))
                 .catch(() => {});
         }
-    }, [activeTab, genderTrack, season?.id]);
+    }, [activeTab, genderTrack, season?.uuid]);
 
     const handleFollow = useCallback(() => {
         router.post(route('glam-squad.toggleFollow'), {}, { preserveScroll: true });
@@ -209,7 +218,7 @@ export default function Index({
                                         <div style={{ display: 'flex', gap: 8, marginTop: 16, justifyContent: 'center' }}>
                                             {currentChallenge.status === 'submissions_open' && userSquad && !userEntry && (
                                                 <Link
-                                                    href={route('glam-squad.challenge', currentChallenge.id)}
+                                                    href={route('glam-squad.challenge', currentChallenge.uuid)}
                                                     className="glam-btn glam-btn-pink"
                                                 >
                                                     Submit Entry <ChevronRight size={16} />
@@ -217,7 +226,7 @@ export default function Index({
                                             )}
                                             {currentChallenge.status === 'voting_open' && !userEntry && (
                                                 <Link
-                                                    href={route('glam-squad.challenge', currentChallenge.id)}
+                                                    href={route('glam-squad.challenge', currentChallenge.uuid)}
                                                     className="glam-btn glam-btn-primary"
                                                 >
                                                     Vote Now <ChevronRight size={16} />
@@ -225,7 +234,7 @@ export default function Index({
                                             )}
                                             {currentChallenge.status === 'completed' && (
                                                 <Link
-                                                    href={route('glam-squad.results', { challengeId: currentChallenge.id, track: 'female' })}
+                                                    href={route('glam-squad.results', { challengeUuid: currentChallenge.uuid, track: 'female' })}
                                                     className="glam-btn glam-btn-primary"
                                                 >
                                                     View Results <ChevronRight size={16} />
@@ -243,7 +252,7 @@ export default function Index({
                                             <button
                                                 key={tab.key}
                                                 className={`glam-tab ${activeTab === tab.key ? 'active' : ''}`}
-                                                onClick={() => setActiveTab(tab.key)}
+                                                onClick={() => { setActiveTab(tab.key); window.location.hash = tab.key; }}
                                             >
                                                 <Icon size={15} /> {tab.label}
                                             </button>
@@ -262,9 +271,9 @@ export default function Index({
                                                         challenge={c}
                                                         onClick={() => {
                                                             if (c.status === 'completed') {
-                                                                router.visit(route('glam-squad.results', { challengeId: c.id, track: 'female' }));
+                                                                router.visit(route('glam-squad.results', { challengeUuid: c.uuid, track: 'female' }));
                                                             } else {
-                                                                router.visit(route('glam-squad.challenge', c.id));
+                                                                router.visit(route('glam-squad.challenge', c.uuid));
                                                             }
                                                         }}
                                                     />
@@ -394,13 +403,13 @@ export default function Index({
                                                     {seasons.map(s => (
                                                         <div
                                                             key={s.id}
-                                                            onClick={() => router.visit(route('glam-squad.index'), { data: { season_id: s.id } })}
+                                                            onClick={() => router.visit(route('glam-squad.index'), { data: { season_uuid: s.uuid } })}
                                                             style={{
                                                                 padding: '8px 12px',
                                                                 borderRadius: 8,
                                                                 cursor: 'pointer',
-                                                                background: season?.id === s.id ? 'rgba(102,126,234,0.15)' : 'transparent',
-                                                                color: season?.id === s.id ? '#ffffff' : '#94a3b8',
+                                                                background: season?.uuid === s.uuid ? 'rgba(102,126,234,0.15)' : 'transparent',
+                                                                color: season?.uuid === s.uuid ? '#ffffff' : '#94a3b8',
                                                                 fontSize: 13,
                                                                 marginBottom: 4,
                                                             }}

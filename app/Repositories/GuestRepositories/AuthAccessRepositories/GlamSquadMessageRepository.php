@@ -11,7 +11,11 @@ class GlamSquadMessageRepository
     public function getMessages(int $squadId, ?int $beforeId = null, int $limit = 50)
     {
         $query = GlamSquadMessage::where('squad_id', $squadId)
-            ->with('sender')
+            ->with([
+                'sender',
+                'repliedMessage:id,sender_id,message',
+                'repliedMessage.sender:id,first_name,last_name',
+            ])
             ->orderByDesc('id');
 
         if ($beforeId) {
