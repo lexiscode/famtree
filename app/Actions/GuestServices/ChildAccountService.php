@@ -129,6 +129,17 @@ class ChildAccountService
                 $connectedUser->gender
             );
 
+            // Step-sibling detection: if the connected person is one of the parent's
+            // other children, check if they share the same other parent.
+            $childRelTypes = ['son', 'daughter', 'child'];
+            $siblingRelTypes = ['brother', 'sister'];
+            if (in_array($parentRelationshipType, $childRelTypes) && in_array($childRelationshipType, $siblingRelTypes)) {
+                $siblingOtherParentId = $connection->other_parent_id;
+                if ($otherParentId && $siblingOtherParentId && $otherParentId !== $siblingOtherParentId) {
+                    $childRelationshipType = $childRelationshipType === 'brother' ? 'step_brother' : 'step_sister';
+                }
+            }
+
             // Skip if no relationship could be inferred
             if (!$childRelationshipType) {
                 continue;
