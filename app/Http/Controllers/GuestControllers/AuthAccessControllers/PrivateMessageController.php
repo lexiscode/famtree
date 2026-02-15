@@ -10,6 +10,8 @@ use App\Repositories\GuestRepositories\FamilyTreeRepository;
 use App\Repositories\GuestRepositories\AuthAccessRepositories\TreeChatRepository;
 use App\Repositories\GuestRepositories\AuthAccessRepositories\ClassSetRepository;
 use App\Repositories\GuestRepositories\AuthAccessRepositories\ClassSetMessageRepository;
+use App\Repositories\GuestRepositories\AuthAccessRepositories\GlamRepository;
+use App\Repositories\GuestRepositories\AuthAccessRepositories\GlamSquadMessageRepository;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -21,7 +23,9 @@ class PrivateMessageController extends Controller
         private TreeChatRepository $treeChatRepository,
         private ClassSetService $classSetService,
         private ClassSetRepository $classSetRepository,
-        private ClassSetMessageRepository $classSetMessageRepository
+        private ClassSetMessageRepository $classSetMessageRepository,
+        private GlamRepository $glamRepository,
+        private GlamSquadMessageRepository $glamSquadMessageRepository
     ) {}
 
     /**
@@ -452,6 +456,30 @@ class PrivateMessageController extends Controller
                     'created_at' => $latestMessage->created_at->toISOString(),
                 ] : null,
                 'last_message_at' => $latestMessage ? $latestMessage->created_at->toISOString() : $classSet->created_at->toISOString(),
+            ];
+        }
+
+        // Get glam squad chats
+        $glamSquads = $this->glamRepository->getUserSquads($userId);
+        foreach ($glamSquads as $glamSquad) {
+            $latestMessage = $this->glamSquadMessageRepository->getLatestMessage($glamSquad->id);
+            $unreadCount = $this->glamSquadMessageRepository->getUnreadCount($glamSquad->id, $userId);
+
+            $groupChats[] = [
+                'uuid' => $glamSquad->uuid,
+                'type' => 'glam_squad',
+                'name' => $glamSquad->name,
+                'member_count' => $glamSquad->members_count,
+                'unread_count' => $unreadCount,
+                'lastMessage' => $latestMessage ? [
+                    'message' => $latestMessage->message,
+                    'sender_id' => $latestMessage->sender_id,
+                    'sender_name' => $latestMessage->sender
+                        ? trim($latestMessage->sender->first_name . ' ' . $latestMessage->sender->last_name)
+                        : 'Unknown',
+                    'created_at' => $latestMessage->created_at->toISOString(),
+                ] : null,
+                'last_message_at' => $latestMessage ? $latestMessage->created_at->toISOString() : $glamSquad->created_at->toISOString(),
             ];
         }
 

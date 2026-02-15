@@ -272,6 +272,19 @@
     background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
 }
 
+/* Glam Squad Chat Styling */
+.group-avatar .glam-squad-fallback {
+    background: linear-gradient(135deg, #ec4899 0%, #f43f5e 100%) !important;
+}
+
+.group-avatar .glam-squad-fallback svg {
+    color: #ffffff;
+}
+
+.group-chat-header .chat-user-avatar .glam-squad-fallback {
+    background: linear-gradient(135deg, #ec4899 0%, #f43f5e 100%) !important;
+}
+
 .conversation-info {
     flex: 1;
     min-width: 0;

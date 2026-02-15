@@ -99,6 +99,14 @@ class Kernel extends ConsoleKernel
             ->onOneServer()
             ->withoutOverlapping()
             ->name('process-pending-removals');
+
+        // Glam Squad challenge lifecycle transitions
+        // Runs every 5 minutes
+        $schedule->command('glam:lifecycle')
+            ->everyFiveMinutes()
+            ->onOneServer()
+            ->withoutOverlapping()
+            ->name('glam-challenge-lifecycle');
     }
 
     /**

@@ -43,6 +43,8 @@ use App\Http\Controllers\GuestControllers\AuthAccessControllers\ClassSetChatCont
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\GroupElectionController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\GroupRemovalController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\PredictionController;
+use App\Http\Controllers\GuestControllers\AuthAccessControllers\GlamController as GuestGlamController;
+use App\Http\Controllers\GuestControllers\AuthAccessControllers\GlamSquadChatController;
 use Inertia\Inertia;
 
 
@@ -433,5 +435,29 @@ Route::middleware(['web', 'auth'])->group(function () {
         // Prediction Banner routes
         Route::get('/{classSetUuid}/predictions/open', [PredictionController::class, 'openFixtures'])->name('class-sets.predictions.open');
         Route::get('/{classSetUuid}/predictions/standings', [PredictionController::class, 'groupStandings'])->name('class-sets.predictions.standings');
+    });
+
+    // Glam Squad routes
+    Route::prefix('glam-squad')->group(function () {
+        Route::get('/', [GuestGlamController::class, 'index'])->name('glam-squad.index');
+        Route::get('/challenge/{id}', [GuestGlamController::class, 'challenge'])->name('glam-squad.challenge');
+        Route::post('/join-squad', [GuestGlamController::class, 'joinSquad'])->name('glam-squad.joinSquad');
+        Route::post('/join-mixed', [GuestGlamController::class, 'joinMixed'])->name('glam-squad.joinMixed');
+        Route::post('/leave-squad/{squadId}', [GuestGlamController::class, 'leaveSquad'])->name('glam-squad.leaveSquad');
+        Route::post('/challenge/{challengeId}/submit', [GuestGlamController::class, 'submitEntry'])->name('glam-squad.submitEntry');
+        Route::put('/entry/{entryId}', [GuestGlamController::class, 'updateEntry'])->name('glam-squad.updateEntry');
+        Route::post('/entry/{entryId}/vote', [GuestGlamController::class, 'vote'])->name('glam-squad.vote');
+        Route::get('/challenge/{challengeId}/next-vote', [GuestGlamController::class, 'nextVote'])->name('glam-squad.nextVote');
+        Route::post('/toggle-follow', [GuestGlamController::class, 'toggleFollow'])->name('glam-squad.toggleFollow');
+        Route::get('/challenge/{challengeId}/results/{track}', [GuestGlamController::class, 'results'])->name('glam-squad.results');
+        Route::get('/api/winners', [GuestGlamController::class, 'winners'])->name('glam-squad.winners');
+
+        // Squad Chat
+        Route::get('/{squadUuid}/messages', [GlamSquadChatController::class, 'getMessages'])->name('glam-squad.messages');
+        Route::post('/{squadUuid}/messages', [GlamSquadChatController::class, 'sendMessage'])->name('glam-squad.send-message');
+        Route::post('/{squadUuid}/typing', [GlamSquadChatController::class, 'typing'])->name('glam-squad.typing');
+        Route::put('/message/{messageId}', [GlamSquadChatController::class, 'editMessage'])->name('glam-squad.edit-message');
+        Route::delete('/message/{messageId}', [GlamSquadChatController::class, 'deleteMessage'])->name('glam-squad.delete-message');
+        Route::post('/bulk-delete', [GlamSquadChatController::class, 'bulkDeleteMessages'])->name('glam-squad.bulk-delete');
     });
 });

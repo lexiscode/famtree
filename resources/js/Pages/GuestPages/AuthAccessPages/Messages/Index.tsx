@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { MessageCircle, Search, ArrowLeft, Users, GraduationCap, Pencil, Trash2, X, Check, CheckSquare, Square, Shield, Vote, UserMinus, Clock, AlertTriangle, ChevronDown, LogOut, Trophy } from 'lucide-react';
+import { MessageCircle, Search, ArrowLeft, Users, GraduationCap, Pencil, Trash2, X, Check, CheckSquare, Square, Shield, Vote, UserMinus, Clock, AlertTriangle, ChevronDown, LogOut, Trophy, Sparkles } from 'lucide-react';
 import '../../../../../css/predictions.css';
 
 // Custom Leaf Indicator Components for message status
@@ -115,7 +115,7 @@ interface ActiveConversation {
 
 interface GroupChat {
     uuid: string;
-    type: 'family_tree' | 'class_set';
+    type: 'family_tree' | 'class_set' | 'glam_squad';
     name: string;
     member_count: number;
     unread_count: number;
@@ -424,10 +424,14 @@ export default function MessagesIndex({
         // Determine channel name based on group type
         const channelName = activeGroupChat.type === 'class_set'
             ? `class-set.${activeGroupChat.uuid}`
+            : activeGroupChat.type === 'glam_squad'
+            ? `glam-squad.${activeGroupChat.uuid}`
             : `family-tree.${activeGroupChat.uuid}`;
 
         const eventName = activeGroupChat.type === 'class_set'
             ? '.ClassSetMessageSent'
+            : activeGroupChat.type === 'glam_squad'
+            ? '.GlamSquadMessageSent'
             : '.TreeMessageSent';
 
         const channel = window.Echo.join(channelName)
@@ -488,11 +492,13 @@ export default function MessagesIndex({
             // Use different route based on group type
             const routeName = group.type === 'class_set'
                 ? 'class-sets.messages'
+                : group.type === 'glam_squad'
+                ? 'glam-squad.messages'
                 : 'family-tree.chat.messages';
             const response = await axios.get(route(routeName, group.uuid));
 
             // Handle different response formats
-            const messages = group.type === 'class_set'
+            const messages = (group.type === 'class_set' || group.type === 'glam_squad')
                 ? response.data.messages.map((m: any) => ({
                     id: m.id,
                     user_id: m.sender?.id || m.sender_id,
@@ -711,13 +717,15 @@ export default function MessagesIndex({
             // Use different route based on group type
             const routeName = activeGroupChat.type === 'class_set'
                 ? 'class-sets.send-message'
+                : activeGroupChat.type === 'glam_squad'
+                ? 'glam-squad.send-message'
                 : 'family-tree.chat.send';
             const response = await axios.post(route(routeName, activeGroupChat.uuid), {
                 message: newMessage.trim(),
             });
 
             // Handle different response formats
-            const newMsg = activeGroupChat.type === 'class_set'
+            const newMsg = (activeGroupChat.type === 'class_set' || activeGroupChat.type === 'glam_squad')
                 ? {
                     id: response.data.message.id,
                     user_id: response.data.message.sender?.id || response.data.message.sender_id,
@@ -904,7 +912,9 @@ export default function MessagesIndex({
         try {
             // Use different route based on whether it's DM or group chat
             const routeName = activeGroupChat
-                ? (activeGroupChat.type === 'class_set' ? 'class-sets.bulk-delete' : 'family-tree.chat.bulk-delete')
+                ? (activeGroupChat.type === 'class_set' ? 'class-sets.bulk-delete'
+                    : activeGroupChat.type === 'glam_squad' ? 'glam-squad.bulk-delete'
+                    : 'family-tree.chat.bulk-delete')
                 : 'messages.bulk-delete';
             const response = await axios.post(route(routeName), {
                 message_ids: selectedMessageIds,
@@ -941,6 +951,8 @@ export default function MessagesIndex({
         try {
             const routeName = activeGroupChat.type === 'class_set'
                 ? 'class-sets.edit-message'
+                : activeGroupChat.type === 'glam_squad'
+                ? 'glam-squad.edit-message'
                 : 'family-tree.chat.edit';
             const response = await axios.put(route(routeName, editingMessageId), {
                 message: editingText.trim(),
@@ -970,6 +982,8 @@ export default function MessagesIndex({
         try {
             const routeName = activeGroupChat.type === 'class_set'
                 ? 'class-sets.delete-message'
+                : activeGroupChat.type === 'glam_squad'
+                ? 'glam-squad.delete-message'
                 : 'family-tree.chat.delete';
             const response = await axios.delete(route(routeName, deletingMessageId));
 
@@ -1070,9 +1084,11 @@ export default function MessagesIndex({
                                             className={`messages-conversation-item group-chat ${activeGroupChat?.uuid === group.uuid ? 'active' : ''} ${group.unread_count > 0 ? 'unread' : ''}`}
                                         >
                                             <div className="conversation-avatar group-avatar">
-                                                <div className={`avatar-fallback group-fallback ${group.type === 'class_set' ? 'class-set-fallback' : ''}`}>
+                                                <div className={`avatar-fallback group-fallback ${group.type === 'class_set' ? 'class-set-fallback' : group.type === 'glam_squad' ? 'glam-squad-fallback' : ''}`}>
                                                     {group.type === 'class_set' ? (
                                                         <GraduationCap size={20} />
+                                                    ) : group.type === 'glam_squad' ? (
+                                                        <Sparkles size={20} />
                                                     ) : (
                                                         <Users size={20} />
                                                     )}
@@ -1199,9 +1215,11 @@ export default function MessagesIndex({
                                         style={{ cursor: activeGroupChat.type === 'class_set' ? 'pointer' : 'default' }}
                                     >
                                         <div className="chat-user-avatar group-avatar">
-                                            <div className={`avatar-fallback group-fallback ${activeGroupChat.type === 'class_set' ? 'class-set-fallback' : ''}`}>
+                                            <div className={`avatar-fallback group-fallback ${activeGroupChat.type === 'class_set' ? 'class-set-fallback' : activeGroupChat.type === 'glam_squad' ? 'glam-squad-fallback' : ''}`}>
                                                 {activeGroupChat.type === 'class_set' ? (
                                                     <GraduationCap size={20} />
+                                                ) : activeGroupChat.type === 'glam_squad' ? (
+                                                    <Sparkles size={20} />
                                                 ) : (
                                                     <Users size={20} />
                                                 )}
@@ -1212,6 +1230,8 @@ export default function MessagesIndex({
                                             <span className="chat-user-username">
                                                 {activeGroupChat.type === 'class_set' ? (
                                                     <GraduationCap size={12} style={{ marginRight: '4px', display: 'inline' }} />
+                                                ) : activeGroupChat.type === 'glam_squad' ? (
+                                                    <Sparkles size={12} style={{ marginRight: '4px', display: 'inline' }} />
                                                 ) : (
                                                     <Users size={12} style={{ marginRight: '4px', display: 'inline' }} />
                                                 )}

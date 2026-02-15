@@ -1,0 +1,857 @@
+/* ===================================
+   GLAM SQUAD - DARK PREMIUM THEME
+   =================================== */
+
+.glam-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #0F1419 0%, #1a2332 50%, #0F1419 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.glam-page::after {
+    content: '';
+    position: fixed;
+    top: 10%;
+    right: 10%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(236, 72, 153, 0.15) 0%, rgba(236, 72, 153, 0) 70%);
+    border-radius: 50%;
+    filter: blur(60px);
+    animation: glamFloatOrb 25s ease-in-out infinite;
+    z-index: 0;
+    pointer-events: none;
+}
+
+@keyframes glamFloatOrb {
+    0%, 100% { transform: translateY(0px) translateX(0px); }
+    33% { transform: translateY(-40px) translateX(20px); }
+    66% { transform: translateY(40px) translateX(-20px); }
+}
+
+.glam-page .container-fluid {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+    position: relative;
+    z-index: 1;
+}
+
+.glam-content {
+    padding-top: 24px;
+    padding-bottom: 60px;
+}
+
+/* ===================================
+   SIDEBAR
+   =================================== */
+.glam-sidebar {
+    position: sticky;
+    top: 80px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.sidebar-widget {
+    background: rgba(30, 41, 59, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    backdrop-filter: blur(20px);
+    overflow: hidden;
+}
+
+.widget-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.widget-header h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+}
+
+.widget-body {
+    padding: 16px 20px;
+}
+
+/* ===================================
+   CHALLENGE BANNER
+   =================================== */
+.challenge-banner {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(236, 72, 153, 0.2));
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 32px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(20px);
+}
+
+.challenge-banner h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 8px;
+}
+
+.challenge-banner .theme-tag {
+    display: inline-block;
+    background: rgba(236, 72, 153, 0.2);
+    color: #f472b6;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    margin-bottom: 12px;
+}
+
+.challenge-banner .status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.status-indicator.submissions_open { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+.status-indicator.voting_open { background: rgba(251, 191, 36, 0.15); color: #fbbf24; }
+.status-indicator.upcoming { background: rgba(96, 165, 250, 0.15); color: #60a5fa; }
+.status-indicator.completed { background: rgba(148, 163, 184, 0.15); color: #94a3b8; }
+
+/* ===================================
+   TABS
+   =================================== */
+.glam-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 24px;
+    background: rgba(30, 41, 59, 0.6);
+    border-radius: 12px;
+    padding: 4px;
+    overflow-x: auto;
+}
+
+.glam-tab {
+    padding: 10px 18px;
+    border-radius: 10px;
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.glam-tab:hover { color: #cbd5e1; }
+.glam-tab.active { background: rgba(102, 126, 234, 0.2); color: #ffffff; }
+
+/* ===================================
+   ENTRY CARD
+   =================================== */
+.entry-card {
+    background: rgba(30, 41, 59, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    backdrop-filter: blur(20px);
+    transition: transform 0.2s;
+}
+
+.entry-card:hover { transform: translateY(-2px); }
+
+.entry-card-photos {
+    display: flex;
+    gap: 2px;
+}
+
+.entry-card-photos img {
+    width: 100%;
+    height: 240px;
+    object-fit: cover;
+}
+
+.entry-card-photos.dual img {
+    width: 50%;
+}
+
+.entry-card-body {
+    padding: 16px;
+}
+
+.entry-card-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.entry-card-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(102, 126, 234, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: #ffffff;
+    overflow: hidden;
+}
+
+.entry-card-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.entry-card-caption {
+    color: #cbd5e1;
+    font-size: 14px;
+    margin-bottom: 12px;
+}
+
+.entry-card-stats {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+
+.entry-card-stats span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #94a3b8;
+    font-size: 13px;
+}
+
+.rank-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    font-weight: 700;
+    font-size: 13px;
+}
+
+.rank-badge.gold { background: rgba(255, 215, 0, 0.2); color: #ffd700; }
+.rank-badge.silver { background: rgba(192, 192, 192, 0.2); color: #c0c0c0; }
+.rank-badge.bronze { background: rgba(205, 127, 50, 0.2); color: #cd7f32; }
+.rank-badge.other { background: rgba(148, 163, 184, 0.1); color: #94a3b8; }
+
+/* ===================================
+   STAR RATING
+   =================================== */
+.star-rating {
+    display: flex;
+    gap: 4px;
+}
+
+.star-rating .star {
+    cursor: pointer;
+    transition: transform 0.15s, color 0.15s;
+    color: #475569;
+}
+
+.star-rating .star:hover { transform: scale(1.2); }
+.star-rating .star.active { color: #fbbf24; }
+.star-rating .star.hovered { color: #fcd34d; }
+
+/* ===================================
+   VOTING BOOTH
+   =================================== */
+.voting-booth {
+    background: rgba(30, 41, 59, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    backdrop-filter: blur(20px);
+    overflow: hidden;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.voting-booth-photos {
+    position: relative;
+}
+
+.voting-booth-photos img {
+    width: 100%;
+    height: 400px;
+    object-fit: cover;
+}
+
+.voting-booth-body {
+    padding: 24px;
+    text-align: center;
+}
+
+.voting-booth-caption {
+    color: #cbd5e1;
+    font-size: 15px;
+    margin-bottom: 20px;
+}
+
+.voting-booth-stars {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.voting-booth-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.voting-booth-header h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+}
+
+.voting-booth-entry {
+    padding: 24px;
+}
+
+.voting-entry-photos {
+    display: flex;
+    gap: 4px;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.voting-entry-photos .entry-photo-thumb {
+    flex: 1;
+    border-radius: 0;
+    aspect-ratio: auto;
+}
+
+.voting-entry-photos .voting-photo {
+    width: 100%;
+    height: 380px;
+    object-fit: cover;
+}
+
+/* ===================================
+   RESULTS PODIUM
+   =================================== */
+.results-podium {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 16px;
+}
+
+.podium-entry {
+    flex: 1;
+    max-width: 220px;
+    background: rgba(30, 41, 59, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 20px 16px;
+    text-align: center;
+    backdrop-filter: blur(20px);
+    transition: transform 0.2s;
+}
+
+.podium-entry:hover { transform: translateY(-4px); }
+
+.podium-entry.podium-first {
+    border-color: rgba(255, 215, 0, 0.3);
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(30, 41, 59, 0.8));
+    transform: translateY(-12px);
+}
+
+.podium-entry.podium-first:hover { transform: translateY(-16px); }
+
+.podium-rank {
+    margin-bottom: 12px;
+}
+
+.podium-photo-wrap {
+    margin-bottom: 12px;
+}
+
+.podium-photo {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.podium-first .podium-photo {
+    height: 220px;
+    border-color: rgba(255, 215, 0, 0.3);
+}
+
+.podium-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: center;
+}
+
+/* ===================================
+   PHOTO UPLOADER
+   =================================== */
+.photo-uploader {
+    border: 2px dashed rgba(255, 255, 255, 0.15);
+    border-radius: 16px;
+    padding: 32px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    background: rgba(30, 41, 59, 0.4);
+}
+
+.photo-uploader:hover {
+    border-color: rgba(236, 72, 153, 0.4);
+}
+
+.photo-uploader-preview {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.photo-uploader-preview img {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ===================================
+   ENTRY PHOTO THUMBNAILS
+   =================================== */
+.entry-photo-thumb {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    aspect-ratio: 1;
+}
+
+.entry-photo-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.3s ease;
+}
+
+.entry-photo-thumb:hover img {
+    transform: scale(1.05);
+}
+
+.entry-photo-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    color: #ffffff;
+}
+
+.entry-photo-thumb:hover .entry-photo-overlay {
+    opacity: 1;
+}
+
+/* ===================================
+   LEADERBOARD TABLE
+   =================================== */
+.leaderboard-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.leaderboard-table th {
+    color: #94a3b8;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.leaderboard-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    color: #cbd5e1;
+    font-size: 14px;
+}
+
+.leaderboard-table tr:hover td {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.leaderboard-table .rank-col {
+    width: 50px;
+    text-align: center;
+}
+
+.leaderboard-table .points-col {
+    font-weight: 600;
+    color: #667eea;
+}
+
+/* ===================================
+   BADGE GRID
+   =================================== */
+.badge-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+}
+
+.badge-item {
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+    transition: transform 0.2s;
+}
+
+.badge-item:hover { transform: translateY(-2px); }
+
+.badge-item .badge-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 8px;
+}
+
+.badge-item .badge-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 4px;
+}
+
+.badge-item .badge-desc {
+    font-size: 11px;
+    color: #94a3b8;
+}
+
+.badge-item.earned {
+    border-color: rgba(236, 72, 153, 0.3);
+}
+
+.badge-item.locked {
+    opacity: 0.5;
+}
+
+/* ===================================
+   GENDER TRACK TOGGLE
+   =================================== */
+.gender-toggle {
+    display: flex;
+    gap: 4px;
+    background: rgba(30, 41, 59, 0.6);
+    border-radius: 10px;
+    padding: 3px;
+}
+
+.gender-toggle button {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: #94a3b8;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.gender-toggle button.active {
+    background: rgba(102, 126, 234, 0.2);
+    color: #ffffff;
+}
+
+/* ===================================
+   BUTTONS
+   =================================== */
+.glam-btn {
+    padding: 10px 20px;
+    border-radius: 10px;
+    border: none;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.glam-btn-primary {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #ffffff;
+}
+
+.glam-btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.glam-btn-pink {
+    background: linear-gradient(135deg, #ec4899, #f472b6);
+    color: #ffffff;
+}
+
+.glam-btn-pink:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);
+}
+
+.glam-btn-outline {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #cbd5e1;
+}
+
+.glam-btn-outline:hover {
+    border-color: rgba(255, 255, 255, 0.3);
+    color: #ffffff;
+}
+
+.glam-btn-sm {
+    padding: 6px 14px;
+    font-size: 13px;
+}
+
+.glam-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* ===================================
+   SQUAD INFO
+   =================================== */
+.squad-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: rgba(102, 126, 234, 0.1);
+    border-radius: 12px;
+    margin-bottom: 12px;
+}
+
+.squad-info-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.squad-info-count {
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+/* ===================================
+   COUNTDOWN
+   =================================== */
+.countdown {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.countdown-segment {
+    text-align: center;
+}
+
+.countdown-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1;
+}
+
+.countdown-label {
+    font-size: 11px;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ===================================
+   CHALLENGE TIMELINE
+   =================================== */
+.challenge-timeline {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin: 16px 0;
+}
+
+.timeline-step {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+}
+
+.timeline-step .step-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #475569;
+    margin-bottom: 6px;
+    z-index: 1;
+}
+
+.timeline-step .step-dot.active { background: #667eea; box-shadow: 0 0 8px rgba(102, 126, 234, 0.4); }
+.timeline-step .step-dot.completed { background: #10b981; }
+
+.timeline-step .step-label {
+    font-size: 10px;
+    color: #94a3b8;
+    text-align: center;
+}
+
+.timeline-step .step-line {
+    position: absolute;
+    top: 6px;
+    left: 50%;
+    right: -50%;
+    height: 2px;
+    background: #475569;
+    z-index: 0;
+}
+
+.timeline-step .step-line.completed { background: #10b981; }
+
+/* ===================================
+   EMPTY STATE
+   =================================== */
+.glam-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: #94a3b8;
+}
+
+.glam-empty-icon {
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.glam-empty h3 {
+    color: #cbd5e1;
+    font-size: 16px;
+    margin-bottom: 8px;
+}
+
+.glam-empty p {
+    font-size: 14px;
+    color: #94a3b8;
+}
+
+/* ===================================
+   WINNER SHOWCASE (FEED SIDEBAR)
+   =================================== */
+.winner-showcase {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.winner-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    border-radius: 10px;
+    transition: background 0.2s;
+}
+
+.winner-item:hover { background: rgba(255, 255, 255, 0.04); }
+
+.winner-photo {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    object-fit: cover;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.winner-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.winner-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: #ffffff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.winner-score {
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+/* ===================================
+   RESPONSIVE
+   =================================== */
+@media (max-width: 768px) {
+    .glam-sidebar { position: static; }
+    .challenge-banner { padding: 20px; }
+    .challenge-banner h2 { font-size: 18px; }
+    .entry-card-photos img { height: 180px; }
+    .voting-booth-photos img { height: 300px; }
+    .countdown-value { font-size: 22px; }
+    .badge-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+    .results-podium { flex-direction: column; align-items: center; }
+    .podium-entry { max-width: 100%; width: 100%; }
+    .podium-entry.podium-first { transform: none; }
+    .podium-entry.podium-first:hover { transform: translateY(-4px); }
+    .voting-entry-photos .voting-photo { height: 250px; }
+    .glam-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+}

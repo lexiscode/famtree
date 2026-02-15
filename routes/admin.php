@@ -29,6 +29,7 @@ use App\Http\Controllers\AdminControllers\SystemController;
 use App\Http\Controllers\AdminControllers\PublicPageController;
 use App\Http\Controllers\AdminControllers\TeamController;
 use App\Http\Controllers\AdminControllers\PredictionController;
+use App\Http\Controllers\AdminControllers\GlamController;
 
 
 Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], function () {
@@ -235,6 +236,25 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
         Route::post('/predictions/fixtures/{id}/cancel', [PredictionController::class, 'cancelFixture'])->name('predictions.cancelFixture');
         Route::get('/predictions/seasons/{id}/standings', [PredictionController::class, 'standings'])->name('predictions.standings');
         Route::get('/predictions/seasons/{id}/badges', [PredictionController::class, 'badges'])->name('predictions.badges');
+
+        // Phase 17: Glam Squad Management
+        Route::get('/glam', [GlamController::class, 'index'])->name('glam.index');
+        Route::get('/glam/create', [GlamController::class, 'create'])->name('glam.create');
+        Route::post('/glam/seasons', [GlamController::class, 'storeSeason'])->name('glam.storeSeason');
+        Route::get('/glam/seasons/{id}', [GlamController::class, 'show'])->name('glam.show');
+        Route::get('/glam/seasons/{id}/edit', [GlamController::class, 'edit'])->name('glam.edit');
+        Route::put('/glam/seasons/{id}', [GlamController::class, 'updateSeason'])->name('glam.updateSeason');
+        Route::post('/glam/seasons/{id}/activate', [GlamController::class, 'activateSeason'])->name('glam.activateSeason');
+        Route::post('/glam/seasons/{id}/complete', [GlamController::class, 'completeSeason'])->name('glam.completeSeason');
+        Route::post('/glam/seasons/{id}/challenges', [GlamController::class, 'storeChallenge'])->name('glam.storeChallenge');
+        Route::put('/glam/challenges/{id}', [GlamController::class, 'updateChallenge'])->name('glam.updateChallenge');
+        Route::post('/glam/challenges/{id}/transition', [GlamController::class, 'transitionChallenge'])->name('glam.transitionChallenge');
+        Route::post('/glam/challenges/{id}/results', [GlamController::class, 'calculateResults'])->name('glam.calculateResults');
+        Route::get('/glam/squads', [GlamController::class, 'squads'])->name('glam.squads');
+        Route::get('/glam/squads/{id}', [GlamController::class, 'showSquad'])->name('glam.showSquad');
+        Route::post('/glam/squads/{squadId}/remove-member', [GlamController::class, 'removeSquadMember'])->name('glam.removeSquadMember');
+        Route::get('/glam/seasons/{id}/standings/{track}', [GlamController::class, 'standings'])->name('glam.standings');
+        Route::get('/glam/seasons/{id}/badges', [GlamController::class, 'badges'])->name('glam.badges');
 
         // Phase 15: Admin Team & Role Management
         Route::get('/team', [TeamController::class, 'index'])->name('team.index');
