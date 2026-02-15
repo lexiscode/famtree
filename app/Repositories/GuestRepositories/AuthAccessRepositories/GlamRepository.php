@@ -355,7 +355,7 @@ class GlamRepository
             ->orderByDesc('end_date')
             ->first();
 
-        if (!$lastSeason) return ['type' => 'season', 'title' => '', 'winners' => []];
+        if (!$lastSeason) return ['type' => 'season', 'title' => '', 'season_uuid' => null, 'winners' => []];
 
         $standings = GlamStanding::where('season_id', $lastSeason->id)
             ->with('user')
@@ -388,6 +388,7 @@ class GlamRepository
         return [
             'type' => 'season',
             'title' => $lastSeason->name,
+            'season_uuid' => $lastSeason->uuid,
             'winners' => $winners->toArray(),
         ];
     }

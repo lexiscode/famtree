@@ -115,7 +115,11 @@ export default function WinnerShowcase() {
                 </div>
             </div>
             <div className="widget-footer">
-                <Link href={route('glam-squad.index')}>View All</Link>
+                <Link href={
+                    isSeason && data.season_uuid
+                        ? `/glam-squad?season_uuid=${data.season_uuid}#leaderboard`
+                        : route('glam-squad.index')
+                }>View All</Link>
             </div>
         </div>
     );

@@ -103,5 +103,6 @@ export interface GlamWinner {
 export interface GlamWinnersResponse {
     type: 'challenge' | 'season';
     title: string;
+    season_uuid?: string | null;
     winners: GlamWinner[];
 }
