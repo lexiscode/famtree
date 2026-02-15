@@ -153,15 +153,7 @@ export default function Index({ reports, statistics, search, filters, perPage }:
     return (
         <AdminLayout>
             <div>
-                {/* Flash Messages */}
-                {flash?.success && (
-                    <div className="ap-flash ap-flash-success">{flash.success}</div>
-                )}
-                {flash?.error && (
-                    <div className="ap-flash ap-flash-error">{flash.error}</div>
-                )}
-
-                {/* Header */}
+{/* Header */}
                 <div className="ap-page-header">
                     <h1 className="ap-page-title">Reports</h1>
                     <p className="ap-page-subtitle">Review and manage user reports to maintain community safety and trust</p>

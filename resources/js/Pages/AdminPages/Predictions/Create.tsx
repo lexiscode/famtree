@@ -38,9 +38,7 @@ export default function Create({ organizations }: Props) {
     return (
         <AdminLayout>
             <div>
-                {flash?.error && <div className="ap-flash ap-flash-error">{flash.error}</div>}
-
-                <button className="ap-back-btn ap-mb-md" onClick={() => router.visit(route('admin.predictions.index'))}>
+<button className="ap-back-btn ap-mb-md" onClick={() => router.visit(route('admin.predictions.index'))}>
                     <ArrowLeft size={16} /> Back to Predictions
                 </button>
 

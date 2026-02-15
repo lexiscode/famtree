@@ -3,7 +3,7 @@ import { router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import {
     ArrowLeft, Pencil, Trophy, Calendar, Target, Users, Award,
-    Plus, X, Flame,
+    Plus, X, Flame, CheckCircle, AlertTriangle, XCircle,
 } from 'lucide-react';
 
 interface Gameweek {
@@ -98,6 +98,17 @@ export default function Show({ season, standings, badges }: Props) {
     const [resultForm, setResultForm] = useState({ home_score: '', away_score: '' });
     const [submitting, setSubmitting] = useState(false);
 
+    // Confirmation dialog
+    const [confirmDialog, setConfirmDialog] = useState<{
+        title: string;
+        message: string;
+        confirmLabel: string;
+        confirmColor: string;
+        confirmBg: string;
+        icon: typeof CheckCircle;
+        onConfirm: () => void;
+    } | null>(null);
+
     // Gameweek form
     const [showGwForm, setShowGwForm] = useState(false);
     const [gwForm, setGwForm] = useState({ label: '', start_date: '', end_date: '' });
@@ -109,16 +120,34 @@ export default function Show({ season, standings, badges }: Props) {
     });
 
     const handleActivate = useCallback(() => {
-        if (window.confirm('Activate this season? Users will be able to make predictions.')) {
-            router.post(route('admin.predictions.activateSeason', season.id), {}, { preserveScroll: true });
-        }
-    }, [season.id]);
+        setConfirmDialog({
+            title: 'Activate Season',
+            message: `Are you sure you want to activate "${season.name}"? Users will be able to make predictions once activated.`,
+            confirmLabel: 'Activate',
+            confirmColor: '#10b981',
+            confirmBg: 'rgba(16, 185, 129, 0.15)',
+            icon: CheckCircle,
+            onConfirm: () => {
+                setConfirmDialog(null);
+                router.post(route('admin.predictions.activateSeason', season.id), {}, { preserveScroll: true });
+            },
+        });
+    }, [season.id, season.name]);
 
     const handleComplete = useCallback(() => {
-        if (window.confirm('Complete this season? This will freeze the final standings.')) {
-            router.post(route('admin.predictions.completeSeason', season.id), {}, { preserveScroll: true });
-        }
-    }, [season.id]);
+        setConfirmDialog({
+            title: 'Complete Season',
+            message: `Are you sure you want to complete "${season.name}"? This will freeze the final standings and no more predictions can be made.`,
+            confirmLabel: 'Complete Season',
+            confirmColor: '#f59e0b',
+            confirmBg: 'rgba(245, 158, 11, 0.15)',
+            icon: AlertTriangle,
+            onConfirm: () => {
+                setConfirmDialog(null);
+                router.post(route('admin.predictions.completeSeason', season.id), {}, { preserveScroll: true });
+            },
+        });
+    }, [season.id, season.name]);
 
     const handleEnterResult = useCallback(() => {
         if (showResultModal === null) return;
@@ -133,9 +162,18 @@ export default function Show({ season, standings, badges }: Props) {
     }, [showResultModal, resultForm]);
 
     const handleCancelFixture = useCallback((id: number) => {
-        if (window.confirm('Cancel this fixture? Predictions will not be scored.')) {
-            router.post(route('admin.predictions.cancelFixture', id), {}, { preserveScroll: true });
-        }
+        setConfirmDialog({
+            title: 'Cancel Fixture',
+            message: 'Are you sure you want to cancel this fixture? Predictions will not be scored and this cannot be undone.',
+            confirmLabel: 'Cancel Fixture',
+            confirmColor: '#ef4444',
+            confirmBg: 'rgba(239, 68, 68, 0.15)',
+            icon: XCircle,
+            onConfirm: () => {
+                setConfirmDialog(null);
+                router.post(route('admin.predictions.cancelFixture', id), {}, { preserveScroll: true });
+            },
+        });
     }, []);
 
     const handleCreateGameweek = useCallback((e: React.FormEvent) => {
@@ -188,9 +226,6 @@ export default function Show({ season, standings, badges }: Props) {
     return (
         <AdminLayout>
             <div>
-                {flash?.success && <div className="ap-flash ap-flash-success">{flash.success}</div>}
-                {flash?.error && <div className="ap-flash ap-flash-error">{flash.error}</div>}
-
                 {/* Header */}
                 <button className="ap-back-btn ap-mb-md" onClick={() => router.visit(route('admin.predictions.index'))}>
                     <ArrowLeft size={16} /> Back to Predictions
@@ -630,6 +665,98 @@ export default function Show({ season, standings, badges }: Props) {
                             </div>
                         </div>
                     </div>
+                    );
+                })()}
+
+                {/* Confirmation Dialog */}
+                {confirmDialog && (() => {
+                    const Icon = confirmDialog.icon;
+                    return (
+                        <div
+                            onClick={() => setConfirmDialog(null)}
+                            style={{
+                                position: 'fixed', inset: 0, zIndex: 9999,
+                                background: 'rgba(0, 0, 0, 0.6)',
+                                backdropFilter: 'blur(4px)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                padding: '1rem',
+                                animation: 'fadeIn 0.15s ease-out',
+                            }}
+                        >
+                            <div
+                                onClick={(e) => e.stopPropagation()}
+                                style={{
+                                    background: '#1a1a2e',
+                                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                                    borderRadius: '16px',
+                                    padding: '1.75rem',
+                                    width: '100%',
+                                    maxWidth: '420px',
+                                    boxShadow: '0 25px 60px rgba(0, 0, 0, 0.5)',
+                                    animation: 'slideUp 0.2s ease-out',
+                                }}
+                            >
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                                    <div style={{
+                                        width: '44px', height: '44px', borderRadius: '12px',
+                                        background: confirmDialog.confirmBg,
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    }}>
+                                        <Icon size={22} color={confirmDialog.confirmColor} />
+                                    </div>
+                                    <button
+                                        onClick={() => setConfirmDialog(null)}
+                                        style={{
+                                            background: 'rgba(255, 255, 255, 0.05)', border: 'none',
+                                            borderRadius: '8px', padding: '6px', cursor: 'pointer',
+                                            color: '#888', display: 'flex', transition: 'all 0.15s ease',
+                                        }}
+                                        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'; e.currentTarget.style.color = '#ccc'; }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'; e.currentTarget.style.color = '#888'; }}
+                                    >
+                                        <X size={16} />
+                                    </button>
+                                </div>
+
+                                <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.1rem', fontWeight: 600, color: '#ffffff' }}>
+                                    {confirmDialog.title}
+                                </h3>
+                                <p style={{ margin: '0 0 1.5rem', fontSize: '0.875rem', color: '#999', lineHeight: 1.5 }}>
+                                    {confirmDialog.message}
+                                </p>
+
+                                <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                                    <button
+                                        onClick={() => setConfirmDialog(null)}
+                                        style={{
+                                            padding: '0.6rem 1.25rem', borderRadius: '10px',
+                                            background: 'rgba(255, 255, 255, 0.06)',
+                                            border: '1px solid rgba(255, 255, 255, 0.08)',
+                                            color: '#ccc', fontSize: '0.85rem', fontWeight: 500,
+                                            cursor: 'pointer', transition: 'all 0.15s ease',
+                                        }}
+                                        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'; }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)'; }}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={confirmDialog.onConfirm}
+                                        style={{
+                                            padding: '0.6rem 1.25rem', borderRadius: '10px',
+                                            background: confirmDialog.confirmBg,
+                                            border: `1px solid ${confirmDialog.confirmColor}33`,
+                                            color: confirmDialog.confirmColor, fontSize: '0.85rem', fontWeight: 600,
+                                            cursor: 'pointer', transition: 'all 0.15s ease',
+                                        }}
+                                        onMouseEnter={(e) => { e.currentTarget.style.background = confirmDialog.confirmColor; e.currentTarget.style.color = '#fff'; }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.background = confirmDialog.confirmBg; e.currentTarget.style.color = confirmDialog.confirmColor; }}
+                                    >
+                                        {confirmDialog.confirmLabel}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     );
                 })()}
             </div>

@@ -93,15 +93,7 @@ export default function ViewConversation({ conversation, messages }: Props) {
     return (
         <AdminLayout>
             <div>
-                {/* Flash Messages */}
-                {flash?.success && (
-                    <div className="ap-flash ap-flash-success">{flash.success}</div>
-                )}
-                {flash?.error && (
-                    <div className="ap-flash ap-flash-error">{flash.error}</div>
-                )}
-
-                {/* Header with Back Button */}
+{/* Header with Back Button */}
                 <button className="ap-back-btn" onClick={() => router.get(route('admin.messaging.conversations'))}>
                     <ArrowLeft size={16} /> Back to Conversations
                 </button>

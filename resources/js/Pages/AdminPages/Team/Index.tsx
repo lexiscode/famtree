@@ -137,15 +137,7 @@ export default function Index({ admins, statistics }: Props) {
     return (
         <AdminLayout>
             <div>
-                {/* Flash Messages */}
-                {flash?.success && (
-                    <div className="ap-flash ap-flash-success">{flash.success}</div>
-                )}
-                {flash?.error && (
-                    <div className="ap-flash ap-flash-error">{flash.error}</div>
-                )}
-
-                {/* Page Header */}
+{/* Page Header */}
                 <div className="ap-page-header">
                     <div className="ap-page-header-row">
                         <div>

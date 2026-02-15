@@ -108,15 +108,7 @@ export default function TreeChats({ treeChats, statistics, filters, search, perP
     return (
         <AdminLayout>
             <div>
-                {/* Flash Messages */}
-                {flash?.success && (
-                    <div className="ap-flash ap-flash-success">{flash.success}</div>
-                )}
-                {flash?.error && (
-                    <div className="ap-flash ap-flash-error">{flash.error}</div>
-                )}
-
-                {/* Header */}
+{/* Header */}
                 <div className="ap-page-header">
                     <h1 className="ap-page-title">Family Tree Chats</h1>
                     <p className="ap-page-subtitle">Monitor and oversee all family tree group conversations</p>

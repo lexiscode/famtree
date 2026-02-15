@@ -48,10 +48,8 @@ export default function Edit({ season, organizations }: Props) {
     return (
         <AdminLayout>
             <div>
-                {flash?.success && <div className="ap-flash ap-flash-success">{flash.success}</div>}
-                {flash?.error && <div className="ap-flash ap-flash-error">{flash.error}</div>}
 
-                <button className="ap-back-btn ap-mb-md" onClick={() => router.visit(route('admin.predictions.show', season.id))}>
+<button className="ap-back-btn ap-mb-md" onClick={() => router.visit(route('admin.predictions.show', season.id))}>
                     <ArrowLeft size={16} /> Back to Season
                 </button>
 

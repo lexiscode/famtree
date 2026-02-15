@@ -96,15 +96,7 @@ export default function Editor({ page }: Props) {
     return (
         <AdminLayout>
             <div>
-                {/* Flash Messages */}
-                {flash?.success && (
-                    <div className="ap-flash ap-flash-success">{flash.success}</div>
-                )}
-                {flash?.error && (
-                    <div className="ap-flash ap-flash-error">{flash.error}</div>
-                )}
-
-                {/* Back Button */}
+{/* Back Button */}
                 <button className="ap-back-btn" onClick={handleCancel}>
                     <ArrowLeft size={16} /> Back to Pages
                 </button>

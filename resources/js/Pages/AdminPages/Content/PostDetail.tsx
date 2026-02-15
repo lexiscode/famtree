@@ -137,15 +137,7 @@ export default function PostDetailPage({ post }: Props) {
     return (
         <AdminLayout>
             <div>
-                {/* Flash Messages */}
-                {flash?.success && (
-                    <div className="ap-flash ap-flash-success">{flash.success}</div>
-                )}
-                {flash?.error && (
-                    <div className="ap-flash ap-flash-error">{flash.error}</div>
-                )}
-
-                {/* Header */}
+{/* Header */}
                 <button className="ap-back-btn" onClick={() => router.get(route('admin.content.posts'))}>
                     <ArrowLeft size={16} /> Back to Posts
                 </button>

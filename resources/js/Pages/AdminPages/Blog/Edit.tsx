@@ -107,15 +107,7 @@ export default function Edit({ post }: Props) {
     return (
         <AdminLayout>
             <div>
-                {/* Flash Messages */}
-                {flash?.success && (
-                    <div className="ap-flash ap-flash-success">{flash.success}</div>
-                )}
-                {flash?.error && (
-                    <div className="ap-flash ap-flash-error">{flash.error}</div>
-                )}
-
-                {/* Page Header */}
+{/* Page Header */}
                 <div className="ap-page-header-row">
                     <div className="ap-flex ap-items-center ap-gap-md">
                         <button onClick={handleCancel} className="ap-back-btn">

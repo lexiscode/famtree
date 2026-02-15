@@ -143,15 +143,7 @@ export default function ElectionDetail({ election }: Props) {
     return (
         <AdminLayout>
             <div>
-                {/* Flash Messages */}
-                {flash?.success && (
-                    <div className="ap-flash ap-flash-success">{flash.success}</div>
-                )}
-                {flash?.error && (
-                    <div className="ap-flash ap-flash-error">{flash.error}</div>
-                )}
-
-                {/* Back Button */}
+{/* Back Button */}
                 <button
                     className="ap-back-btn"
                     onClick={() => router.get(route('admin.elections.index'))}

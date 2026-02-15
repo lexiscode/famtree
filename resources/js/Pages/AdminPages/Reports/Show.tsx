@@ -100,15 +100,7 @@ export default function Show({ report }: Props) {
     return (
         <AdminLayout>
             <div>
-                {/* Flash Messages */}
-                {flash?.success && (
-                    <div className="ap-flash ap-flash-success">{flash.success}</div>
-                )}
-                {flash?.error && (
-                    <div className="ap-flash ap-flash-error">{flash.error}</div>
-                )}
-
-                {/* Back Button & Header */}
+{/* Back Button & Header */}
                 <button className="ap-back-btn" onClick={() => router.get(route('admin.reports.index'))}>
                     <ArrowLeft size={16} /> Back to Reports
                 </button>

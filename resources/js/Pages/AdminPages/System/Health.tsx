@@ -51,15 +51,7 @@ export default function Health({ health, storage, app_info }: Props) {
     return (
         <AdminLayout>
             <div>
-                {/* Flash Messages */}
-                {flash?.success && (
-                    <div className="ap-flash ap-flash-success">{flash.success}</div>
-                )}
-                {flash?.error && (
-                    <div className="ap-flash ap-flash-error">{flash.error}</div>
-                )}
-
-                {/* Page Header */}
+{/* Page Header */}
                 <div className="ap-page-header">
                     <h1 className="ap-page-title">System Health</h1>
                     <p className="ap-page-subtitle">Monitor infrastructure health, storage usage, and application configuration</p>

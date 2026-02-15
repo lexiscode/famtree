@@ -104,15 +104,7 @@ export default function OrgPosts({ orgPosts, statistics, search, perPage }: Prop
     return (
         <AdminLayout>
             <div>
-                {/* Flash Messages */}
-                {flash?.success && (
-                    <div className="ap-flash ap-flash-success">{flash.success}</div>
-                )}
-                {flash?.error && (
-                    <div className="ap-flash ap-flash-error">{flash.error}</div>
-                )}
-
-                {/* Header */}
+{/* Header */}
                 <div className="ap-page-header">
                     <h1 className="ap-page-title">Organization Posts</h1>
                     <p className="ap-page-subtitle">Manage and moderate posts created by organizations</p>

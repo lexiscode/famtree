@@ -69,15 +69,7 @@ export default function UsersAnalytics({ growth, retention, twoFaAdoption, demog
     return (
         <AdminLayout>
             <div>
-                {/* Flash Messages */}
-                {flash?.success && (
-                    <div className="ap-flash ap-flash-success">{flash.success}</div>
-                )}
-                {flash?.error && (
-                    <div className="ap-flash ap-flash-error">{flash.error}</div>
-                )}
-
-                {/* Header */}
+{/* Header */}
                 <div className="ap-page-header">
                     <h1 className="ap-page-title">User Analytics</h1>
                     <p className="ap-page-subtitle">

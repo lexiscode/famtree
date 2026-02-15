@@ -68,10 +68,8 @@ export default function Index({ seasons, statistics, perPage }: Props) {
     return (
         <AdminLayout>
             <div>
-                {flash?.success && <div className="ap-flash ap-flash-success">{flash.success}</div>}
-                {flash?.error && <div className="ap-flash ap-flash-error">{flash.error}</div>}
 
-                <div className="ap-page-header">
+<div className="ap-page-header">
                     <div className="ap-page-header-row">
                         <div>
                             <h1 className="ap-page-title">Prediction League</h1>

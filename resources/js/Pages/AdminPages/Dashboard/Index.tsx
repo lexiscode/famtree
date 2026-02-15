@@ -133,15 +133,7 @@ export default function AdminDashboard() {
 
     return (
         <AdminLayout>
-            {/* Flash Messages */}
-            {flash?.success && (
-                <div className="ap-flash ap-flash-success">{flash.success}</div>
-            )}
-            {flash?.error && (
-                <div className="ap-flash ap-flash-error">{flash.error}</div>
-            )}
-
-            {/* Page Header */}
+{/* Page Header */}
             <div className="ap-page-header">
                 <h1 className="ap-page-title">Welcome back, {auth?.admin?.username}</h1>
                 <p className="ap-page-subtitle">Here's what's happening with your platform today</p>

@@ -151,15 +151,7 @@ export default function Posts({ posts, statistics, search, filters, perPage }: P
     return (
         <AdminLayout>
             <div>
-                {/* Flash Messages */}
-                {flash?.success && (
-                    <div className="ap-flash ap-flash-success">{flash.success}</div>
-                )}
-                {flash?.error && (
-                    <div className="ap-flash ap-flash-error">{flash.error}</div>
-                )}
-
-                {/* Header */}
+{/* Header */}
                 <div className="ap-page-header">
                     <h1 className="ap-page-title">Post Management</h1>
                     <p className="ap-page-subtitle">Monitor and moderate all user-generated posts across the platform</p>
