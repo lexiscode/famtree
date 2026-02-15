@@ -14,7 +14,11 @@ class TreeChatRepository
     public function getMessages(int $treeId, int $limit = 50)
     {
         return TreeChatMessage::where('family_tree_id', $treeId)
-            ->with('user:id,first_name,last_name,profile_image')
+            ->with([
+                'user:id,first_name,last_name,profile_image',
+                'repliedMessage:id,user_id,message',
+                'repliedMessage.user:id,first_name,last_name',
+            ])
             ->orderBy('created_at', 'desc')
             ->limit($limit)
             ->get()
@@ -36,12 +40,13 @@ class TreeChatRepository
     /**
      * Create a new chat message
      */
-    public function createMessage(int $treeId, int $userId, string $message): TreeChatMessage
+    public function createMessage(int $treeId, int $userId, string $message, ?int $replyToId = null): TreeChatMessage
     {
         $chatMessage = TreeChatMessage::create([
             'family_tree_id' => $treeId,
             'user_id' => $userId,
             'message' => $message,
+            'reply_to_id' => $replyToId,
         ]);
 
         // Update the sender's last_read_at to include their own message

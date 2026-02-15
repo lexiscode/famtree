@@ -22,7 +22,7 @@ export default function SquadInfoCard({ squad, type, userGender }: Props) {
 
     const handleLeave = () => {
         if (squad) {
-            router.post(route('glam-squad.leaveSquad', squad.id), {}, {
+            router.post(route('glam-squad.leaveSquad', squad.uuid), {}, {
                 preserveScroll: true,
                 onFinish: () => setShowLeaveConfirm(false),
             });

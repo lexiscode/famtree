@@ -17,6 +17,7 @@ class TreeChatMessage extends Model
         'is_read',
         'is_edited',
         'edited_at',
+        'reply_to_id',
     ];
 
     protected $casts = [
@@ -41,5 +42,13 @@ class TreeChatMessage extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the message this is a reply to
+     */
+    public function repliedMessage(): BelongsTo
+    {
+        return $this->belongsTo(TreeChatMessage::class, 'reply_to_id');
     }
 }

@@ -17,7 +17,7 @@ class TreeChatService
     /**
      * Send a chat message and broadcast it
      */
-    public function sendMessage(int $treeId, int $userId, string $message): array
+    public function sendMessage(int $treeId, int $userId, string $message, ?int $replyToId = null): array
     {
         // Validate message is not empty
         $trimmedMessage = trim($message);
@@ -29,10 +29,14 @@ class TreeChatService
         }
 
         // Create the message
-        $chatMessage = $this->chatRepository->createMessage($treeId, $userId, $trimmedMessage);
+        $chatMessage = $this->chatRepository->createMessage($treeId, $userId, $trimmedMessage, $replyToId);
 
-        // Load the user relationship
-        $chatMessage->load('user:id,first_name,last_name,profile_image_url');
+        // Load the user and reply relationships
+        $chatMessage->load([
+            'user:id,first_name,last_name,profile_image_url',
+            'repliedMessage:id,user_id,message',
+            'repliedMessage.user:id,first_name,last_name',
+        ]);
 
         // Broadcast the message event
         broadcast(new TreeMessageSent($chatMessage))->toOthers();

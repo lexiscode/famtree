@@ -156,12 +156,14 @@ class PrivateMessageController extends Controller
 
         $validated = $request->validate([
             'message' => 'required|string|max:5000',
+            'reply_to_id' => 'nullable|integer|exists:private_messages,id',
         ]);
 
         $result = $this->messageService->sendMessage(
             $conversation->id,
             $user->id,
-            $validated['message']
+            $validated['message'],
+            $validated['reply_to_id'] ?? null
         );
 
         if (!$result['success']) {
@@ -382,6 +384,16 @@ class PrivateMessageController extends Controller
             'conversation_id' => $message->conversation_id,
             'sender_id' => $message->sender_id,
             'message' => $message->message,
+            'reply_to_id' => $message->reply_to_id,
+            'replied_message' => $message->repliedMessage ? [
+                'id' => $message->repliedMessage->id,
+                'message' => $message->repliedMessage->message,
+                'sender' => $message->repliedMessage->sender ? [
+                    'id' => $message->repliedMessage->sender->id,
+                    'first_name' => $message->repliedMessage->sender->first_name,
+                    'last_name' => $message->repliedMessage->sender->last_name,
+                ] : null,
+            ] : null,
             'is_delivered' => $message->is_delivered,
             'is_read' => $message->is_read,
             'is_edited' => $message->is_edited,
@@ -466,9 +478,11 @@ class PrivateMessageController extends Controller
             $unreadCount = $this->glamSquadMessageRepository->getUnreadCount($glamSquad->id, $userId);
 
             $groupChats[] = [
+                'id' => $glamSquad->id,
                 'uuid' => $glamSquad->uuid,
                 'type' => 'glam_squad',
                 'name' => $glamSquad->name,
+                'gender_track' => $glamSquad->gender_track,
                 'member_count' => $glamSquad->members_count,
                 'unread_count' => $unreadCount,
                 'lastMessage' => $latestMessage ? [

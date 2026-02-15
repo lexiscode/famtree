@@ -279,6 +279,17 @@ class GlamScoringService
         }
     }
 
+    private const BADGE_BONUS_POINTS = [
+        'fashionista'      => 10,
+        'crowd_favorite'   => 20,
+        'top_model'        => 25,
+        'style_streak'     => 15,
+        'critic_eye'       => 15,
+        'rising_star'      => 20,
+        'season_champion'  => 50,
+        'podium_regular'   => 30,
+    ];
+
     private function awardBadge(string $slug, int $userId, int $seasonId): void
     {
         $badge = GlamBadge::where('slug', $slug)->first();
@@ -299,6 +310,18 @@ class GlamScoringService
                 'times_earned' => 1,
                 'earned_at' => now(),
             ]);
+
+            // Award bonus points on first earn
+            $bonus = self::BADGE_BONUS_POINTS[$slug] ?? 0;
+            if ($bonus > 0) {
+                $standing = GlamStanding::where('season_id', $seasonId)
+                    ->where('user_id', $userId)
+                    ->first();
+                if ($standing) {
+                    $standing->total_points += $bonus;
+                    $standing->save();
+                }
+            }
         }
     }
 }

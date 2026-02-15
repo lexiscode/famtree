@@ -4,6 +4,7 @@ namespace App\Models\GuestModels;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
 
 class GlamSquadMessage extends Model
@@ -17,6 +18,7 @@ class GlamSquadMessage extends Model
         'message',
         'is_edited',
         'edited_at',
+        'reply_to_id',
     ];
 
     protected $casts = [
@@ -45,5 +47,13 @@ class GlamSquadMessage extends Model
     public function sender()
     {
         return $this->belongsTo(User::class, 'sender_id');
+    }
+
+    /**
+     * Get the message this is a reply to
+     */
+    public function repliedMessage(): BelongsTo
+    {
+        return $this->belongsTo(GlamSquadMessage::class, 'reply_to_id');
     }
 }

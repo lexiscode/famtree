@@ -17,6 +17,7 @@ class PrivateMessage extends Model
         'read_at',
         'is_edited',
         'edited_at',
+        'reply_to_id',
     ];
 
     protected $casts = [
@@ -44,6 +45,14 @@ class PrivateMessage extends Model
     public function sender(): BelongsTo
     {
         return $this->belongsTo(User::class, 'sender_id');
+    }
+
+    /**
+     * Get the message this is a reply to
+     */
+    public function repliedMessage(): BelongsTo
+    {
+        return $this->belongsTo(PrivateMessage::class, 'reply_to_id');
     }
 
     /**

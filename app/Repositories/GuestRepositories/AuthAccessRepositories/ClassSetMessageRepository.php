@@ -17,6 +17,8 @@ class ClassSetMessageRepository
                 'sender:id,uuid,first_name,last_name,username,profile_image',
                 'organization',
                 'orgAccount',
+                'repliedMessage:id,sender_id,message',
+                'repliedMessage.sender:id,first_name,last_name',
             ]);
 
         if ($beforeId) {
@@ -33,12 +35,13 @@ class ClassSetMessageRepository
     /**
      * Create a new message
      */
-    public function createMessage(int $classSetId, ?int $senderId, string $message): ClassSetMessage
+    public function createMessage(int $classSetId, ?int $senderId, string $message, ?int $replyToId = null): ClassSetMessage
     {
         return ClassSetMessage::create([
             'class_set_id' => $classSetId,
             'sender_id' => $senderId,
             'message' => $message,
+            'reply_to_id' => $replyToId,
         ]);
     }
 

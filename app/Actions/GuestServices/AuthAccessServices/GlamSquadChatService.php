@@ -41,7 +41,7 @@ class GlamSquadChatService
     /**
      * Send a message.
      */
-    public function sendMessage(string $squadUuid, int $userId, string $messageText): array
+    public function sendMessage(string $squadUuid, int $userId, string $messageText, ?int $replyToId = null): array
     {
         $squad = $this->glamRepository->findSquadByUuid($squadUuid);
         if (!$squad) {
@@ -64,9 +64,10 @@ class GlamSquadChatService
             'squad_id' => $squad->id,
             'sender_id' => $userId,
             'message' => $messageText,
+            'reply_to_id' => $replyToId,
         ]);
 
-        $message->loadMissing('sender');
+        $message->loadMissing(['sender', 'repliedMessage:id,sender_id,message', 'repliedMessage.sender:id,first_name,last_name']);
 
         broadcast(new GlamSquadMessageSent($message, $squad))->toOthers();
 
@@ -135,6 +136,16 @@ class GlamSquadChatService
             'squad_id' => $message->squad_id,
             'sender_id' => $message->sender_id,
             'message' => $message->message,
+            'reply_to_id' => $message->reply_to_id,
+            'replied_message' => $message->repliedMessage ? [
+                'id' => $message->repliedMessage->id,
+                'message' => $message->repliedMessage->message,
+                'sender' => $message->repliedMessage->sender ? [
+                    'id' => $message->repliedMessage->sender->id,
+                    'first_name' => $message->repliedMessage->sender->first_name,
+                    'last_name' => $message->repliedMessage->sender->last_name,
+                ] : null,
+            ] : null,
             'is_edited' => $message->is_edited,
             'edited_at' => $message->edited_at?->toISOString(),
             'created_at' => $message->created_at->toISOString(),

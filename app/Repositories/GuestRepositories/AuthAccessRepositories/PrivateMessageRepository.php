@@ -64,7 +64,11 @@ class PrivateMessageRepository
     public function getMessages(int $conversationId, int $limit = 50): Collection
     {
         return PrivateMessage::where('conversation_id', $conversationId)
-            ->with('sender:id,first_name,last_name,profile_image')
+            ->with([
+                'sender:id,first_name,last_name,profile_image',
+                'repliedMessage:id,sender_id,message',
+                'repliedMessage.sender:id,first_name,last_name',
+            ])
             ->orderByDesc('created_at')
             ->limit($limit)
             ->get()
@@ -86,12 +90,13 @@ class PrivateMessageRepository
     /**
      * Create a new message
      */
-    public function createMessage(int $conversationId, int $senderId, string $message): PrivateMessage
+    public function createMessage(int $conversationId, int $senderId, string $message, ?int $replyToId = null): PrivateMessage
     {
         $privateMessage = PrivateMessage::create([
             'conversation_id' => $conversationId,
             'sender_id' => $senderId,
             'message' => $message,
+            'reply_to_id' => $replyToId,
         ]);
 
         // Update conversation's last_message_at timestamp

@@ -440,17 +440,18 @@ Route::middleware(['web', 'auth'])->group(function () {
     // Glam Squad routes
     Route::prefix('glam-squad')->group(function () {
         Route::get('/', [GuestGlamController::class, 'index'])->name('glam-squad.index');
-        Route::get('/challenge/{id}', [GuestGlamController::class, 'challenge'])->name('glam-squad.challenge');
+        Route::get('/challenge/{uuid}', [GuestGlamController::class, 'challenge'])->name('glam-squad.challenge');
         Route::post('/join-squad', [GuestGlamController::class, 'joinSquad'])->name('glam-squad.joinSquad');
         Route::post('/join-mixed', [GuestGlamController::class, 'joinMixed'])->name('glam-squad.joinMixed');
-        Route::post('/leave-squad/{squadId}', [GuestGlamController::class, 'leaveSquad'])->name('glam-squad.leaveSquad');
-        Route::post('/challenge/{challengeId}/submit', [GuestGlamController::class, 'submitEntry'])->name('glam-squad.submitEntry');
-        Route::put('/entry/{entryId}', [GuestGlamController::class, 'updateEntry'])->name('glam-squad.updateEntry');
-        Route::post('/entry/{entryId}/vote', [GuestGlamController::class, 'vote'])->name('glam-squad.vote');
-        Route::get('/challenge/{challengeId}/next-vote', [GuestGlamController::class, 'nextVote'])->name('glam-squad.nextVote');
+        Route::post('/leave-squad/{squadUuid}', [GuestGlamController::class, 'leaveSquad'])->name('glam-squad.leaveSquad');
+        Route::post('/challenge/{challengeUuid}/submit', [GuestGlamController::class, 'submitEntry'])->name('glam-squad.submitEntry');
+        Route::put('/entry/{entryUuid}', [GuestGlamController::class, 'updateEntry'])->name('glam-squad.updateEntry');
+        Route::post('/entry/{entryUuid}/vote', [GuestGlamController::class, 'vote'])->name('glam-squad.vote');
+        Route::get('/challenge/{challengeUuid}/next-vote', [GuestGlamController::class, 'nextVote'])->name('glam-squad.nextVote');
         Route::post('/toggle-follow', [GuestGlamController::class, 'toggleFollow'])->name('glam-squad.toggleFollow');
-        Route::get('/challenge/{challengeId}/results/{track}', [GuestGlamController::class, 'results'])->name('glam-squad.results');
+        Route::get('/challenge/{challengeUuid}/results/{track}', [GuestGlamController::class, 'results'])->name('glam-squad.results');
         Route::get('/api/winners', [GuestGlamController::class, 'winners'])->name('glam-squad.winners');
+        Route::get('/api/standings/{seasonUuid}/{track}', [GuestGlamController::class, 'standings'])->name('glam-squad.standings');
 
         // Squad Chat
         Route::get('/{squadUuid}/messages', [GlamSquadChatController::class, 'getMessages'])->name('glam-squad.messages');
@@ -459,5 +460,7 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::put('/message/{messageId}', [GlamSquadChatController::class, 'editMessage'])->name('glam-squad.edit-message');
         Route::delete('/message/{messageId}', [GlamSquadChatController::class, 'deleteMessage'])->name('glam-squad.delete-message');
         Route::post('/bulk-delete', [GlamSquadChatController::class, 'bulkDeleteMessages'])->name('glam-squad.bulk-delete');
+        Route::get('/{squadUuid}/members', [GlamSquadChatController::class, 'members'])->name('glam-squad.members');
+        Route::get('/{squadUuid}/standings', [GlamSquadChatController::class, 'standings'])->name('glam-squad.squad-standings');
     });
 });

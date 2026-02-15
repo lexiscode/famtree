@@ -77,7 +77,7 @@ class PrivateMessageService
     /**
      * Send a message in a conversation
      */
-    public function sendMessage(int $conversationId, int $senderId, string $message): array
+    public function sendMessage(int $conversationId, int $senderId, string $message, ?int $replyToId = null): array
     {
         $trimmedMessage = trim($message);
 
@@ -115,11 +115,16 @@ class PrivateMessageService
         $privateMessage = $this->messageRepository->createMessage(
             $conversation->id,
             $senderId,
-            $trimmedMessage
+            $trimmedMessage,
+            $replyToId
         );
 
-        // Load sender info for broadcast
-        $privateMessage->load('sender:id,first_name,last_name,profile_image_url');
+        // Load sender and reply info for broadcast
+        $privateMessage->load([
+            'sender:id,first_name,last_name,profile_image_url',
+            'repliedMessage:id,sender_id,message',
+            'repliedMessage.sender:id,first_name,last_name',
+        ]);
 
         // Broadcast to both users
         broadcast(new PrivateMessageSent($privateMessage, $conversation))->toOthers();

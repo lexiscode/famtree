@@ -19,7 +19,7 @@ class ClassSetChatService
     /**
      * Send a message to a class set chat
      */
-    public function sendMessage(string $classSetUuid, int $userId, string $message): array
+    public function sendMessage(string $classSetUuid, int $userId, string $message, ?int $replyToId = null): array
     {
         $classSet = $this->classSetRepository->getClassSetByUuid($classSetUuid);
 
@@ -56,13 +56,17 @@ class ClassSetChatService
             ]);
         }
 
-        $chatMessage = $this->messageRepository->createMessage($classSet->id, $userId, $message);
+        $chatMessage = $this->messageRepository->createMessage($classSet->id, $userId, $message, $replyToId);
 
         // Mark as read for the sender (they shouldn't see their own message as unread)
         $this->messageRepository->markAsRead($classSet->id, $userId);
 
-        // Load the sender relationship
-        $chatMessage->load('sender:id,uuid,first_name,last_name,username,profile_image');
+        // Load the sender and reply relationships
+        $chatMessage->load([
+            'sender:id,uuid,first_name,last_name,username,profile_image',
+            'repliedMessage:id,sender_id,message',
+            'repliedMessage.sender:id,first_name,last_name',
+        ]);
 
         // Broadcast the message
         broadcast(new ClassSetMessageSent($chatMessage, $classSet))->toOthers();
@@ -73,6 +77,16 @@ class ClassSetChatService
                 'id' => $chatMessage->id,
                 'uuid' => $chatMessage->uuid,
                 'message' => $chatMessage->message,
+                'reply_to_id' => $chatMessage->reply_to_id,
+                'replied_message' => $chatMessage->repliedMessage ? [
+                    'id' => $chatMessage->repliedMessage->id,
+                    'message' => $chatMessage->repliedMessage->message,
+                    'sender' => $chatMessage->repliedMessage->sender ? [
+                        'id' => $chatMessage->repliedMessage->sender->id,
+                        'first_name' => $chatMessage->repliedMessage->sender->first_name,
+                        'last_name' => $chatMessage->repliedMessage->sender->last_name,
+                    ] : null,
+                ] : null,
                 'sender' => [
                     'id' => $chatMessage->sender->id,
                     'uuid' => $chatMessage->sender->uuid,
@@ -147,6 +161,16 @@ class ClassSetChatService
                     'id' => $msg->id,
                     'uuid' => $msg->uuid,
                     'message' => $msg->message,
+                    'reply_to_id' => $msg->reply_to_id,
+                    'replied_message' => $msg->repliedMessage ? [
+                        'id' => $msg->repliedMessage->id,
+                        'message' => $msg->repliedMessage->message,
+                        'sender' => $msg->repliedMessage->sender ? [
+                            'id' => $msg->repliedMessage->sender->id,
+                            'first_name' => $msg->repliedMessage->sender->first_name,
+                            'last_name' => $msg->repliedMessage->sender->last_name,
+                        ] : null,
+                    ] : null,
                     'is_org_broadcast' => $isBroadcast,
                     'sender' => $senderData,
                     'created_at' => $msg->created_at,

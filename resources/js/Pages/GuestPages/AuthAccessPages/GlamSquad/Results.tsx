@@ -25,7 +25,7 @@ export default function Results({ challenge, entries }: Props) {
 
     const handleTrackChange = (newTrack: 'female' | 'male') => {
         setTrack(newTrack);
-        window.location.href = route('glam-squad.results', { challengeId: challenge.id, track: newTrack });
+        window.location.href = route('glam-squad.results', { challengeUuid: challenge.uuid, track: newTrack });
     };
 
     const qualified = entries.filter(e => e.is_qualified);
@@ -166,9 +166,11 @@ export default function Results({ challenge, entries }: Props) {
                                         <div className="widget-header">
                                             <h3><Sparkles size={16} /> All Entries ({unqualified.length})</h3>
                                         </div>
-                                        <div style={{ padding: '8px 16px 0', color: '#94a3b8', fontSize: 13 }}>
-                                            These entries did not meet the minimum vote requirement (5 votes) to qualify for ranking.
-                                        </div>
+                                        {unqualified.some(e => e.vote_count < 5) && (
+                                            <div style={{ padding: '8px 16px 0', color: '#94a3b8', fontSize: 13 }}>
+                                                Entries need at least 5 votes to qualify for ranking.
+                                            </div>
+                                        )}
                                         <div className="widget-body" style={{ padding: 0 }}>
                                             <div style={{ display: 'grid', gap: 16, padding: 16 }}>
                                                 {unqualified.map(entry => (

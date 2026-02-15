@@ -33,15 +33,15 @@ interface Props {
     userVoteCount: number;
     isFollowing: boolean;
     userGender: string | null;
-    challengeId: number;
+    challengeUuid: string;
 }
 
 export default function Challenge({
     season, currentChallenge, challenges, userSquad, userEntry,
-    userVoteCount, isFollowing, userGender, challengeId,
+    userVoteCount, isFollowing, userGender, challengeUuid,
 }: Props) {
     // Find the target challenge
-    const challenge = challenges.find(c => c.id === challengeId) || currentChallenge;
+    const challenge = challenges.find(c => c.uuid === challengeUuid) || currentChallenge;
 
     // Submission form state
     const [photo1, setPhoto1] = useState<File | null>(null);
@@ -133,15 +133,15 @@ export default function Challenge({
 
     // Load first votable entry
     useEffect(() => {
-        if (canVote && challengeId) {
+        if (canVote && challengeUuid) {
             fetchNextVotable();
         }
-    }, [canVote, challengeId]);
+    }, [canVote, challengeUuid]);
 
     const fetchNextVotable = useCallback(() => {
         setVotingLoading(true);
         setSelectedStars(0);
-        fetch(route('glam-squad.nextVote', challengeId))
+        fetch(route('glam-squad.nextVote', { challengeUuid }))
             .then(r => r.json())
             .then(data => {
                 if (data && data.id) {
@@ -158,7 +158,7 @@ export default function Challenge({
                 setNoMoreEntries(true);
                 setVotingLoading(false);
             });
-    }, [challengeId]);
+    }, [challengeUuid]);
 
     const handleSubmit = useCallback(() => {
         if (!photo1 || submitting) return;
@@ -169,18 +169,18 @@ export default function Challenge({
         if (photo2) formData.append('photo_2', photo2);
         if (caption) formData.append('caption', caption);
 
-        router.post(route('glam-squad.submitEntry', challengeId), formData as any, {
+        router.post(route('glam-squad.submitEntry', { challengeUuid }), formData as any, {
             preserveScroll: true,
             forceFormData: true,
             onFinish: () => setSubmitting(false),
         });
-    }, [photo1, photo2, caption, challengeId, submitting]);
+    }, [photo1, photo2, caption, challengeUuid, submitting]);
 
     const handleVote = useCallback(() => {
         if (!votableEntry || selectedStars === 0 || votingLoading) return;
 
         setVotingLoading(true);
-        router.post(route('glam-squad.vote', votableEntry.id), { stars: selectedStars }, {
+        router.post(route('glam-squad.vote', { entryUuid: votableEntry.uuid }), { stars: selectedStars }, {
             preserveScroll: true,
             onSuccess: () => {
                 setVotedCount(prev => prev + 1);
@@ -360,7 +360,7 @@ export default function Challenge({
                                             <p style={{ color: '#94a3b8', fontSize: 14, marginBottom: 16 }}>
                                                 You need to join a gendered squad before you can submit entries.
                                             </p>
-                                            <Link href={route('glam-squad.index')} className="glam-btn glam-btn-pink">
+                                            <Link href={`${route('glam-squad.index')}#squad`} className="glam-btn glam-btn-pink">
                                                 Go to Squads
                                             </Link>
                                         </div>
@@ -387,7 +387,7 @@ export default function Challenge({
                                                     <Heart size={16} /> Follow Glam Squad
                                                 </button>
                                                 <Link
-                                                    href={route('glam-squad.index')}
+                                                    href={`${route('glam-squad.index')}#squad`}
                                                     className="glam-btn glam-btn-primary"
                                                     style={{ width: '100%', justifyContent: 'center', textDecoration: 'none' }}
                                                 >
@@ -514,13 +514,13 @@ export default function Challenge({
                                             </p>
                                             <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
                                                 <Link
-                                                    href={route('glam-squad.results', { challengeId: challenge.id, track: 'female' })}
+                                                    href={route('glam-squad.results', { challengeUuid: challenge.uuid, track: 'female' })}
                                                     className="glam-btn glam-btn-pink"
                                                 >
                                                     Female Results
                                                 </Link>
                                                 <Link
-                                                    href={route('glam-squad.results', { challengeId: challenge.id, track: 'male' })}
+                                                    href={route('glam-squad.results', { challengeUuid: challenge.uuid, track: 'male' })}
                                                     className="glam-btn glam-btn-primary"
                                                 >
                                                     Male Results

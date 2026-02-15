@@ -116,14 +116,20 @@
     margin-bottom: 12px;
 }
 
-.challenge-banner .status-indicator {
+.status-indicator {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 6px 14px;
+    padding: 4px 12px;
     border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.challenge-banner .status-indicator {
+    padding: 6px 14px;
     font-size: 13px;
-    font-weight: 500;
 }
 
 .status-indicator.submissions_open { background: rgba(16, 185, 129, 0.15); color: #34d399; }
