@@ -137,6 +137,28 @@ class RelationshipInferenceService
                 }
             }
 
+            // Spouse's in-law sibling disambiguation: when the path is
+            // user → spouse → sister/brother_in_law, check if the target's in-law
+            // status comes through a SIBLING of the intermediate (legitimate) or
+            // through another spouse/co-wife (exclude).
+            $inLawSiblingTypes = ['sister_in_law', 'brother_in_law'];
+            if (in_array($firstType, $spouseTypes) && in_array($inferredType['type'], $inLawSiblingTypes)) {
+                if (!$this->isInLawThroughSibling($intermediateUserId, $targetUserId)) {
+                    return null; // Co-wife's family — no kinship term
+                }
+            }
+
+            // Parent's in-law sibling disambiguation: when the path is
+            // user → parent → sister/brother_in_law, check if the target's in-law
+            // status comes through a SIBLING of the parent (legitimate aunt/uncle
+            // by marriage) or through another spouse/co-wife (exclude).
+            $auntUncleByMarriageTypes = ['aunt_by_marriage', 'uncle_by_marriage'];
+            if (in_array($firstType, $parentTypes) && in_array($inferredType['type'], $auntUncleByMarriageTypes)) {
+                if (!$this->isInLawThroughSibling($intermediateUserId, $targetUserId)) {
+                    return null; // Co-wife's family — no kinship term for the child
+                }
+            }
+
             return [
                 'type' => $inferredType['type'],
                 'label' => $inferredType['label'],
@@ -483,6 +505,40 @@ class RelationshipInferenceService
             'partner_nephew'  => 'nephew',
             'partner_niece'   => 'niece',
 
+            // Co-wife/co-husband: spouse's other spouse
+            'husband_wife'    => 'co_wife',
+            'husband_partner' => 'co_wife',
+            'wife_husband'    => 'co_husband',
+            'wife_partner'    => 'co_husband',
+            'partner_wife'    => 'co_wife',
+            'partner_husband' => 'co_husband',
+            'partner_partner' => 'co_wife',
+
+            // Exclude: spouse's in-law parents (co-wife's parents, not yours)
+            'husband_father_in_law' => null,
+            'husband_mother_in_law' => null,
+            'wife_father_in_law'    => null,
+            'wife_mother_in_law'    => null,
+            'partner_father_in_law' => null,
+            'partner_mother_in_law' => null,
+
+            // Spouse's in-law siblings (disambiguated at runtime — legitimate through sibling, or co-wife's family)
+            'husband_sister_in_law'  => 'sister_in_law',
+            'husband_brother_in_law' => 'brother_in_law',
+            'wife_sister_in_law'     => 'sister_in_law',
+            'wife_brother_in_law'    => 'brother_in_law',
+            'partner_sister_in_law'  => 'sister_in_law',
+            'partner_brother_in_law' => 'brother_in_law',
+
+            // Parent's in-law siblings (father's brother's wife = aunt by marriage, etc.)
+            // Disambiguated at runtime — legitimate through parent's sibling, or co-wife's family
+            'father_sister_in_law'  => 'aunt_by_marriage',
+            'father_brother_in_law' => 'uncle_by_marriage',
+            'mother_sister_in_law'  => 'aunt_by_marriage',
+            'mother_brother_in_law' => 'uncle_by_marriage',
+            'parent_sister_in_law'  => 'aunt_by_marriage',
+            'parent_brother_in_law' => 'uncle_by_marriage',
+
             // Uncle/Aunt by marriage: uncle/aunt's spouse's siblings
             'uncle_brother_in_law' => 'uncle_by_marriage',
             'uncle_sister_in_law'  => 'aunt_by_marriage',
@@ -759,6 +815,8 @@ class RelationshipInferenceService
             'wife' => 'husband',
             'husband' => 'wife',
             'partner' => 'partner',
+            'co_wife' => 'co_wife',
+            'co_husband' => 'co_husband',
 
             // Default
         ];
@@ -831,6 +889,8 @@ class RelationshipInferenceService
             'ex_brother_in_law' => 'Ex-brother-in-law',
             'ex_daughter_in_law' => 'Ex-daughter-in-law',
             'ex_son_in_law' => 'Ex-son-in-law',
+            'co_wife' => 'Co-wife',
+            'co_husband' => 'Co-husband',
             'godparent' => 'Godparent',
             'godchild' => 'Godchild',
         ];
@@ -912,6 +972,56 @@ class RelationshipInferenceService
                 return true;
             }
             if ($userOnSideB && !$userOnSideA && $targetOnSideA) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if the target is an in-law of the intermediate through a SIBLING
+     * (legitimate) rather than through another spouse/co-wife.
+     *
+     * Returns true if any sibling of the intermediate is married to the target.
+     */
+    private function isInLawThroughSibling(int $intermediateUserId, int $targetUserId): bool
+    {
+        $siblingRelTypes = ['brother', 'sister', 'sibling'];
+
+        // Find all siblings of the intermediate
+        $siblingConnections = UserConnection::where('status', 'accepted')
+            ->whereNull('divorced_at')
+            ->whereIn('relationship_type', $siblingRelTypes)
+            ->where(function ($q) use ($intermediateUserId) {
+                $q->where('requester_user_id', $intermediateUserId)
+                  ->orWhere('recipient_user_id', $intermediateUserId);
+            })
+            ->get();
+
+        $spouseRelTypes = ['wife', 'husband', 'partner'];
+
+        foreach ($siblingConnections as $conn) {
+            $siblingId = $conn->requester_user_id === $intermediateUserId
+                ? $conn->recipient_user_id
+                : $conn->requester_user_id;
+
+            // Check if the target is married to this sibling
+            $isSpouse = UserConnection::where('status', 'accepted')
+                ->whereNull('divorced_at')
+                ->whereIn('relationship_type', $spouseRelTypes)
+                ->where(function ($q) use ($siblingId, $targetUserId) {
+                    $q->where(function ($q) use ($siblingId, $targetUserId) {
+                        $q->where('requester_user_id', $siblingId)
+                          ->where('recipient_user_id', $targetUserId);
+                    })->orWhere(function ($q) use ($siblingId, $targetUserId) {
+                        $q->where('requester_user_id', $targetUserId)
+                          ->where('recipient_user_id', $siblingId);
+                    });
+                })
+                ->exists();
+
+            if ($isSpouse) {
                 return true;
             }
         }

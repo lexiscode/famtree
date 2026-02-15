@@ -115,6 +115,7 @@ const getAbbreviation = (label: string): string => {
         'ex daughter-in-law': 'xDIL', 'ex son-in-law': 'xSIL',
         'ex_mother_in_law': 'xMIL', 'ex_father_in_law': 'xFIL',
         'ex_sister_in_law': 'xSsIL', 'ex_brother_in_law': 'xBrIL',
+        'co_wife': 'CW', 'co_husband': 'CH',
     };
     return map[label.toLowerCase()] || label.charAt(0).toUpperCase();
 };
@@ -177,6 +178,10 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                 'ex_wife': 0,
                 'ex_husband': 0,
                 'ex_partner': 0,
+
+                // Co-wife/co-husband (same level as spouse)
+                'co_wife': 0,
+                'co_husband': 0,
 
                 // Children (1 level below)
                 'son': 1,

@@ -89,6 +89,7 @@ class FamilyTreeService
                 'daughter_in_law', 'son_in_law',
                 'ex_mother_in_law', 'ex_father_in_law', 'ex_sister_in_law', 'ex_brother_in_law',
                 'ex_daughter_in_law', 'ex_son_in_law',
+                'co_wife', 'co_husband',
             ];
             if (in_array($relationshipType, $derivedOnlyTypes)) {
                 continue;

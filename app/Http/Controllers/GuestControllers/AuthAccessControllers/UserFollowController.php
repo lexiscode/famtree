@@ -101,6 +101,7 @@ class UserFollowController extends Controller
         return Inertia::render('GuestPages/AuthAccessPages/Follow/FollowersList', [
             'profile' => [
                 'id' => $targetUser->id,
+                'uuid' => $targetUser->uuid,
                 'name' => trim($targetUser->first_name . ' ' . $targetUser->last_name),
                 'username' => $targetUser->username,
                 'profile_image_url' => $targetUser->profile_image_url,
@@ -181,6 +182,7 @@ class UserFollowController extends Controller
         return Inertia::render('GuestPages/AuthAccessPages/Follow/FollowingList', [
             'profile' => [
                 'id' => $targetUser->id,
+                'uuid' => $targetUser->uuid,
                 'name' => trim($targetUser->first_name . ' ' . $targetUser->last_name),
                 'username' => $targetUser->username,
                 'profile_image_url' => $targetUser->profile_image_url,
