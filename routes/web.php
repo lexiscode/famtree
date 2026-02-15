@@ -40,6 +40,11 @@ use App\Http\Controllers\GuestControllers\AuthAccessControllers\MemorialControll
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\OrganizationController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\ClassSetController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\ClassSetChatController;
+use App\Http\Controllers\GuestControllers\AuthAccessControllers\GroupElectionController;
+use App\Http\Controllers\GuestControllers\AuthAccessControllers\GroupRemovalController;
+use App\Http\Controllers\GuestControllers\AuthAccessControllers\PredictionController;
+use App\Http\Controllers\GuestControllers\AuthAccessControllers\GlamController as GuestGlamController;
+use App\Http\Controllers\GuestControllers\AuthAccessControllers\GlamSquadChatController;
 use Inertia\Inertia;
 
 
@@ -251,6 +256,9 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::delete('/{galleryId}', [GalleryController::class, 'destroy'])->name('galleries.destroy');
     });
 
+    // Trending Posts page
+    Route::get('/trending', [FeedController::class, 'trendingPosts'])->name('trending.index');
+
     // Connection Feeds routes
     Route::get('/connection-feeds', [ConnectionFeedsController::class, 'index'])->name('connection-feeds.index');
 
@@ -396,6 +404,11 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::get('/{organizationSlug}/channels', [OrganizationController::class, 'channels'])->name('organizations.channels');
         Route::get('/faculty/{facultySlug}/departments', [OrganizationController::class, 'departments'])->name('organizations.departments');
         Route::get('/department/{departmentSlug}/class-sets', [OrganizationController::class, 'classSets'])->name('organizations.class-sets');
+
+        // Prediction League routes
+        Route::get('/{slug}/predictions', [PredictionController::class, 'index'])->name('organizations.predictions');
+        Route::post('/{slug}/predictions/predict', [PredictionController::class, 'predict'])->name('organizations.predictions.predict');
+        Route::get('/{slug}/predictions/history', [PredictionController::class, 'history'])->name('organizations.predictions.history');
     });
 
     // Class Set Actions routes
@@ -409,5 +422,42 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::put('/message/{messageId}', [ClassSetChatController::class, 'editMessage'])->name('class-sets.edit-message');
         Route::delete('/message/{messageId}', [ClassSetChatController::class, 'deleteMessage'])->name('class-sets.delete-message');
         Route::post('/bulk-delete', [ClassSetChatController::class, 'bulkDeleteMessages'])->name('class-sets.bulk-delete');
+
+        // Group Election routes
+        Route::get('/{classSetUuid}/election', [GroupElectionController::class, 'show'])->name('class-sets.election.show');
+        Route::post('/{classSetUuid}/election/vote', [GroupElectionController::class, 'vote'])->name('class-sets.election.vote');
+
+        // Group Removal routes
+        Route::get('/{classSetUuid}/removal', [GroupRemovalController::class, 'show'])->name('class-sets.removal.show');
+        Route::post('/{classSetUuid}/removal/initiate', [GroupRemovalController::class, 'initiate'])->name('class-sets.removal.initiate');
+        Route::post('/{classSetUuid}/removal/vote', [GroupRemovalController::class, 'vote'])->name('class-sets.removal.vote');
+
+        // Prediction Banner routes
+        Route::get('/{classSetUuid}/predictions/open', [PredictionController::class, 'openFixtures'])->name('class-sets.predictions.open');
+        Route::get('/{classSetUuid}/predictions/standings', [PredictionController::class, 'groupStandings'])->name('class-sets.predictions.standings');
+    });
+
+    // Glam Squad routes
+    Route::prefix('glam-squad')->group(function () {
+        Route::get('/', [GuestGlamController::class, 'index'])->name('glam-squad.index');
+        Route::get('/challenge/{id}', [GuestGlamController::class, 'challenge'])->name('glam-squad.challenge');
+        Route::post('/join-squad', [GuestGlamController::class, 'joinSquad'])->name('glam-squad.joinSquad');
+        Route::post('/join-mixed', [GuestGlamController::class, 'joinMixed'])->name('glam-squad.joinMixed');
+        Route::post('/leave-squad/{squadId}', [GuestGlamController::class, 'leaveSquad'])->name('glam-squad.leaveSquad');
+        Route::post('/challenge/{challengeId}/submit', [GuestGlamController::class, 'submitEntry'])->name('glam-squad.submitEntry');
+        Route::put('/entry/{entryId}', [GuestGlamController::class, 'updateEntry'])->name('glam-squad.updateEntry');
+        Route::post('/entry/{entryId}/vote', [GuestGlamController::class, 'vote'])->name('glam-squad.vote');
+        Route::get('/challenge/{challengeId}/next-vote', [GuestGlamController::class, 'nextVote'])->name('glam-squad.nextVote');
+        Route::post('/toggle-follow', [GuestGlamController::class, 'toggleFollow'])->name('glam-squad.toggleFollow');
+        Route::get('/challenge/{challengeId}/results/{track}', [GuestGlamController::class, 'results'])->name('glam-squad.results');
+        Route::get('/api/winners', [GuestGlamController::class, 'winners'])->name('glam-squad.winners');
+
+        // Squad Chat
+        Route::get('/{squadUuid}/messages', [GlamSquadChatController::class, 'getMessages'])->name('glam-squad.messages');
+        Route::post('/{squadUuid}/messages', [GlamSquadChatController::class, 'sendMessage'])->name('glam-squad.send-message');
+        Route::post('/{squadUuid}/typing', [GlamSquadChatController::class, 'typing'])->name('glam-squad.typing');
+        Route::put('/message/{messageId}', [GlamSquadChatController::class, 'editMessage'])->name('glam-squad.edit-message');
+        Route::delete('/message/{messageId}', [GlamSquadChatController::class, 'deleteMessage'])->name('glam-squad.delete-message');
+        Route::post('/bulk-delete', [GlamSquadChatController::class, 'bulkDeleteMessages'])->name('glam-squad.bulk-delete');
     });
 });

@@ -14,11 +14,13 @@ class ClassSetMember extends Model
         'user_id',
         'joined_at',
         'is_admin',
+        'is_muted',
         'last_read_at',
     ];
 
     protected $casts = [
         'is_admin' => 'boolean',
+        'is_muted' => 'boolean',
         'joined_at' => 'datetime',
         'last_read_at' => 'datetime',
     ];

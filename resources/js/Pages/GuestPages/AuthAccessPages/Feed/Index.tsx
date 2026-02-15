@@ -4,7 +4,7 @@ import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
 import {
     Home, TrendingUp, Users, Plus, Heart, MessageCircle, Mail,
     User, Settings, UserPlus, UserCheck, Globe, FileText, Loader, Image as ImageIcon, Video, ArrowUp,
-    GraduationCap, Bookmark, Search, X
+    GraduationCap, Bookmark, Search, X, Sparkles
 } from 'lucide-react';
 import CreatePostModal from '../Stories/CreatePostModal';
 import PostCard from '../Stories/PostCard';
@@ -12,6 +12,7 @@ import CommentModal from '../Stories/CommentModal';
 import ProfileCompletionModal from '@/Components/Profile/ProfileCompletionModal';
 import TreeChatWindow from '@/Components/FamilyTree/TreeChatWindow';
 import { ProfileCompletion } from '@/types/inertia';
+import WinnerShowcase from '@/Components/GlamSquad/WinnerShowcase';
 import './Feed.css';
 
 interface FeedUser {
@@ -424,6 +425,10 @@ export default function Feed({
                                             <Settings size={20} />
                                             <span>Settings</span>
                                         </a>
+                                        <a href="/glam-squad" className="quick-link">
+                                            <Sparkles size={20} />
+                                            <span>Glam Squad</span>
+                                        </a>
                                     </div>
                                 </div>
                             </div>
@@ -618,7 +623,13 @@ export default function Feed({
                                             </div>
                                         )}
                                     </div>
+                                    <div className="widget-footer">
+                                        <Link href="/trending">View All</Link>
+                                    </div>
                                 </div>
+
+                                {/* Glam Squad Winners Widget */}
+                                <WinnerShowcase />
 
                                 {/* Suggested Users Widget */}
                                 <div className="sidebar-widget">

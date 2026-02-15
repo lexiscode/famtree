@@ -52,7 +52,7 @@ class ClassSet extends Model
     public function users()
     {
         return $this->belongsToMany(User::class, 'class_set_members')
-            ->withPivot(['joined_at', 'is_admin'])
+            ->withPivot(['joined_at', 'is_admin', 'is_muted'])
             ->withTimestamps();
     }
 

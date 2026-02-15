@@ -3,6 +3,7 @@
 namespace App\Models\OrgModels;
 
 use App\Models\GuestModels\Organization;
+use App\Notifications\OrgResetPasswordNotification;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -46,6 +47,11 @@ class OrgAccount extends Authenticatable
                 $model->uuid = (string) Str::uuid();
             }
         });
+    }
+
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new OrgResetPasswordNotification($token));
     }
 
     public function organization()

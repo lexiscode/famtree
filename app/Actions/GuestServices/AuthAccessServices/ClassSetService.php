@@ -5,6 +5,7 @@ namespace App\Actions\GuestServices\AuthAccessServices;
 use App\Repositories\GuestRepositories\AuthAccessRepositories\ClassSetRepository;
 use App\Repositories\GuestRepositories\AuthAccessRepositories\ClassSetMessageRepository;
 use App\Actions\GuestServices\OrganizationFollowService;
+use App\Actions\GuestServices\AuthAccessServices\GroupElectionService;
 use Illuminate\Validation\ValidationException;
 
 class ClassSetService
@@ -12,7 +13,8 @@ class ClassSetService
     public function __construct(
         private ClassSetRepository $classSetRepository,
         private ClassSetMessageRepository $messageRepository,
-        private OrganizationFollowService $organizationFollowService
+        private OrganizationFollowService $organizationFollowService,
+        private GroupElectionService $electionService
     ) {
     }
 
@@ -53,6 +55,13 @@ class ClassSetService
             // Fire-and-forget: don't let follow failure block joining
         }
 
+        // Check if member count just hit 20 → trigger initial election
+        try {
+            $this->electionService->triggerInitialElection($classSet->id);
+        } catch (\Throwable $e) {
+            // Fire-and-forget: don't let election trigger failure block joining
+        }
+
         return [
             'success' => true,
             'message' => 'Successfully joined ' . $classSet->name,
@@ -78,6 +87,13 @@ class ClassSetService
             throw ValidationException::withMessages([
                 'class_set' => ['You are not a member of this class set.'],
             ]);
+        }
+
+        // Check if user was admin before removal
+        try {
+            $this->electionService->handleAdminLeft($classSet->id, $userId);
+        } catch (\Throwable $e) {
+            // Fire-and-forget
         }
 
         $this->classSetRepository->removeMember($classSet->id, $userId);
@@ -115,7 +131,9 @@ class ClassSetService
                     'message' => $latestMessage->message,
                     'sender_name' => $latestMessage->is_org_broadcast
                         ? ($latestMessage->organization->short_name ?? $latestMessage->organization->name ?? 'Organization')
-                        : ($latestMessage->sender ? $latestMessage->sender->first_name . ' ' . $latestMessage->sender->last_name : 'Unknown'),
+                        : ($latestMessage->sender
+                            ? $latestMessage->sender->first_name . ' ' . $latestMessage->sender->last_name
+                            : ($classSet->department->faculty->organization->short_name ?? $classSet->department->faculty->organization->name ?? 'System')),
                     'is_org_broadcast' => (bool) $latestMessage->is_org_broadcast,
                     'created_at' => $latestMessage->created_at,
                 ] : null,

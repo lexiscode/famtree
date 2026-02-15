@@ -10,6 +10,7 @@ use App\Models\GuestModels\Conversation;
 use App\Models\GuestModels\PrivateMessage;
 use App\Models\GuestModels\User;
 use App\Repositories\GuestRepositories\AuthAccessRepositories\PrivateMessageRepository;
+use App\Repositories\GuestRepositories\AuthAccessRepositories\ClassSetRepository;
 use App\Repositories\GuestRepositories\UserConnectionRepository;
 use App\Repositories\GuestRepositories\UserFollowRepository;
 use Illuminate\Support\Collection;
@@ -19,7 +20,8 @@ class PrivateMessageService
     public function __construct(
         private PrivateMessageRepository $messageRepository,
         private UserConnectionRepository $connectionRepository,
-        private UserFollowRepository $followRepository
+        private UserFollowRepository $followRepository,
+        private ClassSetRepository $classSetRepository
     ) {}
 
     /**
@@ -44,6 +46,11 @@ class PrivateMessageService
             return true;
         }
 
+        // Check if they share a common group (class set)
+        if ($this->classSetRepository->shareCommonGroup($senderId, $recipientId)) {
+            return true;
+        }
+
         return false;
     }
 
@@ -55,7 +62,7 @@ class PrivateMessageService
         if (!$this->canMessage($userId, $otherUserId)) {
             return [
                 'success' => false,
-                'error' => 'You cannot message this user. You must be connected or they must follow you.',
+                'error' => 'You cannot message this user. You must be connected, following each other, or in the same group.',
             ];
         }
 

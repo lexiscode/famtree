@@ -272,6 +272,19 @@
     background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
 }
 
+/* Glam Squad Chat Styling */
+.group-avatar .glam-squad-fallback {
+    background: linear-gradient(135deg, #ec4899 0%, #f43f5e 100%) !important;
+}
+
+.group-avatar .glam-squad-fallback svg {
+    color: #ffffff;
+}
+
+.group-chat-header .chat-user-avatar .glam-squad-fallback {
+    background: linear-gradient(135deg, #ec4899 0%, #f43f5e 100%) !important;
+}
+
 .conversation-info {
     flex: 1;
     min-width: 0;
@@ -785,6 +798,58 @@
 }
 
 /* ============================================
+   DIALOG & PANEL ANIMATIONS
+   ============================================ */
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* ============================================
+   ELECTION / REMOVAL PANEL SCROLLBAR
+   ============================================ */
+
+.election-candidates-list {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(139, 92, 246, 0.25) transparent;
+}
+
+.election-candidates-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.election-candidates-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.election-candidates-list::-webkit-scrollbar-thumb {
+    background: rgba(139, 92, 246, 0.25);
+    border-radius: 10px;
+}
+
+.election-candidates-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(139, 92, 246, 0.45);
+}
+
+/* ============================================
    RESPONSIVE STYLES
    ============================================ */
 
@@ -881,12 +946,12 @@
 }
 
 .bulk-select-toggle {
-    width: 20px !important;
-    height: 20px !important;
-    min-width: 20px !important;
-    min-height: 20px !important;
-    max-width: 20px !important;
-    max-height: 20px !important;
+    width: 24px !important;
+    height: 24px !important;
+    min-width: 24px !important;
+    min-height: 24px !important;
+    max-width: 24px !important;
+    max-height: 24px !important;
     border-radius: 4px;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -902,8 +967,8 @@
 }
 
 .bulk-select-toggle svg {
-    width: 12px !important;
-    height: 12px !important;
+    width: 14px !important;
+    height: 14px !important;
     flex-shrink: 0;
 }
 
@@ -923,9 +988,9 @@
     align-items: center !important;
     gap: 0.2rem;
     padding: 2px 6px !important;
-    height: 20px !important;
-    max-height: 20px !important;
-    min-height: 20px !important;
+    height: 24px !important;
+    max-height: 24px !important;
+    min-height: 24px !important;
     background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
     border: none;
     border-radius: 4px;

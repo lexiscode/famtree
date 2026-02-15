@@ -5,6 +5,7 @@ namespace App\Http\Controllers\OrgControllers;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\OrgControllers\Traits\AuthorizesOrgActions;
 use App\Actions\OrgServices\OrgRoleService;
+use App\Repositories\OrgRepositories\OrgActivityLogRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -15,6 +16,7 @@ class RoleController extends Controller
 
     public function __construct(
         private OrgRoleService $roleService,
+        private OrgActivityLogRepository $activityLogRepo,
     ) {}
 
     public function index()
@@ -39,6 +41,16 @@ class RoleController extends Controller
 
         $this->roleService->createRole($orgAccount->organization_id, $validated);
 
+        $this->activityLogRepo->create([
+            'org_account_id' => $orgAccount->id,
+            'organization_id' => $orgAccount->organization_id,
+            'action_type' => 'role_created',
+            'resource_type' => 'role',
+            'description' => 'Created role: ' . $validated['name'],
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
         return redirect()->back()->with('success', 'Role created successfully.');
     }
 
@@ -58,10 +70,20 @@ class RoleController extends Controller
             return redirect()->back()->with('error', 'Role not found or cannot be modified.');
         }
 
+        $this->activityLogRepo->create([
+            'org_account_id' => $orgAccount->id,
+            'organization_id' => $orgAccount->organization_id,
+            'action_type' => 'role_updated',
+            'resource_type' => 'role',
+            'description' => 'Updated role: ' . $validated['name'],
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
         return redirect()->back()->with('success', 'Role updated successfully.');
     }
 
-    public function destroy(int $id)
+    public function destroy(Request $request, int $id)
     {
         $this->authorizeOrg('manage-staff');
         $orgAccount = Auth::guard('org')->user();
@@ -71,6 +93,16 @@ class RoleController extends Controller
         if ($result !== true) {
             return redirect()->back()->with('error', $result);
         }
+
+        $this->activityLogRepo->create([
+            'org_account_id' => $orgAccount->id,
+            'organization_id' => $orgAccount->organization_id,
+            'action_type' => 'role_deleted',
+            'resource_type' => 'role',
+            'description' => 'Deleted a role',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
 
         return redirect()->back()->with('success', 'Role deleted successfully.');
     }

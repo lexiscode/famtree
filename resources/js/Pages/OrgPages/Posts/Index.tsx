@@ -1,9 +1,10 @@
 import OrgLayout from '@/Layouts/OrgLayout';
+import { useState, useEffect, useCallback } from 'react';
 import { router } from '@inertiajs/react';
 import {
     Plus, Pin, Trash2, Eye,
     ChevronLeft, ChevronRight,
-    Heart, MessageCircle,
+    Heart, MessageCircle, X,
 } from 'lucide-react';
 
 interface OrgPostImage {
@@ -49,17 +50,34 @@ function truncate(text: string, maxLength: number): string {
 }
 
 export default function PostsIndex({ posts }: Props) {
+    const [confirmDelete, setConfirmDelete] = useState<OrgPost | null>(null);
+
     const handleTogglePin = (e: React.MouseEvent, id: number) => {
         e.stopPropagation();
         router.post(route('org.posts.togglePin', { id }));
     };
 
-    const handleDelete = (e: React.MouseEvent, id: number) => {
+    const requestDelete = (e: React.MouseEvent, post: OrgPost) => {
         e.stopPropagation();
-        if (confirm('Are you sure you want to delete this post?')) {
-            router.delete(route('org.posts.destroy', { id }));
-        }
+        setConfirmDelete(post);
     };
+
+    const executeDelete = useCallback(() => {
+        if (!confirmDelete) return;
+        router.delete(route('org.posts.destroy', { id: confirmDelete.id }));
+        setConfirmDelete(null);
+    }, [confirmDelete]);
+
+    const dismissConfirm = useCallback(() => {
+        setConfirmDelete(null);
+    }, []);
+
+    useEffect(() => {
+        if (!confirmDelete) return;
+        const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') dismissConfirm(); };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, [confirmDelete, dismissConfirm]);
 
     return (
         <OrgLayout>
@@ -189,7 +207,7 @@ export default function PostsIndex({ posts }: Props) {
                                     <Pin size={14} />
                                 </button>
                                 <button
-                                    onClick={(e) => handleDelete(e, post.id)}
+                                    onClick={(e) => requestDelete(e, post)}
                                     style={{
                                         background: 'rgba(239, 68, 68, 0.1)', border: 'none',
                                         borderRadius: '6px', padding: '0.5rem', cursor: 'pointer',
@@ -270,6 +288,108 @@ export default function PostsIndex({ posts }: Props) {
                     </div>
                 )}
             </div>
+
+            {/* Delete Confirmation Dialog */}
+            {confirmDelete && (
+                <div
+                    onClick={dismissConfirm}
+                    style={{
+                        position: 'fixed', inset: 0, zIndex: 9999,
+                        background: 'rgba(0, 0, 0, 0.6)',
+                        backdropFilter: 'blur(4px)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        padding: '1rem',
+                        animation: 'fadeIn 0.15s ease-out',
+                    }}
+                >
+                    <div
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                            background: '#1a1a2e',
+                            border: '1px solid rgba(255, 255, 255, 0.08)',
+                            borderRadius: '16px',
+                            padding: '1.75rem',
+                            width: '100%',
+                            maxWidth: '400px',
+                            boxShadow: '0 25px 60px rgba(0, 0, 0, 0.5)',
+                            animation: 'slideUp 0.2s ease-out',
+                        }}
+                    >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                            <div style={{
+                                width: '44px', height: '44px', borderRadius: '12px',
+                                background: 'rgba(239, 68, 68, 0.15)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            }}>
+                                <Trash2 size={22} color="#EF4444" />
+                            </div>
+                            <button
+                                onClick={dismissConfirm}
+                                style={{
+                                    background: 'rgba(255, 255, 255, 0.05)', border: 'none',
+                                    borderRadius: '8px', padding: '6px', cursor: 'pointer',
+                                    color: '#888', display: 'flex', transition: 'all 0.15s ease',
+                                }}
+                                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'; e.currentTarget.style.color = '#ccc'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'; e.currentTarget.style.color = '#888'; }}
+                            >
+                                <X size={16} />
+                            </button>
+                        </div>
+
+                        <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.1rem', fontWeight: 600, color: '#ffffff' }}>
+                            Delete Post
+                        </h3>
+                        <p style={{ margin: '0 0 1.5rem', fontSize: '0.875rem', color: '#999', lineHeight: 1.5 }}>
+                            Are you sure you want to delete this post? This action cannot be undone and all associated comments and reactions will be permanently removed.
+                        </p>
+
+                        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                            <button
+                                onClick={dismissConfirm}
+                                style={{
+                                    padding: '0.6rem 1.25rem', borderRadius: '10px',
+                                    background: 'rgba(255, 255, 255, 0.06)',
+                                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                                    color: '#ccc', fontSize: '0.85rem', fontWeight: 500,
+                                    cursor: 'pointer', transition: 'all 0.15s ease',
+                                }}
+                                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)'; }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={executeDelete}
+                                style={{
+                                    padding: '0.6rem 1.25rem', borderRadius: '10px',
+                                    background: 'rgba(239, 68, 68, 0.15)',
+                                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                                    color: '#EF4444', fontSize: '0.85rem', fontWeight: 600,
+                                    cursor: 'pointer', transition: 'all 0.15s ease',
+                                    display: 'flex', alignItems: 'center', gap: '6px',
+                                }}
+                                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.25)'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)'; }}
+                            >
+                                <Trash2 size={14} />
+                                Delete Post
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <style>{`
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                @keyframes slideUp {
+                    from { opacity: 0; transform: translateY(10px) scale(0.98); }
+                    to { opacity: 1; transform: translateY(0) scale(1); }
+                }
+            `}</style>
         </OrgLayout>
     );
 }

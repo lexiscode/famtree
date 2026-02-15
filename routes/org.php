@@ -12,6 +12,7 @@ use App\Http\Controllers\OrgControllers\StaffController;
 use App\Http\Controllers\OrgControllers\RoleController;
 use App\Http\Controllers\OrgControllers\GroupsController;
 use App\Http\Controllers\OrgControllers\FollowersController;
+use App\Http\Controllers\OrgControllers\ActivityLogController;
 
 Route::group(['prefix' => 'org', 'as' => 'org.', 'middleware' => ['web']], function () {
 
@@ -24,6 +25,10 @@ Route::group(['prefix' => 'org', 'as' => 'org.', 'middleware' => ['web']], funct
     }], function () {
         Route::get('/login', [OrgAuthController::class, 'showLogin'])->name('login');
         Route::post('/login', [OrgAuthController::class, 'login']);
+        Route::get('/forgot-password', [OrgAuthController::class, 'showForgotPassword'])->name('forgot-password');
+        Route::post('/forgot-password', [OrgAuthController::class, 'sendResetLink'])->name('send-password-reset');
+        Route::get('/reset-password', [OrgAuthController::class, 'showResetPassword'])->name('show-reset-password');
+        Route::post('/reset-password', [OrgAuthController::class, 'resetPassword'])->name('reset-password');
     });
 
     // Authenticated Org Routes
@@ -60,6 +65,9 @@ Route::group(['prefix' => 'org', 'as' => 'org.', 'middleware' => ['web']], funct
         // Analytics
         Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
 
+        // Activity Logs
+        Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
+
         // Profile
         Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
         Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -79,6 +87,9 @@ Route::group(['prefix' => 'org', 'as' => 'org.', 'middleware' => ['web']], funct
 
         // Groups
         Route::get('/groups', [GroupsController::class, 'index'])->name('groups.index');
+        Route::post('/groups/{classSetId}/members/{userId}/force-remove', [GroupsController::class, 'forceRemoveMember'])->name('groups.force-remove');
+        Route::post('/groups/{classSetId}/members/{userId}/appoint-admin', [GroupsController::class, 'appointAdmin'])->name('groups.appoint-admin');
+        Route::post('/groups/{classSetId}/members/{userId}/remove-admin', [GroupsController::class, 'removeAdmin'])->name('groups.remove-admin');
 
         // Followers
         Route::get('/followers', [FollowersController::class, 'index'])->name('followers.index');

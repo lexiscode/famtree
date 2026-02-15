@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\OrgControllers\Traits\AuthorizesOrgActions;
 use App\Actions\OrgServices\OrgStaffService;
 use App\Actions\OrgServices\OrgRoleService;
+use App\Repositories\OrgRepositories\OrgActivityLogRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -17,6 +18,7 @@ class StaffController extends Controller
     public function __construct(
         private OrgStaffService $staffService,
         private OrgRoleService $roleService,
+        private OrgActivityLogRepository $activityLogRepo,
     ) {}
 
     public function index()
@@ -44,6 +46,16 @@ class StaffController extends Controller
 
         $this->staffService->createStaff($orgAccount->organization_id, $validated);
 
+        $this->activityLogRepo->create([
+            'org_account_id' => $orgAccount->id,
+            'organization_id' => $orgAccount->organization_id,
+            'action_type' => 'staff_created',
+            'resource_type' => 'staff',
+            'description' => 'Created staff account: ' . $validated['username'],
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
         return redirect()->back()->with('success', 'Staff account created successfully.');
     }
 
@@ -65,10 +77,20 @@ class StaffController extends Controller
             return redirect()->back()->with('error', 'Staff account not found or cannot be modified.');
         }
 
+        $this->activityLogRepo->create([
+            'org_account_id' => $orgAccount->id,
+            'organization_id' => $orgAccount->organization_id,
+            'action_type' => 'staff_updated',
+            'resource_type' => 'staff',
+            'description' => 'Updated staff account: ' . ($staff->display_name ?? $staff->username),
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
         return redirect()->back()->with('success', 'Staff account updated successfully.');
     }
 
-    public function destroy(int $id)
+    public function destroy(Request $request, int $id)
     {
         $this->authorizeOrg('manage-staff');
         $orgAccount = Auth::guard('org')->user();
@@ -76,6 +98,16 @@ class StaffController extends Controller
         if (!$this->staffService->deleteStaff($id, $orgAccount->organization_id)) {
             return redirect()->back()->with('error', 'Staff account not found or cannot be deleted.');
         }
+
+        $this->activityLogRepo->create([
+            'org_account_id' => $orgAccount->id,
+            'organization_id' => $orgAccount->organization_id,
+            'action_type' => 'staff_deleted',
+            'resource_type' => 'staff',
+            'description' => 'Removed a staff account',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
 
         return redirect()->back()->with('success', 'Staff account removed successfully.');
     }

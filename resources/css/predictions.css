@@ -1,0 +1,1179 @@
+/* ─── Predictions Page ─── */
+.predictions-page {
+    position: relative;
+    min-height: 100vh;
+    padding: 2rem;
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+}
+
+.predictions-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+}
+
+.predictions-background {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+}
+
+.pred-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(120px);
+    opacity: 0.4;
+    animation: predFloatOrb 20s ease-in-out infinite;
+}
+
+.pred-orb-1 {
+    width: 500px;
+    height: 500px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    top: -100px;
+    right: -100px;
+    animation-delay: 0s;
+}
+
+.pred-orb-2 {
+    width: 400px;
+    height: 400px;
+    background: linear-gradient(135deg, #06b6d4, #22d3ee);
+    bottom: 100px;
+    left: -80px;
+    animation-delay: -7s;
+}
+
+@keyframes predFloatOrb {
+    0%, 100% {
+        transform: translate(0, 0) scale(1);
+    }
+    25% {
+        transform: translate(30px, -30px) scale(1.05);
+    }
+    50% {
+        transform: translate(-20px, 20px) scale(0.95);
+    }
+    75% {
+        transform: translate(20px, 30px) scale(1.02);
+    }
+}
+
+@keyframes predFadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Header */
+.pred-header {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+    animation: predFadeInUp 0.6s ease-out;
+}
+
+.pred-header-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.pred-back-btn {
+    width: 38px;
+    height: 38px;
+    min-height: 38px;
+    padding: 0;
+    border-radius: 10px;
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    color: #94a3b8;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.pred-back-btn svg {
+    color: #94a3b8;
+    stroke: #94a3b8;
+}
+
+.pred-back-btn:hover {
+    color: #ffffff;
+    background: rgba(139, 92, 246, 0.2);
+    border-color: rgba(139, 92, 246, 0.4);
+    transform: translateX(-3px);
+}
+
+.pred-back-btn:hover svg {
+    color: #ffffff;
+    stroke: #ffffff;
+}
+
+.pred-org-logo {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    object-fit: cover;
+    border: 2px solid rgba(139, 92, 246, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.pred-org-logo-placeholder {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.3));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #a78bfa;
+    border: 2px solid rgba(139, 92, 246, 0.3);
+}
+
+.pred-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #ffffff 0%, #c7d2fe 50%, #a5b4fc 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0;
+    letter-spacing: -0.02em;
+}
+
+.pred-subtitle {
+    font-size: 0.85rem;
+    color: #94a3b8;
+    margin: 2px 0 0;
+}
+
+.pred-season-select {
+    background: rgba(30, 41, 59, 0.8);
+    border: 1px solid rgba(148, 163, 184, 0.15);
+    color: #e0e0e0;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    outline: none;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+.pred-season-select:focus {
+    border-color: rgba(139, 92, 246, 0.5);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+.pred-season-select option {
+    background: #1e293b;
+    color: #e0e0e0;
+}
+
+/* Flash Messages */
+.pred-flash {
+    position: relative;
+    z-index: 1;
+    border-radius: 12px;
+    padding: 12px 18px;
+    margin-bottom: 18px;
+    font-size: 0.85rem;
+    backdrop-filter: blur(10px);
+    animation: predFadeInUp 0.4s ease-out;
+}
+
+.pred-flash-success {
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: #10B981;
+}
+
+.pred-flash-error {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #EF4444;
+}
+
+/* Tabs */
+.pred-tabs {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    gap: 2px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+    overflow-x: auto;
+    animation: predFadeInUp 0.6s ease-out 0.2s backwards;
+}
+
+.pred-tab {
+    padding: 12px 18px;
+    border: none;
+    background: transparent;
+    color: #94a3b8;
+    font-size: 0.88rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.pred-tab:hover {
+    color: #c4b5fd;
+}
+
+.pred-tab.active {
+    color: #a78bfa;
+    border-bottom-color: #8B5CF6;
+    font-weight: 600;
+}
+
+/* Glass Card */
+.pred-card {
+    position: relative;
+    z-index: 1;
+    background: linear-gradient(145deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.8));
+    border: 1px solid rgba(148, 163, 184, 0.1);
+    border-radius: 16px;
+    overflow: hidden;
+    backdrop-filter: blur(20px);
+    margin-bottom: 18px;
+    animation: predFadeInUp 0.5s ease-out backwards;
+}
+
+.pred-card-header {
+    padding: 18px 22px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.pred-card-header h3 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0;
+    display: flex;
+    align-items: center;
+}
+
+.pred-card-body {
+    padding: 18px 22px;
+}
+
+/* Standings Table */
+.pred-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.pred-table th {
+    text-align: left;
+    padding: 12px 14px;
+    font-size: 0.73rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+}
+
+.pred-table td {
+    padding: 12px 14px;
+    font-size: 0.88rem;
+    color: #e2e8f0;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.04);
+}
+
+.pred-table tr {
+    transition: background 0.2s ease;
+}
+
+.pred-table tr:hover {
+    background: rgba(139, 92, 246, 0.04);
+}
+
+.pred-table tr.current-user {
+    background: rgba(139, 92, 246, 0.1);
+    border-left: 3px solid #8B5CF6;
+}
+
+.pred-table tr.top-4 {
+    background: rgba(139, 92, 246, 0.05);
+}
+
+/* Fixture Cards */
+.pred-fixtures-grid {
+    display: grid;
+    gap: 14px;
+}
+
+.pred-fixture-card {
+    background: linear-gradient(145deg, rgba(30, 41, 59, 0.6), rgba(15, 23, 42, 0.6));
+    border: 1px solid rgba(148, 163, 184, 0.1);
+    border-radius: 14px;
+    padding: 18px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.pred-fixture-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, #6366f1, #8b5cf6);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.pred-fixture-card:hover {
+    border-color: rgba(139, 92, 246, 0.3);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.pred-fixture-card:hover::before {
+    opacity: 1;
+}
+
+.pred-fixture-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+.pred-fixture-opponent {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.pred-fixture-opponent img {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+.pred-fixture-opponent-placeholder {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.2));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #a78bfa;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+.pred-fixture-meta {
+    font-size: 0.78rem;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Fixture Matchup (both teams) */
+.pred-fixture-matchup {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex: 1;
+}
+
+.pred-team {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pred-team-logo {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 1px solid rgba(148, 163, 184, 0.15);
+    flex-shrink: 0;
+}
+
+.pred-team-logo-placeholder {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.2));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #a78bfa;
+    font-size: 0.7rem;
+    font-weight: 700;
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    flex-shrink: 0;
+}
+
+.pred-team-name {
+    font-weight: 600;
+    color: #e2e8f0;
+    font-size: 0.88rem;
+    white-space: nowrap;
+}
+
+.pred-vs {
+    color: #64748b;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+}
+
+.pred-score-team-label {
+    font-size: 0.72rem;
+    color: #94a3b8;
+    font-weight: 600;
+    white-space: nowrap;
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Bet Type Segmented Control */
+.pred-bet-types {
+    display: inline-flex;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(148, 163, 184, 0.1);
+    border-radius: 8px;
+    padding: 3px;
+    margin-bottom: 14px;
+    gap: 2px;
+}
+
+.pred-bet-type {
+    padding: 4px 12px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: #64748b;
+    font-size: 0.72rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.pred-bet-type:hover {
+    color: #94a3b8;
+}
+
+.pred-bet-type.active {
+    background: rgba(139, 92, 246, 0.2);
+    color: #c4b5fd;
+    font-weight: 600;
+}
+
+/* Prediction Label */
+.pred-pick-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 8px;
+}
+
+/* Prediction Options */
+.pred-options {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.pred-option-btn {
+    flex: 1;
+    min-width: 0;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(148, 163, 184, 0.15);
+    background: rgba(30, 41, 59, 0.5);
+    color: #e2e8f0;
+    font-size: 0.84rem;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    font-weight: 500;
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+}
+
+.pred-option-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: left 0.4s ease;
+}
+
+.pred-option-btn:hover::before {
+    left: 100%;
+}
+
+.pred-option-btn:hover {
+    background: rgba(139, 92, 246, 0.12);
+    border-color: rgba(139, 92, 246, 0.35);
+    color: #ffffff;
+    transform: translateY(-1px);
+}
+
+.pred-option-btn.selected {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(139, 92, 246, 0.25));
+    border-color: rgba(139, 92, 246, 0.5);
+    color: #fff;
+    font-weight: 600;
+    box-shadow: 0 4px 16px rgba(139, 92, 246, 0.2);
+}
+
+/* Score Inputs */
+.pred-score-inputs {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.pred-score-input {
+    width: 56px;
+    padding: 8px;
+    text-align: center;
+    background: rgba(30, 41, 59, 0.8);
+    border: 2px solid rgba(148, 163, 184, 0.15);
+    border-radius: 10px;
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 700;
+    outline: none;
+    transition: all 0.3s ease;
+    -moz-appearance: textfield;
+}
+
+.pred-score-input::-webkit-outer-spin-button,
+.pred-score-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.pred-score-input:focus {
+    border-color: rgba(139, 92, 246, 0.5);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+.pred-score-separator {
+    color: #64748b;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.pred-score-submit {
+    padding: 8px 18px;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: #fff;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+}
+
+.pred-score-submit:hover {
+    box-shadow: 0 6px 24px rgba(99, 102, 241, 0.4);
+    transform: translateY(-1px);
+}
+
+.pred-score-submit:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+/* Prediction Confirmation */
+.pred-confirmation {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: rgba(16, 185, 129, 0.08);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    font-size: 0.82rem;
+    color: #10B981;
+}
+
+.pred-result-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.pred-result-correct {
+    background: rgba(16, 185, 129, 0.12);
+    color: #10B981;
+}
+
+.pred-result-incorrect {
+    background: rgba(239, 68, 68, 0.12);
+    color: #EF4444;
+}
+
+/* Badges Grid */
+.pred-badges-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 14px;
+}
+
+.pred-badge-card {
+    background: linear-gradient(145deg, rgba(30, 41, 59, 0.6), rgba(15, 23, 42, 0.6));
+    border: 1px solid rgba(148, 163, 184, 0.1);
+    border-radius: 14px;
+    padding: 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transition: all 0.3s ease;
+}
+
+.pred-badge-card.earned {
+    border-color: rgba(139, 92, 246, 0.3);
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.08);
+}
+
+.pred-badge-card.earned:hover {
+    border-color: rgba(139, 92, 246, 0.5);
+    transform: translateY(-2px);
+}
+
+.pred-badge-card.unearned {
+    opacity: 0.4;
+}
+
+.pred-badge-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.pred-badge-info h4 {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: #fff;
+    margin: 0 0 3px;
+}
+
+.pred-badge-info p {
+    font-size: 0.78rem;
+    color: #94a3b8;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.pred-badge-earned-count {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #a78bfa;
+    margin-top: 3px;
+}
+
+/* User Stats Row */
+.pred-user-stats {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 14px;
+    margin-bottom: 24px;
+    animation: predFadeInUp 0.5s ease-out 0.1s backwards;
+}
+
+.pred-stat-item {
+    background: linear-gradient(145deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.8));
+    border: 1px solid rgba(148, 163, 184, 0.1);
+    border-radius: 14px;
+    padding: 18px;
+    text-align: center;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+.pred-stat-item:hover {
+    border-color: rgba(139, 92, 246, 0.3);
+    transform: translateY(-2px);
+}
+
+.pred-stat-value {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #a78bfa;
+    display: block;
+    letter-spacing: -0.02em;
+}
+
+.pred-stat-label {
+    font-size: 0.78rem;
+    color: #64748b;
+    display: block;
+    margin-top: 4px;
+    font-weight: 500;
+}
+
+/* Not Eligible Banner */
+.pred-not-eligible {
+    position: relative;
+    z-index: 1;
+    background: linear-gradient(145deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.8));
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    border-radius: 16px;
+    padding: 32px;
+    text-align: center;
+    color: #F59E0B;
+    backdrop-filter: blur(10px);
+    animation: predFadeInUp 0.5s ease-out;
+}
+
+.pred-not-eligible h3 {
+    color: #fff;
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin: 0 0 8px;
+}
+
+.pred-not-eligible p {
+    color: #94a3b8;
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.pred-empty {
+    text-align: center;
+    padding: 48px 24px;
+    color: #64748b;
+    font-size: 0.92rem;
+}
+
+/* Player Avatar */
+.pred-player-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.3));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #a78bfa;
+    overflow: hidden;
+    flex-shrink: 0;
+    border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+.pred-player-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.pred-avatar-fallback {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #a78bfa;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+/* Prediction Type Badge */
+.pred-type-badge {
+    padding: 3px 10px;
+    border-radius: 6px;
+    background: rgba(139, 92, 246, 0.1);
+    color: #a78bfa;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+/* Score Display */
+.pred-score-display {
+    font-weight: 800;
+    font-size: 1.15rem;
+    color: #fff;
+    letter-spacing: -0.02em;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .predictions-page {
+        padding: 1rem;
+    }
+
+    .pred-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .pred-title {
+        font-size: 1.25rem;
+    }
+
+    .pred-tabs {
+        gap: 0;
+    }
+
+    .pred-tab {
+        padding: 10px 14px;
+        font-size: 0.82rem;
+    }
+
+    .pred-user-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .pred-badges-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .pred-fixture-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .pred-fixture-matchup {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .pred-team-name {
+        font-size: 0.82rem;
+    }
+
+    .pred-score-team-label {
+        max-width: 60px;
+        font-size: 0.68rem;
+    }
+
+    .pred-bet-type {
+        padding: 4px 8px;
+        font-size: 0.68rem;
+    }
+
+    .pred-options {
+        flex-direction: column;
+    }
+
+    .pred-option-btn {
+        text-align: center;
+    }
+}
+
+/* ============================================
+   PREDICTION BANNER (Group Chat)
+   ============================================ */
+
+.pred-banner {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(59, 130, 246, 0.06));
+    border-bottom: 1px solid rgba(139, 92, 246, 0.15);
+}
+
+.pred-banner-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.pred-banner-header:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.pred-banner-title {
+    font-weight: 600;
+    color: #ffffff;
+    font-size: 0.85rem;
+}
+
+.pred-banner-count {
+    font-size: 0.62rem;
+    font-weight: 700;
+    color: #a78bfa;
+    background: rgba(139, 92, 246, 0.15);
+    padding: 2px 7px;
+    border-radius: 10px;
+    min-width: 18px;
+    text-align: center;
+}
+
+.pred-banner-link {
+    margin-left: auto;
+    font-size: 0.72rem;
+    color: #8B5CF6;
+    cursor: pointer;
+    font-weight: 500;
+    transition: color 0.15s ease;
+}
+
+.pred-banner-link:hover {
+    color: #a78bfa;
+    text-decoration: underline;
+}
+
+.pred-banner-chevron {
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+    color: #64748b;
+}
+
+.pred-banner-body {
+    padding: 0 16px 12px;
+}
+
+.pred-banner-scroll {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scroll-behavior: smooth;
+}
+
+.pred-banner-scroll::-webkit-scrollbar {
+    height: 3px;
+}
+
+.pred-banner-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.pred-banner-scroll::-webkit-scrollbar-thumb {
+    background: rgba(139, 92, 246, 0.2);
+    border-radius: 3px;
+}
+
+.pred-banner-card {
+    min-width: 540px;
+    max-width: 620px;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(139, 92, 246, 0.12);
+    border-radius: 12px;
+    padding: 12px 14px;
+    flex-shrink: 0;
+    transition: border-color 0.2s ease;
+}
+
+.pred-banner-card:hover {
+    border-color: rgba(139, 92, 246, 0.25);
+}
+
+.pred-banner-matchup {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+
+.pred-banner-team {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+}
+
+.pred-banner-team.away {
+    flex-direction: row-reverse;
+    text-align: right;
+}
+
+.pred-banner-team-logo {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pred-banner-team-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.pred-banner-team-logo-fallback {
+    font-size: 0.55rem;
+    font-weight: 700;
+    color: #64748b;
+}
+
+.pred-banner-team-name {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #e2e8f0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.pred-banner-vs {
+    font-size: 0.58rem;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    flex-shrink: 0;
+}
+
+.pred-banner-meta {
+    font-size: 0.68rem;
+    color: #64748b;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.pred-banner-confirmed {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: rgba(16, 185, 129, 0.08);
+    border: 1px solid rgba(16, 185, 129, 0.15);
+    font-size: 0.72rem;
+    color: #10B981;
+    font-weight: 500;
+}
+
+.pred-banner-result {
+    margin-top: 6px;
+    font-size: 0.72rem;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: center;
+}
+
+.pred-banner-result strong {
+    color: #e2e8f0;
+}
+
+.pred-banner-pts {
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: 600;
+}
+
+.pred-banner-pts.correct {
+    background: rgba(16, 185, 129, 0.12);
+    color: #10B981;
+}
+
+.pred-banner-pts.wrong {
+    background: rgba(239, 68, 68, 0.12);
+    color: #EF4444;
+}
+
+/* Banner-specific compact overrides for bet types & options */
+.pred-banner-card .pred-bet-types {
+    margin-bottom: 6px;
+    justify-content: center;
+}
+
+.pred-banner-card .pred-options {
+    gap: 4px;
+}
+
+.pred-banner-card .pred-option-btn {
+    padding: 5px 6px;
+    font-size: 0.72rem;
+    min-height: 32px;
+}
+
+.pred-banner-card .pred-score-inputs {
+    gap: 6px;
+}
+
+.pred-banner-card .pred-score-input {
+    width: 40px;
+    height: 32px;
+    font-size: 0.9rem;
+}
+
+.pred-banner-card .pred-score-team-label {
+    font-size: 0.62rem;
+    max-width: 55px;
+}
+
+.pred-banner-card .pred-score-submit {
+    padding: 4px 10px;
+    font-size: 0.68rem;
+    min-height: 32px;
+}
+
+.pred-banner-card .pred-pick-label {
+    font-size: 0.62rem;
+    margin: 4px 0 4px;
+}

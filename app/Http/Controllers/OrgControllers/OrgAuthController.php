@@ -3,8 +3,11 @@
 namespace App\Http\Controllers\OrgControllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\OrgModels\OrgAccount;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
 use Inertia\Inertia;
 use App\Models\OrgModels\OrgActivityLog;
 
@@ -58,6 +61,71 @@ class OrgAuthController extends Controller
         return back()->withErrors([
             'email' => 'The provided credentials do not match our records.',
         ])->onlyInput('email');
+    }
+
+    public function showForgotPassword()
+    {
+        return Inertia::render('OrgPages/Auth/OrgForgotPassword');
+    }
+
+    public function sendResetLink(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        $account = OrgAccount::where('email', $request->email)->first();
+
+        if (!$account) {
+            return redirect()->back()->with('error', 'No organization account found with this email address.');
+        }
+
+        $broker = Password::broker('org_accounts');
+        $response = $broker->sendResetLink(['email' => $request->email]);
+
+        if ($response !== Password::RESET_LINK_SENT) {
+            return redirect()->back()->with('error', 'Failed to send password reset link. Please try again.');
+        }
+
+        return redirect()->back()->with('success', 'Password reset link sent to your email address.');
+    }
+
+    public function showResetPassword(Request $request)
+    {
+        return Inertia::render('OrgPages/Auth/OrgResetPassword', [
+            'token' => $request->query('token'),
+            'email' => $request->query('email'),
+        ]);
+    }
+
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'token' => 'required|string',
+            'email' => 'required|email',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $broker = Password::broker('org_accounts');
+
+        $response = $broker->reset(
+            $request->only('email', 'password', 'password_confirmation', 'token'),
+            function (OrgAccount $account, string $password) {
+                $account->password = Hash::make($password);
+                $account->save();
+            }
+        );
+
+        if ($response !== Password::PASSWORD_RESET) {
+            return redirect()->back()->with('error', 'Failed to reset password. The reset link may have expired.');
+        }
+
+        // Auto-login after reset
+        $account = OrgAccount::where('email', $request->email)->first();
+        Auth::guard('org')->login($account);
+        $request->session()->regenerate();
+
+        return redirect()->route('org.dashboard')->with('success', 'Password reset successfully! You are now logged in.');
     }
 
     public function logout(Request $request)

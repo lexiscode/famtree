@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { router, usePage } from '@inertiajs/react';
+import { router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import UserActionModal from '@/Components/AdminComponents/UserActionModal';
-import { ArrowLeft, Mail, Phone, MapPin, Calendar, Shield, Users, Lock, CheckCircle, AlertCircle, Clock, MoreVertical, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, MapPin, Calendar, Shield, Users, Lock, CheckCircle, AlertCircle, Clock, MoreVertical } from 'lucide-react';
 
 interface UserDetail {
     id: number;
@@ -34,23 +34,12 @@ interface Props {
     user: UserDetail;
 }
 
-// Bootstrap theme colors
-const THEME = {
-    primary: '#0d6efd',
-    success: '#198754',
-    danger: '#dc3545',
-    warning: '#ffc107',
-    info: '#0dcaf0',
-    secondary: '#6c757d',
-};
-
 const statusConfig = {
-    active: { bg: '#e8f5e9', border: '#198754', text: '#198754', label: 'Active', icon: CheckCircle },
-    inactive: { bg: '#f3f4f6', border: '#6c757d', text: '#6c757d', label: 'Inactive', icon: Clock },
-    suspended: { bg: '#ffebee', border: '#dc3545', text: '#dc3545', label: 'Suspended', icon: AlertCircle },
+    active: { badgeClass: 'ap-badge-success', label: 'Active', icon: CheckCircle },
+    inactive: { badgeClass: 'ap-badge-neutral', label: 'Inactive', icon: Clock },
+    suspended: { badgeClass: 'ap-badge-danger', label: 'Suspended', icon: AlertCircle },
 };
 
-// Avatar component with image and fallback to initials
 interface AvatarProps {
     imageUrl: string | null;
     fullName: string;
@@ -60,48 +49,18 @@ interface AvatarProps {
 function UserAvatar({ imageUrl, fullName, size = 'small' }: AvatarProps) {
     const [imageError, setImageError] = useState(false);
 
-    const handleImageError = () => {
-        setImageError(true);
-    };
-
-    const sizeConfig = size === 'large'
-        ? { width: '80px', height: '80px', fontSize: '2rem', shadow: '0 8px 24px rgba(0, 82, 232, 0.3)' }
-        : { width: '40px', height: '40px', fontSize: '0.9rem', shadow: 'none' };
+    const sizeClass = size === 'large' ? 'ap-avatar-xl' : 'ap-avatar-lg';
 
     if (imageUrl && !imageError) {
         return (
-            <img
-                src={imageUrl}
-                alt={fullName}
-                style={{
-                    width: sizeConfig.width,
-                    height: sizeConfig.height,
-                    borderRadius: size === 'large' ? '16px' : '10px',
-                    objectFit: 'cover',
-                    display: 'block',
-                    boxShadow: size === 'large' ? sizeConfig.shadow : 'none',
-                }}
-                onError={handleImageError}
-            />
+            <div className={`ap-avatar ${sizeClass}`}>
+                <img src={imageUrl} alt={fullName} onError={() => setImageError(true)} />
+            </div>
         );
     }
 
     return (
-        <div
-            style={{
-                width: sizeConfig.width,
-                height: sizeConfig.height,
-                borderRadius: size === 'large' ? '16px' : '10px',
-                background: 'linear-gradient(135deg, #0052E8 0%, #0040B8 100%)',
-                color: '#FFFFFF',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 700,
-                fontSize: sizeConfig.fontSize,
-                boxShadow: sizeConfig.shadow,
-            }}
-        >
+        <div className={`ap-avatar ${sizeClass} ap-avatar-indigo`}>
             {fullName.charAt(0).toUpperCase()}
         </div>
     );
@@ -137,17 +96,17 @@ export default function Show({ user }: Props) {
     };
 
     const getSecurityActions = () => {
-        const actions: { label: string; type: any; color: string }[] = [];
-        actions.push({ label: 'Reset Password', type: 'reset-password', color: '#0052E8' });
+        const actions: { label: string; type: any; btnClass: string }[] = [];
+        actions.push({ label: 'Reset Password', type: 'reset-password', btnClass: 'ap-btn ap-btn-primary ap-btn-sm' });
         if (user.two_fa_enabled) {
-            actions.push({ label: 'Disable 2FA', type: 'disable-2fa', color: '#DC2626' });
+            actions.push({ label: 'Disable 2FA', type: 'disable-2fa', btnClass: 'ap-btn ap-btn-danger ap-btn-sm' });
         } else {
-            actions.push({ label: 'Enable 2FA', type: 'enable-2fa', color: '#16A34A' });
+            actions.push({ label: 'Enable 2FA', type: 'enable-2fa', btnClass: 'ap-btn ap-btn-success ap-btn-sm' });
         }
         if (!user.onboarding_completed) {
-            actions.push({ label: 'Complete Onboarding', type: 'complete-onboarding', color: '#16A34A' });
+            actions.push({ label: 'Complete Onboarding', type: 'complete-onboarding', btnClass: 'ap-btn ap-btn-success ap-btn-sm' });
         } else {
-            actions.push({ label: 'Reset Onboarding', type: 'reset-onboarding', color: '#DC2626' });
+            actions.push({ label: 'Reset Onboarding', type: 'reset-onboarding', btnClass: 'ap-btn ap-btn-danger ap-btn-sm' });
         }
         return actions;
     };
@@ -155,159 +114,51 @@ export default function Show({ user }: Props) {
     return (
         <AdminLayout>
             <div>
-                {/* Premium Header Section */}
-                <div style={{ marginBottom: '2.5rem', display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-                    <button
-                        onClick={() => router.get(route('admin.users.index'))}
-                        style={{
-                            background: '#E7F5FF',
-                            border: '2px solid #cfe2ff',
-                            padding: '0.65rem',
-                            borderRadius: '12px',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            color: THEME.primary,
-                            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
-                        }}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.background = THEME.primary;
-                            e.currentTarget.style.color = '#FFFFFF';
-                            e.currentTarget.style.borderColor = THEME.primary;
-                            e.currentTarget.style.boxShadow = `0 8px 16px ${THEME.primary}30`;
-                            e.currentTarget.style.transform = 'translateX(-3px)';
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.background = '#E7F5FF';
-                            e.currentTarget.style.color = THEME.primary;
-                            e.currentTarget.style.borderColor = '#cfe2ff';
-                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.04)';
-                            e.currentTarget.style.transform = 'translateX(0)';
-                        }}
-                    >
-                        <ArrowLeft size={20} strokeWidth={2.5} />
-                    </button>
-                    <div>
-                        <h1 style={{ fontSize: '2.25rem', fontWeight: 800, color: '#0a0e27', margin: 0, letterSpacing: '-0.5px' }}>User Details</h1>
-                        <p style={{ fontSize: '0.98rem', color: '#6B7280', margin: 0, marginTop: '0.35rem', fontWeight: 500 }}>View and manage user account information</p>
-                    </div>
+                {/* Back Button + Header */}
+                <button className="ap-back-btn" onClick={() => router.get(route('admin.users.index'))}>
+                    <ArrowLeft size={16} />
+                    Back to Users
+                </button>
+
+                <div className="ap-page-header">
+                    <h1 className="ap-page-title">User Details</h1>
+                    <p className="ap-page-subtitle">View and manage user account information</p>
                 </div>
 
-                {/* Premium User Header Card */}
-                <div style={{ background: '#FFFFFF', borderRadius: '20px', border: '2px solid #E5E7EB', padding: '2.5rem', marginBottom: '2.5rem', boxShadow: '0 8px 28px rgba(0, 0, 0, 0.08)' }}>
-                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '2rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1.75rem', flex: 1 }}>
+                {/* User Header Card */}
+                <div className="ap-card ap-card-lg ap-mb-xl">
+                    <div className="ap-flex ap-items-start ap-justify-between ap-gap-lg ap-flex-wrap">
+                        <div className="ap-flex ap-items-center ap-gap-lg ap-flex-1">
                             <UserAvatar imageUrl={user.profile_image_url} fullName={`${user.first_name} ${user.last_name}`} size="large" />
-                            <div style={{ flex: 1 }}>
-                                <h2 style={{ fontSize: '2rem', fontWeight: 800, color: '#0a0e27', margin: 0, letterSpacing: '-0.5px' }}>
-                                    {user.first_name} {user.last_name}
-                                </h2>
-                                <p style={{ fontSize: '1.05rem', color: '#6B7280', margin: 0, marginTop: '0.35rem', fontWeight: 500 }}>@{user.username}</p>
-                                <div style={{ marginTop: '1rem' }}>
-                                    <div style={{
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        gap: '0.6rem',
-                                        paddingLeft: '0.9rem',
-                                        paddingRight: '0.9rem',
-                                        paddingTop: '0.6rem',
-                                        paddingBottom: '0.6rem',
-                                        borderRadius: '10px',
-                                        fontSize: '0.88rem',
-                                        fontWeight: 700,
-                                        border: `2px solid ${statusConfig_.border}`,
-                                        backgroundColor: statusConfig_.bg,
-                                        color: statusConfig_.text,
-                                        textTransform: 'uppercase',
-                                        letterSpacing: '0.5px',
-                                    }}>
-                                        <StatusIcon size={16} />
+                            <div className="ap-flex-1">
+                                <h2 className="ap-page-title">{user.first_name} {user.last_name}</h2>
+                                <p className="ap-page-subtitle">@{user.username}</p>
+                                <div className="ap-mt-sm">
+                                    <span className={`ap-badge ${statusConfig_.badgeClass}`}>
+                                        <StatusIcon size={12} />
                                         {statusConfig_.label}
-                                    </div>
+                                    </span>
                                 </div>
                             </div>
                         </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '1.25rem' }}>
-                            <div style={{ textAlign: 'right', padding: '0.75rem 1.25rem', background: '#F9FAFB', borderRadius: '12px', border: '1.5px solid #E5E7EB' }}>
-                                <p style={{ fontSize: '0.85rem', color: '#6B7280', margin: 0, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Joined</p>
-                                <p style={{ fontSize: '1.35rem', fontWeight: 800, color: '#0a0e27', margin: 0, marginTop: '0.4rem' }}>
-                                    {new Date(user.created_at).toLocaleDateString()}
-                                </p>
+                        <div className="ap-flex-col ap-items-end ap-gap-md">
+                            <div className="ap-card">
+                                <p className="ap-stat-label">Joined</p>
+                                <p className="ap-font-semibold">{new Date(user.created_at).toLocaleDateString()}</p>
                             </div>
-                            <div style={{ position: 'relative' }}>
-                                <button
-                                    onClick={() => setShowActions(!showActions)}
-                                    style={{
-                                        padding: '0.8rem',
-                                        background: showActions ? `linear-gradient(135deg, ${THEME.primary}15, #0a58ca08)` : '#F3F4F6',
-                                        border: `2.5px solid ${showActions ? THEME.primary : '#E5E7EB'}`,
-                                        borderRadius: '12px',
-                                        cursor: 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        color: showActions ? THEME.primary : '#6B7280',
-                                        transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                                        boxShadow: showActions ? `0 4px 12px ${THEME.primary}25` : '0 2px 4px rgba(0, 0, 0, 0.04)',
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        if (!showActions) {
-                                            e.currentTarget.style.background = '#E5E7EB';
-                                            e.currentTarget.style.borderColor = THEME.primary;
-                                            e.currentTarget.style.color = THEME.primary;
-                                            e.currentTarget.style.boxShadow = `0 4px 12px ${THEME.primary}20`;
-                                        }
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        if (!showActions) {
-                                            e.currentTarget.style.background = '#F3F4F6';
-                                            e.currentTarget.style.borderColor = '#E5E7EB';
-                                            e.currentTarget.style.color = '#6B7280';
-                                            e.currentTarget.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.04)';
-                                        }
-                                    }}
-                                >
-                                    <MoreVertical size={18} />
+                            <div className="ap-dropdown">
+                                <button className="ap-btn ap-btn-secondary ap-btn-icon" onClick={() => setShowActions(!showActions)}>
+                                    <MoreVertical size={16} />
                                 </button>
                                 {showActions && (
-                                    <div style={{
-                                        position: 'absolute',
-                                        top: '100%',
-                                        right: 0,
-                                        marginTop: '0.75rem',
-                                        background: '#FFFFFF',
-                                        border: '2px solid #E5E7EB',
-                                        borderRadius: '14px',
-                                        boxShadow: '0 16px 40px rgba(0, 0, 0, 0.16)',
-                                        minWidth: '220px',
-                                        zIndex: 10,
-                                        overflow: 'hidden',
-                                    }}>
+                                    <div className="ap-dropdown-menu">
                                         {getAvailableActions().map((action) => (
                                             <button
                                                 key={action.type}
+                                                className={`ap-dropdown-item ${action.isDangerous ? 'danger' : ''}`}
                                                 onClick={() => {
                                                     setOpenModal(action.type);
                                                     setShowActions(false);
-                                                }}
-                                                style={{
-                                                    width: '100%',
-                                                    padding: '0.875rem 1rem',
-                                                    background: 'none',
-                                                    border: 'none',
-                                                    borderBottom: '1px solid #E5E7EB',
-                                                    textAlign: 'left',
-                                                    color: action.color,
-                                                    fontSize: '0.95rem',
-                                                    fontWeight: 600,
-                                                    cursor: 'pointer',
-                                                    transition: 'all 0.3s',
-                                                }}
-                                                onMouseEnter={(e) => {
-                                                    e.currentTarget.style.background = '#F9FAFB';
-                                                }}
-                                                onMouseLeave={(e) => {
-                                                    e.currentTarget.style.background = 'none';
                                                 }}
                                             >
                                                 {action.label}
@@ -320,123 +171,55 @@ export default function Show({ user }: Props) {
                     </div>
                 </div>
 
-                {/* Premium Stats Grid */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.75rem', marginBottom: '2.5rem' }}>
+                {/* Stats Grid */}
+                <div className="ap-stats-grid">
                     {[
-                        { label: 'Account Type', value: user.is_child_account ? 'Child' : 'Primary', icon: Users, color: THEME.primary },
-                        { label: '2FA Status', value: user.two_fa_enabled ? 'Enabled' : 'Disabled', icon: Shield, color: user.two_fa_enabled ? THEME.success : THEME.secondary },
-                        { label: 'Connections', value: user.connectionsCount.toString(), icon: Users, color: THEME.info, clickable: true },
-                        { label: 'Child Accounts', value: user.childrenCount.toString(), icon: Users, color: THEME.primary, clickable: true },
-                    ].map((stat, idx) => {
-                        const Icon = stat.icon;
-                        return (
-                            <div
-                                key={idx}
-                                style={{
-                                    background: '#FFFFFF',
-                                    border: `2.5px solid ${stat.color}20`,
-                                    borderRadius: '16px',
-                                    padding: '1.75rem',
-                                    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                                    cursor: stat.clickable ? 'pointer' : 'default',
-                                    boxShadow: '0 2px 12px rgba(0, 0, 0, 0.04)',
-                                    position: 'relative',
-                                    overflow: 'hidden',
-                                }}
-                                onClick={() => {
-                                    if (stat.clickable) {
-                                        if (stat.label === 'Child Accounts') {
-                                            router.get(route('admin.users.childAccounts', user.id));
-                                        } else if (stat.label === 'Connections') {
-                                            router.get(route('admin.users.connections', user.id));
-                                        }
+                        { label: 'Account Type', value: user.is_child_account ? 'Child' : 'Primary', colorClass: 'indigo' },
+                        { label: '2FA Status', value: user.two_fa_enabled ? 'Enabled' : 'Disabled', colorClass: user.two_fa_enabled ? 'green' : 'blue' },
+                        { label: 'Connections', value: user.connectionsCount.toString(), colorClass: 'blue', clickable: true },
+                        { label: 'Child Accounts', value: user.childrenCount.toString(), colorClass: 'indigo', clickable: true },
+                    ].map((stat, idx) => (
+                        <div
+                            key={idx}
+                            className={`ap-stat-card ${stat.clickable ? 'ap-cursor-pointer' : ''}`}
+                            onClick={() => {
+                                if (stat.clickable) {
+                                    if (stat.label === 'Child Accounts') {
+                                        router.get(route('admin.users.childAccounts', user.id));
+                                    } else if (stat.label === 'Connections') {
+                                        router.get(route('admin.users.connections', user.id));
                                     }
-                                }}
-                                onMouseEnter={(e) => {
-                                    if (stat.clickable) {
-                                        e.currentTarget.style.borderColor = stat.color;
-                                        e.currentTarget.style.boxShadow = `0 16px 40px ${stat.color}25, 0 2px 12px rgba(0, 0, 0, 0.04)`;
-                                        e.currentTarget.style.transform = 'translateY(-6px)';
-                                    }
-                                }}
-                                onMouseLeave={(e) => {
-                                    if (stat.clickable) {
-                                        e.currentTarget.style.borderColor = `${stat.color}20`;
-                                        e.currentTarget.style.boxShadow = '0 2px 12px rgba(0, 0, 0, 0.04)';
-                                        e.currentTarget.style.transform = 'translateY(0)';
-                                    }
-                                }}
-                            >
-                                {/* Background accent */}
-                                <div
-                                    style={{
-                                        position: 'absolute',
-                                        top: 0,
-                                        right: 0,
-                                        width: '80px',
-                                        height: '80px',
-                                        background: `${stat.color}10`,
-                                        borderRadius: '50%',
-                                        transform: 'translate(30%, -30%)',
-                                    }}
-                                />
-
-                                <div style={{ position: 'relative', zIndex: 1 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                        <div>
-                                            <p style={{ fontSize: '0.8rem', color: '#6c757d', margin: 0, marginBottom: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{stat.label}</p>
-                                            <p style={{ fontSize: '1.9rem', fontWeight: 800, color: stat.color, margin: 0, lineHeight: 1 }}>{stat.value}</p>
-                                        </div>
-                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '56px', height: '56px', borderRadius: '14px', backgroundColor: `${stat.color}15` }}>
-                                            <Icon size={30} color={stat.color} strokeWidth={1.5} />
-                                        </div>
-                                    </div>
+                                }
+                            }}
+                        >
+                            <div className="ap-stat-card-header">
+                                <div className={`ap-stat-icon ${stat.colorClass}`}>
+                                    <Users size={20} />
                                 </div>
                             </div>
-                        );
-                    })}
+                            <p className="ap-stat-label">{stat.label}</p>
+                            <p className="ap-stat-value">{stat.value}</p>
+                        </div>
+                    ))}
                 </div>
 
-                {/* Premium Tabs */}
-                <div style={{ borderBottom: `3px solid #E5E7EB`, marginBottom: '2.5rem', display: 'flex', gap: '2.5rem', background: '#FFFFFF', padding: '0 0 0 0', borderRadius: '0' }}>
+                {/* Tabs */}
+                <div className="ap-tabs">
                     {(['profile', 'security', 'activity'] as const).map((tab) => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
-                            style={{
-                                padding: '1.1rem 0.5rem',
-                                background: 'none',
-                                border: 'none',
-                                borderBottom: activeTab === tab ? `4px solid ${THEME.primary}` : '4px solid transparent',
-                                color: activeTab === tab ? THEME.primary : '#6B7280',
-                                fontSize: '1.02rem',
-                                fontWeight: activeTab === tab ? 800 : 700,
-                                cursor: 'pointer',
-                                transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                                textTransform: 'capitalize',
-                                letterSpacing: '0.3px',
-                                position: 'relative',
-                            }}
-                            onMouseEnter={(e) => {
-                                if (activeTab !== tab) {
-                                    (e.target as HTMLElement).style.color = THEME.primary;
-                                }
-                            }}
-                            onMouseLeave={(e) => {
-                                if (activeTab !== tab) {
-                                    (e.target as HTMLElement).style.color = '#6B7280';
-                                }
-                            }}
+                            className={`ap-tab ${activeTab === tab ? 'active' : ''}`}
                         >
                             {tab.charAt(0).toUpperCase() + tab.slice(1)}
                         </button>
                     ))}
                 </div>
 
-                {/* Tab Content */}
+                {/* Profile Tab */}
                 {activeTab === 'profile' && (
-                    <div style={{ background: '#FFFFFF', borderRadius: '20px', border: '2px solid #E5E7EB', padding: '2.5rem', boxShadow: '0 8px 28px rgba(0, 0, 0, 0.08)' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '2rem' }}>
+                    <div className="ap-card ap-card-lg">
+                        <div className="ap-form-row">
                             {[
                                 { label: 'Email Address', value: user.email, icon: Mail },
                                 { label: 'Phone', value: user.phone || 'Not provided', icon: Phone },
@@ -445,151 +228,74 @@ export default function Show({ user }: Props) {
                             ].map((field, idx) => {
                                 const Icon = field.icon;
                                 return (
-                                    <div key={idx}>
-                                        <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#6B7280', margin: 0, marginBottom: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{field.label}</p>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '0.9rem 1.1rem', background: '#F9FAFB', borderRadius: '12px', border: '1.5px solid #E5E7EB', transition: 'all 0.3s ease' }}
-                                            onMouseEnter={(e) => {
-                                                e.currentTarget.style.background = '#F3F4F6';
-                                                e.currentTarget.style.borderColor = '#D1D5DB';
-                                            }}
-                                            onMouseLeave={(e) => {
-                                                e.currentTarget.style.background = '#F9FAFB';
-                                                e.currentTarget.style.borderColor = '#E5E7EB';
-                                            }}>
-                                            <Icon size={20} color={THEME.primary} strokeWidth={2} />
-                                            <p style={{ margin: 0, color: '#0a0e27', fontSize: '0.96rem', fontWeight: 500 }}>{field.value}</p>
+                                    <div key={idx} className="ap-mb-lg">
+                                        <p className="ap-filter-label">{field.label}</p>
+                                        <div className="ap-detail-row">
+                                            <Icon size={16} className="ap-shrink-0" />
+                                            <span className="ap-detail-value">{field.value}</span>
                                         </div>
                                     </div>
                                 );
                             })}
-                            {user.address && (
-                                <div style={{ gridColumn: '1 / -1' }}>
-                                    <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#6B7280', margin: 0, marginBottom: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Address</p>
-                                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem', padding: '0.9rem 1.1rem', background: '#F9FAFB', borderRadius: '12px', border: '1.5px solid #E5E7EB', transition: 'all 0.3s ease' }}
-                                        onMouseEnter={(e) => {
-                                            e.currentTarget.style.background = '#F3F4F6';
-                                            e.currentTarget.style.borderColor = '#D1D5DB';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.background = '#F9FAFB';
-                                            e.currentTarget.style.borderColor = '#E5E7EB';
-                                        }}>
-                                        <MapPin size={20} color={THEME.primary} strokeWidth={2} style={{ marginTop: '0.1rem', flexShrink: 0 }} />
-                                        <p style={{ margin: 0, color: '#0a0e27', fontSize: '0.96rem', fontWeight: 500 }}>{user.address}</p>
-                                    </div>
-                                </div>
-                            )}
-                            {user.bio && (
-                                <div style={{ gridColumn: '1 / -1' }}>
-                                    <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#6B7280', margin: 0, marginBottom: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Bio</p>
-                                    <div style={{ padding: '0.9rem 1.1rem', background: '#F9FAFB', borderRadius: '12px', border: '1.5px solid #E5E7EB', transition: 'all 0.3s ease' }}
-                                        onMouseEnter={(e) => {
-                                            e.currentTarget.style.background = '#F3F4F6';
-                                            e.currentTarget.style.borderColor = '#D1D5DB';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.background = '#F9FAFB';
-                                            e.currentTarget.style.borderColor = '#E5E7EB';
-                                        }}>
-                                        <p style={{ margin: 0, color: '#0a0e27', fontSize: '0.96rem', fontWeight: 500 }}>{user.bio}</p>
-                                    </div>
-                                </div>
-                            )}
                         </div>
+                        {user.address && (
+                            <div className="ap-mb-lg">
+                                <p className="ap-filter-label">Address</p>
+                                <div className="ap-detail-row">
+                                    <MapPin size={16} className="ap-shrink-0" />
+                                    <span className="ap-detail-value">{user.address}</span>
+                                </div>
+                            </div>
+                        )}
+                        {user.bio && (
+                            <div>
+                                <p className="ap-filter-label">Bio</p>
+                                <div className="ap-detail-row">
+                                    <span className="ap-detail-value">{user.bio}</span>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
 
+                {/* Security Tab */}
                 {activeTab === 'security' && (
-                    <div style={{ background: '#FFFFFF', borderRadius: '20px', border: '2px solid #E5E7EB', padding: '2.5rem', boxShadow: '0 8px 28px rgba(0, 0, 0, 0.08)' }}>
-                        <div style={{ marginBottom: '2.5rem' }}>
-                            <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0a0e27', margin: 0, marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.85rem', letterSpacing: '-0.3px' }}>
-                                <div style={{ padding: '0.6rem', background: '#E7F1FF', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <Shield size={22} color={THEME.primary} strokeWidth={2.5} />
-                                </div>
+                    <div className="ap-card ap-card-lg">
+                        <div className="ap-section">
+                            <h3 className="ap-section-title ap-flex ap-items-center ap-gap-sm">
+                                <Shield size={18} />
                                 Two-Factor Authentication
                             </h3>
-                            <div style={{ padding: '1.2rem', background: '#F9FAFB', borderRadius: '12px', border: '1.5px solid #E5E7EB' }}>
-                                <p style={{ margin: 0, color: '#666', fontSize: '0.96rem' }}>
-                                    Status: <span style={{ fontWeight: 800, color: user.two_fa_enabled ? THEME.success : '#6B7280', marginLeft: '0.5rem' }}>
-                                        {user.two_fa_enabled ? '✓ Enabled' : '✕ Disabled'}
-                                    </span>
-                                </p>
+                            <div className="ap-detail-row">
+                                <span className="ap-detail-label">Status</span>
+                                <span className={`ap-badge ${user.two_fa_enabled ? 'ap-badge-success' : 'ap-badge-neutral'}`}>
+                                    {user.two_fa_enabled ? 'Enabled' : 'Disabled'}
+                                </span>
                             </div>
                         </div>
 
-                        <div style={{ marginBottom: '2.5rem' }}>
-                            <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0a0e27', margin: 0, marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.85rem', letterSpacing: '-0.3px' }}>
-                                <div style={{ padding: '0.6rem', background: '#E7F1FF', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <Lock size={22} color={THEME.primary} strokeWidth={2.5} />
-                                </div>
+                        <hr className="ap-divider" />
+
+                        <div className="ap-section">
+                            <h3 className="ap-section-title ap-flex ap-items-center ap-gap-sm">
+                                <Lock size={18} />
                                 Password Management
                             </h3>
-                            <button
-                                onClick={() => setOpenModal('reset-password')}
-                                style={{
-                                    paddingLeft: '1.75rem',
-                                    paddingRight: '1.75rem',
-                                    paddingTop: '0.85rem',
-                                    paddingBottom: '0.85rem',
-                                    background: `linear-gradient(135deg, ${THEME.primary} 0%, #0a58ca 100%)`,
-                                    color: '#FFFFFF',
-                                    border: 'none',
-                                    borderRadius: '12px',
-                                    fontWeight: 700,
-                                    cursor: 'pointer',
-                                    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                                    boxShadow: `0 4px 12px ${THEME.primary}25`,
-                                    fontSize: '0.96rem',
-                                    letterSpacing: '0.3px',
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.boxShadow = `0 12px 28px ${THEME.primary}40`;
-                                    e.currentTarget.style.transform = 'translateY(-3px)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.boxShadow = `0 4px 12px ${THEME.primary}25`;
-                                    e.currentTarget.style.transform = 'translateY(0)';
-                                }}
-                            >
+                            <button className="ap-btn ap-btn-primary" onClick={() => setOpenModal('reset-password')}>
                                 Reset Password
                             </button>
                         </div>
 
-                        <div style={{ borderTop: '2.5px solid #E5E7EB', paddingTop: '2.5rem' }}>
-                            <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0a0e27', margin: 0, marginBottom: '1.5rem', letterSpacing: '-0.3px' }}>Account Actions</h3>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '1rem' }}>
+                        <hr className="ap-divider" />
+
+                        <div className="ap-section">
+                            <h3 className="ap-section-title">Account Actions</h3>
+                            <div className="ap-flex ap-gap-sm ap-flex-wrap">
                                 {getSecurityActions().map((action) => (
                                     <button
                                         key={action.type}
+                                        className={action.btnClass}
                                         onClick={() => setOpenModal(action.type)}
-                                        style={{
-                                            paddingLeft: '1.1rem',
-                                            paddingRight: '1.1rem',
-                                            paddingTop: '0.8rem',
-                                            paddingBottom: '0.8rem',
-                                            background: '#FFFFFF',
-                                            color: action.color,
-                                            border: `2px solid ${action.color}30`,
-                                            borderRadius: '12px',
-                                            fontWeight: 700,
-                                            cursor: 'pointer',
-                                            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                                            fontSize: '0.92rem',
-                                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
-                                            letterSpacing: '0.3px',
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            e.currentTarget.style.background = action.color + '15';
-                                            e.currentTarget.style.borderColor = action.color + '60';
-                                            e.currentTarget.style.boxShadow = `0 8px 16px ${action.color}25`;
-                                            e.currentTarget.style.transform = 'translateY(-2px)';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.background = '#FFFFFF';
-                                            e.currentTarget.style.borderColor = action.color + '30';
-                                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.04)';
-                                            e.currentTarget.style.transform = 'translateY(0)';
-                                        }}
                                     >
                                         {action.label}
                                     </button>
@@ -598,51 +304,50 @@ export default function Show({ user }: Props) {
                         </div>
 
                         {user.deleted_at && (
-                            <div style={{ marginTop: '2.5rem', padding: '1.25rem', background: '#FEE2E2', borderRadius: '14px', border: '2px solid #FECACA', boxShadow: '0 4px 12px rgba(220, 38, 38, 0.1)' }}>
-                                <p style={{ margin: 0, color: '#991B1B', fontWeight: 800, fontSize: '0.96rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                                    <span style={{ fontSize: '1.2rem' }}>⚠</span>
-                                    Account Deleted
-                                </p>
-                                <p style={{ margin: 0, marginTop: '0.6rem', color: '#7F1D1D', fontSize: '0.92rem', fontWeight: 500 }}>
-                                    This account was deleted on <strong>{new Date(user.deleted_at).toLocaleDateString()}</strong>
-                                </p>
+                            <div className="ap-alert ap-alert-danger ap-mt-lg">
+                                <AlertCircle size={16} />
+                                <div>
+                                    <p className="ap-alert-title">Account Deleted</p>
+                                    <p className="ap-alert-text">
+                                        This account was deleted on <strong>{new Date(user.deleted_at).toLocaleDateString()}</strong>
+                                    </p>
+                                </div>
                             </div>
                         )}
 
                         {user.scheduled_deletion_at && (
-                            <div style={{ marginTop: '2.5rem', padding: '1.25rem', background: '#FEF3C7', borderRadius: '14px', border: '2px solid #FDE68A', boxShadow: '0 4px 12px rgba(180, 83, 9, 0.1)' }}>
-                                <p style={{ margin: 0, color: '#92400E', fontWeight: 800, fontSize: '0.96rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                                    <span style={{ fontSize: '1.2rem' }}>⏱</span>
-                                    Scheduled for Deletion
-                                </p>
-                                <p style={{ margin: 0, marginTop: '0.6rem', color: '#78350F', fontSize: '0.92rem', fontWeight: 500 }}>
-                                    Scheduled for deletion on <strong>{new Date(user.scheduled_deletion_at).toLocaleDateString()}</strong>
-                                </p>
+                            <div className="ap-alert ap-alert-warning ap-mt-lg">
+                                <Clock size={16} />
+                                <div>
+                                    <p className="ap-alert-title">Scheduled for Deletion</p>
+                                    <p className="ap-alert-text">
+                                        Scheduled for deletion on <strong>{new Date(user.scheduled_deletion_at).toLocaleDateString()}</strong>
+                                    </p>
+                                </div>
                             </div>
                         )}
                     </div>
                 )}
 
+                {/* Activity Tab */}
                 {activeTab === 'activity' && (
-                    <div style={{ background: '#FFFFFF', borderRadius: '20px', border: '2px solid #E5E7EB', padding: '2.5rem', boxShadow: '0 8px 28px rgba(0, 0, 0, 0.08)' }}>
-                        <div style={{ space: '1.5rem' }}>
-                            {[
-                                { label: 'Account Created', value: new Date(user.created_at).toLocaleDateString() + ' at ' + new Date(user.created_at).toLocaleTimeString(), icon: Calendar },
-                                { label: 'Last Updated', value: new Date(user.updated_at).toLocaleDateString() + ' at ' + new Date(user.updated_at).toLocaleTimeString(), icon: Calendar },
-                                { label: 'Onboarding Status', value: user.onboarding_completed ? '✓ Completed' : 'Incomplete', icon: CheckCircle },
-                            ].map((item, idx) => {
-                                const Icon = item.icon;
-                                return (
-                                    <div key={idx} style={{ marginBottom: idx === 2 ? 0 : '2rem', paddingBottom: idx === 2 ? 0 : '2rem', borderBottom: idx === 2 ? 'none' : '2px solid #E5E7EB' }}>
-                                        <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#6B7280', margin: 0, marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{item.label}</p>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '1rem', background: '#F9FAFB', borderRadius: '12px', border: '1.5px solid #E5E7EB' }}>
-                                            <Icon size={20} color={THEME.primary} strokeWidth={2} />
-                                            <p style={{ fontSize: '0.98rem', fontWeight: 600, color: '#0a0e27', margin: 0 }}>{item.value}</p>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
+                    <div className="ap-card ap-card-lg">
+                        {[
+                            { label: 'Account Created', value: new Date(user.created_at).toLocaleDateString() + ' at ' + new Date(user.created_at).toLocaleTimeString(), icon: Calendar },
+                            { label: 'Last Updated', value: new Date(user.updated_at).toLocaleDateString() + ' at ' + new Date(user.updated_at).toLocaleTimeString(), icon: Calendar },
+                            { label: 'Onboarding Status', value: user.onboarding_completed ? 'Completed' : 'Incomplete', icon: CheckCircle },
+                        ].map((item, idx) => {
+                            const Icon = item.icon;
+                            return (
+                                <div key={idx} className="ap-detail-row">
+                                    <span className="ap-detail-label ap-flex ap-items-center ap-gap-sm">
+                                        <Icon size={14} />
+                                        {item.label}
+                                    </span>
+                                    <span className="ap-detail-value">{item.value}</span>
+                                </div>
+                            );
+                        })}
                     </div>
                 )}
 

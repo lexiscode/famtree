@@ -2,6 +2,7 @@ import { ReactNode, useState } from 'react';
 import { usePage, router } from '@inertiajs/react';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import '@/../css/org-layout.css';
 import { useFlashToast } from '@/hooks/useFlashToast';
 import {
     Menu,
@@ -15,6 +16,7 @@ import {
     Shield,
     FolderTree,
     Heart,
+    ScrollText,
     LogOut,
     ChevronDown,
 } from 'lucide-react';
@@ -97,6 +99,12 @@ export default function OrgLayout({ children }: OrgLayoutProps) {
             active: route().current('org.analytics.*'),
         },
         {
+            label: 'Activity Logs',
+            icon: ScrollText,
+            href: route('org.activity-logs.index'),
+            active: route().current('org.activity-logs.*'),
+        },
+        {
             label: 'Profile',
             icon: Building2,
             href: route('org.profile.show'),
@@ -137,7 +145,7 @@ export default function OrgLayout({ children }: OrgLayoutProps) {
             color: '#e0e0e0',
         }}>
             {/* Sidebar */}
-            <aside style={{
+            <aside className="org-sidebar" style={{
                 width: sidebarOpen ? '260px' : '80px',
                 background: 'linear-gradient(180deg, #141425 0%, #0e0e1e 100%)',
                 borderRight: '1px solid rgba(255, 255, 255, 0.06)',
@@ -242,7 +250,7 @@ export default function OrgLayout({ children }: OrgLayoutProps) {
                 </div>
 
                 {/* Navigation */}
-                <nav style={{
+                <nav className="org-sidebar-nav" style={{
                     flex: 1,
                     padding: '1.25rem 0.5rem',
                     overflowY: 'auto',
@@ -439,7 +447,7 @@ export default function OrgLayout({ children }: OrgLayoutProps) {
                 </header>
 
                 {/* Page Content */}
-                <div style={{
+                <div className="org-main-content" style={{
                     flex: 1,
                     padding: '2rem 2.5rem',
                     overflowY: 'auto',

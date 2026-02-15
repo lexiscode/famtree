@@ -501,6 +501,39 @@ class RelationshipInferenceService
             'aunt_father_in_law'   => null,
             'aunt_mother_in_law'   => null,
 
+            // Exclude: child's nephew/niece (child's spouse's sibling's child — no English kinship term)
+            'son_nephew'       => null,
+            'son_niece'        => null,
+            'daughter_nephew'  => null,
+            'daughter_niece'   => null,
+            'child_nephew'     => null,
+            'child_niece'      => null,
+
+            // Exclude: parent's in-laws through sibling's marriage (no English kinship term)
+            'father_father_in_law' => null,
+            'father_mother_in_law' => null,
+            'mother_father_in_law' => null,
+            'mother_mother_in_law' => null,
+            'parent_father_in_law' => null,
+            'parent_mother_in_law' => null,
+
+            // Exclude: grandchild's nephew/niece/cousin (through in-law side — no English kinship term)
+            'grandson_nephew'        => null,
+            'grandson_niece'         => null,
+            'granddaughter_nephew'   => null,
+            'granddaughter_niece'    => null,
+            'grandchild_nephew'      => null,
+            'grandchild_niece'       => null,
+            'grandson_first_cousin'       => null,
+            'grandson_second_cousin'      => null,
+            'grandson_third_cousin'       => null,
+            'granddaughter_first_cousin'  => null,
+            'granddaughter_second_cousin' => null,
+            'granddaughter_third_cousin'  => null,
+            'grandchild_first_cousin'     => null,
+            'grandchild_second_cousin'    => null,
+            'grandchild_third_cousin'     => null,
+
             // Default fallbacks
             'child_child' => 'cousin',
             'son_child' => 'nephew',

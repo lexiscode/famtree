@@ -810,6 +810,48 @@ class FeedController extends Controller
     }
 
     /**
+     * Display the trending posts page with pagination
+     */
+    public function trendingPosts(\Illuminate\Http\Request $request)
+    {
+        $user = auth()->user()->load('familyInfo');
+
+        if (!$user) {
+            return redirect()->route('home');
+        }
+
+        $trendingData = $this->connectionFeedsService->getPaginatedTrendingPosts($user, 15);
+
+        // Get sidebar data
+        $connections = $this->connectionRepository->getConnections($user->id);
+        $connectionCount = count($connections);
+        $pendingRequests = $this->connectionRepository->getPendingRequests($user->id);
+        $sentRequests = $this->connectionRepository->getSentRequests($user->id);
+        $unreadNotificationCount = $this->notificationService->getUnreadCount($user->id);
+
+        $userData = [
+            'id' => $user->id,
+            'uuid' => $user->uuid,
+            'first_name' => $user->first_name,
+            'last_name' => $user->last_name,
+            'name' => trim($user->first_name . ' ' . $user->last_name),
+            'username' => $user->username,
+            'email' => $user->email,
+            'profile_image_url' => $user->profile_image_url,
+            'bio' => $user->bio,
+        ];
+
+        return Inertia::render('GuestPages/AuthAccessPages/Feed/TrendingPosts', [
+            'user' => $userData,
+            'trendingData' => $trendingData,
+            'connectionCount' => $connectionCount,
+            'pendingRequestCount' => count($pendingRequests),
+            'sentRequestCount' => count($sentRequests),
+            'unreadNotificationCount' => $unreadNotificationCount,
+        ]);
+    }
+
+    /**
      * Display a single post within the feed layout
      */
     public function showPost(int $postId)

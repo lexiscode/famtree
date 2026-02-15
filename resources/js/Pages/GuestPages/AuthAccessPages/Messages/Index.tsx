@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { MessageCircle, Search, ArrowLeft, Users, GraduationCap, Pencil, Trash2, X, Check, CheckSquare, Square } from 'lucide-react';
+import { MessageCircle, Search, ArrowLeft, Users, GraduationCap, Pencil, Trash2, X, Check, CheckSquare, Square, Shield, Vote, UserMinus, Clock, AlertTriangle, ChevronDown, LogOut, Trophy, Sparkles } from 'lucide-react';
+import '../../../../../css/predictions.css';
 
 // Custom Leaf Indicator Components for message status
 const LeafOutline = ({ size = 14, className = '' }: { size?: number; className?: string }) => (
@@ -114,7 +115,7 @@ interface ActiveConversation {
 
 interface GroupChat {
     uuid: string;
-    type: 'family_tree' | 'class_set';
+    type: 'family_tree' | 'class_set' | 'glam_squad';
     name: string;
     member_count: number;
     unread_count: number;
@@ -154,6 +155,60 @@ interface OnlineUser {
     first_name: string;
     last_name: string;
     profile_image_url: string | null;
+}
+
+interface ElectionCandidate {
+    user_id: number;
+    first_name: string;
+    last_name: string;
+    username: string;
+    profile_image: string | null;
+    votes_count: number;
+}
+
+interface ElectionData {
+    id: number;
+    type: 'initial' | 'replacement' | 'tiebreaker';
+    status: string;
+    positions_to_fill: number;
+    ends_at: string;
+    started_at: string;
+    has_voted: boolean;
+    candidates: ElectionCandidate[];
+    total_votes: number;
+}
+
+interface RemovalVote {
+    admin_user_id: number;
+    admin_name: string;
+    vote: 'confirm' | 'reject';
+}
+
+interface RemovalData {
+    id: number;
+    status: string;
+    expires_at: string;
+    is_admin: boolean;
+    is_target: boolean;
+    is_initiator: boolean;
+    target_user: {
+        id: number;
+        uuid: string;
+        first_name: string;
+        last_name: string;
+        username: string;
+        profile_image: string | null;
+    };
+    initiator: {
+        id: number;
+        uuid: string;
+        first_name: string;
+        last_name: string;
+        username: string;
+    };
+    votes: RemovalVote[];
+    has_voted: boolean;
+    admins: { id: number; uuid: string; first_name: string; last_name: string; username: string }[];
 }
 
 interface Props {
@@ -205,6 +260,51 @@ export default function MessagesIndex({
     const [selectedMessageIds, setSelectedMessageIds] = useState<number[]>([]);
     const [isBulkDeleting, setIsBulkDeleting] = useState(false);
     const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+
+    // Election state
+    const [electionData, setElectionData] = useState<ElectionData | null>(null);
+    const [isVoting, setIsVoting] = useState(false);
+    const [electionExpanded, setElectionExpanded] = useState(true);
+    const [removalExpanded, setRemovalExpanded] = useState(true);
+
+    // Prediction banner state
+    const [predictionFixtures, setPredictionFixtures] = useState<any[]>([]);
+    const [predictionOrgSlug, setPredictionOrgSlug] = useState<string>('');
+    const [predictionOrgName, setPredictionOrgName] = useState<string>('');
+    const [predictionOrgLogo, setPredictionOrgLogo] = useState<string | null>(null);
+    const [predictionBannerExpanded, setPredictionBannerExpanded] = useState(true);
+    const [predictionSubmitting, setPredictionSubmitting] = useState(false);
+    const [bannerPredForms, setBannerPredForms] = useState<Record<number, { type: string; value: string; homeScore: string; awayScore: string }>>({});
+
+    const getBannerPredForm = (fixtureId: number) => bannerPredForms[fixtureId] || { type: 'match_result', value: '', homeScore: '', awayScore: '' };
+    const updateBannerPredForm = (fixtureId: number, updates: Partial<{ type: string; value: string; homeScore: string; awayScore: string }>) => {
+        setBannerPredForms(prev => ({ ...prev, [fixtureId]: { ...getBannerPredForm(fixtureId), ...updates } }));
+    };
+
+    // Removal state
+    const [removalData, setRemovalData] = useState<RemovalData | null>(null);
+    const [isRemovalAction, setIsRemovalAction] = useState(false);
+    const [isMuted, setIsMuted] = useState(false);
+
+    // Members panel state
+    const [showMembersPanel, setShowMembersPanel] = useState(false);
+    const [membersList, setMembersList] = useState<Array<{
+        id: number; uuid: string; first_name: string; last_name: string;
+        username: string; profile_image: string | null; is_admin: boolean; joined_at: string;
+    }>>([]);
+    const [membersLoading, setMembersLoading] = useState(false);
+    const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+    const [isLeaving, setIsLeaving] = useState(false);
+    const [removalConfirmTarget, setRemovalConfirmTarget] = useState<{ id: number; first_name: string; last_name: string } | null>(null);
+
+    // League table panel state
+    const [showLeaguePanel, setShowLeaguePanel] = useState(false);
+    const [leagueStandings, setLeagueStandings] = useState<Array<{
+        rank: number; user_id: number; first_name: string; last_name: string;
+        username: string; profile_image_url: string | null;
+        total_points: number; predictions_made: number; correct_predictions: number;
+    }>>([]);
+    const [leagueLoading, setLeagueLoading] = useState(false);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -324,10 +424,14 @@ export default function MessagesIndex({
         // Determine channel name based on group type
         const channelName = activeGroupChat.type === 'class_set'
             ? `class-set.${activeGroupChat.uuid}`
+            : activeGroupChat.type === 'glam_squad'
+            ? `glam-squad.${activeGroupChat.uuid}`
             : `family-tree.${activeGroupChat.uuid}`;
 
         const eventName = activeGroupChat.type === 'class_set'
             ? '.ClassSetMessageSent'
+            : activeGroupChat.type === 'glam_squad'
+            ? '.GlamSquadMessageSent'
             : '.TreeMessageSent';
 
         const channel = window.Echo.join(channelName)
@@ -388,11 +492,13 @@ export default function MessagesIndex({
             // Use different route based on group type
             const routeName = group.type === 'class_set'
                 ? 'class-sets.messages'
+                : group.type === 'glam_squad'
+                ? 'glam-squad.messages'
                 : 'family-tree.chat.messages';
             const response = await axios.get(route(routeName, group.uuid));
 
             // Handle different response formats
-            const messages = group.type === 'class_set'
+            const messages = (group.type === 'class_set' || group.type === 'glam_squad')
                 ? response.data.messages.map((m: any) => ({
                     id: m.id,
                     user_id: m.sender?.id || m.sender_id,
@@ -418,6 +524,187 @@ export default function MessagesIndex({
         }
     }, [scrollToBottom]);
 
+    // Fetch election and removal data for class_set groups
+    const fetchGroupAdminData = useCallback(async (groupUuid: string) => {
+        try {
+            const [electionRes, removalRes] = await Promise.all([
+                axios.get(route('class-sets.election.show', groupUuid)),
+                axios.get(route('class-sets.removal.show', groupUuid)),
+            ]);
+            setElectionData(electionRes.data.election || null);
+            setRemovalData(removalRes.data.removal || null);
+            setIsMuted(removalRes.data.removal?.is_target || false);
+        } catch {
+            setElectionData(null);
+            setRemovalData(null);
+            setIsMuted(false);
+        }
+
+        // Fetch prediction fixtures for football org groups
+        try {
+            const predRes = await axios.get(route('class-sets.predictions.open', groupUuid));
+            setPredictionOrgSlug(predRes.data.organizationSlug || '');
+            setPredictionOrgName(predRes.data.organizationName || '');
+            setPredictionOrgLogo(predRes.data.organizationLogo || null);
+            if (predRes.data.fixtures && predRes.data.fixtures.length > 0) {
+                setPredictionFixtures(predRes.data.fixtures);
+            } else {
+                setPredictionFixtures([]);
+            }
+        } catch {
+            setPredictionFixtures([]);
+            setPredictionOrgSlug('');
+            setPredictionOrgName('');
+            setPredictionOrgLogo(null);
+        }
+    }, []);
+
+    // Load group admin data when class_set group is selected
+    useEffect(() => {
+        if (activeGroupChat?.type === 'class_set') {
+            fetchGroupAdminData(activeGroupChat.uuid);
+        } else {
+            setElectionData(null);
+            setRemovalData(null);
+            setIsMuted(false);
+            setPredictionFixtures([]);
+            setPredictionOrgSlug('');
+            setPredictionOrgName('');
+            setPredictionOrgLogo(null);
+        }
+    }, [activeGroupChat, fetchGroupAdminData]);
+
+    // Fetch members list for the panel
+    const fetchMembers = useCallback(async () => {
+        if (!activeGroupChat || activeGroupChat.type !== 'class_set') return;
+        setMembersLoading(true);
+        try {
+            const response = await axios.get(route('class-sets.members', activeGroupChat.uuid));
+            setMembersList(response.data.members || []);
+        } catch {
+            setMembersList([]);
+        } finally {
+            setMembersLoading(false);
+        }
+    }, [activeGroupChat]);
+
+    const toggleMembersPanel = useCallback(() => {
+        setShowMembersPanel(prev => {
+            if (!prev) {
+                setShowLeaguePanel(false);
+                fetchMembers();
+            }
+            return !prev;
+        });
+    }, [fetchMembers]);
+
+    const fetchLeagueStandings = useCallback(async () => {
+        if (!activeGroupChat) return;
+        setLeagueLoading(true);
+        try {
+            const response = await axios.get(route('class-sets.predictions.standings', activeGroupChat.uuid));
+            setLeagueStandings(response.data || []);
+        } catch {
+            setLeagueStandings([]);
+        } finally {
+            setLeagueLoading(false);
+        }
+    }, [activeGroupChat]);
+
+    const toggleLeaguePanel = useCallback(() => {
+        setShowLeaguePanel(prev => {
+            if (!prev) {
+                setShowMembersPanel(false);
+                fetchLeagueStandings();
+            }
+            return !prev;
+        });
+    }, [fetchLeagueStandings]);
+
+    const handleLeaveGroup = useCallback(() => {
+        if (!activeGroupChat || isLeaving) return;
+        setIsLeaving(true);
+        router.post(route('class-sets.leave', activeGroupChat.uuid), {}, {
+            onSuccess: () => {
+                setShowLeaveConfirm(false);
+                setActiveGroupChat(null);
+                setIsLeaving(false);
+            },
+            onError: () => {
+                setIsLeaving(false);
+            },
+        });
+    }, [activeGroupChat, isLeaving]);
+
+    // Close members panel, league panel and leave confirm when switching chats
+    useEffect(() => {
+        setShowMembersPanel(false);
+        setMembersList([]);
+        setShowLeaveConfirm(false);
+        setShowLeaguePanel(false);
+        setLeagueStandings([]);
+    }, [activeGroupChat]);
+
+    // Vote in an election
+    const handleElectionVote = useCallback(async (candidateId: number) => {
+        if (!activeGroupChat || isVoting) return;
+        setIsVoting(true);
+        try {
+            const response = await axios.post(route('class-sets.election.vote', activeGroupChat.uuid), {
+                candidate_id: candidateId,
+            });
+            if (response.data.success) {
+                setElectionData(prev => prev ? {
+                    ...prev,
+                    has_voted: true,
+                    candidates: response.data.candidates,
+                    total_votes: prev.total_votes + 1,
+                } : null);
+            }
+        } catch (error: any) {
+            console.error('Error voting:', error);
+        } finally {
+            setIsVoting(false);
+        }
+    }, [activeGroupChat, isVoting]);
+
+    // Initiate removal
+    const handleInitiateRemoval = useCallback(async (targetUserId: number) => {
+        if (!activeGroupChat || isRemovalAction) return;
+        setIsRemovalAction(true);
+        try {
+            const response = await axios.post(route('class-sets.removal.initiate', activeGroupChat.uuid), {
+                target_user_id: targetUserId,
+            });
+            if (response.data.success) {
+                // Refresh removal data
+                fetchGroupAdminData(activeGroupChat.uuid);
+            }
+        } catch (error: any) {
+            console.error('Error initiating removal:', error);
+        } finally {
+            setIsRemovalAction(false);
+        }
+    }, [activeGroupChat, isRemovalAction, fetchGroupAdminData]);
+
+    // Vote on removal
+    const handleRemovalVote = useCallback(async (vote: 'confirm' | 'reject') => {
+        if (!activeGroupChat || isRemovalAction) return;
+        setIsRemovalAction(true);
+        try {
+            const response = await axios.post(route('class-sets.removal.vote', activeGroupChat.uuid), {
+                vote,
+            });
+            if (response.data.success) {
+                fetchGroupAdminData(activeGroupChat.uuid);
+            }
+        } catch (error: any) {
+            console.error('Error voting on removal:', error);
+        } finally {
+            setIsRemovalAction(false);
+        }
+    }, [activeGroupChat, isRemovalAction, fetchGroupAdminData]);
+
     // Send group message
     const handleSendGroupMessage = useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
@@ -430,13 +717,15 @@ export default function MessagesIndex({
             // Use different route based on group type
             const routeName = activeGroupChat.type === 'class_set'
                 ? 'class-sets.send-message'
+                : activeGroupChat.type === 'glam_squad'
+                ? 'glam-squad.send-message'
                 : 'family-tree.chat.send';
             const response = await axios.post(route(routeName, activeGroupChat.uuid), {
                 message: newMessage.trim(),
             });
 
             // Handle different response formats
-            const newMsg = activeGroupChat.type === 'class_set'
+            const newMsg = (activeGroupChat.type === 'class_set' || activeGroupChat.type === 'glam_squad')
                 ? {
                     id: response.data.message.id,
                     user_id: response.data.message.sender?.id || response.data.message.sender_id,
@@ -623,7 +912,9 @@ export default function MessagesIndex({
         try {
             // Use different route based on whether it's DM or group chat
             const routeName = activeGroupChat
-                ? (activeGroupChat.type === 'class_set' ? 'class-sets.bulk-delete' : 'family-tree.chat.bulk-delete')
+                ? (activeGroupChat.type === 'class_set' ? 'class-sets.bulk-delete'
+                    : activeGroupChat.type === 'glam_squad' ? 'glam-squad.bulk-delete'
+                    : 'family-tree.chat.bulk-delete')
                 : 'messages.bulk-delete';
             const response = await axios.post(route(routeName), {
                 message_ids: selectedMessageIds,
@@ -660,6 +951,8 @@ export default function MessagesIndex({
         try {
             const routeName = activeGroupChat.type === 'class_set'
                 ? 'class-sets.edit-message'
+                : activeGroupChat.type === 'glam_squad'
+                ? 'glam-squad.edit-message'
                 : 'family-tree.chat.edit';
             const response = await axios.put(route(routeName, editingMessageId), {
                 message: editingText.trim(),
@@ -689,6 +982,8 @@ export default function MessagesIndex({
         try {
             const routeName = activeGroupChat.type === 'class_set'
                 ? 'class-sets.delete-message'
+                : activeGroupChat.type === 'glam_squad'
+                ? 'glam-squad.delete-message'
                 : 'family-tree.chat.delete';
             const response = await axios.delete(route(routeName, deletingMessageId));
 
@@ -789,9 +1084,11 @@ export default function MessagesIndex({
                                             className={`messages-conversation-item group-chat ${activeGroupChat?.uuid === group.uuid ? 'active' : ''} ${group.unread_count > 0 ? 'unread' : ''}`}
                                         >
                                             <div className="conversation-avatar group-avatar">
-                                                <div className={`avatar-fallback group-fallback ${group.type === 'class_set' ? 'class-set-fallback' : ''}`}>
+                                                <div className={`avatar-fallback group-fallback ${group.type === 'class_set' ? 'class-set-fallback' : group.type === 'glam_squad' ? 'glam-squad-fallback' : ''}`}>
                                                     {group.type === 'class_set' ? (
                                                         <GraduationCap size={20} />
+                                                    ) : group.type === 'glam_squad' ? (
+                                                        <Sparkles size={20} />
                                                     ) : (
                                                         <Users size={20} />
                                                     )}
@@ -912,11 +1209,17 @@ export default function MessagesIndex({
                                     >
                                         <ArrowLeft size={20} />
                                     </button>
-                                    <div className="chat-user-info">
+                                    <div
+                                        className="chat-user-info"
+                                        onClick={activeGroupChat.type === 'class_set' ? toggleMembersPanel : undefined}
+                                        style={{ cursor: activeGroupChat.type === 'class_set' ? 'pointer' : 'default' }}
+                                    >
                                         <div className="chat-user-avatar group-avatar">
-                                            <div className={`avatar-fallback group-fallback ${activeGroupChat.type === 'class_set' ? 'class-set-fallback' : ''}`}>
+                                            <div className={`avatar-fallback group-fallback ${activeGroupChat.type === 'class_set' ? 'class-set-fallback' : activeGroupChat.type === 'glam_squad' ? 'glam-squad-fallback' : ''}`}>
                                                 {activeGroupChat.type === 'class_set' ? (
                                                     <GraduationCap size={20} />
+                                                ) : activeGroupChat.type === 'glam_squad' ? (
+                                                    <Sparkles size={20} />
                                                 ) : (
                                                     <Users size={20} />
                                                 )}
@@ -927,6 +1230,8 @@ export default function MessagesIndex({
                                             <span className="chat-user-username">
                                                 {activeGroupChat.type === 'class_set' ? (
                                                     <GraduationCap size={12} style={{ marginRight: '4px', display: 'inline' }} />
+                                                ) : activeGroupChat.type === 'glam_squad' ? (
+                                                    <Sparkles size={12} style={{ marginRight: '4px', display: 'inline' }} />
                                                 ) : (
                                                     <Users size={12} style={{ marginRight: '4px', display: 'inline' }} />
                                                 )}
@@ -979,8 +1284,683 @@ export default function MessagesIndex({
                                         >
                                             {isBulkSelectMode ? <X size={12} /> : <CheckSquare size={12} />}
                                         </button>
+                                        {activeGroupChat.type === 'class_set' && predictionOrgSlug && (
+                                            <button
+                                                onClick={toggleLeaguePanel}
+                                                title="League Table"
+                                                style={{
+                                                    width: '24px', height: '24px', minWidth: '24px', minHeight: '24px',
+                                                    maxWidth: '24px', maxHeight: '24px',
+                                                    borderRadius: '4px',
+                                                    background: showLeaguePanel ? 'rgba(139, 92, 246, 0.25)' : 'rgba(139, 92, 246, 0.08)',
+                                                    border: `1px solid ${showLeaguePanel ? 'rgba(139, 92, 246, 0.4)' : 'rgba(139, 92, 246, 0.15)'}`,
+                                                    color: '#8B5CF6',
+                                                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                    cursor: 'pointer', padding: 0, transition: 'all 0.2s ease',
+                                                    boxSizing: 'border-box', lineHeight: 1,
+                                                }}
+                                                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(139, 92, 246, 0.25)'; }}
+                                                onMouseLeave={(e) => { e.currentTarget.style.background = showLeaguePanel ? 'rgba(139, 92, 246, 0.25)' : 'rgba(139, 92, 246, 0.08)'; }}
+                                            >
+                                                <Trophy size={14} />
+                                            </button>
+                                        )}
+                                        {activeGroupChat.type === 'class_set' && (
+                                            <button
+                                                onClick={() => setShowLeaveConfirm(true)}
+                                                title="Leave group"
+                                                style={{
+                                                    width: '24px', height: '24px', minWidth: '24px', minHeight: '24px',
+                                                    maxWidth: '24px', maxHeight: '24px',
+                                                    borderRadius: '4px',
+                                                    background: 'rgba(239, 68, 68, 0.08)',
+                                                    border: '1px solid rgba(239, 68, 68, 0.15)',
+                                                    color: '#EF4444',
+                                                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                    cursor: 'pointer', padding: 0, transition: 'all 0.2s ease',
+                                                    boxSizing: 'border-box', lineHeight: 1,
+                                                }}
+                                                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.18)'; }}
+                                                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.08)'; }}
+                                            >
+                                                <LogOut size={14} />
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
+
+                                {/* Leave Group Confirmation Dialog */}
+                                {showLeaveConfirm && activeGroupChat.type === 'class_set' && (
+                                    <div
+                                        onClick={() => setShowLeaveConfirm(false)}
+                                        style={{
+                                            position: 'fixed', inset: 0, zIndex: 9999,
+                                            background: 'rgba(0, 0, 0, 0.6)',
+                                            backdropFilter: 'blur(4px)',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            padding: '1rem',
+                                            animation: 'fadeIn 0.15s ease-out',
+                                        }}
+                                    >
+                                        <div
+                                            onClick={(e) => e.stopPropagation()}
+                                            style={{
+                                                background: '#1a1a2e',
+                                                border: '1px solid rgba(255, 255, 255, 0.08)',
+                                                borderRadius: '16px',
+                                                padding: '1.75rem',
+                                                width: '100%',
+                                                maxWidth: '400px',
+                                                boxShadow: '0 25px 60px rgba(0, 0, 0, 0.5)',
+                                                animation: 'slideUp 0.2s ease-out',
+                                            }}
+                                        >
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                                                <div style={{
+                                                    width: '44px', height: '44px', borderRadius: '12px',
+                                                    background: 'rgba(239, 68, 68, 0.15)',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                }}>
+                                                    <LogOut size={22} color="#EF4444" />
+                                                </div>
+                                                <button
+                                                    onClick={() => setShowLeaveConfirm(false)}
+                                                    style={{
+                                                        background: 'rgba(255, 255, 255, 0.05)', border: 'none',
+                                                        borderRadius: '8px', padding: '6px', cursor: 'pointer',
+                                                        color: '#888', display: 'flex', transition: 'all 0.15s ease',
+                                                    }}
+                                                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'; e.currentTarget.style.color = '#ccc'; }}
+                                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'; e.currentTarget.style.color = '#888'; }}
+                                                >
+                                                    <X size={16} />
+                                                </button>
+                                            </div>
+
+                                            <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.1rem', fontWeight: 600, color: '#ffffff' }}>
+                                                Leave Group
+                                            </h3>
+                                            <p style={{ margin: '0 0 1.5rem', fontSize: '0.875rem', color: '#999', lineHeight: 1.5 }}>
+                                                Are you sure you want to leave <strong style={{ color: '#e0e0e0' }}>{activeGroupChat.name}</strong>? You will no longer receive messages from this group and will need to rejoin to access the chat again.
+                                            </p>
+
+                                            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                                                <button
+                                                    onClick={() => setShowLeaveConfirm(false)}
+                                                    style={{
+                                                        padding: '0.6rem 1.25rem', borderRadius: '10px',
+                                                        background: 'rgba(255, 255, 255, 0.06)',
+                                                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                                                        color: '#ccc', fontSize: '0.85rem', fontWeight: 500,
+                                                        cursor: 'pointer', transition: 'all 0.15s ease',
+                                                    }}
+                                                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'; }}
+                                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)'; }}
+                                                >
+                                                    Cancel
+                                                </button>
+                                                <button
+                                                    onClick={handleLeaveGroup}
+                                                    disabled={isLeaving}
+                                                    style={{
+                                                        padding: '0.6rem 1.25rem', borderRadius: '10px',
+                                                        background: 'rgba(239, 68, 68, 0.15)',
+                                                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                                                        color: '#EF4444', fontSize: '0.85rem', fontWeight: 600,
+                                                        cursor: isLeaving ? 'not-allowed' : 'pointer',
+                                                        opacity: isLeaving ? 0.6 : 1,
+                                                        transition: 'all 0.15s ease',
+                                                        display: 'flex', alignItems: 'center', gap: '6px',
+                                                    }}
+                                                    onMouseEnter={(e) => { if (!isLeaving) e.currentTarget.style.background = 'rgba(239, 68, 68, 0.25)'; }}
+                                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)'; }}
+                                                >
+                                                    <LogOut size={14} />
+                                                    {isLeaving ? 'Leaving...' : 'Leave Group'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Removal Confirmation Dialog */}
+                                {removalConfirmTarget && (
+                                    <div
+                                        onClick={() => setRemovalConfirmTarget(null)}
+                                        style={{
+                                            position: 'fixed', inset: 0, zIndex: 9999,
+                                            background: 'rgba(0, 0, 0, 0.6)',
+                                            backdropFilter: 'blur(4px)',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            padding: '1rem',
+                                            animation: 'fadeIn 0.15s ease-out',
+                                        }}
+                                    >
+                                        <div
+                                            onClick={(e) => e.stopPropagation()}
+                                            style={{
+                                                background: '#1a1a2e',
+                                                border: '1px solid rgba(255, 255, 255, 0.08)',
+                                                borderRadius: '16px',
+                                                padding: '1.75rem',
+                                                width: '100%',
+                                                maxWidth: '420px',
+                                                boxShadow: '0 25px 60px rgba(0, 0, 0, 0.5)',
+                                                animation: 'slideUp 0.2s ease-out',
+                                            }}
+                                        >
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                                                <div style={{
+                                                    width: '44px', height: '44px', borderRadius: '12px',
+                                                    background: 'rgba(239, 68, 68, 0.15)',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                }}>
+                                                    <UserMinus size={22} color="#EF4444" />
+                                                </div>
+                                                <button
+                                                    onClick={() => setRemovalConfirmTarget(null)}
+                                                    style={{
+                                                        background: 'rgba(255, 255, 255, 0.05)', border: 'none',
+                                                        borderRadius: '8px', padding: '6px', cursor: 'pointer',
+                                                        color: '#888', display: 'flex', transition: 'all 0.15s ease',
+                                                    }}
+                                                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'; e.currentTarget.style.color = '#ccc'; }}
+                                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'; e.currentTarget.style.color = '#888'; }}
+                                                >
+                                                    <X size={16} />
+                                                </button>
+                                            </div>
+
+                                            <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.1rem', fontWeight: 600, color: '#ffffff' }}>
+                                                Initiate Member Removal
+                                            </h3>
+                                            <p style={{ margin: '0 0 1.5rem', fontSize: '0.875rem', color: '#999', lineHeight: 1.5 }}>
+                                                Are you sure you want to initiate the removal of <strong style={{ color: '#e0e0e0' }}>{removalConfirmTarget.first_name} {removalConfirmTarget.last_name}</strong> from this group? This will require confirmation from another admin within 3 days to complete.
+                                            </p>
+
+                                            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                                                <button
+                                                    onClick={() => setRemovalConfirmTarget(null)}
+                                                    style={{
+                                                        padding: '0.6rem 1.25rem', borderRadius: '10px',
+                                                        background: 'rgba(255, 255, 255, 0.06)',
+                                                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                                                        color: '#ccc', fontSize: '0.85rem', fontWeight: 500,
+                                                        cursor: 'pointer', transition: 'all 0.15s ease',
+                                                    }}
+                                                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'; }}
+                                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)'; }}
+                                                >
+                                                    Cancel
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        handleInitiateRemoval(removalConfirmTarget.id);
+                                                        setRemovalConfirmTarget(null);
+                                                        setShowMembersPanel(false);
+                                                    }}
+                                                    disabled={isRemovalAction}
+                                                    style={{
+                                                        padding: '0.6rem 1.25rem', borderRadius: '10px',
+                                                        background: 'rgba(239, 68, 68, 0.15)',
+                                                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                                                        color: '#EF4444', fontSize: '0.85rem', fontWeight: 600,
+                                                        cursor: isRemovalAction ? 'not-allowed' : 'pointer',
+                                                        opacity: isRemovalAction ? 0.6 : 1,
+                                                        transition: 'all 0.15s ease',
+                                                        display: 'flex', alignItems: 'center', gap: '6px',
+                                                    }}
+                                                    onMouseEnter={(e) => { if (!isRemovalAction) e.currentTarget.style.background = 'rgba(239, 68, 68, 0.25)'; }}
+                                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)'; }}
+                                                >
+                                                    <UserMinus size={14} />
+                                                    {isRemovalAction ? 'Processing...' : 'Remove Member'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Election Banner (Collapsible) */}
+                                {electionData && activeGroupChat?.type === 'class_set' && (
+                                    <div style={{
+                                        background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.08))',
+                                        borderBottom: '1px solid rgba(59, 130, 246, 0.2)',
+                                    }}>
+                                        {/* Clickable Header */}
+                                        <div
+                                            onClick={() => setElectionExpanded(!electionExpanded)}
+                                            style={{
+                                                display: 'flex', alignItems: 'center', gap: '8px',
+                                                padding: '10px 16px',
+                                                cursor: 'pointer',
+                                                transition: 'background 0.15s ease',
+                                            }}
+                                            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)'; }}
+                                            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                                        >
+                                            <Vote size={16} color="#3B82F6" />
+                                            <span style={{ fontWeight: 600, color: '#ffffff', fontSize: '0.85rem' }}>
+                                                {electionData.type === 'initial' ? 'Group Admin Election' :
+                                                    electionData.type === 'replacement' ? 'Replacement Admin Election' : 'Tiebreaker Election'}
+                                            </span>
+                                            {electionData.has_voted && (
+                                                <span style={{
+                                                    fontSize: '0.65rem', fontWeight: 600, color: '#10B981',
+                                                    background: 'rgba(16, 185, 129, 0.12)',
+                                                    padding: '2px 6px', borderRadius: '4px',
+                                                }}>
+                                                    Voted
+                                                </span>
+                                            )}
+                                            <span style={{
+                                                marginLeft: 'auto', fontSize: '0.72rem', color: '#888',
+                                                display: 'flex', alignItems: 'center', gap: '4px',
+                                            }}>
+                                                <Clock size={11} />
+                                                {(() => {
+                                                    const end = new Date(electionData.ends_at);
+                                                    const now = new Date();
+                                                    const diff = end.getTime() - now.getTime();
+                                                    if (diff <= 0) return 'Ended';
+                                                    const hours = Math.floor(diff / (1000 * 60 * 60));
+                                                    const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                                                    return hours > 0 ? `${hours}h ${mins}m left` : `${mins}m left`;
+                                                })()}
+                                            </span>
+                                            <ChevronDown size={16} color="#888" style={{
+                                                transition: 'transform 0.2s ease',
+                                                transform: electionExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                                                flexShrink: 0,
+                                            }} />
+                                        </div>
+
+                                        {/* Collapsible Body */}
+                                        {electionExpanded && (
+                                            <div style={{ padding: '0 16px 12px' }}>
+                                                <p style={{ color: '#aaa', fontSize: '0.78rem', margin: '0 0 8px' }}>
+                                                    Vote for {electionData.positions_to_fill} admin{electionData.positions_to_fill > 1 ? 's' : ''} · {electionData.total_votes} vote{electionData.total_votes !== 1 ? 's' : ''} cast
+                                                </p>
+                                                <div className="election-candidates-list" style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '200px', overflowY: 'auto' }}>
+                                                    {electionData.candidates.slice(0, 10).map(candidate => (
+                                                        <div key={candidate.user_id} style={{
+                                                            display: 'flex', alignItems: 'center', gap: '8px',
+                                                            padding: '6px 10px', borderRadius: '8px',
+                                                            background: 'rgba(255, 255, 255, 0.03)',
+                                                            border: '1px solid rgba(255, 255, 255, 0.05)',
+                                                        }}>
+                                                            <div style={{
+                                                                width: '28px', height: '28px', borderRadius: '50%',
+                                                                background: 'rgba(139, 92, 246, 0.2)', display: 'flex',
+                                                                alignItems: 'center', justifyContent: 'center',
+                                                                fontSize: '0.7rem', fontWeight: 600, color: '#8B5CF6', overflow: 'hidden',
+                                                            }}>
+                                                                {candidate.profile_image
+                                                                    ? <img src={candidate.profile_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                                    : candidate.first_name.charAt(0)}
+                                                            </div>
+                                                            <span style={{ flex: 1, fontSize: '0.85rem', color: '#e0e0e0' }}>
+                                                                {candidate.first_name} {candidate.last_name}
+                                                            </span>
+                                                            <span style={{ fontSize: '0.75rem', color: '#888', minWidth: '40px', textAlign: 'right' }}>
+                                                                {candidate.votes_count} vote{candidate.votes_count !== 1 ? 's' : ''}
+                                                            </span>
+                                                            {!electionData.has_voted ? (
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); handleElectionVote(candidate.user_id); }}
+                                                                    disabled={isVoting}
+                                                                    style={{
+                                                                        padding: '3px 10px', borderRadius: '6px', border: 'none',
+                                                                        background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)',
+                                                                        color: '#fff', fontSize: '0.75rem', fontWeight: 600,
+                                                                        cursor: isVoting ? 'not-allowed' : 'pointer',
+                                                                        opacity: isVoting ? 0.6 : 1,
+                                                                    }}
+                                                                >
+                                                                    Vote
+                                                                </button>
+                                                            ) : (
+                                                                <span style={{ fontSize: '0.7rem', color: '#10B981' }}>
+                                                                    <Check size={12} />
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                {electionData.has_voted && (
+                                                    <p style={{ color: '#10B981', fontSize: '0.78rem', margin: '8px 0 0', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                        <Check size={14} /> You have voted
+                                                    </p>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* Prediction Banner (Collapsible) */}
+                                {predictionFixtures.length > 0 && activeGroupChat?.type === 'class_set' && (
+                                    <div className="pred-banner">
+                                        {/* Clickable Header */}
+                                        <div className="pred-banner-header" onClick={() => setPredictionBannerExpanded(!predictionBannerExpanded)}>
+                                            <Trophy size={14} color="#a78bfa" />
+                                            <span className="pred-banner-title">Predictions Open</span>
+                                            <span className="pred-banner-count">{predictionFixtures.length}</span>
+                                            {predictionOrgSlug && (
+                                                <span className="pred-banner-link" onClick={(e) => { e.stopPropagation(); router.visit(`/organizations/${predictionOrgSlug}/predictions`); }}>
+                                                    Full League
+                                                </span>
+                                            )}
+                                            <ChevronDown size={16} className="pred-banner-chevron" style={{ transform: predictionBannerExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+                                        </div>
+
+                                        {/* Collapsible Body — Scrollable fixture cards */}
+                                        {predictionBannerExpanded && (
+                                            <div className="pred-banner-body">
+                                                <div className="pred-banner-scroll">
+                                                    {predictionFixtures.map((fixture: any) => {
+                                                        const homeName = fixture.venue === 'home' ? predictionOrgName : fixture.opponent_name;
+                                                        const awayName = fixture.venue === 'home' ? fixture.opponent_name : predictionOrgName;
+                                                        const homeLogo = fixture.venue === 'home' ? predictionOrgLogo : fixture.opponent_logo;
+                                                        const awayLogo = fixture.venue === 'home' ? fixture.opponent_logo : predictionOrgLogo;
+                                                        const form = getBannerPredForm(fixture.id);
+
+                                                        const submitBannerPrediction = (type: string, value: string, homeScore?: string, awayScore?: string) => {
+                                                            if (!predictionOrgSlug || predictionSubmitting) return;
+                                                            setPredictionSubmitting(true);
+                                                            const data: any = { fixture_id: fixture.id, prediction_type: type, prediction_value: value };
+                                                            if (type === 'correct_score') {
+                                                                data.predicted_home_score = parseInt(homeScore || '0');
+                                                                data.predicted_away_score = parseInt(awayScore || '0');
+                                                            }
+                                                            axios.post(route('organizations.predictions.predict', predictionOrgSlug), data).then(() => {
+                                                                setPredictionFixtures(prev => prev.map(f =>
+                                                                    f.id === fixture.id
+                                                                        ? { ...f, user_prediction: { prediction_type: type, prediction_value: value, predicted_home_score: data.predicted_home_score ?? null, predicted_away_score: data.predicted_away_score ?? null, is_correct: null, points_earned: 0, is_locked: false } }
+                                                                        : f
+                                                                ));
+                                                            }).catch(() => {}).finally(() => setPredictionSubmitting(false));
+                                                        };
+
+                                                        return (
+                                                        <div key={fixture.id} className="pred-banner-card">
+                                                            {/* Matchup */}
+                                                            <div className="pred-banner-matchup">
+                                                                <div className="pred-banner-team">
+                                                                    <div className="pred-banner-team-logo">
+                                                                        {homeLogo
+                                                                            ? <img src={homeLogo} alt="" />
+                                                                            : <span className="pred-banner-team-logo-fallback">{homeName?.charAt(0)}</span>}
+                                                                    </div>
+                                                                    <span className="pred-banner-team-name">{homeName}</span>
+                                                                </div>
+                                                                <span className="pred-banner-vs">vs</span>
+                                                                <div className="pred-banner-team away">
+                                                                    <div className="pred-banner-team-logo">
+                                                                        {awayLogo
+                                                                            ? <img src={awayLogo} alt="" />
+                                                                            : <span className="pred-banner-team-logo-fallback">{awayName?.charAt(0)}</span>}
+                                                                    </div>
+                                                                    <span className="pred-banner-team-name">{awayName}</span>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Meta */}
+                                                            <div className="pred-banner-meta">
+                                                                {new Date(fixture.match_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                                                {fixture.competition && <> · {fixture.competition}</>}
+                                                            </div>
+
+                                                            {/* Already predicted */}
+                                                            {fixture.user_prediction ? (
+                                                                <div className="pred-banner-confirmed">
+                                                                    <Check size={12} />
+                                                                    <span>
+                                                                        {fixture.user_prediction.prediction_type === 'correct_score'
+                                                                            ? `${homeName} ${fixture.user_prediction.predicted_home_score} - ${fixture.user_prediction.predicted_away_score} ${awayName}`
+                                                                            : fixture.user_prediction.prediction_value === 'home_win' ? `${homeName} Win`
+                                                                            : fixture.user_prediction.prediction_value === 'away_win' ? `${awayName} Win`
+                                                                            : fixture.user_prediction.prediction_value === 'draw' ? 'Draw'
+                                                                            : fixture.user_prediction.prediction_value === 'home_draw' ? `${homeName}/Draw`
+                                                                            : fixture.user_prediction.prediction_value === 'away_draw' ? `${awayName}/Draw`
+                                                                            : fixture.user_prediction.prediction_value === 'home_away' ? `${homeName}/${awayName}`
+                                                                            : fixture.user_prediction.prediction_value}
+                                                                    </span>
+                                                                </div>
+                                                            ) : (
+                                                                <>
+                                                                    {/* Bet Type Selector */}
+                                                                    <div className="pred-bet-types">
+                                                                        <button className={`pred-bet-type ${form.type === 'match_result' ? 'active' : ''}`}
+                                                                            onClick={() => updateBannerPredForm(fixture.id, { type: 'match_result', value: '' })}>
+                                                                            Result · 5pts
+                                                                        </button>
+                                                                        <button className={`pred-bet-type ${form.type === 'double_chance' ? 'active' : ''}`}
+                                                                            onClick={() => updateBannerPredForm(fixture.id, { type: 'double_chance', value: '' })}>
+                                                                            Double · 2pts
+                                                                        </button>
+                                                                        <button className={`pred-bet-type ${form.type === 'correct_score' ? 'active' : ''}`}
+                                                                            onClick={() => updateBannerPredForm(fixture.id, { type: 'correct_score', value: '' })}>
+                                                                            Score · 15pts
+                                                                        </button>
+                                                                    </div>
+
+                                                                    <p className="pred-pick-label">Pick your prediction</p>
+
+                                                                    {/* Match Result Options */}
+                                                                    {form.type === 'match_result' && (
+                                                                        <div className="pred-options">
+                                                                            {[
+                                                                                { value: 'home_win', label: `${homeName} Win` },
+                                                                                { value: 'draw', label: 'Draw' },
+                                                                                { value: 'away_win', label: `${awayName} Win` },
+                                                                            ].map(opt => (
+                                                                                <button key={opt.value}
+                                                                                    className={`pred-option-btn ${form.value === opt.value ? 'selected' : ''}`}
+                                                                                    onClick={() => {
+                                                                                        updateBannerPredForm(fixture.id, { value: opt.value });
+                                                                                        submitBannerPrediction('match_result', opt.value);
+                                                                                    }}
+                                                                                    disabled={predictionSubmitting}>
+                                                                                    {opt.label}
+                                                                                </button>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+
+                                                                    {/* Double Chance Options */}
+                                                                    {form.type === 'double_chance' && (
+                                                                        <div className="pred-options">
+                                                                            {[
+                                                                                { value: 'home_draw', label: `${homeName}/Draw` },
+                                                                                { value: 'away_draw', label: `${awayName}/Draw` },
+                                                                                { value: 'home_away', label: `${homeName}/${awayName}` },
+                                                                            ].map(opt => (
+                                                                                <button key={opt.value}
+                                                                                    className={`pred-option-btn ${form.value === opt.value ? 'selected' : ''}`}
+                                                                                    onClick={() => {
+                                                                                        updateBannerPredForm(fixture.id, { value: opt.value });
+                                                                                        submitBannerPrediction('double_chance', opt.value);
+                                                                                    }}
+                                                                                    disabled={predictionSubmitting}>
+                                                                                    {opt.label}
+                                                                                </button>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+
+                                                                    {/* Correct Score Inputs */}
+                                                                    {form.type === 'correct_score' && (
+                                                                        <div className="pred-score-inputs">
+                                                                            <span className="pred-score-team-label">{homeName}</span>
+                                                                            <input type="number" min="0" max="99" className="pred-score-input" placeholder="0"
+                                                                                value={form.homeScore}
+                                                                                onChange={(e) => updateBannerPredForm(fixture.id, { homeScore: e.target.value })} />
+                                                                            <span className="pred-score-separator">—</span>
+                                                                            <input type="number" min="0" max="99" className="pred-score-input" placeholder="0"
+                                                                                value={form.awayScore}
+                                                                                onChange={(e) => updateBannerPredForm(fixture.id, { awayScore: e.target.value })} />
+                                                                            <span className="pred-score-team-label">{awayName}</span>
+                                                                            <button className="pred-score-submit"
+                                                                                onClick={() => submitBannerPrediction('correct_score', `${form.homeScore}-${form.awayScore}`, form.homeScore, form.awayScore)}
+                                                                                disabled={predictionSubmitting || form.homeScore === '' || form.awayScore === ''}>
+                                                                                {predictionSubmitting ? '...' : 'Submit'}
+                                                                            </button>
+                                                                        </div>
+                                                                    )}
+                                                                </>
+                                                            )}
+
+                                                            {/* Completed result */}
+                                                            {fixture.status === 'completed' && (
+                                                                <div className="pred-banner-result">
+                                                                    Final: <strong>{homeName} {fixture.home_score} - {fixture.away_score} {awayName}</strong>
+                                                                    {fixture.user_prediction?.is_correct !== null && (
+                                                                        <span className={`pred-banner-pts ${fixture.user_prediction.is_correct ? 'correct' : 'wrong'}`}>
+                                                                            {fixture.user_prediction.is_correct ? `+${fixture.user_prediction.points_earned}` : '0'} pts
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* Removal Alert (Collapsible) */}
+                                {removalData && activeGroupChat?.type === 'class_set' && (
+                                    <div style={{
+                                        background: removalData.is_target
+                                            ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(220, 38, 38, 0.08))'
+                                            : 'linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(217, 119, 6, 0.06))',
+                                        borderBottom: `1px solid ${removalData.is_target ? 'rgba(239, 68, 68, 0.3)' : 'rgba(245, 158, 11, 0.2)'}`,
+                                    }}>
+                                        {/* Clickable Header */}
+                                        <div
+                                            onClick={() => setRemovalExpanded(!removalExpanded)}
+                                            style={{
+                                                display: 'flex', alignItems: 'center', gap: '8px',
+                                                padding: '10px 16px',
+                                                cursor: 'pointer',
+                                                transition: 'background 0.15s ease',
+                                            }}
+                                            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)'; }}
+                                            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                                        >
+                                            <AlertTriangle size={16} color={removalData.is_target ? '#EF4444' : '#F59E0B'} />
+                                            <span style={{ fontWeight: 600, color: '#ffffff', fontSize: '0.85rem' }}>
+                                                {removalData.is_target
+                                                    ? 'Removal Initiated Against You'
+                                                    : removalData.is_admin
+                                                        ? 'Member Removal Vote'
+                                                        : 'Moderation in Progress'}
+                                            </span>
+                                            {/* Status badge when collapsed */}
+                                            {!removalExpanded && removalData.is_admin && !removalData.has_voted && !removalData.is_initiator && (
+                                                <span style={{
+                                                    fontSize: '0.65rem', fontWeight: 600, padding: '2px 6px',
+                                                    borderRadius: '4px', background: 'rgba(239, 68, 68, 0.15)',
+                                                    color: '#F87171',
+                                                }}>
+                                                    Action Needed
+                                                </span>
+                                            )}
+                                            <span style={{ marginLeft: 'auto', fontSize: '0.7rem', color: '#888' }}>
+                                                Expires {new Date(removalData.expires_at).toLocaleDateString()}
+                                            </span>
+                                            <ChevronDown
+                                                size={16}
+                                                color="#888"
+                                                style={{
+                                                    transition: 'transform 0.2s ease',
+                                                    transform: removalExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                                                    flexShrink: 0,
+                                                }}
+                                            />
+                                        </div>
+
+                                        {/* Collapsible Body */}
+                                        {removalExpanded && (
+                                            <div style={{ padding: '0 16px 12px' }}>
+                                                {removalData.is_target ? (
+                                                    <>
+                                                        <p style={{ color: '#F87171', fontSize: '0.82rem', margin: '0 0 6px' }}>
+                                                            {removalData.initiator.first_name} {removalData.initiator.last_name} has initiated your removal from this group.
+                                                        </p>
+                                                        <p style={{ color: '#aaa', fontSize: '0.78rem', margin: '0 0 4px' }}>
+                                                            Contact the admins to discuss:
+                                                        </p>
+                                                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                                            {removalData.admins.map(admin => (
+                                                                <button
+                                                                    key={admin.id}
+                                                                    onClick={() => router.post(route('messages.start'), { user_id: admin.id }, { preserveState: false })}
+                                                                    style={{
+                                                                        padding: '3px 10px', borderRadius: '6px', border: '1px solid rgba(59, 130, 246, 0.3)',
+                                                                        background: 'rgba(59, 130, 246, 0.1)', color: '#60A5FA',
+                                                                        fontSize: '0.75rem', cursor: 'pointer',
+                                                                    }}
+                                                                >
+                                                                    DM {admin.first_name}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    </>
+                                                ) : removalData.is_admin ? (
+                                                    <>
+                                                        <p style={{ color: '#e0e0e0', fontSize: '0.82rem', margin: '0 0 8px' }}>
+                                                            {removalData.initiator.first_name} wants to remove <strong>{removalData.target_user.first_name} {removalData.target_user.last_name}</strong> from this group.
+                                                        </p>
+                                                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+                                                            {removalData.votes.map(v => (
+                                                                <span key={v.admin_user_id} style={{
+                                                                    fontSize: '0.72rem', padding: '2px 8px', borderRadius: '4px',
+                                                                    background: v.vote === 'confirm' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(34, 197, 94, 0.15)',
+                                                                    color: v.vote === 'confirm' ? '#F87171' : '#4ADE80',
+                                                                }}>
+                                                                    {v.admin_name}: {v.vote}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                        {!removalData.has_voted && !removalData.is_initiator && (
+                                                            <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                                                                <button
+                                                                    onClick={() => handleRemovalVote('confirm')}
+                                                                    disabled={isRemovalAction}
+                                                                    style={{
+                                                                        padding: '5px 16px', borderRadius: '6px', border: 'none',
+                                                                        background: '#EF4444', color: '#fff', fontSize: '0.8rem',
+                                                                        fontWeight: 600, cursor: 'pointer', opacity: isRemovalAction ? 0.6 : 1,
+                                                                    }}
+                                                                >
+                                                                    Confirm Remove
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => handleRemovalVote('reject')}
+                                                                    disabled={isRemovalAction}
+                                                                    style={{
+                                                                        padding: '5px 16px', borderRadius: '6px', border: '1px solid rgba(34, 197, 94, 0.3)',
+                                                                        background: 'rgba(34, 197, 94, 0.1)', color: '#4ADE80',
+                                                                        fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', opacity: isRemovalAction ? 0.6 : 1,
+                                                                    }}
+                                                                >
+                                                                    Reject
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    <p style={{ color: '#aaa', fontSize: '0.8rem', margin: 0 }}>
+                                                        A moderation action is in progress.
+                                                    </p>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
 
                                 {/* Group Messages Container */}
                                 <div className="messages-chat-messages">
@@ -1007,6 +1987,29 @@ export default function MessagesIndex({
                                                 const isEditing = editingMessageId === message.id;
                                                 const isShowingDeleteConfirm = deletingMessageId === message.id;
                                                 const isSelected = selectedMessageIds.includes(message.id);
+
+                                                // Render system messages (null sender)
+                                                const isSystemMessage = !isBroadcast && !message.user_id && !message.user;
+                                                if (isSystemMessage) {
+                                                    return (
+                                                        <div key={message.id} style={{
+                                                            textAlign: 'center', padding: '8px 16px', margin: '6px 0',
+                                                        }}>
+                                                            <span style={{
+                                                                display: 'inline-block', padding: '6px 14px',
+                                                                background: 'rgba(255, 255, 255, 0.05)',
+                                                                border: '1px solid rgba(255, 255, 255, 0.08)',
+                                                                borderRadius: '20px', fontSize: '0.78rem',
+                                                                color: '#aaa', lineHeight: 1.4,
+                                                            }}>
+                                                                {message.message}
+                                                            </span>
+                                                            <div style={{ fontSize: '0.65rem', color: '#666', marginTop: '2px' }}>
+                                                                {formatTime(message.created_at)}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                }
 
                                                 // Render broadcast messages with distinctive styling
                                                 if (isBroadcast) {
@@ -1186,28 +2189,39 @@ export default function MessagesIndex({
                                 </div>
 
                                 {/* Group Message Input */}
-                                <form onSubmit={handleSendGroupMessage} className="messages-input-form">
-                                    <input
-                                        type="text"
-                                        value={newMessage}
-                                        onChange={(e) => setNewMessage(e.target.value)}
-                                        placeholder="Type a message..."
-                                        className="messages-input"
-                                        disabled={isSending}
-                                        maxLength={5000}
-                                    />
-                                    <button
-                                        type="submit"
-                                        className="messages-send-btn"
-                                        disabled={!newMessage.trim() || isSending}
-                                    >
-                                        {isSending ? (
-                                            <div className="spinner-small"></div>
-                                        ) : (
-                                            <span style={{ fontSize: '20px', color: '#ffffff' }}>➤</span>
-                                        )}
-                                    </button>
-                                </form>
+                                {isMuted ? (
+                                    <div className="messages-input-form" style={{
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        padding: '12px 16px', color: '#F87171', fontSize: '0.85rem',
+                                        gap: '6px',
+                                    }}>
+                                        <AlertTriangle size={16} />
+                                        <span>You cannot send messages while a removal is pending.</span>
+                                    </div>
+                                ) : (
+                                    <form onSubmit={handleSendGroupMessage} className="messages-input-form">
+                                        <input
+                                            type="text"
+                                            value={newMessage}
+                                            onChange={(e) => setNewMessage(e.target.value)}
+                                            placeholder="Type a message..."
+                                            className="messages-input"
+                                            disabled={isSending}
+                                            maxLength={5000}
+                                        />
+                                        <button
+                                            type="submit"
+                                            className="messages-send-btn"
+                                            disabled={!newMessage.trim() || isSending}
+                                        >
+                                            {isSending ? (
+                                                <div className="spinner-small"></div>
+                                            ) : (
+                                                <span style={{ fontSize: '20px', color: '#ffffff' }}>➤</span>
+                                            )}
+                                        </button>
+                                    </form>
+                                )}
                             </>
                         ) : activeConversation ? (
                             <>
@@ -1492,6 +2506,350 @@ export default function MessagesIndex({
                             </div>
                         )}
                     </div>
+
+                    {/* Members Panel */}
+                    {showMembersPanel && activeGroupChat?.type === 'class_set' && (
+                        <div style={{
+                            width: '280px', minWidth: '280px',
+                            background: 'rgba(15, 23, 42, 0.95)',
+                            borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
+                            display: 'flex', flexDirection: 'column',
+                            animation: 'slideInRight 0.2s ease-out',
+                        }}>
+                            {/* Panel Header */}
+                            <div style={{
+                                padding: '1rem 1.25rem',
+                                borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <Users size={16} color="#8B5CF6" />
+                                    <span style={{ fontWeight: 600, color: '#fff', fontSize: '0.9rem' }}>
+                                        Members
+                                    </span>
+                                    <span style={{
+                                        fontSize: '0.7rem', color: '#888',
+                                        background: 'rgba(255, 255, 255, 0.06)',
+                                        padding: '2px 6px', borderRadius: '4px',
+                                    }}>
+                                        {activeGroupChat.member_count}
+                                    </span>
+                                </div>
+                                <button
+                                    onClick={() => setShowMembersPanel(false)}
+                                    style={{
+                                        background: 'rgba(255, 255, 255, 0.05)', border: 'none',
+                                        borderRadius: '6px', padding: '4px', cursor: 'pointer',
+                                        color: '#888', display: 'flex', transition: 'all 0.15s ease',
+                                    }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'; e.currentTarget.style.color = '#ccc'; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'; e.currentTarget.style.color = '#888'; }}
+                                >
+                                    <X size={14} />
+                                </button>
+                            </div>
+
+                            {/* Members List */}
+                            <div className="election-candidates-list" style={{
+                                flex: 1, overflowY: 'auto', padding: '0.5rem',
+                            }}>
+                                {membersLoading ? (
+                                    <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+                                        <div className="spinner" style={{ width: '24px', height: '24px', borderWidth: '2px' }}></div>
+                                    </div>
+                                ) : membersList.length > 0 ? (
+                                    <>
+                                        {/* Admins first */}
+                                        {membersList.filter(m => m.is_admin).length > 0 && (
+                                            <div style={{
+                                                padding: '0.5rem 0.75rem 0.35rem',
+                                                fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase',
+                                                letterSpacing: '0.05em', color: '#F59E0B',
+                                            }}>
+                                                Admins
+                                            </div>
+                                        )}
+                                        {membersList.filter(m => m.is_admin).map(member => (
+                                            <div key={member.id} style={{
+                                                display: 'flex', alignItems: 'center', gap: '8px',
+                                                padding: '6px 10px', borderRadius: '8px',
+                                                transition: 'background 0.15s',
+                                                cursor: member.id !== currentUserId ? 'pointer' : 'default',
+                                            }}
+                                                onClick={() => { if (member.id !== currentUserId) router.post(route('messages.start'), { user_id: member.id }, { preserveState: false }); }}
+                                                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)'; }}
+                                                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                                            >
+                                                <div style={{
+                                                    width: '32px', height: '32px', borderRadius: '10px',
+                                                    background: 'rgba(139, 92, 246, 0.2)', display: 'flex',
+                                                    alignItems: 'center', justifyContent: 'center',
+                                                    fontSize: '0.75rem', fontWeight: 600, color: '#8B5CF6',
+                                                    overflow: 'hidden', flexShrink: 0,
+                                                }}>
+                                                    {member.profile_image
+                                                        ? <img src={member.profile_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                        : member.first_name.charAt(0)}
+                                                </div>
+                                                <div style={{ flex: 1, minWidth: 0 }}>
+                                                    <div style={{ fontSize: '0.82rem', color: '#e0e0e0', fontWeight: 500 }}>
+                                                        {member.first_name} {member.last_name}
+                                                        {member.id === currentUserId && <span style={{ fontSize: '0.7rem', color: '#888', marginLeft: '4px' }}>(You)</span>}
+                                                    </div>
+                                                    <div style={{ fontSize: '0.7rem', color: '#666' }}>
+                                                        @{member.username}
+                                                    </div>
+                                                </div>
+                                                <span style={{
+                                                    fontSize: '0.6rem', fontWeight: 700, color: '#F59E0B',
+                                                    background: 'rgba(245, 158, 11, 0.12)',
+                                                    padding: '2px 6px', borderRadius: '4px', flexShrink: 0,
+                                                }}>
+                                                    ADMIN
+                                                </span>
+                                            </div>
+                                        ))}
+
+                                        {/* Regular members */}
+                                        {membersList.filter(m => !m.is_admin).length > 0 && (
+                                            <div style={{
+                                                padding: '0.65rem 0.75rem 0.35rem',
+                                                fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase',
+                                                letterSpacing: '0.05em', color: '#666',
+                                            }}>
+                                                Members
+                                            </div>
+                                        )}
+                                        {membersList.filter(m => !m.is_admin).map(member => (
+                                            <div key={member.id} style={{
+                                                display: 'flex', alignItems: 'center', gap: '8px',
+                                                padding: '6px 10px', borderRadius: '8px',
+                                                transition: 'background 0.15s',
+                                                cursor: member.id !== currentUserId ? 'pointer' : 'default',
+                                            }}
+                                                onClick={() => { if (member.id !== currentUserId) router.post(route('messages.start'), { user_id: member.id }, { preserveState: false }); }}
+                                                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)'; }}
+                                                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                                            >
+                                                <div style={{
+                                                    width: '32px', height: '32px', borderRadius: '10px',
+                                                    background: 'rgba(139, 92, 246, 0.2)', display: 'flex',
+                                                    alignItems: 'center', justifyContent: 'center',
+                                                    fontSize: '0.75rem', fontWeight: 600, color: '#8B5CF6',
+                                                    overflow: 'hidden', flexShrink: 0,
+                                                }}>
+                                                    {member.profile_image
+                                                        ? <img src={member.profile_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                        : member.first_name.charAt(0)}
+                                                </div>
+                                                <div style={{ flex: 1, minWidth: 0 }}>
+                                                    <div style={{ fontSize: '0.82rem', color: '#e0e0e0', fontWeight: 500 }}>
+                                                        {member.first_name} {member.last_name}
+                                                        {member.id === currentUserId && <span style={{ fontSize: '0.7rem', color: '#888', marginLeft: '4px' }}>(You)</span>}
+                                                    </div>
+                                                    <div style={{ fontSize: '0.7rem', color: '#666' }}>
+                                                        @{member.username}
+                                                    </div>
+                                                </div>
+                                                {/* Remove button - visible to admins only, not for self, not when a removal is already pending */}
+                                                {membersList.some(m => m.id === currentUserId && m.is_admin) && member.id !== currentUserId && !removalData && (
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setRemovalConfirmTarget({ id: member.id, first_name: member.first_name, last_name: member.last_name });
+                                                        }}
+                                                        title={`Remove ${member.first_name}`}
+                                                        style={{
+                                                            background: 'rgba(239, 68, 68, 0.08)', border: 'none',
+                                                            borderRadius: '6px', padding: '4px', cursor: 'pointer',
+                                                            color: '#EF4444', display: 'flex', flexShrink: 0,
+                                                            transition: 'all 0.15s ease', opacity: 0.6,
+                                                        }}
+                                                        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.18)'; e.currentTarget.style.opacity = '1'; }}
+                                                        onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.08)'; e.currentTarget.style.opacity = '0.6'; }}
+                                                    >
+                                                        <UserMinus size={14} />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </>
+                                ) : (
+                                    <div style={{ textAlign: 'center', padding: '2rem', color: '#555', fontSize: '0.85rem' }}>
+                                        No members found.
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* League Table Panel */}
+                    {showLeaguePanel && activeGroupChat?.type === 'class_set' && predictionOrgSlug && (
+                        <div style={{
+                            width: '280px', minWidth: '280px',
+                            background: 'rgba(15, 23, 42, 0.95)',
+                            borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
+                            display: 'flex', flexDirection: 'column',
+                            animation: 'slideInRight 0.2s ease-out',
+                        }}>
+                            {/* Panel Header */}
+                            <div style={{
+                                padding: '1rem 1.25rem',
+                                borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <Trophy size={16} color="#8B5CF6" />
+                                    <span style={{ fontWeight: 600, color: '#fff', fontSize: '0.9rem' }}>
+                                        League Table
+                                    </span>
+                                    <span style={{
+                                        fontSize: '0.7rem', color: '#888',
+                                        background: 'rgba(255, 255, 255, 0.06)',
+                                        padding: '2px 6px', borderRadius: '4px',
+                                    }}>
+                                        {leagueStandings.length}
+                                    </span>
+                                </div>
+                                <button
+                                    onClick={() => setShowLeaguePanel(false)}
+                                    style={{
+                                        background: 'rgba(255, 255, 255, 0.05)', border: 'none',
+                                        borderRadius: '6px', padding: '4px', cursor: 'pointer',
+                                        color: '#888', display: 'flex', transition: 'all 0.15s ease',
+                                    }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'; e.currentTarget.style.color = '#ccc'; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'; e.currentTarget.style.color = '#888'; }}
+                                >
+                                    <X size={14} />
+                                </button>
+                            </div>
+
+                            {/* Standings List */}
+                            <div className="election-candidates-list" style={{
+                                flex: 1, overflowY: 'auto', padding: '0.5rem',
+                            }}>
+                                {leagueLoading ? (
+                                    <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+                                        <div className="spinner" style={{ width: '24px', height: '24px', borderWidth: '2px' }}></div>
+                                    </div>
+                                ) : leagueStandings.length > 0 ? (
+                                    <>
+                                        {/* Column Headers */}
+                                        <div style={{
+                                            display: 'flex', alignItems: 'center', gap: '8px',
+                                            padding: '6px 10px', borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+                                            marginBottom: '4px',
+                                        }}>
+                                            <span style={{ width: '20px', fontSize: '0.65rem', fontWeight: 600, color: '#666', textAlign: 'center' }}>#</span>
+                                            <span style={{ flex: 1, fontSize: '0.65rem', fontWeight: 600, color: '#666', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Player</span>
+                                            <span style={{ fontSize: '0.65rem', fontWeight: 600, color: '#666', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Pts</span>
+                                        </div>
+
+                                        {/* Standing Rows */}
+                                        {leagueStandings.map((standing) => {
+                                            const isCurrentUser = standing.user_id === currentUserId;
+                                            const rankColor = standing.rank === 1 ? '#FFD700' : standing.rank === 2 ? '#C0C0C0' : standing.rank === 3 ? '#CD7F32' : '#666';
+                                            return (
+                                                <div
+                                                    key={standing.user_id}
+                                                    style={{
+                                                        display: 'flex', alignItems: 'center', gap: '8px',
+                                                        padding: '6px 10px', borderRadius: '8px',
+                                                        transition: 'background 0.15s',
+                                                        cursor: !isCurrentUser ? 'pointer' : 'default',
+                                                        background: isCurrentUser ? 'rgba(139, 92, 246, 0.08)' : 'transparent',
+                                                        borderLeft: isCurrentUser ? '2px solid #8B5CF6' : '2px solid transparent',
+                                                    }}
+                                                    onClick={() => { if (!isCurrentUser) router.post(route('messages.start'), { user_id: standing.user_id }, { preserveState: false }); }}
+                                                    onMouseEnter={(e) => { e.currentTarget.style.background = isCurrentUser ? 'rgba(139, 92, 246, 0.12)' : 'rgba(255, 255, 255, 0.04)'; }}
+                                                    onMouseLeave={(e) => { e.currentTarget.style.background = isCurrentUser ? 'rgba(139, 92, 246, 0.08)' : 'transparent'; }}
+                                                >
+                                                    {/* Rank */}
+                                                    <span style={{
+                                                        width: '20px', textAlign: 'center',
+                                                        fontSize: '0.75rem', fontWeight: 700, color: rankColor,
+                                                    }}>
+                                                        {standing.rank}
+                                                    </span>
+
+                                                    {/* Avatar */}
+                                                    <div style={{
+                                                        width: '32px', height: '32px', borderRadius: '10px',
+                                                        background: 'rgba(139, 92, 246, 0.2)', display: 'flex',
+                                                        alignItems: 'center', justifyContent: 'center',
+                                                        fontSize: '0.75rem', fontWeight: 600, color: '#8B5CF6',
+                                                        overflow: 'hidden', flexShrink: 0,
+                                                    }}>
+                                                        {standing.profile_image_url
+                                                            ? <img src={standing.profile_image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                            : standing.first_name?.charAt(0)}
+                                                    </div>
+
+                                                    {/* Name & Stats */}
+                                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                                        <div style={{ fontSize: '0.82rem', color: '#e0e0e0', fontWeight: 500 }}>
+                                                            {standing.first_name} {standing.last_name}
+                                                            {isCurrentUser && <span style={{ fontSize: '0.7rem', color: '#8B5CF6', marginLeft: '4px' }}>(You)</span>}
+                                                        </div>
+                                                        <div style={{ fontSize: '0.7rem', color: '#666' }}>
+                                                            {standing.predictions_made} preds &middot; {standing.correct_predictions} correct
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Points Badge */}
+                                                    <span style={{
+                                                        fontSize: '0.75rem', fontWeight: 700,
+                                                        color: standing.rank <= 3 ? rankColor : '#a78bfa',
+                                                        background: standing.rank <= 3
+                                                            ? `${rankColor}18`
+                                                            : 'rgba(139, 92, 246, 0.12)',
+                                                        padding: '2px 8px', borderRadius: '6px', flexShrink: 0,
+                                                    }}>
+                                                        {standing.total_points}
+                                                    </span>
+                                                </div>
+                                            );
+                                        })}
+                                    </>
+                                ) : (
+                                    <div style={{ textAlign: 'center', padding: '2rem', color: '#555' }}>
+                                        <Trophy size={32} color="#444" style={{ marginBottom: '8px' }} />
+                                        <div style={{ fontSize: '0.85rem', fontWeight: 500, color: '#777', marginBottom: '4px' }}>
+                                            No standings yet
+                                        </div>
+                                        <div style={{ fontSize: '0.75rem', color: '#555' }}>
+                                            Make predictions to climb the league!
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Footer */}
+                            <div style={{
+                                padding: '0.75rem 1rem',
+                                borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+                            }}>
+                                <button
+                                    onClick={() => router.visit(`/organizations/${predictionOrgSlug}/predictions`)}
+                                    style={{
+                                        width: '100%', padding: '8px 12px',
+                                        background: 'rgba(139, 92, 246, 0.15)',
+                                        border: '1px solid rgba(139, 92, 246, 0.25)',
+                                        borderRadius: '8px', color: '#a78bfa',
+                                        fontSize: '0.8rem', fontWeight: 600,
+                                        cursor: 'pointer', transition: 'all 0.2s ease',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                                    }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(139, 92, 246, 0.25)'; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(139, 92, 246, 0.15)'; }}
+                                >
+                                    <Trophy size={14} />
+                                    View Full League
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </AuthAccessLayout>

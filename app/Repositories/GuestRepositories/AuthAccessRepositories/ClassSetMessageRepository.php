@@ -33,7 +33,7 @@ class ClassSetMessageRepository
     /**
      * Create a new message
      */
-    public function createMessage(int $classSetId, int $senderId, string $message): ClassSetMessage
+    public function createMessage(int $classSetId, ?int $senderId, string $message): ClassSetMessage
     {
         return ClassSetMessage::create([
             'class_set_id' => $classSetId,

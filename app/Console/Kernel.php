@@ -68,12 +68,45 @@ class Kernel extends ConsoleKernel
             ->withoutOverlapping()
             ->name('deceased-execute-pending-changes');
 
+        // Cleanup old organization activity logs (older than 14 days)
+        // Runs daily at 2:30 AM
+        $schedule->command('org:cleanup-activity-logs --days=14')
+            ->daily()
+            ->at('02:30')
+            ->onOneServer()
+            ->withoutOverlapping()
+            ->name('cleanup-old-activity-logs');
+
         // Process pending scheduled/recurring organization broadcasts
         // Runs every minute to check for broadcasts ready to send
         $schedule->command('org:process-broadcasts')
             ->everyMinute()
             ->withoutOverlapping()
             ->name('org-process-broadcasts');
+
+        // Process ended group elections (determine winners, handle ties)
+        // Runs every 5 minutes
+        $schedule->command('groups:process-elections')
+            ->everyFiveMinutes()
+            ->onOneServer()
+            ->withoutOverlapping()
+            ->name('process-group-elections');
+
+        // Process expired pending member removals (auto-confirm after 3 days)
+        // Runs hourly
+        $schedule->command('groups:process-removals')
+            ->hourly()
+            ->onOneServer()
+            ->withoutOverlapping()
+            ->name('process-pending-removals');
+
+        // Glam Squad challenge lifecycle transitions
+        // Runs every 5 minutes
+        $schedule->command('glam:lifecycle')
+            ->everyFiveMinutes()
+            ->onOneServer()
+            ->withoutOverlapping()
+            ->name('glam-challenge-lifecycle');
     }
 
     /**

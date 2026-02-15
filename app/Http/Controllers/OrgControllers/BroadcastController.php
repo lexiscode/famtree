@@ -5,6 +5,7 @@ namespace App\Http\Controllers\OrgControllers;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\OrgControllers\Traits\AuthorizesOrgActions;
 use App\Actions\OrgServices\OrgBroadcastService;
+use App\Repositories\OrgRepositories\OrgActivityLogRepository;
 use App\Models\GuestModels\Organization;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -15,6 +16,7 @@ class BroadcastController extends Controller
     use AuthorizesOrgActions;
     public function __construct(
         private OrgBroadcastService $broadcastService,
+        private OrgActivityLogRepository $activityLogRepo,
     ) {}
 
     public function index()
@@ -73,6 +75,16 @@ class BroadcastController extends Controller
             'organization_id' => $orgAccount->organization_id,
             'org_account_id' => $orgAccount->id,
             ...$validated,
+        ]);
+
+        $this->activityLogRepo->create([
+            'org_account_id' => $orgAccount->id,
+            'organization_id' => $orgAccount->organization_id,
+            'action_type' => 'broadcast_created',
+            'resource_type' => 'broadcast',
+            'description' => 'Created a new broadcast' . ($validated['title'] ? ': ' . $validated['title'] : ''),
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
         ]);
 
         return redirect()->route('org.broadcasts.index')->with('success', 'Broadcast created successfully.');
@@ -148,10 +160,20 @@ class BroadcastController extends Controller
             return redirect()->back()->with('error', 'This broadcast cannot be updated.');
         }
 
+        $this->activityLogRepo->create([
+            'org_account_id' => $orgAccount->id,
+            'organization_id' => $orgAccount->organization_id,
+            'action_type' => 'broadcast_updated',
+            'resource_type' => 'broadcast',
+            'description' => 'Updated a broadcast' . ($validated['title'] ? ': ' . $validated['title'] : ''),
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
         return redirect()->route('org.broadcasts.show', $broadcast->id)->with('success', 'Broadcast updated successfully.');
     }
 
-    public function cancel(int $id)
+    public function cancel(Request $request, int $id)
     {
         $this->authorizeOrg('manage-broadcasts');
         $orgAccount = Auth::guard('org')->user();
@@ -160,6 +182,16 @@ class BroadcastController extends Controller
         if (!$broadcast) {
             return redirect()->back()->with('error', 'Cannot cancel this broadcast.');
         }
+
+        $this->activityLogRepo->create([
+            'org_account_id' => $orgAccount->id,
+            'organization_id' => $orgAccount->organization_id,
+            'action_type' => 'broadcast_cancelled',
+            'resource_type' => 'broadcast',
+            'description' => 'Cancelled a broadcast',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
 
         return redirect()->back()->with('success', 'Broadcast cancelled successfully.');
     }
