@@ -516,15 +516,18 @@ class FamilyTreeService
                     $nodes[] = $this->formatUserNode($connectedUser, $labelType);
                     $processedUsers[$connectedUser->id] = true;
                 }
-                $edges[] = [
-                    'id' => "edge-{$targetUserId}-{$connectedUser->id}",
-                    'source' => $targetUserId,
-                    'target' => $connectedUser->id,
-                    'relationshipType' => $labelType,
-                    'label' => $this->formatRelationshipLabel($labelType),
-                    'color' => $this->getRelationshipColor($labelType),
-                    'isDivorced' => $isDivorced,
-                ];
+                // Skip edge for the viewer — their edge is added explicitly at the end
+                if ($connectedUser->id !== $viewerId) {
+                    $edges[] = [
+                        'id' => "edge-{$targetUserId}-{$connectedUser->id}",
+                        'source' => $targetUserId,
+                        'target' => $connectedUser->id,
+                        'relationshipType' => $labelType,
+                        'label' => $this->formatRelationshipLabel($labelType),
+                        'color' => $this->getRelationshipColor($labelType),
+                        'isDivorced' => $isDivorced,
+                    ];
+                }
                 $spouseIds[$connectedUser->id] = $isDivorced;
             } elseif (in_array($targetRelType, $childTypes)) {
                 // Verify this child actually belongs to the target (not auto-connected from another spouse)
@@ -685,7 +688,15 @@ class FamilyTreeService
         }
 
         // Determine viewer-to-target relationship (what the target is to the viewer)
+        // Check divorced status to use ex_ prefix for previous spouses
         $viewerToTargetRel = $this->connectionRepository->getRelationshipFromViewerPerspective($viewerId, $targetUserId);
+        $viewerTargetConnection = $this->connectionRepository->getConnectionBetween($viewerId, $targetUserId);
+        $viewerTargetDivorced = $viewerTargetConnection ? $viewerTargetConnection->isDivorced() : false;
+
+        if ($viewerToTargetRel && $viewerTargetDivorced && in_array($viewerToTargetRel, ['wife', 'husband', 'partner'])) {
+            $viewerToTargetRel = 'ex_' . $viewerToTargetRel;
+        }
+
         if (!$viewerToTargetRel && $relationshipHint) {
             $viewerToTargetRel = $relationshipHint;
         }
@@ -704,7 +715,7 @@ class FamilyTreeService
             'relationshipType' => $viewerToTargetRel,
             'label' => $this->formatRelationshipLabel($viewerToTargetRel),
             'color' => $this->getRelationshipColor($viewerToTargetRel),
-            'isDivorced' => false,
+            'isDivorced' => $viewerTargetDivorced,
         ];
 
         return [
