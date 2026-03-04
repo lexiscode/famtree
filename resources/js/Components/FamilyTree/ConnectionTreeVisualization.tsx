@@ -574,15 +574,26 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
 
             const csgBounds: { childId: number; spouseId: number; grandchildIds: number[]; minX: number; maxX: number; centerX: number }[] = [];
 
+            // Track how many spouses placed on each side per child to avoid overlap
+            const childRightCount: Record<number, number> = {};
+            const childLeftCount: Record<number, number> = {};
+
             treeData.childSpouseGroups.forEach(group => {
                 const childPos = positions[group.childId];
                 if (!childPos) return;
 
                 // Place in-law spouse diagonally below and to the side of child
                 const spouseYOffset = 40; // gentle slant downward (halfway between horizontal and diagonal)
-                const spouseX = group.isDivorced
-                    ? childPos.x - (nodeWidth * 0.8)
-                    : childPos.x + (nodeWidth * 0.8);
+                let spouseX: number;
+                if (group.isDivorced) {
+                    const leftIdx = childLeftCount[group.childId] || 0;
+                    spouseX = childPos.x - (nodeWidth * 0.8) - (leftIdx * nodeWidth);
+                    childLeftCount[group.childId] = leftIdx + 1;
+                } else {
+                    const rightIdx = childRightCount[group.childId] || 0;
+                    spouseX = childPos.x + (nodeWidth * 0.8) + (rightIdx * nodeWidth);
+                    childRightCount[group.childId] = rightIdx + 1;
+                }
                 positions[group.spouseId] = { x: spouseX, y: childPos.y + spouseYOffset, level: 1 };
 
                 // Position grandchildren under midpoint of child + in-law
