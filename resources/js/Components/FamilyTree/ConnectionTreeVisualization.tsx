@@ -631,11 +631,12 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
         }
 
         // Position viewer node above root (scoped tree view)
+        // Use 1.5x levelHeight for extra space so the edge badge is clearly visible
         if (viewerNodeId !== null && positions[rootUserId]) {
             const rootPos = positions[rootUserId];
             positions[viewerNodeId] = {
                 x: rootPos.x,
-                y: rootPos.y - levelHeight,
+                y: rootPos.y - Math.round(levelHeight * 1.5),
                 level: -1,
             };
         }
@@ -1297,9 +1298,6 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                                     const tooltipW = Math.max(fullLabel.length * 7.5 + 24, 70);
 
                                     const edgeIsDivorced = edge.isDivorced || false;
-                                    // Hide the edge badge if this is the viewer→root edge
-                                    // (the viewer node already has a badge showing the relationship)
-                                    const isViewerEdge = viewerNodeId !== null && edge.source === viewerNodeId;
 
                                     return (
                                         <g key={edge.id}>
@@ -1322,8 +1320,8 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                                                 strokeLinecap="round"
                                                 strokeDasharray={edgeIsDivorced ? '8,6' : undefined}
                                             />
-                                            {/* Abbreviated relationship badge with hover tooltip (hidden for viewer edge) */}
-                                            {!isViewerEdge && <g
+                                            {/* Abbreviated relationship badge with hover tooltip */}
+                                            <g
                                                 onMouseEnter={() => setHoveredEdge(edge.id)}
                                                 onMouseLeave={() => setHoveredEdge(null)}
                                                 style={{ cursor: 'pointer' }}
@@ -1397,7 +1395,7 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                                                         </text>
                                                     </g>
                                                 )}
-                                            </g>}
+                                            </g>
                                         </g>
                                     );
                                 });
@@ -1798,8 +1796,9 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
 
                     {/* Family unit: Michael → siblings bar → parents inverted triangle */}
                     {(() => {
-                        const siblingNodes = treeData.nodes.filter(n => ['brother', 'sister', 'sibling'].includes(n.relationshipType));
-                        const parentNodes = treeData.nodes.filter(n => ['father', 'mother', 'parent'].includes(n.relationshipType));
+                        const viewerNodeId = treeData.viewerNode?.id ?? null;
+                        const siblingNodes = treeData.nodes.filter(n => ['brother', 'sister', 'sibling'].includes(n.relationshipType) && n.id !== viewerNodeId);
+                        const parentNodes = treeData.nodes.filter(n => ['father', 'mother', 'parent'].includes(n.relationshipType) && n.id !== viewerNodeId);
 
                         // Only render if there are siblings or parents
                         if (siblingNodes.length === 0 && parentNodes.length === 0) return null;
