@@ -48,6 +48,10 @@ interface ConnectionTreeData {
         parent2Id: number;
         isDivorced: boolean;
     } | null;
+    viewerNode?: {
+        id: number;
+        relationshipType: string;
+    };
 }
 
 interface User {
@@ -72,6 +76,7 @@ export default function Index({ connectionTreeData, user }: Props) {
 
     // Check if viewing own tree
     const isOwnTree = currentOwner.id === user.id;
+    const isScopedView = !!currentTreeData.viewerNode;
 
     // Count unique relationship types
     const relationshipStats = useMemo(() => {
@@ -89,10 +94,23 @@ export default function Index({ connectionTreeData, user }: Props) {
         // Don't reload if clicking on current root user
         if (userId === currentTreeData.rootUserId) return;
 
+        // If clicking the auth user's own node (in a scoped tree), reset to own tree
+        if (userId === user.id) {
+            setCurrentTreeData(connectionTreeData);
+            setCurrentOwner(user);
+            setViewHistory([]);
+            return;
+        }
+
         setIsLoading(true);
 
         try {
-            const response = await fetch(`/api/tree/${userId}`, {
+            // Find the clicked node to get its relationshipType as a hint
+            const clickedNode = currentTreeData.nodes.find(n => n.id === userId);
+            const hint = clickedNode?.relationshipType || '';
+            const url = `/api/tree/${userId}${hint ? `?relationshipHint=${encodeURIComponent(hint)}` : ''}`;
+
+            const response = await fetch(url, {
                 headers: {
                     'Accept': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
@@ -123,7 +141,7 @@ export default function Index({ connectionTreeData, user }: Props) {
         } finally {
             setIsLoading(false);
         }
-    }, [currentTreeData, currentOwner, isLoading]);
+    }, [currentTreeData, currentOwner, isLoading, user.id, connectionTreeData, user]);
 
     // Handle going back to previous tree view
     const handleGoBack = useCallback(() => {
@@ -198,7 +216,7 @@ export default function Index({ connectionTreeData, user }: Props) {
                                     backgroundClip: 'text',
                                     letterSpacing: '-0.5px'
                                 }}>
-                                    {isOwnTree ? 'Your Connection Tree' : `${currentOwner.name}'s Connection Tree`}
+                                    {isOwnTree ? 'Your Connection Tree' : `${currentOwner.name}'s Family`}
                                 </h1>
                                 <p style={{
                                     margin: 0,
@@ -208,7 +226,9 @@ export default function Index({ connectionTreeData, user }: Props) {
                                 }}>
                                     {isOwnTree
                                         ? 'Visualize your family connections in an interactive tree format'
-                                        : `Viewing ${currentOwner.name}'s family connections from their perspective`
+                                        : isScopedView
+                                            ? `Viewing ${currentOwner.name}'s immediate family (spouses, children, grandchildren)`
+                                            : `Viewing ${currentOwner.name}'s family connections from their perspective`
                                     }
                                 </p>
                             </div>

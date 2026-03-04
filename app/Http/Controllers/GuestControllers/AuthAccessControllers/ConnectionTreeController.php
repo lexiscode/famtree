@@ -132,15 +132,24 @@ class ConnectionTreeController extends Controller
             return response()->json(['error' => 'You do not have permission to view this family tree.'], 403);
         }
 
-        // Get connection tree data for the specified user
-        $connectionTreeData = $this->connectionTreeService->buildFamilyTree($userId);
+        // Build scoped tree when viewing someone else's tree, full tree for own tree
+        if ($viewer->id !== $userId) {
+            $relationshipHint = request()->query('relationshipHint');
+            $connectionTreeData = $this->connectionTreeService->buildScopedTree($userId, $viewer->id, $relationshipHint);
+        } else {
+            $connectionTreeData = $this->connectionTreeService->buildFamilyTree($userId);
+        }
 
-        // Apply nuclear family blur if needed
+        // Apply nuclear family blur if needed (viewer node should never be blurred)
         $shouldBlurNuclearFamily = $owner->blur_nuclear_family_for_public && !$this->isConnectedDirect($viewer, $owner) && $viewer->id !== $userId;
 
         if ($shouldBlurNuclearFamily) {
             // Add shouldBlur flag to nuclear family nodes
-            $connectionTreeData['nodes'] = array_map(function ($node) use ($owner) {
+            $connectionTreeData['nodes'] = array_map(function ($node) use ($owner, $viewer) {
+                if ($node['id'] === $viewer->id) {
+                    $node['shouldBlur'] = false;
+                    return $node;
+                }
                 $isNuclearFamily = $this->privacyService->getRelationshipContext($node['id'], $owner->id) === 'nuclear_family';
                 $node['shouldBlur'] = $isNuclearFamily;
                 return $node;

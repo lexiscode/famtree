@@ -58,6 +58,11 @@ interface ParentConnection {
     isDivorced: boolean;
 }
 
+interface ViewerNode {
+    id: number;
+    relationshipType: string;
+}
+
 interface TreeData {
     nodes: Node[];
     edges: Edge[];
@@ -66,6 +71,7 @@ interface TreeData {
     childSpouseGroups?: ChildSpouseGroup[];
     parentFamilyUnits?: ParentFamilyUnit[];
     parentConnection?: ParentConnection | null;
+    viewerNode?: ViewerNode;
 }
 
 interface Props {
@@ -276,10 +282,16 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
             });
         }
 
+        // Viewer node ID (excluded from standard level grouping, positioned separately)
+        const viewerNodeId = treeData.viewerNode?.id ?? null;
+
         // Group nodes by their calculated level based on relationship type
         const levelMap: Record<number, number[]> = {};
 
         nodes.forEach(node => {
+            // Skip viewer node (positioned separately above root)
+            if (viewerNodeId !== null && node.id === viewerNodeId) return;
+
             // Skip nodes that belong to parentFamilyUnits (positioned in Phase 2)
             if (parentFamilyUnitNodeIds.has(node.id)) return;
 
@@ -616,6 +628,16 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                     curr.centerX += overlap;
                 }
             }
+        }
+
+        // Position viewer node above root (scoped tree view)
+        if (viewerNodeId !== null && positions[rootUserId]) {
+            const rootPos = positions[rootUserId];
+            positions[viewerNodeId] = {
+                x: rootPos.x,
+                y: rootPos.y - levelHeight,
+                level: -1,
+            };
         }
 
         // Phase 3: Resolve overlaps between step-sibling groups and other nodes
@@ -1160,8 +1182,10 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                             }
 
                             // Collect sibling and parent IDs (rendered by custom family unit section)
-                            const siblingIds = new Set(treeData.nodes.filter(n => ['brother', 'sister', 'sibling'].includes(n.relationshipType)).map(n => n.id));
-                            const parentIds = new Set(treeData.nodes.filter(n => ['father', 'mother', 'parent'].includes(n.relationshipType)).map(n => n.id));
+                            // Exclude the viewer node — it's positioned separately and its edge should render normally
+                            const viewerNodeId = treeData.viewerNode?.id ?? null;
+                            const siblingIds = new Set(treeData.nodes.filter(n => ['brother', 'sister', 'sibling'].includes(n.relationshipType) && n.id !== viewerNodeId).map(n => n.id));
+                            const parentIds = new Set(treeData.nodes.filter(n => ['father', 'mother', 'parent'].includes(n.relationshipType) && n.id !== viewerNodeId).map(n => n.id));
                             const hasFamilyUnit = siblingIds.size > 0 || parentIds.size > 0;
 
                             // Collect parent family unit node IDs (rendered by parent family unit section)
@@ -1218,10 +1242,7 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                                     // Skip root → child edges when child belongs to a spouse group
                                     // (these are rendered as inverted triangles instead)
                                     if (edge.source === treeData.rootUserId && spouseGroupChildIds.has(edge.target)) {
-                                        const targetNode = treeData.nodes.find(n => n.id === edge.target);
-                                        if (targetNode && ['son', 'daughter', 'child'].includes(targetNode.relationshipType)) {
-                                            return false;
-                                        }
+                                        return false;
                                     }
 
                                     // Check if this is a direct root -> grandchild edge (skip these, show through parent instead)
@@ -1276,6 +1297,9 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                                     const tooltipW = Math.max(fullLabel.length * 7.5 + 24, 70);
 
                                     const edgeIsDivorced = edge.isDivorced || false;
+                                    // Hide the edge badge if this is the viewer→root edge
+                                    // (the viewer node already has a badge showing the relationship)
+                                    const isViewerEdge = viewerNodeId !== null && edge.source === viewerNodeId;
 
                                     return (
                                         <g key={edge.id}>
@@ -1298,8 +1322,8 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                                                 strokeLinecap="round"
                                                 strokeDasharray={edgeIsDivorced ? '8,6' : undefined}
                                             />
-                                            {/* Abbreviated relationship badge with hover tooltip */}
-                                            <g
+                                            {/* Abbreviated relationship badge with hover tooltip (hidden for viewer edge) */}
+                                            {!isViewerEdge && <g
                                                 onMouseEnter={() => setHoveredEdge(edge.id)}
                                                 onMouseLeave={() => setHoveredEdge(null)}
                                                 style={{ cursor: 'pointer' }}
@@ -1373,7 +1397,7 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                                                         </text>
                                                     </g>
                                                 )}
-                                            </g>
+                                            </g>}
                                         </g>
                                     );
                                 });
