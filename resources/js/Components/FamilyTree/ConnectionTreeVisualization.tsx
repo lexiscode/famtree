@@ -583,7 +583,7 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                 if (!childPos) return;
 
                 // Place in-law spouse diagonally below and to the side of child
-                const spouseYOffset = 40; // gentle slant downward (halfway between horizontal and diagonal)
+                const spouseYOffset = 180; // push down to create clear row separation from children
                 let spouseX: number;
                 if (group.isDivorced) {
                     const leftIdx = childLeftCount[group.childId] || 0;
