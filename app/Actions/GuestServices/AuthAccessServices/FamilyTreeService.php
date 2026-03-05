@@ -468,6 +468,218 @@ class FamilyTreeService
     }
 
     /**
+     * Build a deep family tree that recursively traverses all descendants beyond the
+     * standard 2-level depth. Used by the paternal/maternal expanded view to show
+     * the full lineage from the topmost ancestor down to the youngest generation.
+     *
+     * Strategy: start with buildFamilyTree output, then recursively find children
+     * of grandchildren (great-grandchildren), their children (great-great-grandchildren), etc.
+     */
+    public function buildDeepFamilyTree(int $userId): array
+    {
+        $tree = $this->buildFamilyTree($userId);
+
+        // Collect all processed node IDs
+        $processedIds = [];
+        foreach ($tree['nodes'] as $node) {
+            $processedIds[$node['id']] = true;
+        }
+
+        // Find the deepest descendant nodes (grandchildren) — they are the frontier to expand
+        $grandchildTypes = ['grandson', 'granddaughter', 'grandchild'];
+        $frontier = [];
+        foreach ($tree['nodes'] as $node) {
+            if (in_array($node['relationshipType'], $grandchildTypes)) {
+                $frontier[] = $node['id'];
+            }
+        }
+
+        // Recursively expand each frontier node's descendants
+        $depth = 2; // grandchildren are depth 2 from root
+        $maxDepth = 10; // safety limit
+
+        while (!empty($frontier) && $depth < $maxDepth) {
+            $nextFrontier = [];
+            $depth++;
+
+            foreach ($frontier as $parentNodeId) {
+                $connections = $this->connectionRepository->getConnections($parentNodeId);
+
+                foreach ($connections as $connection) {
+                    $otherUser = $connection->requester_user_id === $parentNodeId
+                        ? $connection->recipient
+                        : $connection->requester;
+
+                    if (isset($processedIds[$otherUser->id])) {
+                        continue;
+                    }
+
+                    $relType = $this->getRelationshipFromUserPerspective($connection, $parentNodeId);
+
+                    // Only follow children and spouses downward
+                    if (in_array($relType, ['son', 'daughter', 'child'])) {
+                        // Determine the relationship type from ROOT's perspective
+                        $nodeRelType = $this->getDeepDescendantType($depth, $otherUser->gender);
+
+                        $tree['nodes'][] = $this->formatUserNode($otherUser, $nodeRelType);
+                        $processedIds[$otherUser->id] = true;
+
+                        // Edge from parent to child
+                        $tree['edges'][] = [
+                            'id' => "edge-{$parentNodeId}-{$otherUser->id}",
+                            'source' => $parentNodeId,
+                            'target' => $otherUser->id,
+                            'relationshipType' => $nodeRelType,
+                            'label' => $this->formatRelationshipLabel($nodeRelType),
+                            'color' => $this->getRelationshipColor($nodeRelType),
+                            'isDivorced' => false,
+                        ];
+
+                        $nextFrontier[] = $otherUser->id;
+
+                    } elseif (in_array($relType, ['wife', 'husband', 'partner'])) {
+                        // Spouse of a descendant — add as in-law
+                        $isDivorced = $connection->isDivorced();
+                        $inLawType = $this->getDeepInLawType($otherUser->gender, $isDivorced);
+
+                        $tree['nodes'][] = $this->formatUserNode($otherUser, $inLawType);
+                        $processedIds[$otherUser->id] = true;
+
+                        $tree['edges'][] = [
+                            'id' => "edge-{$parentNodeId}-{$otherUser->id}",
+                            'source' => $parentNodeId,
+                            'target' => $otherUser->id,
+                            'relationshipType' => $inLawType,
+                            'label' => $this->formatRelationshipLabel($inLawType),
+                            'color' => $this->getRelationshipColor($inLawType),
+                            'isDivorced' => $isDivorced,
+                        ];
+                    }
+                }
+            }
+
+            $frontier = $nextFrontier;
+        }
+
+        // Rebuild childSpouseGroups for deeper levels
+        $tree['childSpouseGroups'] = $this->buildDeepChildSpouseGroups($tree);
+
+        return $tree;
+    }
+
+    /**
+     * Get the relationship type label for a deep descendant from the root's perspective.
+     */
+    private function getDeepDescendantType(int $depth, ?string $gender): string
+    {
+        return match ($depth) {
+            1 => match ($gender) { 'male' => 'son', 'female' => 'daughter', default => 'child' },
+            2 => match ($gender) { 'male' => 'grandson', 'female' => 'granddaughter', default => 'grandchild' },
+            3 => match ($gender) { 'male' => 'great_grandson', 'female' => 'great_granddaughter', default => 'great_grandchild' },
+            4 => match ($gender) { 'male' => 'great_great_grandson', 'female' => 'great_great_granddaughter', default => 'great_great_grandchild' },
+            default => 'descendant',
+        };
+    }
+
+    /**
+     * Get the in-law relationship type for a deep descendant's spouse.
+     */
+    private function getDeepInLawType(?string $gender, bool $isDivorced): string
+    {
+        $base = match ($gender) {
+            'female' => 'daughter_in_law',
+            'male' => 'son_in_law',
+            default => 'son_in_law',
+        };
+
+        return $isDivorced ? 'ex_' . $base : $base;
+    }
+
+    /**
+     * Rebuild childSpouseGroups for the entire deep tree.
+     * Groups grandchildren (and deeper) under their parent+spouse pairs.
+     */
+    private function buildDeepChildSpouseGroups(array &$tree): array
+    {
+        $childSpouseGroups = $tree['childSpouseGroups'] ?? [];
+
+        // Find all child-type nodes (son/daughter) that have deeper descendants
+        $childTypes = ['son', 'daughter', 'child'];
+        $grandchildTypes = ['grandson', 'granddaughter', 'grandchild',
+            'great_grandson', 'great_granddaughter', 'great_grandchild',
+            'great_great_grandson', 'great_great_granddaughter', 'great_great_grandchild',
+            'descendant'];
+        $inLawTypes = ['daughter_in_law', 'son_in_law', 'ex_daughter_in_law', 'ex_son_in_law'];
+
+        // For each edge where source is a grandchild+ type and target is an in-law,
+        // find the corresponding children and group them
+        $nodeTypeMap = [];
+        foreach ($tree['nodes'] as $node) {
+            $nodeTypeMap[$node['id']] = $node['relationshipType'];
+        }
+
+        // Find all nodes that are grandchildren or deeper and have in-law spouses
+        $potentialParents = [];
+        foreach ($tree['edges'] as $edge) {
+            $sourceType = $nodeTypeMap[$edge['source']] ?? '';
+            $targetType = $nodeTypeMap[$edge['target']] ?? '';
+
+            if (in_array($sourceType, $grandchildTypes) && in_array($targetType, $inLawTypes)) {
+                $potentialParents[$edge['source']][] = [
+                    'spouseId' => $edge['target'],
+                    'isDivorced' => $edge['isDivorced'] ?? false,
+                ];
+            }
+        }
+
+        // For each potential parent (grandchild with spouse), find their children in the tree
+        foreach ($potentialParents as $parentId => $spouses) {
+            foreach ($spouses as $spouse) {
+                $groupChildIds = [];
+                foreach ($tree['edges'] as $edge) {
+                    if ($edge['source'] === $parentId) {
+                        $targetType = $nodeTypeMap[$edge['target']] ?? '';
+                        if (in_array($targetType, $grandchildTypes) || in_array($targetType, $childTypes)) {
+                            // Verify this child belongs to this spouse pair using other_parent_id
+                            $childToParent = $this->connectionRepository->getConnectionBetween($edge['target'], $parentId);
+                            $matched = false;
+                            if ($childToParent && $childToParent->other_parent_id !== null) {
+                                $matched = ($childToParent->other_parent_id === $spouse['spouseId']);
+                            } else {
+                                $childToSpouse = $this->connectionRepository->getConnectionBetween($edge['target'], $spouse['spouseId']);
+                                $matched = ($childToSpouse !== null);
+                            }
+
+                            if ($matched) {
+                                $groupChildIds[] = $edge['target'];
+                                // Tag node with childSpouseGroupId
+                                foreach ($tree['nodes'] as &$node) {
+                                    if ($node['id'] === $edge['target']) {
+                                        $node['childSpouseGroupId'] = $spouse['spouseId'];
+                                        break;
+                                    }
+                                }
+                                unset($node);
+                            }
+                        }
+                    }
+                }
+
+                if (!empty($groupChildIds) || true) {
+                    $childSpouseGroups[] = [
+                        'childId' => $parentId,
+                        'spouseId' => $spouse['spouseId'],
+                        'isDivorced' => $spouse['isDivorced'],
+                        'grandchildIds' => $groupChildIds,
+                    ];
+                }
+            }
+        }
+
+        return $childSpouseGroups;
+    }
+
+    /**
      * Build a scoped (downward-only) tree for viewing another user's family.
      * Shows: target as root, their spouses, children, grandchildren.
      * Adds the viewer as a single node above the target with a relationship edge.

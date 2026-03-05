@@ -226,8 +226,8 @@ class ConnectionTreeController extends Controller
             return response()->json(['error' => 'Ancestor not found'], 404);
         }
 
-        // Build the ancestor's full tree (bypasses privacy - ancestral lineage always visible)
-        $connectionTreeData = $this->connectionTreeService->buildFamilyTree($ancestorId);
+        // Build the ancestor's deep tree (bypasses privacy - ancestral lineage always visible)
+        $connectionTreeData = $this->connectionTreeService->buildDeepFamilyTree($ancestorId);
         $parentAvailability = $this->connectionTreeService->getParentAvailability($ancestorId);
 
         return response()->json([
