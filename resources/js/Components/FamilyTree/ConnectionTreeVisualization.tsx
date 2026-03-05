@@ -141,6 +141,14 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
     const [hoveredNode, setHoveredNode] = useState<number | null>(null);
     const [hoveredEdge, setHoveredEdge] = useState<string | null>(null);
 
+    // Reset zoom, pan, and hover states when tree data changes (but preserve fullscreen)
+    useEffect(() => {
+        setZoom(1);
+        setPan({ x: 0, y: 0 });
+        setHoveredNode(null);
+        setHoveredEdge(null);
+    }, [treeData.rootUserId]);
+
     // Calculate node positions using a hierarchical tree layout
     const { nodePositions, svgDimensions } = useMemo(() => {
         if (!treeData || treeData.nodes.length === 0) {
