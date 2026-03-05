@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { router } from '@inertiajs/react';
-import { Users, Maximize2, Minimize2, ZoomIn, ZoomOut, RefreshCw } from 'lucide-react';
+import { Users, Maximize2, Minimize2, ZoomIn, ZoomOut, RefreshCw, ArrowUpCircle, ArrowLeft } from 'lucide-react';
 
 interface Node {
     id: number;
@@ -14,6 +14,7 @@ interface Node {
     shouldBlur?: boolean;
     spouseGroupId?: number | null;
     childSpouseGroupId?: number | null;
+    viewerLabel?: string;
 }
 
 interface Edge {
@@ -58,6 +59,11 @@ interface ParentConnection {
     isDivorced: boolean;
 }
 
+interface ViewerNode {
+    id: number;
+    relationshipType: string;
+}
+
 interface TreeData {
     nodes: Node[];
     edges: Edge[];
@@ -66,11 +72,18 @@ interface TreeData {
     childSpouseGroups?: ChildSpouseGroup[];
     parentFamilyUnits?: ParentFamilyUnit[];
     parentConnection?: ParentConnection | null;
+    viewerNode?: ViewerNode;
+    isUpwardTree?: boolean;
 }
 
 interface Props {
     treeData: TreeData;
     onAvatarClick?: (userId: number, shouldBlur: boolean) => void;
+    hasPaternal?: boolean;
+    hasMaternal?: boolean;
+    onExpandedView?: (side: 'paternal' | 'maternal') => void;
+    disableNodeClicks?: boolean;
+    onBackToDefault?: () => void;
 }
 
 interface NodePosition {
@@ -116,6 +129,7 @@ const getAbbreviation = (label: string): string => {
         'ex_mother_in_law': 'xMIL', 'ex_father_in_law': 'xFIL',
         'ex_sister_in_law': 'xSsIL', 'ex_brother_in_law': 'xBrIL',
         'co_wife': 'CW', 'co_husband': 'CH',
+        'descendant': 'Desc',
     };
     return map[label.toLowerCase()] || label.charAt(0).toUpperCase();
 };
@@ -124,7 +138,7 @@ const capitalizeLabel = (label: string): string => {
     return label.charAt(0).toUpperCase() + label.slice(1).toLowerCase();
 };
 
-const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick }) => {
+const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick, hasPaternal, hasMaternal, onExpandedView, disableNodeClicks, onBackToDefault }) => {
     const svgRef = useRef<SVGSVGElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const [zoom, setZoom] = useState(1);
@@ -134,6 +148,14 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [hoveredNode, setHoveredNode] = useState<number | null>(null);
     const [hoveredEdge, setHoveredEdge] = useState<string | null>(null);
+
+    // Reset zoom, pan, and hover states when tree data changes (but preserve fullscreen)
+    useEffect(() => {
+        setZoom(1);
+        setPan({ x: 0, y: 0 });
+        setHoveredNode(null);
+        setHoveredEdge(null);
+    }, [treeData.rootUserId]);
 
     // Calculate node positions using a hierarchical tree layout
     const { nodePositions, svgDimensions } = useMemo(() => {
@@ -211,6 +233,9 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                 'great_great_grandson': 4,
                 'great_great_granddaughter': 4,
 
+                // Generic deep descendant (5+ levels below)
+                'descendant': 5,
+
                 // Extended family at appropriate levels
                 'aunt': -1,
                 'uncle': -1,
@@ -276,10 +301,16 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
             });
         }
 
+        // Viewer node ID (excluded from standard level grouping, positioned separately)
+        const viewerNodeId = treeData.viewerNode?.id ?? null;
+
         // Group nodes by their calculated level based on relationship type
         const levelMap: Record<number, number[]> = {};
 
         nodes.forEach(node => {
+            // Skip viewer node (positioned separately above root)
+            if (viewerNodeId !== null && node.id === viewerNodeId) return;
+
             // Skip nodes that belong to parentFamilyUnits (positioned in Phase 2)
             if (parentFamilyUnitNodeIds.has(node.id)) return;
 
@@ -516,8 +547,9 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                 }
 
                 // Grandparents (parent's parents): V-shape above uncle/aunt row
+                // When no siblings exist, position closer to parent to avoid large gap
                 if (unit.parents.length > 0) {
-                    const gpY = parentPos.y - 350;
+                    const gpY = unit.siblings.length > 0 ? parentPos.y - 350 : parentPos.y - 200;
                     const gpSpacing = 180;
                     const totalGpWidth = (unit.parents.length - 1) * gpSpacing;
                     unit.parents.forEach((gpId, index) => {
@@ -562,15 +594,26 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
 
             const csgBounds: { childId: number; spouseId: number; grandchildIds: number[]; minX: number; maxX: number; centerX: number }[] = [];
 
+            // Track how many spouses placed on each side per child to avoid overlap
+            const childRightCount: Record<number, number> = {};
+            const childLeftCount: Record<number, number> = {};
+
             treeData.childSpouseGroups.forEach(group => {
                 const childPos = positions[group.childId];
                 if (!childPos) return;
 
                 // Place in-law spouse diagonally below and to the side of child
-                const spouseYOffset = 40; // gentle slant downward (halfway between horizontal and diagonal)
-                const spouseX = group.isDivorced
-                    ? childPos.x - (nodeWidth * 0.8)
-                    : childPos.x + (nodeWidth * 0.8);
+                const spouseYOffset = 180; // push down to create clear row separation from children
+                let spouseX: number;
+                if (group.isDivorced) {
+                    const leftIdx = childLeftCount[group.childId] || 0;
+                    spouseX = childPos.x - (nodeWidth * 0.8) - (leftIdx * nodeWidth);
+                    childLeftCount[group.childId] = leftIdx + 1;
+                } else {
+                    const rightIdx = childRightCount[group.childId] || 0;
+                    spouseX = childPos.x + (nodeWidth * 0.8) + (rightIdx * nodeWidth);
+                    childRightCount[group.childId] = rightIdx + 1;
+                }
                 positions[group.spouseId] = { x: spouseX, y: childPos.y + spouseYOffset, level: 1 };
 
                 // Position grandchildren under midpoint of child + in-law
@@ -615,6 +658,27 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                     curr.maxX += overlap;
                     curr.centerX += overlap;
                 }
+            }
+        }
+
+        // Position viewer node (scoped tree view)
+        // Use 1.5x levelHeight for extra space so the edge badge is clearly visible
+        if (viewerNodeId !== null && positions[rootUserId]) {
+            const rootPos = positions[rootUserId];
+            if (treeData.isUpwardTree) {
+                // Upward tree: viewer is BELOW root (they are the child looking up)
+                positions[viewerNodeId] = {
+                    x: rootPos.x,
+                    y: rootPos.y + Math.round(levelHeight * 1.5),
+                    level: 1,
+                };
+            } else {
+                // Downward tree: viewer is ABOVE root (default behavior)
+                positions[viewerNodeId] = {
+                    x: rootPos.x,
+                    y: rootPos.y - Math.round(levelHeight * 1.5),
+                    level: -1,
+                };
             }
         }
 
@@ -804,43 +868,51 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                     }
                 });
 
-                // Within each band, sort by X and check consecutive pairs from different groups
+                // Within each band, collapse nodes into group extents and resolve group-level overlaps.
+                // This avoids infinite oscillation when groups have interleaved members.
                 for (const [, bandNodes] of bandMap) {
-                    bandNodes.sort((a, b) => positions[a].x - positions[b].x);
+                    // Build group extents (minX, maxX) for groups present in this band
+                    const bandGroups = new Map<number, { minX: number; maxX: number }>();
+                    bandNodes.forEach(nodeId => {
+                        const grp = nodeToGroup.get(nodeId) ?? nodeId;
+                        const x = positions[nodeId].x;
+                        const existing = bandGroups.get(grp);
+                        if (existing) {
+                            existing.minX = Math.min(existing.minX, x);
+                            existing.maxX = Math.max(existing.maxX, x);
+                        } else {
+                            bandGroups.set(grp, { minX: x, maxX: x });
+                        }
+                    });
 
-                    let shifted = true;
-                    while (shifted) {
-                        shifted = false;
-                        for (let i = 0; i < bandNodes.length - 1; i++) {
-                            const leftId = bandNodes[i];
-                            const rightId = bandNodes[i + 1];
-                            const leftGroup = nodeToGroup.get(leftId) ?? leftId;
-                            const rightGroup = nodeToGroup.get(rightId) ?? rightId;
+                    // Sort groups by their minX
+                    const sortedGroups = Array.from(bandGroups.entries())
+                        .sort((a, b) => a[1].minX - b[1].minX);
 
-                            // Only resolve between different groups (skip root's own group)
-                            if (leftGroup === rightGroup) continue;
+                    // Resolve overlaps between consecutive groups
+                    for (let i = 1; i < sortedGroups.length; i++) {
+                        const [prevGrp, prevExtent] = sortedGroups[i - 1];
+                        const [currGrp, currExtent] = sortedGroups[i];
 
-                            const gap = positions[rightId].x - positions[leftId].x;
-                            if (gap < MIN_NODE_GAP) {
-                                const shiftAmount = MIN_NODE_GAP - gap;
+                        const gap = currExtent.minX - prevExtent.maxX;
+                        if (gap < MIN_NODE_GAP) {
+                            const shiftAmount = MIN_NODE_GAP - gap;
 
-                                // Don't shift the root's group
-                                if (rightGroup === rootUserId) continue;
+                            // Don't shift the root's group
+                            if (currGrp === rootUserId) continue;
 
-                                // Shift the entire right group
-                                const members = groupMembers.get(rightGroup) || [rightId];
-                                members.forEach(memberId => {
-                                    if (positions[memberId]) {
-                                        positions[memberId].x += shiftAmount;
-                                    }
-                                });
+                            // Shift all members of the current group (everywhere, not just this band)
+                            const members = groupMembers.get(currGrp) || [];
+                            members.forEach(memberId => {
+                                if (positions[memberId]) {
+                                    positions[memberId].x += shiftAmount;
+                                }
+                            });
 
-                                // Re-sort after shifting
-                                bandNodes.sort((a, b) => positions[a].x - positions[b].x);
-                                shifted = true;
-                                anyShift = true;
-                                break; // restart scan for this band
-                            }
+                            // Update extent for subsequent comparisons
+                            currExtent.minX += shiftAmount;
+                            currExtent.maxX += shiftAmount;
+                            anyShift = true;
                         }
                     }
                 }
@@ -932,18 +1004,18 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
 
     // Handle click on node name to navigate to profile
     const handleNodeClick = useCallback((username: string, shouldBlur: boolean) => {
-        if (shouldBlur) return; // Don't navigate for blurred nodes
+        if (shouldBlur || disableNodeClicks) return;
         window.location.href = `/profile/${username}`;
-    }, []);
+    }, [disableNodeClicks]);
 
     // Handle click on avatar to switch tree view
     const handleAvatarClick = useCallback((userId: number, shouldBlur: boolean, e: React.MouseEvent) => {
         e.stopPropagation();
-        if (shouldBlur) return; // Don't switch for blurred nodes
+        if (shouldBlur || disableNodeClicks) return;
         if (onAvatarClick) {
             onAvatarClick(userId, shouldBlur);
         }
-    }, [onAvatarClick]);
+    }, [onAvatarClick, disableNodeClicks]);
 
     if (!treeData || treeData.nodes.length === 0) {
         return (
@@ -999,6 +1071,37 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                 border: '1px solid rgba(102, 126, 234, 0.3)',
                 boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)'
             }}>
+                {onBackToDefault && (
+                    <button
+                        onClick={onBackToDefault}
+                        style={{
+                            background: 'linear-gradient(135deg, #94A3B8 0%, #64748B 100%)',
+                            border: 'none',
+                            borderRadius: '10px',
+                            padding: '10px 14px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            color: 'white',
+                            transition: 'all 0.2s',
+                            gap: '4px',
+                            minWidth: '60px'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(148, 163, 184, 0.5)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = 'none';
+                        }}
+                    >
+                        <ArrowLeft size={20} />
+                        <span style={{ fontSize: '10px', fontWeight: 600 }}>Back</span>
+                    </button>
+                )}
                 <button
                     onClick={handleZoomIn}
                     style={{
@@ -1121,6 +1224,68 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                         {isFullscreen ? 'Exit' : 'Expand'}
                     </span>
                 </button>
+                {hasPaternal && onExpandedView && (
+                    <button
+                        onClick={() => onExpandedView('paternal')}
+                        style={{
+                            background: 'linear-gradient(135deg, #06B6D4 0%, #0891B2 100%)',
+                            border: 'none',
+                            borderRadius: '10px',
+                            padding: '10px 14px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            color: 'white',
+                            transition: 'all 0.2s',
+                            gap: '4px',
+                            minWidth: '60px'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(6, 182, 212, 0.5)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = 'none';
+                        }}
+                    >
+                        <ArrowUpCircle size={20} />
+                        <span style={{ fontSize: '10px', fontWeight: 600 }}>Paternal</span>
+                    </button>
+                )}
+                {hasMaternal && onExpandedView && (
+                    <button
+                        onClick={() => onExpandedView('maternal')}
+                        style={{
+                            background: 'linear-gradient(135deg, #EC4899 0%, #DB2777 100%)',
+                            border: 'none',
+                            borderRadius: '10px',
+                            padding: '10px 14px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            color: 'white',
+                            transition: 'all 0.2s',
+                            gap: '4px',
+                            minWidth: '60px'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(236, 72, 153, 0.5)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = 'none';
+                        }}
+                    >
+                        <ArrowUpCircle size={20} />
+                        <span style={{ fontSize: '10px', fontWeight: 600 }}>Maternal</span>
+                    </button>
+                )}
             </div>
 
             {/* SVG Canvas */}
@@ -1160,8 +1325,10 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                             }
 
                             // Collect sibling and parent IDs (rendered by custom family unit section)
-                            const siblingIds = new Set(treeData.nodes.filter(n => ['brother', 'sister', 'sibling'].includes(n.relationshipType)).map(n => n.id));
-                            const parentIds = new Set(treeData.nodes.filter(n => ['father', 'mother', 'parent'].includes(n.relationshipType)).map(n => n.id));
+                            // Exclude the viewer node — it's positioned separately and its edge should render normally
+                            const viewerNodeId = treeData.viewerNode?.id ?? null;
+                            const siblingIds = new Set(treeData.nodes.filter(n => ['brother', 'sister', 'sibling'].includes(n.relationshipType) && n.id !== viewerNodeId).map(n => n.id));
+                            const parentIds = new Set(treeData.nodes.filter(n => ['father', 'mother', 'parent'].includes(n.relationshipType) && n.id !== viewerNodeId).map(n => n.id));
                             const hasFamilyUnit = siblingIds.size > 0 || parentIds.size > 0;
 
                             // Collect parent family unit node IDs (rendered by parent family unit section)
@@ -1218,10 +1385,7 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                                     // Skip root → child edges when child belongs to a spouse group
                                     // (these are rendered as inverted triangles instead)
                                     if (edge.source === treeData.rootUserId && spouseGroupChildIds.has(edge.target)) {
-                                        const targetNode = treeData.nodes.find(n => n.id === edge.target);
-                                        if (targetNode && ['son', 'daughter', 'child'].includes(targetNode.relationshipType)) {
-                                            return false;
-                                        }
+                                        return false;
                                     }
 
                                     // Check if this is a direct root -> grandchild edge (skip these, show through parent instead)
@@ -1774,8 +1938,9 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
 
                     {/* Family unit: Michael → siblings bar → parents inverted triangle */}
                     {(() => {
-                        const siblingNodes = treeData.nodes.filter(n => ['brother', 'sister', 'sibling'].includes(n.relationshipType));
-                        const parentNodes = treeData.nodes.filter(n => ['father', 'mother', 'parent'].includes(n.relationshipType));
+                        const viewerNodeId = treeData.viewerNode?.id ?? null;
+                        const siblingNodes = treeData.nodes.filter(n => ['brother', 'sister', 'sibling'].includes(n.relationshipType) && n.id !== viewerNodeId);
+                        const parentNodes = treeData.nodes.filter(n => ['father', 'mother', 'parent'].includes(n.relationshipType) && n.id !== viewerNodeId);
 
                         // Only render if there are siblings or parents
                         if (siblingNodes.length === 0 && parentNodes.length === 0) return null;
@@ -1853,10 +2018,18 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                                         />
                                         {/* Sibling badge on root's vertical line */}
                                         {(() => {
-                                            const sbMidY = (rootTopY + junctionY) / 2;
+                                            // Position badge closer to root (60% down from junction toward root) to avoid overlapping sibling name
+                                            const sbMidY = junctionY + (rootTopY - junctionY) * 0.6;
                                             const sbEdgeId = 'family-sibling-link';
                                             const isSbHovered = hoveredEdge === sbEdgeId;
-                                            const sbTooltipW = 70;
+                                            // For upward trees with a single sibling, show that sibling's viewer label on the root line
+                                            const useViewerLabel = treeData.isUpwardTree && siblingPositions.length === 1;
+                                            const firstSibNode = useViewerLabel ? treeData.nodes.find(n => n.id === siblingPositions[0].id) : null;
+                                            const sbLabel = firstSibNode?.viewerLabel || (useViewerLabel ? siblingPositions[0]?.relationshipType || 'sibling' : 'sibling');
+                                            const sbAbbr = useViewerLabel ? getAbbreviation(sbLabel) : 'Sb';
+                                            const sbFullLabel = useViewerLabel ? capitalizeLabel(sbLabel) : 'Sibling';
+                                            const sbBadgeW = sbAbbr.length > 2 ? 42 : sbAbbr.length > 1 ? 36 : 26;
+                                            const sbTooltipW = Math.max(sbFullLabel.length * 7.5 + 24, 70);
                                             return (
                                                 <g
                                                     onMouseEnter={() => setHoveredEdge(sbEdgeId)}
@@ -1867,21 +2040,21 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                                                         <circle cx={rootX} cy={sbMidY} r="20" fill={familyUnitColor} opacity="0.2" filter="blur(8px)" />
                                                     )}
                                                     <rect
-                                                        x={rootX - 18} y={sbMidY - 12}
-                                                        width={36} height={24}
+                                                        x={rootX - sbBadgeW / 2} y={sbMidY - 12}
+                                                        width={sbBadgeW} height={24}
                                                         fill="rgba(15, 23, 42, 0.95)"
                                                         stroke={familyUnitColor}
                                                         strokeWidth={isSbHovered ? '2' : '1.5'}
                                                         rx="12" ry="12"
                                                     />
                                                     <text x={rootX} y={sbMidY + 4} textAnchor="middle" fontSize="11" fontWeight="700" fill={familyUnitColor} style={{ letterSpacing: '0.5px' }}>
-                                                        Sb
+                                                        {sbAbbr}
                                                     </text>
                                                     {isSbHovered && (
                                                         <g>
                                                             <rect x={rootX - sbTooltipW / 2} y={sbMidY - 44} width={sbTooltipW} height={26} fill={familyUnitColor} rx="13" ry="13" opacity="0.12" filter="blur(6px)" />
                                                             <rect x={rootX - sbTooltipW / 2} y={sbMidY - 44} width={sbTooltipW} height={26} fill="rgba(15, 23, 42, 0.98)" stroke={familyUnitColor} strokeWidth="1" rx="13" ry="13" />
-                                                            <text x={rootX} y={sbMidY - 27} textAnchor="middle" fontSize="11" fontWeight="600" fill={familyUnitColor} style={{ letterSpacing: '0.3px' }}>Sibling</text>
+                                                            <text x={rootX} y={sbMidY - 27} textAnchor="middle" fontSize="11" fontWeight="600" fill={familyUnitColor} style={{ letterSpacing: '0.3px' }}>{sbFullLabel}</text>
                                                         </g>
                                                     )}
                                                 </g>
@@ -1922,7 +2095,8 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
 
                                         {/* Abbreviation badges on sibling vertical stubs (bar to sibling node) */}
                                         {siblingPositions.map(sib => {
-                                            const label = sib.relationshipType;
+                                            const sibNode = treeData.nodes.find(n => n.id === sib.id);
+                                            const label = sibNode?.viewerLabel || sib.relationshipType;
                                             const abbr = getAbbreviation(label);
                                             const fullLabel = capitalizeLabel(label);
                                             const badgeW = abbr.length > 1 ? 36 : 26;
@@ -2000,7 +2174,8 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                                             {/* Lines from each parent down to the triangle junction */}
                                             {parentPositions.map(par => {
                                                 const parBottomY = par.y + 60;
-                                                const label = treeData.nodes.find(n => n.id === par.id)?.relationshipType || '';
+                                                const parNode = treeData.nodes.find(n => n.id === par.id);
+                                                const label = parNode?.viewerLabel || parNode?.relationshipType || '';
                                                 const abbr = getAbbreviation(label);
                                                 const fullLabel = capitalizeLabel(label);
                                                 const badgeW = abbr.length > 1 ? 36 : 26;
@@ -2137,7 +2312,8 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
 
                                         {/* Vertical stubs to each uncle/aunt with badges */}
                                         {uncleAuntPositions.map(ua => {
-                                            const label = ua.relationshipType;
+                                            const uaNode = treeData.nodes.find(n => n.id === ua.id);
+                                            const label = uaNode?.viewerLabel || ua.relationshipType;
                                             const abbr = getAbbreviation(label);
                                             const fullLabel = capitalizeLabel(label);
                                             const badgeW = abbr.length > 2 ? 42 : abbr.length > 1 ? 36 : 26;
@@ -2172,14 +2348,15 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                                 {/* Grandparents V-shape: lines from each grandparent down to junction */}
                                 {grandparentPositions.length > 0 && (() => {
                                     const gpTargetX = parX;
-                                    const gpTargetY = uncleAuntPositions.length > 0 ? uaJunctionY : parTopY - 40;
+                                    const gpTargetY = uncleAuntPositions.length > 0 ? uaJunctionY : parTopY;
                                     const gpColor = '#7C3AED'; // Violet for grandparents
 
                                     return (
                                         <g>
                                             {grandparentPositions.map(gp => {
                                                 const gpBottomY = gp.y + 60;
-                                                const label = gp.relationshipType;
+                                                const gpNode = treeData.nodes.find(n => n.id === gp.id);
+                                                const label = gpNode?.viewerLabel || gp.relationshipType;
                                                 const abbr = getAbbreviation(label);
                                                 const fullLabel = capitalizeLabel(label);
                                                 const badgeW = abbr.length > 2 ? 42 : abbr.length > 1 ? 36 : 26;
@@ -2438,7 +2615,7 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                                         </text>
                                     )}
                                     {/* Clickable overlay for avatar - switches to this user's tree */}
-                                    {onAvatarClick && (
+                                    {onAvatarClick && !disableNodeClicks && (
                                         <circle
                                             cx={x}
                                             cy={y}
@@ -2459,7 +2636,7 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                                         textAnchor="middle"
                                         fontSize="14"
                                         fontWeight="700"
-                                        fill={shouldBlur ? '#FFFFFF' : '#38BDF8'}
+                                        fill={shouldBlur ? '#FFFFFF' : disableNodeClicks ? '#94A3B8' : '#38BDF8'}
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             handleNodeClick(node.username, shouldBlur);
@@ -2467,8 +2644,8 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                                         style={{
                                             textShadow: '0 2px 8px rgba(0,0,0,0.8)',
                                             filter: shouldBlur ? 'blur(4px)' : 'none',
-                                            cursor: shouldBlur ? 'not-allowed' : 'pointer',
-                                            textDecoration: shouldBlur ? 'none' : 'underline',
+                                            cursor: (shouldBlur || disableNodeClicks) ? 'default' : 'pointer',
+                                            textDecoration: (shouldBlur || disableNodeClicks) ? 'none' : 'underline',
                                             textUnderlineOffset: '3px'
                                         }}
                                     >

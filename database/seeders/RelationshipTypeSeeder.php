@@ -91,6 +91,18 @@ class RelationshipTypeSeeder extends Seeder
             ['type_key' => 'ex_daughter_in_law', 'label' => 'Ex-daughter-in-law', 'description' => 'Your ex-daughter-in-law', 'sort_order' => 58, 'is_bidirectional' => false],
             ['type_key' => 'ex_son_in_law', 'label' => 'Ex-son-in-law', 'description' => 'Your ex-son-in-law', 'sort_order' => 59, 'is_bidirectional' => false],
 
+            // Grandchild-in-law relationships
+            ['type_key' => 'granddaughter_in_law', 'label' => 'Granddaughter-in-law', 'description' => 'Your granddaughter-in-law', 'sort_order' => 62, 'is_bidirectional' => false],
+            ['type_key' => 'grandson_in_law', 'label' => 'Grandson-in-law', 'description' => 'Your grandson-in-law', 'sort_order' => 63, 'is_bidirectional' => false],
+
+            // Great-grandchild-in-law relationships
+            ['type_key' => 'great_granddaughter_in_law', 'label' => 'Great-granddaughter-in-law', 'description' => 'Your great-granddaughter-in-law', 'sort_order' => 64, 'is_bidirectional' => false],
+            ['type_key' => 'great_grandson_in_law', 'label' => 'Great-grandson-in-law', 'description' => 'Your great-grandson-in-law', 'sort_order' => 65, 'is_bidirectional' => false],
+
+            // Ex-grandchild-in-law relationships
+            ['type_key' => 'ex_granddaughter_in_law', 'label' => 'Ex-granddaughter-in-law', 'description' => 'Your ex-granddaughter-in-law', 'sort_order' => 68, 'is_bidirectional' => false],
+            ['type_key' => 'ex_grandson_in_law', 'label' => 'Ex-grandson-in-law', 'description' => 'Your ex-grandson-in-law', 'sort_order' => 69, 'is_bidirectional' => false],
+
             // Other relationships
             ['type_key' => 'godparent', 'label' => 'Godparent', 'description' => 'Your godparent', 'sort_order' => 60, 'is_bidirectional' => false],
             ['type_key' => 'godchild', 'label' => 'Godchild', 'description' => 'Your godchild', 'sort_order' => 61, 'is_bidirectional' => false],

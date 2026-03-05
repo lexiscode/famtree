@@ -293,3 +293,25 @@ This project is open-sourced software licensed under the MIT license.
 - [TypeScript Documentation](https://www.typescriptlang.org/docs)
 - [Vite Documentation](https://vitejs.dev)
 - [Laravel Sail Documentation](https://laravel.com/docs/sail)
+
+
+Here's what you need — two steps:
+
+  Step 1: Set the election deadline to the past
+
+  UPDATE group_elections
+  SET ends_at = NOW()
+  WHERE status = 'active'
+  AND class_set_id = (SELECT id FROM class_sets WHERE name LIKE '%Class of 2026 (English)%' LIMIT 1);
+
+  Or if you want to target it more directly:
+
+  -- Check the active election first
+  SELECT * FROM group_elections WHERE status = 'active';
+
+  -- Then update by ID (replace 1 with your election's ID)
+  UPDATE group_elections SET ends_at = NOW() WHERE id = 1;
+
+  Step 2: Run the processor command
+
+  docker-compose exec -T famtree php artisan groups:process-elections
