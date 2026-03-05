@@ -7,6 +7,7 @@ use App\Actions\GuestServices\AuthAccessServices\FamilyTreeService as Connection
 use App\Actions\GuestServices\ProfilePrivacyService;
 use App\Repositories\GuestRepositories\UserConnectionRepository;
 use App\Models\GuestModels\User;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class ConnectionTreeController extends Controller
@@ -30,6 +31,7 @@ class ConnectionTreeController extends Controller
 
         // Get connection tree data for visualization
         $connectionTreeData = $this->connectionTreeService->buildFamilyTree($user->id);
+        $parentAvailability = $this->connectionTreeService->getParentAvailability($user->id);
 
         return Inertia::render('GuestPages/AuthAccessPages/YourTree/Index', [
             'connectionTreeData' => $connectionTreeData,
@@ -40,6 +42,8 @@ class ConnectionTreeController extends Controller
                 'profile_image_url' => $user->profile_image_url,
                 'status' => $user->status,
             ],
+            'hasPaternal' => $parentAvailability['hasPaternal'],
+            'hasMaternal' => $parentAvailability['hasMaternal'],
         ]);
     }
 
@@ -162,6 +166,8 @@ class ConnectionTreeController extends Controller
             }, $connectionTreeData['nodes']);
         }
 
+        $parentAvailability = $this->connectionTreeService->getParentAvailability($owner->id);
+
         return response()->json([
             'success' => true,
             'connectionTreeData' => $connectionTreeData,
@@ -172,6 +178,57 @@ class ConnectionTreeController extends Controller
                 'profile_image_url' => $owner->profile_image_url,
                 'status' => $owner->status,
             ],
+            'hasPaternal' => $parentAvailability['hasPaternal'],
+            'hasMaternal' => $parentAvailability['hasMaternal'],
+        ]);
+    }
+
+    /**
+     * Get expanded ancestral view (paternal/maternal lineage traced to topmost ancestor)
+     */
+    public function getExpandedView(Request $request)
+    {
+        $viewer = auth()->user();
+
+        if (!$viewer) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $userId = (int) $request->query('userId');
+        $side = $request->query('side');
+
+        if (!in_array($side, ['paternal', 'maternal'])) {
+            return response()->json(['error' => 'Invalid side parameter'], 400);
+        }
+
+        $ancestorId = $this->connectionTreeService->findTopmostAncestor($userId, $side);
+
+        if (!$ancestorId) {
+            return response()->json(['error' => 'No ancestor found'], 404);
+        }
+
+        $ancestor = User::find($ancestorId);
+
+        if (!$ancestor) {
+            return response()->json(['error' => 'Ancestor not found'], 404);
+        }
+
+        // Build the ancestor's full tree (bypasses privacy - ancestral lineage always visible)
+        $connectionTreeData = $this->connectionTreeService->buildFamilyTree($ancestorId);
+        $parentAvailability = $this->connectionTreeService->getParentAvailability($ancestorId);
+
+        return response()->json([
+            'success' => true,
+            'connectionTreeData' => $connectionTreeData,
+            'owner' => [
+                'id' => $ancestor->id,
+                'name' => trim(($ancestor->first_name ?? '') . ' ' . ($ancestor->last_name ?? '')),
+                'username' => $ancestor->username,
+                'profile_image_url' => $ancestor->profile_image_url,
+                'status' => $ancestor->status,
+            ],
+            'hasPaternal' => $parentAvailability['hasPaternal'],
+            'hasMaternal' => $parentAvailability['hasMaternal'],
         ]);
     }
 

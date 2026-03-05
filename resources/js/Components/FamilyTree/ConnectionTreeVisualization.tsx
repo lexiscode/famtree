@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { router } from '@inertiajs/react';
-import { Users, Maximize2, Minimize2, ZoomIn, ZoomOut, RefreshCw } from 'lucide-react';
+import { Users, Maximize2, Minimize2, ZoomIn, ZoomOut, RefreshCw, ArrowUpCircle, ArrowLeft } from 'lucide-react';
 
 interface Node {
     id: number;
@@ -77,6 +77,11 @@ interface TreeData {
 interface Props {
     treeData: TreeData;
     onAvatarClick?: (userId: number, shouldBlur: boolean) => void;
+    hasPaternal?: boolean;
+    hasMaternal?: boolean;
+    onExpandedView?: (side: 'paternal' | 'maternal') => void;
+    disableNodeClicks?: boolean;
+    onBackToDefault?: () => void;
 }
 
 interface NodePosition {
@@ -130,7 +135,7 @@ const capitalizeLabel = (label: string): string => {
     return label.charAt(0).toUpperCase() + label.slice(1).toLowerCase();
 };
 
-const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick }) => {
+const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick, hasPaternal, hasMaternal, onExpandedView, disableNodeClicks, onBackToDefault }) => {
     const svgRef = useRef<SVGSVGElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const [zoom, setZoom] = useState(1);
@@ -974,18 +979,18 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
 
     // Handle click on node name to navigate to profile
     const handleNodeClick = useCallback((username: string, shouldBlur: boolean) => {
-        if (shouldBlur) return; // Don't navigate for blurred nodes
+        if (shouldBlur || disableNodeClicks) return;
         window.location.href = `/profile/${username}`;
-    }, []);
+    }, [disableNodeClicks]);
 
     // Handle click on avatar to switch tree view
     const handleAvatarClick = useCallback((userId: number, shouldBlur: boolean, e: React.MouseEvent) => {
         e.stopPropagation();
-        if (shouldBlur) return; // Don't switch for blurred nodes
+        if (shouldBlur || disableNodeClicks) return;
         if (onAvatarClick) {
             onAvatarClick(userId, shouldBlur);
         }
-    }, [onAvatarClick]);
+    }, [onAvatarClick, disableNodeClicks]);
 
     if (!treeData || treeData.nodes.length === 0) {
         return (
@@ -1041,6 +1046,37 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                 border: '1px solid rgba(102, 126, 234, 0.3)',
                 boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)'
             }}>
+                {onBackToDefault && (
+                    <button
+                        onClick={onBackToDefault}
+                        style={{
+                            background: 'linear-gradient(135deg, #94A3B8 0%, #64748B 100%)',
+                            border: 'none',
+                            borderRadius: '10px',
+                            padding: '10px 14px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            color: 'white',
+                            transition: 'all 0.2s',
+                            gap: '4px',
+                            minWidth: '60px'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(148, 163, 184, 0.5)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = 'none';
+                        }}
+                    >
+                        <ArrowLeft size={20} />
+                        <span style={{ fontSize: '10px', fontWeight: 600 }}>Back</span>
+                    </button>
+                )}
                 <button
                     onClick={handleZoomIn}
                     style={{
@@ -1163,6 +1199,68 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                         {isFullscreen ? 'Exit' : 'Expand'}
                     </span>
                 </button>
+                {hasPaternal && onExpandedView && (
+                    <button
+                        onClick={() => onExpandedView('paternal')}
+                        style={{
+                            background: 'linear-gradient(135deg, #06B6D4 0%, #0891B2 100%)',
+                            border: 'none',
+                            borderRadius: '10px',
+                            padding: '10px 14px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            color: 'white',
+                            transition: 'all 0.2s',
+                            gap: '4px',
+                            minWidth: '60px'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(6, 182, 212, 0.5)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = 'none';
+                        }}
+                    >
+                        <ArrowUpCircle size={20} />
+                        <span style={{ fontSize: '10px', fontWeight: 600 }}>Paternal</span>
+                    </button>
+                )}
+                {hasMaternal && onExpandedView && (
+                    <button
+                        onClick={() => onExpandedView('maternal')}
+                        style={{
+                            background: 'linear-gradient(135deg, #EC4899 0%, #DB2777 100%)',
+                            border: 'none',
+                            borderRadius: '10px',
+                            padding: '10px 14px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            color: 'white',
+                            transition: 'all 0.2s',
+                            gap: '4px',
+                            minWidth: '60px'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(236, 72, 153, 0.5)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = 'none';
+                        }}
+                    >
+                        <ArrowUpCircle size={20} />
+                        <span style={{ fontSize: '10px', fontWeight: 600 }}>Maternal</span>
+                    </button>
+                )}
             </div>
 
             {/* SVG Canvas */}
@@ -2480,7 +2578,7 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                                         </text>
                                     )}
                                     {/* Clickable overlay for avatar - switches to this user's tree */}
-                                    {onAvatarClick && (
+                                    {onAvatarClick && !disableNodeClicks && (
                                         <circle
                                             cx={x}
                                             cy={y}
@@ -2501,7 +2599,7 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                                         textAnchor="middle"
                                         fontSize="14"
                                         fontWeight="700"
-                                        fill={shouldBlur ? '#FFFFFF' : '#38BDF8'}
+                                        fill={shouldBlur ? '#FFFFFF' : disableNodeClicks ? '#94A3B8' : '#38BDF8'}
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             handleNodeClick(node.username, shouldBlur);
@@ -2509,8 +2607,8 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick 
                                         style={{
                                             textShadow: '0 2px 8px rgba(0,0,0,0.8)',
                                             filter: shouldBlur ? 'blur(4px)' : 'none',
-                                            cursor: shouldBlur ? 'not-allowed' : 'pointer',
-                                            textDecoration: shouldBlur ? 'none' : 'underline',
+                                            cursor: (shouldBlur || disableNodeClicks) ? 'default' : 'pointer',
+                                            textDecoration: (shouldBlur || disableNodeClicks) ? 'none' : 'underline',
                                             textUnderlineOffset: '3px'
                                         }}
                                     >

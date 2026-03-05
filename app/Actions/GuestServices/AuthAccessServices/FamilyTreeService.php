@@ -1621,4 +1621,71 @@ class FamilyTreeService
             ];
         }
     }
+
+    /**
+     * Check if a user has father/mother connections (for paternal/maternal expanded view buttons)
+     */
+    public function getParentAvailability(int $userId): array
+    {
+        $connections = $this->connectionRepository->getConnections($userId);
+        $hasPaternal = false;
+        $hasMaternal = false;
+
+        foreach ($connections as $conn) {
+            $relType = $this->getRelationshipFromUserPerspective($conn, $userId);
+            if ($relType === 'father') $hasPaternal = true;
+            if ($relType === 'mother') $hasMaternal = true;
+            if ($hasPaternal && $hasMaternal) break;
+        }
+
+        return ['hasPaternal' => $hasPaternal, 'hasMaternal' => $hasMaternal];
+    }
+
+    /**
+     * Find the topmost ancestor by tracing upward through fathers.
+     * Paternal: start from user's father, then trace father chain.
+     * Maternal: start from user's mother, then trace father chain.
+     */
+    public function findTopmostAncestor(int $userId, string $side): ?int
+    {
+        $connections = $this->connectionRepository->getConnections($userId);
+        $targetRelType = $side === 'paternal' ? 'father' : 'mother';
+        $parentId = null;
+
+        foreach ($connections as $conn) {
+            $relType = $this->getRelationshipFromUserPerspective($conn, $userId);
+            if ($relType === $targetRelType) {
+                $parentId = $conn->requester_user_id === $userId
+                    ? $conn->recipient_user_id : $conn->requester_user_id;
+                break;
+            }
+        }
+
+        if (!$parentId) return null;
+
+        return $this->traceUpwardThroughFathers($parentId);
+    }
+
+    /**
+     * Recursively trace upward through father connections until no father is found.
+     * Returns the topmost ancestor ID.
+     */
+    private function traceUpwardThroughFathers(int $currentId, array $visited = []): int
+    {
+        $visited[] = $currentId;
+        $connections = $this->connectionRepository->getConnections($currentId);
+
+        foreach ($connections as $conn) {
+            $relType = $this->getRelationshipFromUserPerspective($conn, $currentId);
+            if ($relType === 'father') {
+                $fatherId = $conn->requester_user_id === $currentId
+                    ? $conn->recipient_user_id : $conn->requester_user_id;
+                if (!in_array($fatherId, $visited)) {
+                    return $this->traceUpwardThroughFathers($fatherId, $visited);
+                }
+            }
+        }
+
+        return $currentId;
+    }
 }

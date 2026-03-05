@@ -196,6 +196,9 @@ Route::middleware(['web', 'auth'])->group(function () {
     // View Another User's Tree route
     Route::get('/profile/{username}/tree', [ConnectionTreeController::class, 'viewUserTree'])->name('profile.tree');
 
+    // API endpoint for expanded ancestral view (paternal/maternal lineage)
+    Route::get('/api/tree-expanded-view', [ConnectionTreeController::class, 'getExpandedView'])->name('api.tree.expanded-view');
+
     // API endpoint for getting tree data (for inline tree switching)
     Route::get('/api/tree/{userId}', [ConnectionTreeController::class, 'getTreeData'])->name('api.tree.data');
 

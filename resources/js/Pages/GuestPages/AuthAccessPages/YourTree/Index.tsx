@@ -65,14 +65,19 @@ interface User {
 interface Props {
     connectionTreeData: ConnectionTreeData;
     user: User;
+    hasPaternal: boolean;
+    hasMaternal: boolean;
 }
 
-export default function Index({ connectionTreeData, user }: Props) {
+export default function Index({ connectionTreeData, user, hasPaternal, hasMaternal }: Props) {
     // State for current tree data (can switch to view other users' trees)
     const [currentTreeData, setCurrentTreeData] = useState<ConnectionTreeData>(connectionTreeData);
     const [currentOwner, setCurrentOwner] = useState<User>(user);
     const [isLoading, setIsLoading] = useState(false);
-    const [viewHistory, setViewHistory] = useState<Array<{ treeData: ConnectionTreeData; owner: User }>>([]);
+    const [currentHasPaternal, setCurrentHasPaternal] = useState(hasPaternal);
+    const [currentHasMaternal, setCurrentHasMaternal] = useState(hasMaternal);
+    const [isExpandedView, setIsExpandedView] = useState(false);
+    const [viewHistory, setViewHistory] = useState<Array<{ treeData: ConnectionTreeData; owner: User; hasPaternal: boolean; hasMaternal: boolean }>>([]);
 
     // Check if viewing own tree
     const isOwnTree = currentOwner.id === user.id;
@@ -98,6 +103,9 @@ export default function Index({ connectionTreeData, user }: Props) {
         if (userId === user.id) {
             setCurrentTreeData(connectionTreeData);
             setCurrentOwner(user);
+            setCurrentHasPaternal(hasPaternal);
+            setCurrentHasMaternal(hasMaternal);
+            setIsExpandedView(false);
             setViewHistory([]);
             return;
         }
@@ -129,11 +137,13 @@ export default function Index({ connectionTreeData, user }: Props) {
 
             if (data.success) {
                 // Save current state to history for back navigation
-                setViewHistory(prev => [...prev, { treeData: currentTreeData, owner: currentOwner }]);
+                setViewHistory(prev => [...prev, { treeData: currentTreeData, owner: currentOwner, hasPaternal: currentHasPaternal, hasMaternal: currentHasMaternal }]);
 
                 // Update to new tree
                 setCurrentTreeData(data.connectionTreeData);
                 setCurrentOwner(data.owner);
+                setCurrentHasPaternal(data.hasPaternal ?? false);
+                setCurrentHasMaternal(data.hasMaternal ?? false);
             }
         } catch (error) {
             console.error('Error fetching tree data:', error);
@@ -141,7 +151,7 @@ export default function Index({ connectionTreeData, user }: Props) {
         } finally {
             setIsLoading(false);
         }
-    }, [currentTreeData, currentOwner, isLoading, user.id, connectionTreeData, user]);
+    }, [currentTreeData, currentOwner, isLoading, user.id, connectionTreeData, user, hasPaternal, hasMaternal, currentHasPaternal, currentHasMaternal]);
 
     // Handle going back to previous tree view
     const handleGoBack = useCallback(() => {
@@ -150,6 +160,9 @@ export default function Index({ connectionTreeData, user }: Props) {
         const previousState = viewHistory[viewHistory.length - 1];
         setCurrentTreeData(previousState.treeData);
         setCurrentOwner(previousState.owner);
+        setCurrentHasPaternal(previousState.hasPaternal);
+        setCurrentHasMaternal(previousState.hasMaternal);
+        setIsExpandedView(false);
         setViewHistory(prev => prev.slice(0, -1));
     }, [viewHistory]);
 
@@ -157,8 +170,54 @@ export default function Index({ connectionTreeData, user }: Props) {
     const handleResetToOwnTree = useCallback(() => {
         setCurrentTreeData(connectionTreeData);
         setCurrentOwner(user);
+        setCurrentHasPaternal(hasPaternal);
+        setCurrentHasMaternal(hasMaternal);
+        setIsExpandedView(false);
         setViewHistory([]);
-    }, [connectionTreeData, user]);
+    }, [connectionTreeData, user, hasPaternal, hasMaternal]);
+
+    // Handle expanded view (paternal/maternal lineage)
+    const handleExpandedView = useCallback(async (side: 'paternal' | 'maternal') => {
+        if (isLoading) return;
+
+        setIsLoading(true);
+
+        try {
+            const response = await fetch(`/api/tree-expanded-view?userId=${currentOwner.id}&side=${side}`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                alert(errorData.error || 'Failed to load expanded view');
+                setIsLoading(false);
+                return;
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Save current state to history
+                setViewHistory(prev => [...prev, { treeData: currentTreeData, owner: currentOwner, hasPaternal: currentHasPaternal, hasMaternal: currentHasMaternal }]);
+
+                // Update to ancestor's tree
+                setCurrentTreeData(data.connectionTreeData);
+                setCurrentOwner(data.owner);
+                setCurrentHasPaternal(data.hasPaternal ?? false);
+                setCurrentHasMaternal(data.hasMaternal ?? false);
+                setIsExpandedView(true);
+            }
+        } catch (error) {
+            console.error('Error fetching expanded view:', error);
+            alert('Failed to load expanded view. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    }, [currentTreeData, currentOwner, isLoading, currentHasPaternal, currentHasMaternal]);
 
     return (
         <AuthAccessLayout>
@@ -374,6 +433,11 @@ export default function Index({ connectionTreeData, user }: Props) {
                         <ConnectionTreeVisualization
                             treeData={currentTreeData}
                             onAvatarClick={handleAvatarClick}
+                            hasPaternal={currentHasPaternal}
+                            hasMaternal={currentHasMaternal}
+                            onExpandedView={handleExpandedView}
+                            disableNodeClicks={isExpandedView}
+                            onBackToDefault={isExpandedView ? handleResetToOwnTree : undefined}
                         />
                     </div>
 
