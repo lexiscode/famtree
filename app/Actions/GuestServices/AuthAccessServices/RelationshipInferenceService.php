@@ -56,11 +56,19 @@ class RelationshipInferenceService
             $firstType = $this->getRelationshipFromUserPerspective($userId, $intermediateUserId, $firstConnection);
             $secondType = $this->getRelationshipFromUserPerspective($intermediateUserId, $targetUserId, $secondConnection);
 
-            // If either hop has an "ex_" prefixed type, the chain goes through a dissolved
-            // relationship — the target has no familial tie to the logged-in user.
-            if (str_starts_with($firstType, 'ex_') || str_starts_with($secondType, 'ex_')) {
+            // If the FIRST hop is ex_, the user's own direct connection is dissolved
+            // — no familial tie to anyone through that path.
+            if (str_starts_with($firstType, 'ex_') || $firstConnection->isDivorced()) {
                 return null;
             }
+
+            // Detect if the second hop goes through a dissolved relationship
+            $secondHopDissolved = str_starts_with($secondType, 'ex_') || $secondConnection->isDivorced();
+
+            // For inference, strip ex_ prefix from second type so map lookup works
+            $lookupSecondType = $secondHopDissolved && str_starts_with($secondType, 'ex_')
+                ? substr($secondType, 3)
+                : $secondType;
 
             // Get genders for context-aware inference
             $targetUser = User::find($targetUserId);
@@ -69,7 +77,7 @@ class RelationshipInferenceService
             // Infer the combined relationship
             $inferredType = $this->inferCombinedRelationship(
                 $firstType,
-                $secondType,
+                $lookupSecondType,
                 $intermediateUser?->gender,
                 $targetUser?->gender
             );
@@ -79,10 +87,10 @@ class RelationshipInferenceService
                 return null;
             }
 
-            // Divorce-aware handling: if either connection is divorced, the chain
-            // goes through a dissolved marriage — exclude entirely.
-            if ($firstConnection->isDivorced() || $secondConnection->isDivorced()) {
-                return null;
+            // If second hop is dissolved, prefix the inferred type with "ex_"
+            if ($secondHopDissolved && !str_starts_with($inferredType['type'], 'ex_')) {
+                $inferredType['type'] = 'ex_' . $inferredType['type'];
+                $inferredType['label'] = $this->getRelationshipLabel($inferredType['type']);
             }
 
             // Divorce-through-intermediate: if the intermediate user is a child of
@@ -221,6 +229,27 @@ class RelationshipInferenceService
             ];
         }
 
+        // Refine gender-neutral types to gender-specific using the target's gender
+        if ($targetUserGender) {
+            $genderRefinements = [
+                'great_grandchild' => $targetUserGender === 'male' ? 'great_grandson' : 'great_granddaughter',
+                'great_great_grandchild' => $targetUserGender === 'male' ? 'great_great_grandson' : 'great_great_granddaughter',
+                'grandchild' => $targetUserGender === 'male' ? 'grandson' : 'granddaughter',
+                'great_grandparent' => $targetUserGender === 'male' ? 'great_grandfather' : 'great_grandmother',
+                'great_great_grandparent' => $targetUserGender === 'male' ? 'great_great_grandfather' : 'great_great_grandmother',
+                'grandparent' => $targetUserGender === 'male' ? 'grandfather' : 'grandmother',
+                'sibling' => $targetUserGender === 'male' ? 'brother' : 'sister',
+                'child' => $targetUserGender === 'male' ? 'son' : 'daughter',
+                'parent' => $targetUserGender === 'male' ? 'father' : 'mother',
+                'grandchild_in_law' => $targetUserGender === 'male' ? 'grandson_in_law' : 'granddaughter_in_law',
+                'great_grandchild_in_law' => $targetUserGender === 'male' ? 'great_grandson_in_law' : 'great_granddaughter_in_law',
+            ];
+
+            if (isset($genderRefinements[$inferred['type']])) {
+                $inferred['type'] = $genderRefinements[$inferred['type']];
+            }
+        }
+
         // Add label
         $inferred['label'] = $this->getRelationshipLabel($inferred['type']);
 
@@ -267,6 +296,54 @@ class RelationshipInferenceService
             'daughter_husband' => 'son_in_law',
             'child_wife' => 'daughter_in_law',
             'child_husband' => 'son_in_law',
+
+            // Grandparent viewing grandchild's spouse (grandchild-in-law inference)
+            // If X is my grandson/granddaughter, and X's wife/husband is Y, then Y is my granddaughter/grandson-in-law
+            'grandson_wife' => 'granddaughter_in_law',
+            'grandson_husband' => 'grandson_in_law',
+            'grandson_partner' => 'grandchild_in_law',
+            'granddaughter_wife' => 'granddaughter_in_law',
+            'granddaughter_husband' => 'grandson_in_law',
+            'granddaughter_partner' => 'grandchild_in_law',
+            'grandchild_wife' => 'granddaughter_in_law',
+            'grandchild_husband' => 'grandson_in_law',
+            'grandchild_partner' => 'grandchild_in_law',
+
+            // Grandchild-in-law via child → child's in-law
+            // If X is my son/daughter, and X's daughter-in-law/son-in-law is Y, then Y is my granddaughter/grandson-in-law
+            'son_daughter_in_law' => 'granddaughter_in_law',
+            'son_son_in_law' => 'grandson_in_law',
+            'daughter_daughter_in_law' => 'granddaughter_in_law',
+            'daughter_son_in_law' => 'grandson_in_law',
+            'child_daughter_in_law' => 'granddaughter_in_law',
+            'child_son_in_law' => 'grandson_in_law',
+
+            // Great-grandparent viewing great-grandchild's spouse (great-grandchild-in-law inference)
+            'great_grandson_wife' => 'great_granddaughter_in_law',
+            'great_grandson_husband' => 'great_grandson_in_law',
+            'great_grandson_partner' => 'great_grandchild_in_law',
+            'great_granddaughter_wife' => 'great_granddaughter_in_law',
+            'great_granddaughter_husband' => 'great_grandson_in_law',
+            'great_granddaughter_partner' => 'great_grandchild_in_law',
+            'great_grandchild_wife' => 'great_granddaughter_in_law',
+            'great_grandchild_husband' => 'great_grandson_in_law',
+            'great_grandchild_partner' => 'great_grandchild_in_law',
+
+            // Great-grandchild-in-law via grandchild → grandchild's in-law
+            'grandson_daughter_in_law' => 'great_granddaughter_in_law',
+            'grandson_son_in_law' => 'great_grandson_in_law',
+            'granddaughter_daughter_in_law' => 'great_granddaughter_in_law',
+            'granddaughter_son_in_law' => 'great_grandson_in_law',
+            'grandchild_daughter_in_law' => 'great_granddaughter_in_law',
+            'grandchild_son_in_law' => 'great_grandson_in_law',
+
+            // Great-grandchild-in-law via child → child's grandchild-in-law
+            'son_granddaughter_in_law' => 'great_granddaughter_in_law',
+            'son_grandson_in_law' => 'great_grandson_in_law',
+            'daughter_granddaughter_in_law' => 'great_granddaughter_in_law',
+            'daughter_grandson_in_law' => 'great_grandson_in_law',
+            'child_granddaughter_in_law' => 'great_granddaughter_in_law',
+            'child_grandson_in_law' => 'great_grandson_in_law',
 
             // Viewing parent's spouse (other parent inference)
             // If X is my father/mother, and X's wife/husband is Y, then Y is my mother/father
@@ -364,6 +441,17 @@ class RelationshipInferenceService
             'grandparent_mother' => 'great_grandmother',
             'grandparent_father' => 'great_grandfather',
 
+            // Great-grandparent relationships (parent → grandparent)
+            'father_grandmother' => 'great_grandmother',
+            'father_grandfather' => 'great_grandfather',
+            'father_grandparent' => 'great_grandparent',
+            'mother_grandmother' => 'great_grandmother',
+            'mother_grandfather' => 'great_grandfather',
+            'mother_grandparent' => 'great_grandparent',
+            'parent_grandmother' => 'great_grandmother',
+            'parent_grandfather' => 'great_grandfather',
+            'parent_grandparent' => 'great_grandparent',
+
             // Great-grandchild relationships (grandchild → child)
             'grandson_son' => 'great_grandson',
             'grandson_daughter' => 'great_granddaughter',
@@ -372,17 +460,72 @@ class RelationshipInferenceService
             'grandchild_son' => 'great_grandson',
             'grandchild_daughter' => 'great_granddaughter',
 
+            // Great-grandchild relationships (child → grandchild)
+            'son_grandson' => 'great_grandson',
+            'son_granddaughter' => 'great_granddaughter',
+            'son_grandchild' => 'great_grandchild',
+            'daughter_grandson' => 'great_grandson',
+            'daughter_granddaughter' => 'great_granddaughter',
+            'daughter_grandchild' => 'great_grandchild',
+            'child_grandson' => 'great_grandson',
+            'child_granddaughter' => 'great_granddaughter',
+            'child_grandchild' => 'great_grandchild',
+
             // Great-great-grandparent relationships (great-grandparent → parent)
             'great_grandmother_mother' => 'great_great_grandmother',
             'great_grandmother_father' => 'great_great_grandfather',
             'great_grandfather_mother' => 'great_great_grandmother',
             'great_grandfather_father' => 'great_great_grandfather',
 
+            // Great-great-grandparent relationships (parent → great-grandparent)
+            'father_great_grandmother' => 'great_great_grandmother',
+            'father_great_grandfather' => 'great_great_grandfather',
+            'father_great_grandparent' => 'great_great_grandparent',
+            'mother_great_grandmother' => 'great_great_grandmother',
+            'mother_great_grandfather' => 'great_great_grandfather',
+            'mother_great_grandparent' => 'great_great_grandparent',
+            'parent_great_grandmother' => 'great_great_grandmother',
+            'parent_great_grandfather' => 'great_great_grandfather',
+            'parent_great_grandparent' => 'great_great_grandparent',
+
+            // Great-great-grandparent relationships (grandparent → grandparent)
+            'grandmother_grandmother' => 'great_great_grandmother',
+            'grandmother_grandfather' => 'great_great_grandfather',
+            'grandmother_grandparent' => 'great_great_grandparent',
+            'grandfather_grandmother' => 'great_great_grandmother',
+            'grandfather_grandfather' => 'great_great_grandfather',
+            'grandfather_grandparent' => 'great_great_grandparent',
+            'grandparent_grandmother' => 'great_great_grandmother',
+            'grandparent_grandfather' => 'great_great_grandfather',
+            'grandparent_grandparent' => 'great_great_grandparent',
+
             // Great-great-grandchild relationships (great-grandchild → child)
             'great_grandson_son' => 'great_great_grandson',
             'great_grandson_daughter' => 'great_great_granddaughter',
             'great_granddaughter_son' => 'great_great_grandson',
             'great_granddaughter_daughter' => 'great_great_granddaughter',
+
+            // Great-great-grandchild relationships (child → great-grandchild)
+            'son_great_grandson' => 'great_great_grandson',
+            'son_great_granddaughter' => 'great_great_granddaughter',
+            'son_great_grandchild' => 'great_great_grandchild',
+            'daughter_great_grandson' => 'great_great_grandson',
+            'daughter_great_granddaughter' => 'great_great_granddaughter',
+            'daughter_great_grandchild' => 'great_great_grandchild',
+            'child_great_grandson' => 'great_great_grandson',
+            'child_great_granddaughter' => 'great_great_granddaughter',
+            'child_great_grandchild' => 'great_great_grandchild',
+
+            // Great-great-grandchild relationships (grandchild → grandchild)
+            'grandson_grandson' => 'great_great_grandson',
+            'grandson_granddaughter' => 'great_great_granddaughter',
+            'grandson_grandchild' => 'great_great_grandchild',
+            'granddaughter_grandson' => 'great_great_grandson',
+            'granddaughter_granddaughter' => 'great_great_granddaughter',
+            'granddaughter_grandchild' => 'great_great_grandchild',
+            'grandchild_grandson' => 'great_great_grandson',
+            'grandchild_granddaughter' => 'great_great_granddaughter',
+            'grandchild_grandchild' => 'great_great_grandchild',
 
             // Cousin relationships
             'brother_cousin' => 'cousin',
@@ -883,6 +1026,15 @@ class RelationshipInferenceService
             'brother_in_law' => 'Brother-in-law',
             'son_in_law' => 'Son-in-law',
             'daughter_in_law' => 'Daughter-in-law',
+            'grandson_in_law' => 'Grandson-in-law',
+            'granddaughter_in_law' => 'Granddaughter-in-law',
+            'grandchild_in_law' => 'Grandchild-in-law',
+            'great_grandson_in_law' => 'Great-grandson-in-law',
+            'great_granddaughter_in_law' => 'Great-granddaughter-in-law',
+            'great_grandchild_in_law' => 'Great-grandchild-in-law',
+            'ex_granddaughter_in_law' => 'Ex-granddaughter-in-law',
+            'ex_grandson_in_law' => 'Ex-grandson-in-law',
+            'ex_grandchild_in_law' => 'Ex-grandchild-in-law',
             'ex_mother_in_law' => 'Ex-mother-in-law',
             'ex_father_in_law' => 'Ex-father-in-law',
             'ex_sister_in_law' => 'Ex-sister-in-law',
