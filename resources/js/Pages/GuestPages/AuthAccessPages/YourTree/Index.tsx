@@ -52,6 +52,7 @@ interface ConnectionTreeData {
         id: number;
         relationshipType: string;
     };
+    isUpwardTree?: boolean;
 }
 
 interface User {

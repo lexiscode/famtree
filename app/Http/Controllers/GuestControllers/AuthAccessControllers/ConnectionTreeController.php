@@ -139,7 +139,20 @@ class ConnectionTreeController extends Controller
         // Build scoped tree when viewing someone else's tree, full tree for own tree
         if ($viewer->id !== $userId) {
             $relationshipHint = request()->query('relationshipHint');
-            $connectionTreeData = $this->connectionTreeService->buildScopedTree($userId, $viewer->id, $relationshipHint);
+
+            // Determine if this is an "upward" node (parent/grandparent types)
+            $upwardTypes = [
+                'father', 'mother', 'parent',
+                'grandfather', 'grandmother', 'grandparent',
+                'great_grandfather', 'great_grandmother',
+                'great_great_grandfather', 'great_great_grandmother',
+            ];
+
+            if ($relationshipHint && in_array($relationshipHint, $upwardTypes)) {
+                $connectionTreeData = $this->connectionTreeService->buildUpwardScopedTree($userId, $viewer->id, $relationshipHint);
+            } else {
+                $connectionTreeData = $this->connectionTreeService->buildScopedTree($userId, $viewer->id, $relationshipHint);
+            }
         } else {
             $connectionTreeData = $this->connectionTreeService->buildFamilyTree($userId);
         }
