@@ -61,7 +61,7 @@ export default function TreeChats({ treeChats, statistics, filters, search, perP
     }, [searchQuery, perPage]);
 
     const handleSearch = useCallback(() => {
-        router.get(route('admin.messaging.treeChats'), buildParams(), { preserveScroll: true });
+        router.get(route('admin.messaging.treeChats'), buildParams(), { preserveScroll: true, preserveState: true });
     }, [buildParams]);
 
     useEffect(() => {
@@ -145,12 +145,8 @@ export default function TreeChats({ treeChats, statistics, filters, search, perP
                             placeholder="Search tree chats by name..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                         />
                     </div>
-                    <button className="ap-btn ap-btn-primary" onClick={handleSearch}>
-                        Search
-                    </button>
                 </div>
 
                 {searchQuery && (

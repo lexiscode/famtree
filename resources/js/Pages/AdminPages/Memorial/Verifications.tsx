@@ -123,11 +123,11 @@ export default function Verifications({ verifications, statistics, search, filte
             router.get(
                 route('admin.memorial.verifications'),
                 { search: searchQuery, filters: buildFilterObj(), per_page: perPage },
-                { preserveScroll: true }
+                { preserveScroll: true, preserveState: true }
             );
         }, 300);
         return () => clearTimeout(timer);
-    }, [filterStage, filterStatus]);
+    }, [filterStage, filterStatus, searchQuery]);
 
     const handleReset = useCallback(() => {
         setSearchQuery('');
@@ -185,12 +185,8 @@ export default function Verifications({ verifications, statistics, search, filte
                             placeholder="Search by user name or username..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                         />
                     </div>
-                    <button className="ap-btn ap-btn-primary" onClick={handleSearch}>
-                        Search
-                    </button>
                     <button
                         className={`ap-btn ${showFilters ? 'ap-btn-primary' : 'ap-btn-secondary'}`}
                         onClick={() => setShowFilters(!showFilters)}

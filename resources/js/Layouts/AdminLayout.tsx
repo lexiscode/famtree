@@ -1,4 +1,4 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, useCallback, useEffect } from 'react';
 import { usePage, router } from '@inertiajs/react';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -8,11 +8,11 @@ import {
     X,
     LayoutDashboard,
     Users,
-    FileText,
     BarChart3,
     Settings,
     LogOut,
     ChevronDown,
+    ChevronRight,
     Bell,
     Search,
     Zap,
@@ -32,6 +32,10 @@ import {
     UserCog,
     Trophy,
     Sparkles,
+    Crown,
+    Gamepad2,
+    PanelLeft,
+    type LucideIcon,
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -48,39 +52,146 @@ interface SharedProps {
     };
 }
 
+interface NavItem {
+    label: string;
+    icon: LucideIcon;
+    href: string;
+    active: boolean;
+}
+
+interface NavGroup {
+    label: string;
+    icon: LucideIcon;
+    items: NavItem[];
+    active: boolean;
+}
+
+type NavEntry = NavItem | NavGroup;
+
+function isNavGroup(entry: NavEntry): entry is NavGroup {
+    return 'items' in entry;
+}
+
 export default function AdminLayout({ children }: AdminLayoutProps) {
     const { auth } = usePage<SharedProps>().props;
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+    const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
     useFlashToast();
 
-    const handleLogout = () => {
+    const handleLogout = useCallback(() => {
         router.post(route('admin.logout'));
-    };
+    }, []);
 
-    const navigationItems = [
-        { label: 'Dashboard', icon: LayoutDashboard, href: route('admin.dashboard'), active: route().current('admin.dashboard') },
-        { label: 'Users', icon: Users, href: route('admin.users.index'), active: route().current('admin.users.*') },
-        { label: 'Organizations', icon: Building2, href: route('admin.organizations.index'), active: route().current('admin.organizations.*') || route().current('admin.orgCategories.*') },
-        { label: 'Content', icon: Image, href: route('admin.content.posts'), active: route().current('admin.content.*') },
-        { label: 'Reports', icon: AlertTriangle, href: route('admin.reports.index'), active: route().current('admin.reports.*') || route().current('admin.blocks.*') },
-        { label: 'Blog', icon: BookOpen, href: route('admin.blog.index'), active: route().current('admin.blog.*') },
-        { label: 'Contact', icon: Mail, href: route('admin.contact.index'), active: route().current('admin.contact.*') },
-        { label: 'Memorial', icon: Heart, href: route('admin.memorial.verifications'), active: route().current('admin.memorial.*') },
-        { label: 'Messaging', icon: MessageSquare, href: route('admin.messaging.conversations'), active: route().current('admin.messaging.*') },
-        { label: 'Family Trees', icon: GitBranch, href: route('admin.familyTrees.index'), active: route().current('admin.familyTrees.*') || route().current('admin.connections.*') },
-        { label: 'Groups', icon: Vote, href: route('admin.elections.index'), active: route().current('admin.elections.*') || route().current('admin.removals.*') },
-        { label: 'Predictions', icon: Trophy, href: route('admin.predictions.index'), active: route().current('admin.predictions.*') },
-        { label: 'Glam Squad', icon: Sparkles, href: route('admin.glam.index'), active: route().current('admin.glam.*') },
-        { label: 'Analytics', icon: BarChart3, href: route('admin.analytics.overview'), active: route().current('admin.analytics.*') },
-        { label: 'Security', icon: Shield, href: route('admin.security.dashboard'), active: route().current('admin.security.*') },
-        { label: 'Notifications', icon: BellRing, href: route('admin.notifications.broadcast'), active: route().current('admin.notifications.*') || route().current('admin.emails.*') },
-        { label: 'System', icon: Server, href: route('admin.system.health'), active: route().current('admin.system.*') },
-        { label: 'Public Pages', icon: Globe, href: route('admin.publicPages.index'), active: route().current('admin.publicPages.*') },
-        { label: 'Settings', icon: Settings, href: route('admin.settings.index'), active: route().current('admin.settings.*') },
-        { label: 'Team', icon: UserCog, href: route('admin.team.index'), active: route().current('admin.team.*') },
+    const toggleGroup = useCallback((label: string) => {
+        setExpandedGroups(prev => ({ ...prev, [label]: !prev[label] }));
+    }, []);
+
+    const navigation: NavEntry[] = [
+        // Standalone: Dashboard
+        {
+            label: 'Dashboard',
+            icon: LayoutDashboard,
+            href: route('admin.dashboard'),
+            active: route().current('admin.dashboard'),
+        },
+
+        // Group: User Management
+        {
+            label: 'User Management',
+            icon: Users,
+            active: route().current('admin.users.*') || route().current('admin.organizations.*') || route().current('admin.orgCategories.*') || route().current('admin.reservedUsernames.*') || route().current('admin.claimRequests.*'),
+            items: [
+                { label: 'Users', icon: Users, href: route('admin.users.index'), active: route().current('admin.users.*') },
+                { label: 'Organizations', icon: Building2, href: route('admin.organizations.index'), active: route().current('admin.organizations.*') || route().current('admin.orgCategories.*') },
+                { label: 'Reserved Names', icon: Crown, href: route('admin.reservedUsernames.index'), active: route().current('admin.reservedUsernames.*') },
+                { label: 'Claim Requests', icon: Shield, href: route('admin.claimRequests.index'), active: route().current('admin.claimRequests.*') },
+            ],
+        },
+
+        // Group: Content
+        {
+            label: 'Content',
+            icon: Image,
+            active: route().current('admin.content.*') || route().current('admin.blog.*') || route().current('admin.publicPages.*'),
+            items: [
+                { label: 'Posts & Media', icon: Image, href: route('admin.content.posts'), active: route().current('admin.content.*') },
+                { label: 'Blog', icon: BookOpen, href: route('admin.blog.index'), active: route().current('admin.blog.*') },
+                { label: 'Public Pages', icon: Globe, href: route('admin.publicPages.index'), active: route().current('admin.publicPages.*') },
+            ],
+        },
+
+        // Group: Community
+        {
+            label: 'Community',
+            icon: GitBranch,
+            active: route().current('admin.familyTrees.*') || route().current('admin.connections.*') || route().current('admin.elections.*') || route().current('admin.removals.*') || route().current('admin.messaging.*') || route().current('admin.memorial.*'),
+            items: [
+                { label: 'Family Trees', icon: GitBranch, href: route('admin.familyTrees.index'), active: route().current('admin.familyTrees.*') || route().current('admin.connections.*') },
+                { label: 'Groups', icon: Vote, href: route('admin.elections.index'), active: route().current('admin.elections.*') || route().current('admin.removals.*') },
+                { label: 'Messaging', icon: MessageSquare, href: route('admin.messaging.conversations'), active: route().current('admin.messaging.*') },
+                { label: 'Memorial', icon: Heart, href: route('admin.memorial.verifications'), active: route().current('admin.memorial.*') },
+            ],
+        },
+
+        // Group: Games & Activities
+        {
+            label: 'Games',
+            icon: Gamepad2,
+            active: route().current('admin.predictions.*') || route().current('admin.glam.*'),
+            items: [
+                { label: 'Predictions', icon: Trophy, href: route('admin.predictions.index'), active: route().current('admin.predictions.*') },
+                { label: 'Glam Squad', icon: Sparkles, href: route('admin.glam.index'), active: route().current('admin.glam.*') },
+            ],
+        },
+
+        // Group: Analytics & Reports
+        {
+            label: 'Insights',
+            icon: BarChart3,
+            active: route().current('admin.analytics.*') || route().current('admin.reports.*') || route().current('admin.blocks.*') || route().current('admin.security.*'),
+            items: [
+                { label: 'Analytics', icon: BarChart3, href: route('admin.analytics.overview'), active: route().current('admin.analytics.*') },
+                { label: 'Reports', icon: AlertTriangle, href: route('admin.reports.index'), active: route().current('admin.reports.*') || route().current('admin.blocks.*') },
+                { label: 'Security', icon: Shield, href: route('admin.security.dashboard'), active: route().current('admin.security.*') },
+            ],
+        },
+
+        // Group: Communication
+        {
+            label: 'Communication',
+            icon: BellRing,
+            active: route().current('admin.notifications.*') || route().current('admin.emails.*') || route().current('admin.contact.*'),
+            items: [
+                { label: 'Notifications', icon: BellRing, href: route('admin.notifications.broadcast'), active: route().current('admin.notifications.*') || route().current('admin.emails.*') },
+                { label: 'Contact', icon: Mail, href: route('admin.contact.index'), active: route().current('admin.contact.*') },
+            ],
+        },
+
+        // Group: System
+        {
+            label: 'System',
+            icon: Server,
+            active: route().current('admin.system.*') || route().current('admin.settings.*') || route().current('admin.team.*'),
+            items: [
+                { label: 'Health', icon: Server, href: route('admin.system.health'), active: route().current('admin.system.*') },
+                { label: 'Settings', icon: Settings, href: route('admin.settings.index'), active: route().current('admin.settings.*') },
+                { label: 'Team', icon: UserCog, href: route('admin.team.index'), active: route().current('admin.team.*') },
+            ],
+        },
     ];
+
+    // Auto-expand groups that have an active item
+    useEffect(() => {
+        const initial: Record<string, boolean> = {};
+        navigation.forEach(entry => {
+            if (isNavGroup(entry) && entry.active) {
+                initial[entry.label] = true;
+            }
+        });
+        setExpandedGroups(prev => ({ ...prev, ...initial }));
+    }, []);
 
     return (
         <div className="ap-layout">
@@ -88,7 +199,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <aside className={`ap-sidebar ${sidebarOpen ? '' : 'collapsed'}`}>
                 {/* Logo */}
                 <div className="ap-sidebar-logo">
-                    <div className="ap-flex ap-items-center ap-gap-md" style={{ minWidth: 0 }}>
+                    <div className="ap-sidebar-logo-inner">
                         <div className="ap-sidebar-logo-icon">
                             <Zap size={18} />
                         </div>
@@ -99,25 +210,82 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                             </div>
                         )}
                     </div>
-                    <button className="ap-sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
-                        {sidebarOpen ? <X size={16} /> : <Menu size={16} />}
+                    <button
+                        className="ap-sidebar-toggle"
+                        onClick={() => setSidebarOpen(!sidebarOpen)}
+                        aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+                    >
+                        {sidebarOpen ? <PanelLeft size={16} /> : <Menu size={16} />}
                     </button>
                 </div>
 
                 {/* Navigation */}
                 <nav className="ap-sidebar-nav">
                     <div className="ap-sidebar-nav-list">
-                        {navigationItems.map((item, index) => {
-                            const Icon = item.icon;
+                        {navigation.map((entry, idx) => {
+                            if (isNavGroup(entry)) {
+                                const isExpanded = expandedGroups[entry.label];
+                                const GroupIcon = entry.icon;
+
+                                if (!sidebarOpen) {
+                                    // Collapsed: show first active item or first item icon
+                                    const activeItem = entry.items.find(i => i.active) || entry.items[0];
+                                    const ActiveIcon = activeItem.icon;
+                                    return (
+                                        <a
+                                            key={idx}
+                                            href={activeItem.href}
+                                            className={`ap-nav-item ${entry.active ? 'active' : ''}`}
+                                            title={entry.label}
+                                        >
+                                            <GroupIcon size={18} className="ap-nav-icon" />
+                                        </a>
+                                    );
+                                }
+
+                                return (
+                                    <div key={idx} className="ap-nav-group">
+                                        <button
+                                            className={`ap-nav-group-toggle ${entry.active ? 'active' : ''}`}
+                                            onClick={() => toggleGroup(entry.label)}
+                                        >
+                                            <GroupIcon size={18} className="ap-nav-icon" />
+                                            <span className="ap-nav-label">{entry.label}</span>
+                                            <ChevronRight
+                                                size={14}
+                                                className={`ap-nav-chevron ${isExpanded ? 'expanded' : ''}`}
+                                            />
+                                        </button>
+                                        <div className={`ap-nav-group-items ${isExpanded ? 'open' : ''}`}>
+                                            {entry.items.map((item, subIdx) => {
+                                                const SubIcon = item.icon;
+                                                return (
+                                                    <a
+                                                        key={subIdx}
+                                                        href={item.href}
+                                                        className={`ap-nav-subitem ${item.active ? 'active' : ''}`}
+                                                    >
+                                                        <SubIcon size={15} className="ap-nav-icon" />
+                                                        <span className="ap-nav-label">{item.label}</span>
+                                                    </a>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                );
+                            }
+
+                            // Standalone item
+                            const Icon = entry.icon;
                             return (
                                 <a
-                                    key={index}
-                                    href={item.href}
-                                    className={`ap-nav-item ${item.active ? 'active' : ''}`}
-                                    title={!sidebarOpen ? item.label : undefined}
+                                    key={idx}
+                                    href={entry.href}
+                                    className={`ap-nav-item ${entry.active ? 'active' : ''}`}
+                                    title={!sidebarOpen ? entry.label : undefined}
                                 >
                                     <Icon size={18} className="ap-nav-icon" />
-                                    {sidebarOpen && <span className="ap-nav-label">{item.label}</span>}
+                                    {sidebarOpen && <span className="ap-nav-label">{entry.label}</span>}
                                 </a>
                             );
                         })}
@@ -161,8 +329,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 <header className="ap-topbar">
                     <div className="ap-topbar-search">
                         <Search size={16} />
-                        <input type="text" placeholder="Search..." />
-                        <kbd className="ap-topbar-kbd">⌘K</kbd>
+                        <input type="text" placeholder="Search anything..." />
+                        <kbd className="ap-topbar-kbd">&#8984;K</kbd>
                     </div>
 
                     <div className="ap-topbar-right">

@@ -12,6 +12,7 @@ use App\Http\Controllers\GuestControllers\FeaturesController;
 use App\Http\Controllers\GuestControllers\HowItWorksController;
 use App\Http\Controllers\GuestControllers\FamilyPreviewController;
 use App\Http\Controllers\GuestControllers\FamilyExplorerController;
+use App\Http\Controllers\GuestControllers\UsernameClaimController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\LandingPageController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\FeedController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\ConnectionRequestController;
@@ -84,6 +85,12 @@ Route::middleware(['web', 'guest'])->group(function () {
     Route::get('/auth/google/callback', [OAuthController::class, 'handleGoogleCallback'])->name('auth.google.callback');
     Route::get('/auth/oauth/complete', [OAuthController::class, 'showCompletionForm'])->name('auth.oauth.complete');
     Route::post('/auth/oauth/complete', [OAuthController::class, 'completeRegistration'])->name('auth.oauth.complete.submit');
+});
+
+// Claim Reserved Username (accessible to anyone)
+Route::middleware(['web'])->group(function () {
+    Route::get('/claim-username', [UsernameClaimController::class, 'index'])->name('claim-username');
+    Route::post('/claim-username', [UsernameClaimController::class, 'store'])->name('claim-username.store');
 });
 
 // 2FA verification routes (accessible without full authentication)

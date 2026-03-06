@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { usePage, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import {
@@ -88,8 +88,20 @@ export default function OrgPosts({ orgPosts, statistics, search, perPage }: Prop
     const isInitialMount = useRef(true);
 
     const handleSearch = useCallback(() => {
-        router.get(route('admin.content.orgPosts'), { search: searchQuery, per_page: perPage }, { preserveScroll: true });
+        router.get(route('admin.content.orgPosts'), { search: searchQuery, per_page: perPage }, { preserveScroll: true, preserveState: true });
     }, [searchQuery, perPage]);
+
+    useEffect(() => {
+        if (isInitialMount.current) {
+            isInitialMount.current = false;
+            return;
+        }
+
+        const timer = setTimeout(() => {
+            handleSearch();
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
 
     const handlePageChange = (page: number) => {
         router.get(route('admin.content.orgPosts'), { page, search: searchQuery, per_page: perPage }, { preserveScroll: true });
@@ -140,12 +152,8 @@ export default function OrgPosts({ orgPosts, statistics, search, perPage }: Prop
                             placeholder="Search org posts by content or organization..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                         />
                     </div>
-                    <button className="ap-btn ap-btn-primary" onClick={handleSearch}>
-                        Search
-                    </button>
                 </div>
 
                 {/* Table */}

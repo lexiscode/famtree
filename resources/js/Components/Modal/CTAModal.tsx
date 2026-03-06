@@ -593,6 +593,17 @@ export default function CTAModal({
                 )}
               </button>
 
+              {apiError && apiError.includes('reserved') && (
+                <div style={{ textAlign: 'center', marginTop: 12 }}>
+                  <a
+                    href="/claim-username"
+                    style={{ color: '#fbbf24', fontWeight: 600, fontSize: 14, textDecoration: 'underline' }}
+                  >
+                    Are you the rightful owner? Submit a claim request
+                  </a>
+                </div>
+              )}
+
               {/* OAuth Divider */}
               <div className="oauth-divider">
                 <span>or</span>

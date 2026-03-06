@@ -97,11 +97,11 @@ export default function Index({ trees, statistics, filters, search, perPage }: P
                     filters: filterObj,
                     per_page: perPage,
                 },
-                { preserveScroll: true }
+                { preserveScroll: true, preserveState: true }
             );
         }, 300);
         return () => clearTimeout(timer);
-    }, [filterVisibility]);
+    }, [filterVisibility, searchQuery]);
 
     const handleReset = useCallback(() => {
         setSearchQuery('');
@@ -170,12 +170,8 @@ export default function Index({ trees, statistics, filters, search, perPage }: P
                             placeholder="Search by tree name or root user..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                         />
                     </div>
-                    <button className="ap-btn ap-btn-primary" onClick={handleSearch}>
-                        Search
-                    </button>
                     <button
                         className={`ap-btn ${showFilters ? 'ap-btn-primary' : 'ap-btn-secondary'}`}
                         onClick={() => setShowFilters(!showFilters)}

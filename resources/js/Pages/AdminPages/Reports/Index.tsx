@@ -123,10 +123,10 @@ export default function Index({ reports, statistics, search, filters, perPage }:
             return;
         }
         const timer = setTimeout(() => {
-            router.get(route('admin.reports.index'), buildParams(), { preserveScroll: true });
+            router.get(route('admin.reports.index'), buildParams(), { preserveScroll: true, preserveState: true });
         }, 300);
         return () => clearTimeout(timer);
-    }, [filterStatus, filterReason]);
+    }, [filterStatus, filterReason, searchQuery]);
 
     const handleReset = useCallback(() => {
         setSearchQuery('');
@@ -192,12 +192,8 @@ export default function Index({ reports, statistics, search, filters, perPage }:
                             placeholder="Search by reporter, reported user, or reason..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                         />
                     </div>
-                    <button className="ap-btn ap-btn-primary" onClick={handleSearch}>
-                        Search
-                    </button>
                     <button
                         className={`ap-btn ${showFilters ? 'ap-btn-primary' : 'ap-btn-secondary'}`}
                         onClick={() => setShowFilters(!showFilters)}

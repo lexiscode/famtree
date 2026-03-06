@@ -79,10 +79,10 @@ export default function AuditLog({ logs, filters, search, perPage }: Props) {
             return;
         }
         const timer = setTimeout(() => {
-            router.get(route('admin.security.auditLog'), buildParams(), { preserveScroll: true });
+            router.get(route('admin.security.auditLog'), buildParams(), { preserveScroll: true, preserveState: true });
         }, 300);
         return () => clearTimeout(timer);
-    }, [filterActionType, filterResourceType]);
+    }, [filterActionType, filterResourceType, searchQuery]);
 
     const handleReset = useCallback(() => {
         setSearchQuery('');
@@ -141,13 +141,8 @@ export default function AuditLog({ logs, filters, search, perPage }: Props) {
                                 placeholder="Search by description..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                             />
                         </div>
-
-                        <button className="ap-btn ap-btn-primary" onClick={handleSearch}>
-                            Search
-                        </button>
 
                         <button
                             className={`ap-btn ${showFilters ? 'ap-btn-primary' : 'ap-btn-secondary'}`}

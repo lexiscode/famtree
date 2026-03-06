@@ -122,10 +122,10 @@ export default function Posts({ posts, statistics, search, filters, perPage }: P
             return;
         }
         const timer = setTimeout(() => {
-            router.get(route('admin.content.posts'), buildParams(), { preserveScroll: true });
+            router.get(route('admin.content.posts'), buildParams(), { preserveScroll: true, preserveState: true });
         }, 300);
         return () => clearTimeout(timer);
-    }, [filterType, filterPrivacy]);
+    }, [filterType, filterPrivacy, searchQuery]);
 
     const handleReset = useCallback(() => {
         setSearchQuery('');
@@ -189,12 +189,8 @@ export default function Posts({ posts, statistics, search, filters, perPage }: P
                             placeholder="Search posts by content or username..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                         />
                     </div>
-                    <button className="ap-btn ap-btn-primary" onClick={handleSearch}>
-                        Search
-                    </button>
                     <button
                         className={`ap-btn ${showFilters ? 'ap-btn-primary' : 'ap-btn-secondary'}`}
                         onClick={() => setShowFilters(!showFilters)}

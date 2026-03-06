@@ -138,7 +138,7 @@ export default function Index({ organizations, statistics, categories, filters, 
                     filters: buildFilterObj(),
                     per_page: perPage,
                 },
-                { preserveScroll: true }
+                { preserveScroll: true, preserveState: true }
             );
         }, 300);
         return () => clearTimeout(timer);
@@ -222,7 +222,6 @@ export default function Index({ organizations, statistics, categories, filters, 
                             placeholder="Search organizations by name..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                         />
                     </div>
 

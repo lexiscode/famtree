@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { usePage, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import {
@@ -79,8 +79,20 @@ export default function Elections({ elections, statistics, search, filters, perP
     }, [searchQuery, perPage]);
 
     const handleSearch = useCallback(() => {
-        router.get(route('admin.elections.index'), buildParams(), { preserveScroll: true });
+        router.get(route('admin.elections.index'), buildParams(), { preserveScroll: true, preserveState: true });
     }, [buildParams]);
+
+    useEffect(() => {
+        if (isInitialMount.current) {
+            isInitialMount.current = false;
+            return;
+        }
+
+        const timer = setTimeout(() => {
+            handleSearch();
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
 
     const handlePageChange = (page: number) => {
         router.get(route('admin.elections.index'), { ...buildParams(), page }, { preserveScroll: true });
@@ -151,12 +163,8 @@ export default function Elections({ elections, statistics, search, filters, perP
                             placeholder="Search elections by class set name..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                         />
                     </div>
-                    <button className="ap-btn ap-btn-primary" onClick={handleSearch}>
-                        Search
-                    </button>
                 </div>
 
                 {searchQuery && (

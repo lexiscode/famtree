@@ -30,6 +30,8 @@ use App\Http\Controllers\AdminControllers\PublicPageController;
 use App\Http\Controllers\AdminControllers\TeamController;
 use App\Http\Controllers\AdminControllers\PredictionController;
 use App\Http\Controllers\AdminControllers\GlamController;
+use App\Http\Controllers\AdminControllers\ReservedUsernameController;
+use App\Http\Controllers\AdminControllers\UsernameClaimRequestController;
 
 
 Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], function () {
@@ -255,6 +257,21 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
         Route::post('/glam/squads/{squadId}/remove-member', [GlamController::class, 'removeSquadMember'])->name('glam.removeSquadMember');
         Route::get('/glam/seasons/{id}/standings/{track}', [GlamController::class, 'standings'])->name('glam.standings');
         Route::get('/glam/seasons/{id}/badges', [GlamController::class, 'badges'])->name('glam.badges');
+
+        // Reserved Usernames Management
+        Route::get('/reserved-usernames', [ReservedUsernameController::class, 'index'])->name('reservedUsernames.index');
+        Route::post('/reserved-usernames', [ReservedUsernameController::class, 'store'])->name('reservedUsernames.store');
+        Route::put('/reserved-usernames/{id}', [ReservedUsernameController::class, 'update'])->name('reservedUsernames.update');
+        Route::delete('/reserved-usernames/{id}', [ReservedUsernameController::class, 'destroy'])->name('reservedUsernames.destroy');
+        Route::post('/reserved-usernames/{id}/reassign', [ReservedUsernameController::class, 'reassign'])->name('reservedUsernames.reassign');
+
+        // Username Claim Requests
+        Route::get('/claim-requests', [UsernameClaimRequestController::class, 'index'])->name('claimRequests.index');
+        Route::post('/claim-requests/{id}/generate-code', [UsernameClaimRequestController::class, 'generateCode'])->name('claimRequests.generateCode');
+        Route::post('/claim-requests/{id}/send-code', [UsernameClaimRequestController::class, 'sendCode'])->name('claimRequests.sendCode');
+        Route::post('/claim-requests/{id}/verify', [UsernameClaimRequestController::class, 'verify'])->name('claimRequests.verify');
+        Route::post('/claim-requests/{id}/reject', [UsernameClaimRequestController::class, 'reject'])->name('claimRequests.reject');
+        Route::delete('/claim-requests/{id}', [UsernameClaimRequestController::class, 'destroy'])->name('claimRequests.destroy');
 
         // Phase 15: Admin Team & Role Management
         Route::get('/team', [TeamController::class, 'index'])->name('team.index');

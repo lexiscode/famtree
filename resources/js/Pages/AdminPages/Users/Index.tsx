@@ -11,6 +11,11 @@ import {
     CheckCircle,
     AlertCircle,
     ChevronRight,
+    X,
+    ArrowUpRight,
+    UserCheck,
+    UserX,
+    Baby,
 } from 'lucide-react';
 
 interface User {
@@ -144,11 +149,11 @@ export default function Index({ users, statistics, search, filters, perPage }: P
                     filters: filterObj,
                     per_page: perPage,
                 },
-                { preserveScroll: true }
+                { preserveScroll: true, preserveState: true }
             );
         }, 300);
         return () => clearTimeout(timer);
-    }, [filterStatus, filterTwoFA, filterChildAccount]);
+    }, [searchQuery, filterStatus, filterTwoFA, filterChildAccount]);
 
     const handleReset = useCallback(() => {
         setSearchQuery('');
@@ -199,103 +204,121 @@ export default function Index({ users, statistics, search, filters, perPage }: P
         );
     };
 
+    const hasActiveFilters = searchQuery || filterStatus || filterTwoFA !== '' || filterChildAccount !== '';
+
+    const statCards = [
+        { label: 'Total Users', value: statistics.total, icon: Users, colorClass: 'indigo', trend: '+12%', trendUp: true },
+        { label: 'Active Users', value: statistics.active, icon: UserCheck, colorClass: 'green', trend: `${statistics.total ? Math.round((statistics.active / statistics.total) * 100) : 0}%`, trendUp: true },
+        { label: 'Suspended', value: statistics.suspended, icon: UserX, colorClass: 'red', trend: statistics.suspended > 0 ? `${statistics.suspended} flagged` : 'None', trendUp: false },
+        { label: 'With 2FA', value: statistics.with_2fa, icon: Shield, colorClass: 'blue', trend: `${statistics.total ? Math.round((statistics.with_2fa / statistics.total) * 100) : 0}%`, trendUp: true },
+    ];
+
     return (
         <AdminLayout>
             {/* Page Header */}
             <div className="ap-page-header">
-                <h1 className="ap-page-title">User Management</h1>
-                <p className="ap-page-subtitle">Manage and monitor all registered users in the system</p>
+                <div>
+                    <h1 className="ap-page-title">User Management</h1>
+                    <p className="ap-page-subtitle">Manage and monitor all registered users</p>
+                </div>
             </div>
 
             {/* Stats Grid */}
-            <div className="ap-stats-grid">
-                {[
-                    { label: 'Total Users', value: statistics.total, icon: Users, colorClass: 'indigo' },
-                    { label: 'Active', value: statistics.active, icon: CheckCircle, colorClass: 'green' },
-                    { label: 'Suspended', value: statistics.suspended, icon: AlertCircle, colorClass: 'red' },
-                    { label: 'With 2FA', value: statistics.with_2fa, icon: Shield, colorClass: 'blue' },
-                ].map((stat, idx) => {
+            <div className="ap-stats-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+                {statCards.map((stat, idx) => {
                     const Icon = stat.icon;
                     return (
                         <div key={idx} className="ap-stat-card">
                             <div className="ap-stat-card-header">
+                                <p className="ap-stat-label">{stat.label}</p>
                                 <div className={`ap-stat-icon ${stat.colorClass}`}>
-                                    <Icon size={20} />
+                                    <Icon size={18} strokeWidth={1.8} />
                                 </div>
                             </div>
-                            <p className="ap-stat-label">{stat.label}</p>
-                            <p className="ap-stat-value">{stat.value}</p>
+                            <p className="ap-stat-value">{stat.value.toLocaleString()}</p>
+                            <div className="ap-stat-footer">
+                                <span className={`ap-stat-trend ${stat.trendUp ? 'up' : 'down'}`}>
+                                    <ArrowUpRight size={12} />
+                                    {stat.trend}
+                                </span>
+                                <span className="ap-stat-period">of total</span>
+                            </div>
                         </div>
                     );
                 })}
             </div>
 
             {/* Search and Filters */}
-            <div className="ap-filter-bar">
-                <div className="ap-search-bar">
-                    <Search size={16} />
-                    <input
-                        type="text"
-                        placeholder="Search by name, email, or username..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                    />
+            <div className="ap-card">
+                <div className="ap-filter-bar">
+                    <div className="ap-search-bar">
+                        <Search size={16} />
+                        <input
+                            type="text"
+                            placeholder="Search by name, email, or username..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                    </div>
+
+                    <button
+                        className={`ap-btn ${showFilters ? 'ap-btn-primary' : 'ap-btn-secondary'}`}
+                        onClick={() => setShowFilters(!showFilters)}
+                    >
+                        <Filter size={16} />
+                        Filters
+                        <ChevronDown size={14} style={{ transform: showFilters ? 'rotate(180deg)' : '', transition: 'transform 0.2s ease' }} />
+                    </button>
+
+                    {hasActiveFilters && (
+                        <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={handleReset}>
+                            <X size={14} />
+                            Clear
+                        </button>
+                    )}
                 </div>
 
-                <button className="ap-btn ap-btn-primary" onClick={handleSearch}>
-                    Search
-                </button>
-
-                <button
-                    className={`ap-btn ${showFilters ? 'ap-btn-primary' : 'ap-btn-secondary'}`}
-                    onClick={() => setShowFilters(!showFilters)}
-                >
-                    <Filter size={16} />
-                    Filters
-                    <ChevronDown size={14} style={{ transform: showFilters ? 'rotate(180deg)' : '', transition: 'transform 0.2s ease' }} />
-                </button>
+                {/* Filter Panel */}
+                {showFilters && (
+                    <div className="ap-filter-panel">
+                        <div>
+                            <label className="ap-filter-label">Status</label>
+                            <select className="ap-filter-select" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
+                                <option value="">All Statuses</option>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                                <option value="suspended">Suspended</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="ap-filter-label">2FA Status</label>
+                            <select className="ap-filter-select" value={filterTwoFA} onChange={(e) => setFilterTwoFA(e.target.value)}>
+                                <option value="">All Users</option>
+                                <option value="true">2FA Enabled</option>
+                                <option value="false">2FA Disabled</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="ap-filter-label">Account Type</label>
+                            <select className="ap-filter-select" value={filterChildAccount} onChange={(e) => setFilterChildAccount(e.target.value)}>
+                                <option value="">All Accounts</option>
+                                <option value="false">Primary</option>
+                                <option value="true">Child</option>
+                            </select>
+                        </div>
+                    </div>
+                )}
             </div>
-
-            {/* Filter Panel */}
-            {showFilters && (
-                <div className="ap-filter-panel">
-                    <div>
-                        <label className="ap-filter-label">Status</label>
-                        <select className="ap-filter-select" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
-                            <option value="">All Statuses</option>
-                            <option value="active">Active</option>
-                            <option value="inactive">Inactive</option>
-                            <option value="suspended">Suspended</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label className="ap-filter-label">2FA Status</label>
-                        <select className="ap-filter-select" value={filterTwoFA} onChange={(e) => setFilterTwoFA(e.target.value)}>
-                            <option value="">All Users</option>
-                            <option value="true">2FA Enabled</option>
-                            <option value="false">2FA Disabled</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label className="ap-filter-label">Account Type</label>
-                        <select className="ap-filter-select" value={filterChildAccount} onChange={(e) => setFilterChildAccount(e.target.value)}>
-                            <option value="">All Accounts</option>
-                            <option value="false">Primary</option>
-                            <option value="true">Child</option>
-                        </select>
-                    </div>
-                </div>
-            )}
-
-            {(searchQuery || filterStatus || filterTwoFA !== '' || filterChildAccount !== '') && (
-                <button className="ap-reset-btn ap-mb-lg" onClick={handleReset}>
-                    Reset all filters
-                </button>
-            )}
 
             {/* Users Table */}
             <div className="ap-table-wrap">
+                <div className="ap-card-header">
+                    <div>
+                        <h2 className="ap-card-title">All Users</h2>
+                        <p className="ap-card-subtitle">{users.total} total user{users.total !== 1 ? 's' : ''}</p>
+                    </div>
+                </div>
+
                 {users.data.length > 0 ? (
                     <div className="ap-table-scroll">
                         <table className="ap-table">
@@ -331,7 +354,7 @@ export default function Index({ users, statistics, search, filters, perPage }: P
                                             </span>
                                         </td>
                                         <td>
-                                            <span className="ap-badge ap-badge-primary">
+                                            <span className={`ap-badge ${user.is_child_account ? 'ap-badge-warning' : 'ap-badge-primary'}`}>
                                                 {user.is_child_account ? 'Child' : 'Primary'}
                                             </span>
                                         </td>

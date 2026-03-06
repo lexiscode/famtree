@@ -121,11 +121,11 @@ export default function Index({ connections, statistics, filters, search, perPag
                     filters: filterObj,
                     per_page: perPage,
                 },
-                { preserveScroll: true }
+                { preserveScroll: true, preserveState: true }
             );
         }, 300);
         return () => clearTimeout(timer);
-    }, [filterStatus, filterRelationship]);
+    }, [filterStatus, filterRelationship, searchQuery]);
 
     const handleReset = useCallback(() => {
         setSearchQuery('');
@@ -216,12 +216,8 @@ export default function Index({ connections, statistics, filters, search, perPag
                             placeholder="Search by user name or username..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                         />
                     </div>
-                    <button className="ap-btn ap-btn-primary" onClick={handleSearch}>
-                        Search
-                    </button>
                     <button
                         className={`ap-btn ${showFilters ? 'ap-btn-primary' : 'ap-btn-secondary'}`}
                         onClick={() => setShowFilters(!showFilters)}

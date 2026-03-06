@@ -84,7 +84,7 @@ export default function Conversations({ conversations, statistics, filters, sear
     }, [searchQuery, perPage]);
 
     const handleSearch = useCallback(() => {
-        router.get(route('admin.messaging.conversations'), buildParams(), { preserveScroll: true });
+        router.get(route('admin.messaging.conversations'), buildParams(), { preserveScroll: true, preserveState: true });
     }, [buildParams]);
 
     useEffect(() => {
@@ -168,12 +168,8 @@ export default function Conversations({ conversations, statistics, filters, sear
                             placeholder="Search conversations by username..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                         />
                     </div>
-                    <button className="ap-btn ap-btn-primary" onClick={handleSearch}>
-                        Search
-                    </button>
                 </div>
 
                 {searchQuery && (

@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { usePage, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import {
@@ -64,8 +64,20 @@ export default function Galleries({ galleries, statistics, search, perPage }: Pr
     const isInitialMount = useRef(true);
 
     const handleSearch = useCallback(() => {
-        router.get(route('admin.content.galleries'), { search: searchQuery, per_page: perPage }, { preserveScroll: true });
+        router.get(route('admin.content.galleries'), { search: searchQuery, per_page: perPage }, { preserveScroll: true, preserveState: true });
     }, [searchQuery, perPage]);
+
+    useEffect(() => {
+        if (isInitialMount.current) {
+            isInitialMount.current = false;
+            return;
+        }
+
+        const timer = setTimeout(() => {
+            handleSearch();
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
 
     const handlePageChange = (page: number) => {
         router.get(route('admin.content.galleries'), { page, search: searchQuery, per_page: perPage }, { preserveScroll: true });
@@ -117,12 +129,8 @@ export default function Galleries({ galleries, statistics, search, perPage }: Pr
                             placeholder="Search by title or username..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                         />
                     </div>
-                    <button className="ap-btn ap-btn-primary" onClick={handleSearch}>
-                        Search
-                    </button>
                 </div>
 
                 {/* Gallery Grid */}
