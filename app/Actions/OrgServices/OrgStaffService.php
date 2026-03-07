@@ -26,6 +26,7 @@ class OrgStaffService
             'password' => Hash::make($data['password']),
             'org_role_id' => $data['org_role_id'],
             'display_name' => $data['display_name'] ?? null,
+            'linked_org_group_id' => $data['linked_org_group_id'] ?? null,
             'is_active' => true,
         ]);
     }
@@ -48,6 +49,11 @@ class OrgStaffService
             'display_name' => $data['display_name'] ?? null,
             'is_active' => $data['is_active'] ?? null,
         ], fn ($v) => $v !== null);
+
+        // Allow setting linked_org_group_id to null
+        if (array_key_exists('linked_org_group_id', $data)) {
+            $updateData['linked_org_group_id'] = $data['linked_org_group_id'];
+        }
 
         if (isset($data['password'])) {
             $updateData['password'] = Hash::make($data['password']);

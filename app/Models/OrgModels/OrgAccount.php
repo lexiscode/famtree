@@ -23,6 +23,7 @@ class OrgAccount extends Authenticatable
         'password',
         'org_role_id',
         'display_name',
+        'linked_org_group_id',
         'is_active',
         'last_login_at',
     ];
@@ -77,6 +78,11 @@ class OrgAccount extends Authenticatable
     public function orgRole()
     {
         return $this->belongsTo(OrgRole::class, 'org_role_id');
+    }
+
+    public function linkedOrgGroup()
+    {
+        return $this->belongsTo(OrgGroup::class, 'linked_org_group_id');
     }
 
     public function isOwner(): bool

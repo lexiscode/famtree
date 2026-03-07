@@ -1,8 +1,8 @@
 import OrgLayout from '@/Layouts/OrgLayout';
 import { useState } from 'react';
 import { router } from '@inertiajs/react';
-import { Plus, Shield, X, Edit2, Trash2, Lock } from 'lucide-react';
-import { AVAILABLE_PERMISSIONS } from '@/constants/orgPermissions';
+import { Plus, Shield, X, Edit2, Trash2, Lock, Zap } from 'lucide-react';
+import { AVAILABLE_PERMISSIONS, PERMISSION_TEMPLATES } from '@/constants/orgPermissions';
 
 interface OrgRole {
     id: number;
@@ -10,6 +10,7 @@ interface OrgRole {
     slug: string;
     is_system: boolean;
     permissions: Record<string, boolean>;
+    broadcast_year_limit: number | null;
     accounts_count: number;
     created_at: string;
 }
@@ -23,11 +24,13 @@ export default function RolesIndex({ roles }: Props) {
     const [editingRole, setEditingRole] = useState<OrgRole | null>(null);
     const [roleName, setRoleName] = useState('');
     const [rolePermissions, setRolePermissions] = useState<Record<string, boolean>>({});
+    const [broadcastYearLimit, setBroadcastYearLimit] = useState<string>('');
     const [submitting, setSubmitting] = useState(false);
 
     const resetForm = () => {
         setRoleName('');
         setRolePermissions({});
+        setBroadcastYearLimit('');
     };
 
     const handleAddRole = (e: React.FormEvent) => {
@@ -37,6 +40,7 @@ export default function RolesIndex({ roles }: Props) {
         router.post(route('org.roles.store'), {
             name: roleName,
             permissions: rolePermissions,
+            broadcast_year_limit: broadcastYearLimit ? parseInt(broadcastYearLimit) : null,
         }, {
             onSuccess: () => {
                 setShowAddModal(false);
@@ -51,6 +55,7 @@ export default function RolesIndex({ roles }: Props) {
         setEditingRole(role);
         setRoleName(role.name);
         setRolePermissions(role.permissions || {});
+        setBroadcastYearLimit(role.broadcast_year_limit?.toString() || '');
     };
 
     const handleEditRole = (e: React.FormEvent) => {
@@ -60,6 +65,7 @@ export default function RolesIndex({ roles }: Props) {
         router.put(route('org.roles.update', { id: editingRole.id }), {
             name: roleName,
             permissions: rolePermissions,
+            broadcast_year_limit: broadcastYearLimit ? parseInt(broadcastYearLimit) : null,
         }, {
             onSuccess: () => {
                 setEditingRole(null);
@@ -78,6 +84,14 @@ export default function RolesIndex({ roles }: Props) {
 
     const togglePermission = (key: string) => {
         setRolePermissions(prev => ({ ...prev, [key]: !prev[key] }));
+    };
+
+    const applyTemplate = (template: typeof PERMISSION_TEMPLATES[0]) => {
+        setRoleName(template.name);
+        const perms: Record<string, boolean> = {};
+        Object.entries(template.permissions).forEach(([k, v]) => { perms[k] = v; });
+        setRolePermissions(perms);
+        setBroadcastYearLimit(template.broadcastYearLimit?.toString() || '');
     };
 
     const inputStyle: React.CSSProperties = {
@@ -202,6 +216,37 @@ export default function RolesIndex({ roles }: Props) {
                     </button>
                 </div>
 
+                {/* Permission Templates */}
+                {!editingRole && (
+                    <div style={{ marginBottom: '1.25rem' }}>
+                        <label style={{ ...labelStyle, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                            <Zap size={14} color="#F59E0B" />
+                            Quick Templates
+                        </label>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem' }}>
+                            {PERMISSION_TEMPLATES.map((tpl, i) => (
+                                <button key={i} type="button" onClick={() => applyTemplate(tpl)} style={{
+                                    padding: '0.55rem 0.6rem', borderRadius: '8px',
+                                    background: roleName === tpl.name ? 'rgba(245,158,11,0.12)' : 'rgba(255,255,255,0.03)',
+                                    border: `1px solid ${roleName === tpl.name ? 'rgba(245,158,11,0.3)' : 'rgba(255,255,255,0.06)'}`,
+                                    cursor: 'pointer', textAlign: 'left' as const,
+                                    transition: 'all 0.15s',
+                                }}>
+                                    <p style={{
+                                        margin: 0, fontSize: '0.78rem', fontWeight: 600,
+                                        color: roleName === tpl.name ? '#F59E0B' : '#ccc',
+                                    }}>
+                                        {tpl.name}
+                                    </p>
+                                    <p style={{ margin: '2px 0 0', fontSize: '0.65rem', color: '#666', lineHeight: 1.3 }}>
+                                        {tpl.description}
+                                    </p>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
                 <form onSubmit={onSubmit}>
                     <div style={{ marginBottom: '1.25rem' }}>
                         <label style={labelStyle}>Role Name *</label>
@@ -221,6 +266,23 @@ export default function RolesIndex({ roles }: Props) {
                         </label>
                         {renderPermissionToggles()}
                     </div>
+                    {(rolePermissions['manage_broadcasts'] || rolePermissions['manage_group_broadcasts']) && (
+                        <div style={{ marginTop: '1.25rem' }}>
+                            <label style={labelStyle}>Broadcast Year Limit</label>
+                            <input
+                                type="number"
+                                value={broadcastYearLimit}
+                                onChange={(e) => setBroadcastYearLimit(e.target.value)}
+                                placeholder="Unlimited (leave empty)"
+                                min={1}
+                                max={20}
+                                style={inputStyle}
+                            />
+                            <p style={{ margin: '0.3rem 0 0', fontSize: '0.75rem', color: '#666' }}>
+                                How many years back this role can target broadcasts. Leave empty for unlimited.
+                            </p>
+                        </div>
+                    )}
                     <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
                         <button
                             type="button"

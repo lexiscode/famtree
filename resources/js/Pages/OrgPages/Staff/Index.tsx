@@ -18,17 +18,26 @@ interface StaffMember {
     org_role_id: number | null;
     org_role: OrgRole | null;
     display_name: string | null;
+    linked_org_group_id: number | null;
+    linked_org_group: { id: number; name: string } | null;
     is_active: boolean;
     last_login_at: string | null;
     created_at: string;
 }
 
+interface OrgGroupOption {
+    id: number;
+    name: string;
+    type: string;
+}
+
 interface Props {
     staff: StaffMember[];
     roles: OrgRole[];
+    orgGroups: OrgGroupOption[];
 }
 
-export default function StaffIndex({ staff, roles }: Props) {
+export default function StaffIndex({ staff, roles, orgGroups }: Props) {
     const { auth } = usePage<{ auth: { org?: { is_owner: boolean } } }>().props;
     const currentIsOwner = auth?.org?.is_owner ?? false;
     const [showAddModal, setShowAddModal] = useState(false);
@@ -38,12 +47,14 @@ export default function StaffIndex({ staff, roles }: Props) {
     const [newPassword, setNewPassword] = useState('');
     const [newRoleId, setNewRoleId] = useState<number | ''>('');
     const [newDisplayName, setNewDisplayName] = useState('');
+    const [newLinkedGroupId, setNewLinkedGroupId] = useState<number | ''>('');
     const [submitting, setSubmitting] = useState(false);
 
     // Edit modal state
     const [editRoleId, setEditRoleId] = useState<number | ''>('');
     const [editDisplayName, setEditDisplayName] = useState('');
     const [editPassword, setEditPassword] = useState('');
+    const [editLinkedGroupId, setEditLinkedGroupId] = useState<number | ''>('');
 
     const resetAddForm = () => {
         setNewUsername('');
@@ -51,6 +62,7 @@ export default function StaffIndex({ staff, roles }: Props) {
         setNewPassword('');
         setNewRoleId(roles.length > 0 ? roles[0].id : '');
         setNewDisplayName('');
+        setNewLinkedGroupId('');
     };
 
     const handleAddStaff = (e: React.FormEvent) => {
@@ -63,6 +75,7 @@ export default function StaffIndex({ staff, roles }: Props) {
             password: newPassword,
             org_role_id: newRoleId,
             display_name: newDisplayName || null,
+            linked_org_group_id: newLinkedGroupId || null,
         }, {
             onSuccess: () => {
                 setShowAddModal(false);
@@ -78,6 +91,7 @@ export default function StaffIndex({ staff, roles }: Props) {
         setEditRoleId(member.org_role_id || '');
         setEditDisplayName(member.display_name || '');
         setEditPassword('');
+        setEditLinkedGroupId(member.linked_org_group_id || '');
     };
 
     const handleEditStaff = (e: React.FormEvent) => {
@@ -87,6 +101,7 @@ export default function StaffIndex({ staff, roles }: Props) {
 
         const data: Record<string, unknown> = {
             display_name: editDisplayName || null,
+            linked_org_group_id: editLinkedGroupId || null,
         };
         if (currentIsOwner) {
             data.org_role_id = editRoleId || undefined;
@@ -649,6 +664,24 @@ export default function StaffIndex({ staff, roles }: Props) {
                                 </p>
                             )}
                         </div>
+                        {orgGroups.length > 0 && (
+                            <div style={{ marginTop: '1.25rem' }}>
+                                <label style={labelStyle}>Linked Org Group</label>
+                                <select
+                                    value={newLinkedGroupId}
+                                    onChange={(e) => setNewLinkedGroupId(e.target.value ? Number(e.target.value) : '')}
+                                    style={{ ...inputStyle, cursor: 'pointer' }}
+                                >
+                                    <option value="">None (full access)</option>
+                                    {orgGroups.map((g) => (
+                                        <option key={g.id} value={g.id}>{g.name}</option>
+                                    ))}
+                                </select>
+                                <p style={{ margin: '0.3rem 0 0', fontSize: '0.72rem', color: '#666' }}>
+                                    Link this staff to a specific org group (e.g. SUG). They will only manage that group.
+                                </p>
+                            </div>
+                        )}
                     </>,
                     'Add Staff',
                     !!(newUsername.trim() && newEmail.trim() && newPassword.trim() && newRoleId),
@@ -703,6 +736,21 @@ export default function StaffIndex({ staff, roles }: Props) {
                                 minLength={8}
                             />
                         </div>
+                        {orgGroups.length > 0 && (
+                            <div style={{ marginTop: '1.25rem' }}>
+                                <label style={labelStyle}>Linked Org Group</label>
+                                <select
+                                    value={editLinkedGroupId}
+                                    onChange={(e) => setEditLinkedGroupId(e.target.value ? Number(e.target.value) : '')}
+                                    style={{ ...inputStyle, cursor: 'pointer' }}
+                                >
+                                    <option value="">None (full access)</option>
+                                    {orgGroups.map((g) => (
+                                        <option key={g.id} value={g.id}>{g.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
                     </>,
                     'Save Changes',
                     true,

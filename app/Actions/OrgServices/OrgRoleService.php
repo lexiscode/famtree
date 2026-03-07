@@ -41,6 +41,7 @@ class OrgRoleService
             'slug' => $slug,
             'is_system' => false,
             'permissions' => $data['permissions'] ?? [],
+            'broadcast_year_limit' => $data['broadcast_year_limit'] ?? null,
         ]);
     }
 
@@ -71,6 +72,10 @@ class OrgRoleService
 
         if (array_key_exists('permissions', $data)) {
             $updateData['permissions'] = $data['permissions'] ?? [];
+        }
+
+        if (array_key_exists('broadcast_year_limit', $data)) {
+            $updateData['broadcast_year_limit'] = $data['broadcast_year_limit'];
         }
 
         return $this->roleRepo->update($id, $updateData);

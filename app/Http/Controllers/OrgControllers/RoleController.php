@@ -37,6 +37,7 @@ class RoleController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:100',
             'permissions' => 'nullable|array',
+            'broadcast_year_limit' => 'nullable|integer|min:1|max:20',
         ]);
 
         $this->roleService->createRole($orgAccount->organization_id, $validated);
@@ -62,6 +63,7 @@ class RoleController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:100',
             'permissions' => 'nullable|array',
+            'broadcast_year_limit' => 'nullable|integer|min:1|max:20',
         ]);
 
         $role = $this->roleService->updateRole($id, $orgAccount->organization_id, $validated);

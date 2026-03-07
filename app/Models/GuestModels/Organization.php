@@ -97,6 +97,11 @@ class Organization extends Model
         return $this->hasMany(\App\Models\OrgModels\OrgPost::class);
     }
 
+    public function orgGroups()
+    {
+        return $this->hasMany(\App\Models\OrgModels\OrgGroup::class);
+    }
+
     public function scopeActive($query)
     {
         return $query->where('is_active', true);

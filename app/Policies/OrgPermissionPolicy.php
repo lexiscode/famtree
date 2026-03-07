@@ -16,6 +16,11 @@ class OrgPermissionPolicy
         return $account->hasPermission('manage_broadcasts');
     }
 
+    public function manageGroupBroadcasts(OrgAccount $account): bool
+    {
+        return $account->hasPermission('manage_group_broadcasts');
+    }
+
     public function manageStaff(OrgAccount $account): bool
     {
         return $account->hasPermission('manage_staff');
@@ -29,6 +34,11 @@ class OrgPermissionPolicy
     public function manageGroups(OrgAccount $account): bool
     {
         return $account->hasPermission('manage_groups');
+    }
+
+    public function manageOrgGroups(OrgAccount $account): bool
+    {
+        return $account->hasPermission('manage_org_groups');
     }
 
     public function manageProfile(OrgAccount $account): bool

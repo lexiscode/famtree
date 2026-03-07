@@ -11,8 +11,11 @@ use App\Http\Controllers\OrgControllers\ProfileController;
 use App\Http\Controllers\OrgControllers\StaffController;
 use App\Http\Controllers\OrgControllers\RoleController;
 use App\Http\Controllers\OrgControllers\GroupsController;
+use App\Http\Controllers\OrgControllers\OrgGroupController;
 use App\Http\Controllers\OrgControllers\FollowersController;
 use App\Http\Controllers\OrgControllers\ActivityLogController;
+use App\Http\Controllers\OrgControllers\OrgGroupChatController;
+use App\Http\Controllers\OrgControllers\OrgGroupPollController;
 
 Route::group(['prefix' => 'org', 'as' => 'org.', 'middleware' => ['web']], function () {
 
@@ -61,6 +64,11 @@ Route::group(['prefix' => 'org', 'as' => 'org.', 'middleware' => ['web']], funct
         Route::get('/broadcasts/{id}/edit', [BroadcastController::class, 'edit'])->name('broadcasts.edit');
         Route::put('/broadcasts/{id}', [BroadcastController::class, 'update'])->name('broadcasts.update');
         Route::post('/broadcasts/{id}/cancel', [BroadcastController::class, 'cancel'])->name('broadcasts.cancel');
+        Route::post('/broadcasts/{id}/approve', [BroadcastController::class, 'approve'])->name('broadcasts.approve');
+        Route::post('/broadcasts/{id}/reject', [BroadcastController::class, 'reject'])->name('broadcasts.reject');
+        Route::post('/broadcasts/{id}/flag', [BroadcastController::class, 'flag'])->name('broadcasts.flag');
+        Route::post('/broadcasts/{id}/unflag', [BroadcastController::class, 'unflag'])->name('broadcasts.unflag');
+        Route::get('/broadcasts/{id}/analytics', [BroadcastController::class, 'analytics'])->name('broadcasts.analytics');
 
         // Analytics
         Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
@@ -85,11 +93,51 @@ Route::group(['prefix' => 'org', 'as' => 'org.', 'middleware' => ['web']], funct
         Route::put('/roles/{id}', [RoleController::class, 'update'])->name('roles.update');
         Route::delete('/roles/{id}', [RoleController::class, 'destroy'])->name('roles.destroy');
 
-        // Groups
+        // Groups (Class Set hierarchy)
         Route::get('/groups', [GroupsController::class, 'index'])->name('groups.index');
         Route::post('/groups/{classSetId}/members/{userId}/force-remove', [GroupsController::class, 'forceRemoveMember'])->name('groups.force-remove');
         Route::post('/groups/{classSetId}/members/{userId}/appoint-admin', [GroupsController::class, 'appointAdmin'])->name('groups.appoint-admin');
         Route::post('/groups/{classSetId}/members/{userId}/remove-admin', [GroupsController::class, 'removeAdmin'])->name('groups.remove-admin');
+
+        // Org Groups (SUG, Faculty Unions, etc.)
+        Route::get('/org-groups', [OrgGroupController::class, 'index'])->name('org-groups.index');
+        Route::post('/org-groups/{id}/suspend', [OrgGroupController::class, 'suspend'])->name('org-groups.suspend');
+        Route::post('/org-groups/{id}/unsuspend', [OrgGroupController::class, 'unsuspend'])->name('org-groups.unsuspend');
+        Route::post('/org-groups', [OrgGroupController::class, 'store'])->name('org-groups.store');
+        Route::put('/org-groups/{id}', [OrgGroupController::class, 'update'])->name('org-groups.update');
+        Route::delete('/org-groups/{id}', [OrgGroupController::class, 'destroy'])->name('org-groups.destroy');
+        Route::post('/org-groups/{groupId}/members', [OrgGroupController::class, 'addMember'])->name('org-groups.add-member');
+        Route::delete('/org-groups/{groupId}/members/{userId}', [OrgGroupController::class, 'removeMember'])->name('org-groups.remove-member');
+        Route::put('/org-groups/{groupId}/members/{userId}/role', [OrgGroupController::class, 'updateMemberRole'])->name('org-groups.update-role');
+        Route::post('/org-groups/{groupId}/handover', [OrgGroupController::class, 'handover'])->name('org-groups.handover');
+        Route::get('/org-groups/{groupId}/term-history', [OrgGroupController::class, 'termHistory'])->name('org-groups.term-history');
+        Route::get('/org-groups/{groupId}/search-users', [OrgGroupController::class, 'searchUsers'])->name('org-groups.search-users');
+        Route::get('/org-groups/{groupId}/join-requests', [OrgGroupController::class, 'joinRequests'])->name('org-groups.join-requests');
+        Route::post('/org-groups/{groupId}/join-requests/{requestId}/approve', [OrgGroupController::class, 'approveJoinRequest'])->name('org-groups.approve-join');
+        Route::post('/org-groups/{groupId}/join-requests/{requestId}/reject', [OrgGroupController::class, 'rejectJoinRequest'])->name('org-groups.reject-join');
+        Route::get('/org-groups/{groupId}/bans', [OrgGroupController::class, 'getBans'])->name('org-groups.bans');
+        Route::post('/org-groups/{groupId}/ban/{userId}', [OrgGroupController::class, 'banMember'])->name('org-groups.ban');
+        Route::delete('/org-groups/{groupId}/ban/{userId}', [OrgGroupController::class, 'unbanMember'])->name('org-groups.unban');
+        Route::get('/org-groups/{groupId}/auto-rules', [OrgGroupController::class, 'getAutoRules'])->name('org-groups.auto-rules');
+        Route::get('/org-groups/{groupId}/auto-rule-targets', [OrgGroupController::class, 'getAutoRuleTargets'])->name('org-groups.auto-rule-targets');
+        Route::post('/org-groups/{groupId}/auto-rules', [OrgGroupController::class, 'createAutoRule'])->name('org-groups.create-auto-rule');
+        Route::delete('/org-groups/{groupId}/auto-rules/{ruleId}', [OrgGroupController::class, 'deleteAutoRule'])->name('org-groups.delete-auto-rule');
+        Route::post('/org-groups/{groupId}/auto-rules/{ruleId}/execute', [OrgGroupController::class, 'executeAutoRule'])->name('org-groups.execute-auto-rule');
+
+        // Group Chat
+        Route::get('/org-groups/{groupId}/chat', [OrgGroupChatController::class, 'show'])->name('org-groups.chat');
+        Route::get('/org-groups/{groupId}/chat/messages', [OrgGroupChatController::class, 'messages'])->name('org-groups.chat.messages');
+        Route::post('/org-groups/{groupId}/chat/send', [OrgGroupChatController::class, 'send'])->name('org-groups.chat.send');
+        Route::delete('/org-groups/{groupId}/chat/messages/{messageId}', [OrgGroupChatController::class, 'destroy'])->name('org-groups.chat.delete');
+        Route::post('/org-groups/{groupId}/chat/messages/{messageId}/pin', [OrgGroupChatController::class, 'togglePin'])->name('org-groups.chat.toggle-pin');
+
+        // Group Polls
+        Route::get('/org-groups/{groupId}/polls', [OrgGroupPollController::class, 'index'])->name('org-groups.polls');
+        Route::post('/org-groups/{groupId}/polls', [OrgGroupPollController::class, 'store'])->name('org-groups.polls.store');
+        Route::post('/org-groups/{groupId}/polls/{pollId}/vote', [OrgGroupPollController::class, 'vote'])->name('org-groups.polls.vote');
+        Route::post('/org-groups/{groupId}/polls/{pollId}/close', [OrgGroupPollController::class, 'close'])->name('org-groups.polls.close');
+        Route::delete('/org-groups/{groupId}/polls/{pollId}', [OrgGroupPollController::class, 'destroy'])->name('org-groups.polls.destroy');
+        Route::get('/org-groups/{groupId}/polls/{pollId}/voters', [OrgGroupPollController::class, 'voters'])->name('org-groups.polls.voters');
 
         // Followers
         Route::get('/followers', [FollowersController::class, 'index'])->name('followers.index');

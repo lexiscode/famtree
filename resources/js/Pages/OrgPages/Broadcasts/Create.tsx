@@ -1,24 +1,40 @@
 import OrgLayout from '@/Layouts/OrgLayout';
 import { useState, useMemo } from 'react';
 import { router } from '@inertiajs/react';
-import { ArrowLeft, Send, Search, Loader } from 'lucide-react';
+import { ArrowLeft, Send, Search, Loader, Tag, AlertTriangle } from 'lucide-react';
 import RichTextEditor from '@/Components/RichTextEditor';
 
 interface Group {
     id: number;
     name: string;
+    year: string | null;
     faculty: string | null;
     department: string | null;
 }
 
 interface Props {
     groups: Group[];
+    yearLimit?: number | null;
+    isLimitedAccess?: boolean;
+    categories: Record<string, string>;
+    priorities: Record<string, string>;
 }
 
-export default function BroadcastsCreate({ groups }: Props) {
+const categoryColors: Record<string, string> = {
+    announcement: '#3B82F6',
+    event: '#8B5CF6',
+    urgent: '#EF4444',
+    reminder: '#F59E0B',
+    academic: '#06B6D4',
+    general: '#6B7280',
+};
+
+export default function BroadcastsCreate({ groups, yearLimit, isLimitedAccess, categories, priorities }: Props) {
     const [title, setTitle] = useState('');
+    const [category, setCategory] = useState('general');
+    const [priority, setPriority] = useState('normal');
     const [message, setMessage] = useState('');
-    const [targetType, setTargetType] = useState<'all_groups' | 'selected_groups'>('all_groups');
+    const [targetType, setTargetType] = useState<'all_groups' | 'selected_groups'>(isLimitedAccess ? 'selected_groups' : 'all_groups');
     const [selectedGroupIds, setSelectedGroupIds] = useState<number[]>([]);
     const [scheduleType, setScheduleType] = useState<'immediate' | 'scheduled' | 'recurring'>('immediate');
     const [scheduledAt, setScheduledAt] = useState('');
@@ -80,6 +96,8 @@ export default function BroadcastsCreate({ groups }: Props) {
         setSubmitting(true);
         router.post(route('org.broadcasts.store'), {
             title: title || null,
+            category,
+            priority,
             message,
             target_type: targetType,
             target_class_set_ids: targetType === 'selected_groups' ? selectedGroupIds : [],
@@ -158,6 +176,11 @@ export default function BroadcastsCreate({ groups }: Props) {
                     <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#ffffff', margin: 0 }}>
                         Create Broadcast
                     </h1>
+                    {isLimitedAccess && (
+                        <p style={{ color: '#F59E0B', fontSize: '0.85rem', margin: '0.5rem 0 0' }}>
+                            This broadcast will require approval from an admin before it is sent.
+                        </p>
+                    )}
                 </div>
 
                 {/* Form */}
@@ -187,12 +210,13 @@ export default function BroadcastsCreate({ groups }: Props) {
                                 color: '#e0e0e0', fontSize: '1.05rem',
                                 fontWeight: 600, margin: 0,
                             }}>
-                                Sending broadcast...
+                                {isLimitedAccess ? 'Submitting for approval...' : 'Sending broadcast...'}
                             </p>
                             <p style={{ color: '#888', fontSize: '0.85rem', margin: 0, textAlign: 'center', maxWidth: '320px' }}>
-                                Delivering to {targetType === 'all_groups' ? 'all groups' : `${selectedGroupIds.length} selected group${selectedGroupIds.length !== 1 ? 's' : ''}`}. This may take a moment.
+                                {isLimitedAccess
+                                    ? 'Your broadcast will be reviewed before delivery.'
+                                    : `Delivering to ${targetType === 'all_groups' ? 'all groups' : `${selectedGroupIds.length} selected group${selectedGroupIds.length !== 1 ? 's' : ''}`}. This may take a moment.`}
                             </p>
-                            {/* Indeterminate progress bar */}
                             <div style={{
                                 width: '220px', height: '4px',
                                 background: 'rgba(139, 92, 246, 0.15)',
@@ -227,6 +251,59 @@ export default function BroadcastsCreate({ groups }: Props) {
                         />
                     </div>
 
+                    {/* Category & Priority row */}
+                    <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1.5rem' }}>
+                        <div style={{ flex: 1 }}>
+                            <label style={labelStyle}>
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                    <Tag size={14} /> Category
+                                </span>
+                            </label>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                {Object.entries(categories).map(([key, label]) => {
+                                    const color = categoryColors[key] || '#6B7280';
+                                    const isActive = category === key;
+                                    return (
+                                        <button
+                                            key={key}
+                                            type="button"
+                                            onClick={() => setCategory(key)}
+                                            style={{
+                                                padding: '0.5rem 0.85rem',
+                                                borderRadius: '8px',
+                                                fontSize: '0.82rem',
+                                                fontWeight: 600,
+                                                border: `1px solid ${isActive ? color : 'rgba(255,255,255,0.06)'}`,
+                                                background: isActive ? `${color}18` : '#1e1e35',
+                                                color: isActive ? color : '#888',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s ease',
+                                            }}
+                                        >
+                                            {label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                        <div style={{ width: '200px', flexShrink: 0 }}>
+                            <label style={labelStyle}>
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                    <AlertTriangle size={14} /> Priority
+                                </span>
+                            </label>
+                            <select
+                                value={priority}
+                                onChange={(e) => setPriority(e.target.value)}
+                                style={{ ...inputStyle, cursor: 'pointer' }}
+                            >
+                                {Object.entries(priorities).map(([key, label]) => (
+                                    <option key={key} value={key}>{label}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+
                     {/* Message */}
                     <div style={{ marginBottom: '1.5rem' }}>
                         <label style={labelStyle}>Message *</label>
@@ -242,18 +319,34 @@ export default function BroadcastsCreate({ groups }: Props) {
                     {/* Target Type */}
                     <div style={{ marginBottom: '1.5rem' }}>
                         <label style={labelStyle}>Target Audience</label>
+                        {isLimitedAccess && yearLimit && (
+                            <div style={{
+                                background: 'rgba(139, 92, 246, 0.08)',
+                                border: '1px solid rgba(139, 92, 246, 0.2)',
+                                borderRadius: '8px',
+                                padding: '0.75rem 1rem',
+                                marginBottom: '0.75rem',
+                                fontSize: '0.8rem',
+                                color: '#8B5CF6',
+                            }}>
+                                You can broadcast to groups from the last {yearLimit} year{yearLimit !== 1 ? 's' : ''} only.
+                                {groups.length} group{groups.length !== 1 ? 's' : ''} available.
+                            </div>
+                        )}
                         <div style={{ display: 'flex', gap: '0.75rem' }}>
-                            <label style={targetType === 'all_groups' ? radioLabelActiveStyle : radioLabelStyle}>
-                                <input
-                                    type="radio"
-                                    name="target_type"
-                                    value="all_groups"
-                                    checked={targetType === 'all_groups'}
-                                    onChange={() => setTargetType('all_groups')}
-                                    style={{ accentColor: '#8B5CF6', width: 16, height: 16, flexShrink: 0 }}
-                                />
-                                All Groups
-                            </label>
+                            {!isLimitedAccess && (
+                                <label style={targetType === 'all_groups' ? radioLabelActiveStyle : radioLabelStyle}>
+                                    <input
+                                        type="radio"
+                                        name="target_type"
+                                        value="all_groups"
+                                        checked={targetType === 'all_groups'}
+                                        onChange={() => setTargetType('all_groups')}
+                                        style={{ accentColor: '#8B5CF6', width: 16, height: 16, flexShrink: 0 }}
+                                    />
+                                    All Groups
+                                </label>
+                            )}
                             <label style={targetType === 'selected_groups' ? radioLabelActiveStyle : radioLabelStyle}>
                                 <input
                                     type="radio"
@@ -281,7 +374,6 @@ export default function BroadcastsCreate({ groups }: Props) {
                                 Select Groups ({selectedGroupIds.length} selected)
                             </label>
 
-                            {/* Search & Filter Bar */}
                             <div style={{
                                 display: 'flex', gap: '0.75rem', marginBottom: '0.75rem',
                                 flexWrap: 'wrap', alignItems: 'center',
@@ -501,7 +593,7 @@ export default function BroadcastsCreate({ groups }: Props) {
                             }}
                         >
                             <Send size={16} />
-                            {submitting ? 'Creating...' : 'Create Broadcast'}
+                            {submitting ? 'Creating...' : isLimitedAccess ? 'Submit for Approval' : 'Create Broadcast'}
                         </button>
                     </div>
                 </form>

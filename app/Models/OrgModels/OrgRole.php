@@ -16,11 +16,13 @@ class OrgRole extends Model
         'slug',
         'is_system',
         'permissions',
+        'broadcast_year_limit',
     ];
 
     protected $casts = [
         'permissions' => 'json',
         'is_system' => 'boolean',
+        'broadcast_year_limit' => 'integer',
     ];
 
     protected static function boot()

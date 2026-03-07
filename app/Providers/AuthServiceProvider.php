@@ -31,9 +31,11 @@ class AuthServiceProvider extends ServiceProvider
         $gates = [
             'manage-posts' => 'managePosts',
             'manage-broadcasts' => 'manageBroadcasts',
+            'manage-group-broadcasts' => 'manageGroupBroadcasts',
             'manage-staff' => 'manageStaff',
             'view-analytics' => 'viewAnalytics',
             'manage-groups' => 'manageGroups',
+            'manage-org-groups' => 'manageOrgGroups',
             'manage-profile' => 'manageProfile',
         ];
 

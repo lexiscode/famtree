@@ -79,7 +79,7 @@ class HandleInertiaRequests extends Middleware
         $orgAccount = auth()->guard('org')->user();
         $orgData = null;
         if ($orgAccount) {
-            $orgAccount->load(['organization', 'orgRole']);
+            $orgAccount->load(['organization', 'orgRole', 'linkedOrgGroup']);
             $orgData = [
                 'id' => $orgAccount->id,
                 'uuid' => $orgAccount->uuid,
@@ -89,6 +89,9 @@ class HandleInertiaRequests extends Middleware
                 'display_name' => $orgAccount->display_name,
                 'is_owner' => $orgAccount->isOwner(),
                 'permissions' => $orgAccount->orgRole?->permissions ?? [],
+                'broadcast_year_limit' => $orgAccount->orgRole?->broadcast_year_limit,
+                'linked_org_group_id' => $orgAccount->linked_org_group_id,
+                'linked_org_group_name' => $orgAccount->linkedOrgGroup?->name,
                 'organization' => $orgAccount->organization ? [
                     'id' => $orgAccount->organization->id,
                     'name' => $orgAccount->organization->name,

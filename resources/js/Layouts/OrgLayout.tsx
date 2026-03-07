@@ -15,6 +15,7 @@ import {
     Users,
     Shield,
     FolderTree,
+    UsersRound,
     Heart,
     ScrollText,
     LogOut,
@@ -42,6 +43,9 @@ interface OrgAccount {
     display_name: string | null;
     is_owner: boolean;
     permissions: Record<string, boolean>;
+    broadcast_year_limit: number | null;
+    linked_org_group_id: number | null;
+    linked_org_group_name: string | null;
     organization: OrgOrganization | null;
 }
 
@@ -66,6 +70,14 @@ export default function OrgLayout({ children }: OrgLayoutProps) {
     const canAccess = (permission: string): boolean => {
         if (!org) return false;
         if (org.is_owner) return true;
+        // Special: broadcasts accessible with either manage_broadcasts or manage_group_broadcasts
+        if (permission === 'manage_broadcasts') {
+            return !!org.permissions?.['manage_broadcasts'] || !!org.permissions?.['manage_group_broadcasts'];
+        }
+        // Special: org groups accessible with manage_org_groups OR having a linked group
+        if (permission === 'manage_org_groups') {
+            return !!org.permissions?.['manage_org_groups'] || !!org.linked_org_group_id;
+        }
         return !!org.permissions?.[permission];
     };
 
@@ -127,6 +139,12 @@ export default function OrgLayout({ children }: OrgLayoutProps) {
             icon: FolderTree,
             href: route('org.groups.index'),
             active: route().current('org.groups.*'),
+        },
+        {
+            label: 'Org Groups',
+            icon: UsersRound,
+            href: route('org.org-groups.index'),
+            active: route().current('org.org-groups.*'),
         },
         {
             label: 'Followers',

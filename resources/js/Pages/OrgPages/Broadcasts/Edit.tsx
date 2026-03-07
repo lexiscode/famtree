@@ -1,7 +1,7 @@
 import OrgLayout from '@/Layouts/OrgLayout';
 import { useState, useMemo } from 'react';
 import { router } from '@inertiajs/react';
-import { ArrowLeft, Save, Search, Loader } from 'lucide-react';
+import { ArrowLeft, Save, Search, Loader, Tag, AlertTriangle } from 'lucide-react';
 import RichTextEditor from '@/Components/RichTextEditor';
 
 interface Group {
@@ -15,6 +15,8 @@ interface Broadcast {
     id: number;
     uuid: string;
     title: string | null;
+    category: string;
+    priority: string;
     message: string;
     target_type: string;
     target_class_set_ids: number[] | null;
@@ -23,12 +25,27 @@ interface Broadcast {
     recurrence_type: string | null;
     recurrence_count: number | null;
     status: string;
+    requires_approval: boolean;
+    approval_status: string | null;
 }
 
 interface Props {
     broadcast: Broadcast;
     groups: Group[];
+    yearLimit?: number | null;
+    isLimitedAccess?: boolean;
+    categories: Record<string, string>;
+    priorities: Record<string, string>;
 }
+
+const categoryColors: Record<string, string> = {
+    announcement: '#3B82F6',
+    event: '#8B5CF6',
+    urgent: '#EF4444',
+    reminder: '#F59E0B',
+    academic: '#06B6D4',
+    general: '#6B7280',
+};
 
 function toLocalDatetimeValue(utcString: string | null): string {
     if (!utcString) return '';
@@ -38,8 +55,10 @@ function toLocalDatetimeValue(utcString: string | null): string {
     return local.toISOString().slice(0, 16);
 }
 
-export default function BroadcastsEdit({ broadcast, groups }: Props) {
+export default function BroadcastsEdit({ broadcast, groups, yearLimit, isLimitedAccess, categories, priorities }: Props) {
     const [title, setTitle] = useState(broadcast.title || '');
+    const [category, setCategory] = useState(broadcast.category || 'general');
+    const [priority, setPriority] = useState(broadcast.priority || 'normal');
     const [message, setMessage] = useState(broadcast.message);
     const [targetType, setTargetType] = useState<'all_groups' | 'selected_groups'>(
         broadcast.target_type as 'all_groups' | 'selected_groups'
@@ -107,6 +126,8 @@ export default function BroadcastsEdit({ broadcast, groups }: Props) {
         setSubmitting(true);
         router.put(route('org.broadcasts.update', broadcast.id), {
             title: title || null,
+            category,
+            priority,
             message,
             target_type: targetType,
             target_class_set_ids: targetType === 'selected_groups' ? selectedGroupIds : [],
@@ -185,6 +206,11 @@ export default function BroadcastsEdit({ broadcast, groups }: Props) {
                     <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#ffffff', margin: 0 }}>
                         Edit Broadcast
                     </h1>
+                    {broadcast.requires_approval && broadcast.approval_status === 'rejected' && (
+                        <p style={{ color: '#EF4444', fontSize: '0.85rem', margin: '0.5rem 0 0' }}>
+                            This broadcast was rejected. Edit and resubmit for approval.
+                        </p>
+                    )}
                 </div>
 
                 {/* Form */}
@@ -195,7 +221,6 @@ export default function BroadcastsEdit({ broadcast, groups }: Props) {
                     padding: '2rem',
                     position: 'relative',
                 }}>
-                    {/* Saving Overlay */}
                     {submitting && (
                         <div style={{
                             position: 'absolute', inset: 0, zIndex: 10,
@@ -210,15 +235,10 @@ export default function BroadcastsEdit({ broadcast, groups }: Props) {
                                 color="#8B5CF6"
                                 style={{ animation: 'spin 1.2s linear infinite' }}
                             />
-                            <p style={{
-                                color: '#e0e0e0', fontSize: '1.05rem',
-                                fontWeight: 600, margin: 0,
-                            }}>
+                            <p style={{ color: '#e0e0e0', fontSize: '1.05rem', fontWeight: 600, margin: 0 }}>
                                 Saving broadcast...
                             </p>
-                            <style>{`
-                                @keyframes spin { to { transform: rotate(360deg); } }
-                            `}</style>
+                            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
                         </div>
                     )}
 
@@ -232,6 +252,59 @@ export default function BroadcastsEdit({ broadcast, groups }: Props) {
                             placeholder="Give your broadcast a title..."
                             style={inputStyle}
                         />
+                    </div>
+
+                    {/* Category & Priority */}
+                    <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1.5rem' }}>
+                        <div style={{ flex: 1 }}>
+                            <label style={labelStyle}>
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                    <Tag size={14} /> Category
+                                </span>
+                            </label>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                {Object.entries(categories).map(([key, label]) => {
+                                    const color = categoryColors[key] || '#6B7280';
+                                    const isActive = category === key;
+                                    return (
+                                        <button
+                                            key={key}
+                                            type="button"
+                                            onClick={() => setCategory(key)}
+                                            style={{
+                                                padding: '0.5rem 0.85rem',
+                                                borderRadius: '8px',
+                                                fontSize: '0.82rem',
+                                                fontWeight: 600,
+                                                border: `1px solid ${isActive ? color : 'rgba(255,255,255,0.06)'}`,
+                                                background: isActive ? `${color}18` : '#1e1e35',
+                                                color: isActive ? color : '#888',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s ease',
+                                            }}
+                                        >
+                                            {label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                        <div style={{ width: '200px', flexShrink: 0 }}>
+                            <label style={labelStyle}>
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                    <AlertTriangle size={14} /> Priority
+                                </span>
+                            </label>
+                            <select
+                                value={priority}
+                                onChange={(e) => setPriority(e.target.value)}
+                                style={{ ...inputStyle, cursor: 'pointer' }}
+                            >
+                                {Object.entries(priorities).map(([key, label]) => (
+                                    <option key={key} value={key}>{label}</option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
 
                     {/* Message */}
@@ -250,17 +323,19 @@ export default function BroadcastsEdit({ broadcast, groups }: Props) {
                     <div style={{ marginBottom: '1.5rem' }}>
                         <label style={labelStyle}>Target Audience</label>
                         <div style={{ display: 'flex', gap: '0.75rem' }}>
-                            <label style={targetType === 'all_groups' ? radioLabelActiveStyle : radioLabelStyle}>
-                                <input
-                                    type="radio"
-                                    name="target_type"
-                                    value="all_groups"
-                                    checked={targetType === 'all_groups'}
-                                    onChange={() => setTargetType('all_groups')}
-                                    style={{ accentColor: '#8B5CF6', width: 16, height: 16, flexShrink: 0 }}
-                                />
-                                All Groups
-                            </label>
+                            {!isLimitedAccess && (
+                                <label style={targetType === 'all_groups' ? radioLabelActiveStyle : radioLabelStyle}>
+                                    <input
+                                        type="radio"
+                                        name="target_type"
+                                        value="all_groups"
+                                        checked={targetType === 'all_groups'}
+                                        onChange={() => setTargetType('all_groups')}
+                                        style={{ accentColor: '#8B5CF6', width: 16, height: 16, flexShrink: 0 }}
+                                    />
+                                    All Groups
+                                </label>
+                            )}
                             <label style={targetType === 'selected_groups' ? radioLabelActiveStyle : radioLabelStyle}>
                                 <input
                                     type="radio"
@@ -288,7 +363,6 @@ export default function BroadcastsEdit({ broadcast, groups }: Props) {
                                 Select Groups ({selectedGroupIds.length} selected)
                             </label>
 
-                            {/* Search & Filter Bar */}
                             <div style={{
                                 display: 'flex', gap: '0.75rem', marginBottom: '0.75rem',
                                 flexWrap: 'wrap', alignItems: 'center',
@@ -419,7 +493,6 @@ export default function BroadcastsEdit({ broadcast, groups }: Props) {
                         </div>
                     </div>
 
-                    {/* Scheduled At */}
                     {scheduleType === 'scheduled' && (
                         <div style={{ marginBottom: '1.5rem' }}>
                             <label style={labelStyle}>Scheduled Date & Time</label>
@@ -432,7 +505,6 @@ export default function BroadcastsEdit({ broadcast, groups }: Props) {
                         </div>
                     )}
 
-                    {/* Recurrence Settings */}
                     {scheduleType === 'recurring' && (
                         <div style={{ marginBottom: '1.5rem' }}>
                             <div style={{ marginBottom: '1.5rem' }}>
@@ -444,16 +516,8 @@ export default function BroadcastsEdit({ broadcast, groups }: Props) {
                                     required
                                     style={{ ...inputStyle, maxWidth: '320px', colorScheme: 'dark' }}
                                 />
-                                <p style={{ margin: '0.4rem 0 0', color: '#666', fontSize: '0.78rem' }}>
-                                    The first broadcast will be sent at this date and time. Subsequent sends will occur at the same time.
-                                </p>
                             </div>
-                            <div style={{
-                                display: 'flex',
-                                gap: '1.5rem',
-                                alignItems: 'flex-end',
-                                marginBottom: '1.5rem',
-                            }}>
+                            <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-end' }}>
                                 <div style={{ flex: 1 }}>
                                     <label style={labelStyle}>Recurrence Type</label>
                                     <select

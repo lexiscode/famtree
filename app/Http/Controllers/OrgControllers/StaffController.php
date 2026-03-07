@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\OrgControllers\Traits\AuthorizesOrgActions;
 use App\Actions\OrgServices\OrgStaffService;
 use App\Actions\OrgServices\OrgRoleService;
+use App\Actions\OrgServices\OrgGroupService;
 use App\Repositories\OrgRepositories\OrgActivityLogRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,6 +19,7 @@ class StaffController extends Controller
     public function __construct(
         private OrgStaffService $staffService,
         private OrgRoleService $roleService,
+        private OrgGroupService $groupService,
         private OrgActivityLogRepository $activityLogRepo,
     ) {}
 
@@ -25,9 +27,16 @@ class StaffController extends Controller
     {
         $orgAccount = Auth::guard('org')->user();
 
+        $orgGroups = $this->groupService->getGroups($orgAccount->organization_id);
+
         return Inertia::render('OrgPages/Staff/Index', [
             'staff' => $this->staffService->getStaff($orgAccount->organization_id),
             'roles' => $this->roleService->getNonSystemRoles($orgAccount->organization_id),
+            'orgGroups' => $orgGroups->map(fn($g) => [
+                'id' => $g->id,
+                'name' => $g->name,
+                'type' => $g->type,
+            ]),
         ]);
     }
 
@@ -42,6 +51,7 @@ class StaffController extends Controller
             'password' => 'required|string|min:8',
             'org_role_id' => 'required|exists:org_roles,id',
             'display_name' => 'nullable|string|max:255',
+            'linked_org_group_id' => 'nullable|exists:org_groups,id',
         ]);
 
         $this->staffService->createStaff($orgAccount->organization_id, $validated);
@@ -69,6 +79,7 @@ class StaffController extends Controller
             'display_name' => 'nullable|string|max:255',
             'is_active' => 'sometimes|boolean',
             'password' => 'nullable|string|min:8',
+            'linked_org_group_id' => 'nullable|exists:org_groups,id',
         ]);
 
         $staff = $this->staffService->updateStaff($id, $orgAccount->organization_id, $validated);

@@ -19,7 +19,7 @@ class OrgAccountRepository
 
     public function getByOrganization(int $organizationId): Collection
     {
-        return OrgAccount::with('orgRole')
+        return OrgAccount::with(['orgRole', 'linkedOrgGroup:id,name'])
             ->where('organization_id', $organizationId)
             ->orderBy('created_at')
             ->get();
