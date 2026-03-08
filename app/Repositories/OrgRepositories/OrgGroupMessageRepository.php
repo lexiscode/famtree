@@ -99,4 +99,12 @@ class OrgGroupMessageRepository
     {
         return OrgGroupMessage::where('org_group_id', $groupId)->count();
     }
+
+    public function getLatestMessage(int $groupId): ?OrgGroupMessage
+    {
+        return OrgGroupMessage::where('org_group_id', $groupId)
+            ->with('user:id,uuid,first_name,last_name,username,profile_image')
+            ->orderBy('id', 'desc')
+            ->first();
+    }
 }

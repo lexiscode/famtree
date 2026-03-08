@@ -124,21 +124,6 @@ Route::group(['prefix' => 'org', 'as' => 'org.', 'middleware' => ['web']], funct
         Route::delete('/org-groups/{groupId}/auto-rules/{ruleId}', [OrgGroupController::class, 'deleteAutoRule'])->name('org-groups.delete-auto-rule');
         Route::post('/org-groups/{groupId}/auto-rules/{ruleId}/execute', [OrgGroupController::class, 'executeAutoRule'])->name('org-groups.execute-auto-rule');
 
-        // Group Chat
-        Route::get('/org-groups/{groupId}/chat', [OrgGroupChatController::class, 'show'])->name('org-groups.chat');
-        Route::get('/org-groups/{groupId}/chat/messages', [OrgGroupChatController::class, 'messages'])->name('org-groups.chat.messages');
-        Route::post('/org-groups/{groupId}/chat/send', [OrgGroupChatController::class, 'send'])->name('org-groups.chat.send');
-        Route::delete('/org-groups/{groupId}/chat/messages/{messageId}', [OrgGroupChatController::class, 'destroy'])->name('org-groups.chat.delete');
-        Route::post('/org-groups/{groupId}/chat/messages/{messageId}/pin', [OrgGroupChatController::class, 'togglePin'])->name('org-groups.chat.toggle-pin');
-
-        // Group Polls
-        Route::get('/org-groups/{groupId}/polls', [OrgGroupPollController::class, 'index'])->name('org-groups.polls');
-        Route::post('/org-groups/{groupId}/polls', [OrgGroupPollController::class, 'store'])->name('org-groups.polls.store');
-        Route::post('/org-groups/{groupId}/polls/{pollId}/vote', [OrgGroupPollController::class, 'vote'])->name('org-groups.polls.vote');
-        Route::post('/org-groups/{groupId}/polls/{pollId}/close', [OrgGroupPollController::class, 'close'])->name('org-groups.polls.close');
-        Route::delete('/org-groups/{groupId}/polls/{pollId}', [OrgGroupPollController::class, 'destroy'])->name('org-groups.polls.destroy');
-        Route::get('/org-groups/{groupId}/polls/{pollId}/voters', [OrgGroupPollController::class, 'voters'])->name('org-groups.polls.voters');
-
         // Followers
         Route::get('/followers', [FollowersController::class, 'index'])->name('followers.index');
     });

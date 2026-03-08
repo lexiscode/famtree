@@ -3,7 +3,7 @@
 namespace App\Models\OrgModels;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Models\User;
+use App\Models\GuestModels\User;
 
 class OrgGroupPoll extends Model
 {

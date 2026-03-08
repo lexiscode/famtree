@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { MessageCircle, Search, ArrowLeft, Users, GraduationCap, Pencil, Trash2, X, Check, CheckSquare, Square, Shield, Vote, UserMinus, Clock, AlertTriangle, ChevronDown, LogOut, Trophy, Sparkles, Reply } from 'lucide-react';
+import { MessageCircle, Search, ArrowLeft, Users, GraduationCap, Pencil, Trash2, X, Check, CheckSquare, Square, Shield, Vote, UserMinus, Clock, AlertTriangle, ChevronDown, LogOut, Trophy, Sparkles, Reply, Building2, Pin, PinOff, Paperclip, BarChart3, Plus, Lock, Eye, EyeOff, Download, Image as ImageIcon, File } from 'lucide-react';
 import '../../../../../css/predictions.css';
 
 // Custom Leaf Indicator Components for message status
@@ -122,11 +122,13 @@ interface ActiveConversation {
 interface GroupChat {
     id?: number;
     uuid: string;
-    type: 'family_tree' | 'class_set' | 'glam_squad';
+    type: 'family_tree' | 'class_set' | 'glam_squad' | 'org_group';
     name: string;
     gender_track?: string;
+    organization_name?: string;
     member_count: number;
     unread_count: number;
+    is_suspended?: boolean;
     lastMessage: {
         message: string;
         sender_id: number;
@@ -140,6 +142,9 @@ interface GroupMessage {
     id: number;
     user_id: number;
     message: string;
+    message_type?: 'text' | 'image' | 'file';
+    attachment_url?: string | null;
+    attachment_name?: string | null;
     reply_to_id?: number | null;
     replied_message?: {
         id: number;
@@ -148,6 +153,7 @@ interface GroupMessage {
     } | null;
     is_edited?: boolean;
     edited_at?: string | null;
+    is_pinned?: boolean;
     is_org_broadcast?: boolean;
     organization?: {
         id: number;
@@ -162,6 +168,34 @@ interface GroupMessage {
         last_name: string;
         profile_image_url: string | null;
     };
+}
+
+interface OrgPollOption {
+    id: number;
+    label: string;
+    votes_count: number;
+    percentage: number;
+}
+
+interface OrgPoll {
+    id: number;
+    question: string;
+    description: string | null;
+    poll_type: 'single' | 'multiple';
+    is_anonymous: boolean;
+    show_results_before_vote: boolean;
+    is_active: boolean;
+    is_closed: boolean;
+    is_expired: boolean;
+    expires_at: string | null;
+    closed_at: string | null;
+    created_at: string;
+    creator: { id: number; first_name: string; last_name: string; username: string; profile_image: string | null } | null;
+    options: OrgPollOption[];
+    total_votes: number;
+    total_voters: number;
+    user_votes: number[];
+    has_voted: boolean;
 }
 
 interface OnlineUser {
@@ -302,6 +336,18 @@ export default function MessagesIndex({
     const [removalData, setRemovalData] = useState<RemovalData | null>(null);
     const [isRemovalAction, setIsRemovalAction] = useState(false);
     const [isMuted, setIsMuted] = useState(false);
+
+    // Org group chat state (polls, pins, attachments)
+    const [orgPolls, setOrgPolls] = useState<OrgPoll[]>([]);
+    const [showOrgPollPanel, setShowOrgPollPanel] = useState(false);
+    const [showOrgPinPanel, setShowOrgPinPanel] = useState(false);
+    const [orgPinnedMessages, setOrgPinnedMessages] = useState<GroupMessage[]>([]);
+    const [orgPollsLoading, setOrgPollsLoading] = useState(false);
+    const [showCreateOrgPoll, setShowCreateOrgPoll] = useState(false);
+    const [orgPollForm, setOrgPollForm] = useState({ question: '', description: '', poll_type: 'single' as 'single' | 'multiple', is_anonymous: false, show_results_before_vote: true, expires_at: '', options: ['', ''] });
+    const [orgPollSubmitting, setOrgPollSubmitting] = useState(false);
+    const [orgAttachment, setOrgAttachment] = useState<File | null>(null);
+    const orgFileInputRef = useRef<HTMLInputElement>(null);
 
     // Members panel state
     const [showMembersPanel, setShowMembersPanel] = useState(false);
@@ -482,12 +528,16 @@ export default function MessagesIndex({
             ? `class-set.${activeGroupChat.uuid}`
             : activeGroupChat.type === 'glam_squad'
             ? `glam-squad.${activeGroupChat.uuid}`
+            : activeGroupChat.type === 'org_group'
+            ? `org-group.${activeGroupChat.uuid}`
             : `family-tree.${activeGroupChat.uuid}`;
 
         const eventName = activeGroupChat.type === 'class_set'
             ? '.ClassSetMessageSent'
             : activeGroupChat.type === 'glam_squad'
             ? '.GlamSquadMessageSent'
+            : activeGroupChat.type === 'org_group'
+            ? '.OrgGroupMessageSent'
             : '.TreeMessageSent';
 
         const channel = window.Echo.join(channelName)
@@ -545,6 +595,11 @@ export default function MessagesIndex({
         setActiveGroupChat(group);
         setIsGroupLoading(true);
         setGroupMessages([]);
+        setShowOrgPollPanel(false);
+        setShowOrgPinPanel(false);
+        setOrgPolls([]);
+        setOrgPinnedMessages([]);
+        setOrgAttachment(null);
 
         try {
             // Use different route based on group type
@@ -552,23 +607,31 @@ export default function MessagesIndex({
                 ? 'class-sets.messages'
                 : group.type === 'glam_squad'
                 ? 'glam-squad.messages'
+                : group.type === 'org_group'
+                ? 'org-groups.user.messages'
                 : 'family-tree.chat.messages';
             const response = await axios.get(route(routeName, group.uuid));
 
             // Handle different response formats
-            const messages = (group.type === 'class_set' || group.type === 'glam_squad')
+            const messages = (group.type === 'class_set' || group.type === 'glam_squad' || group.type === 'org_group')
                 ? response.data.messages.map((m: any) => ({
                     id: m.id,
-                    user_id: m.sender?.id || m.sender_id,
+                    user_id: m.sender?.id || m.sender_id || m.user_id,
                     message: m.message,
+                    message_type: m.message_type || 'text',
+                    attachment_url: m.attachment_url || null,
+                    attachment_name: m.attachment_name || null,
+                    reply_to_id: m.reply_to_id || null,
+                    replied_message: m.replied_message || null,
+                    is_pinned: m.is_pinned || false,
                     is_org_broadcast: m.is_org_broadcast || false,
                     organization: m.organization || null,
                     created_at: m.created_at,
-                    user: m.sender ? {
-                        id: m.sender.id,
-                        first_name: m.sender.first_name,
-                        last_name: m.sender.last_name,
-                        profile_image_url: m.sender.profile_image,
+                    user: (m.sender || m.user) ? {
+                        id: (m.sender || m.user).id,
+                        first_name: (m.sender || m.user).first_name,
+                        last_name: (m.sender || m.user).last_name,
+                        profile_image_url: (m.sender || m.user).profile_image_url || (m.sender || m.user).profile_image,
                     } : null,
                 }))
                 : response.data.messages;
@@ -635,10 +698,14 @@ export default function MessagesIndex({
     // Fetch members list for the panel
     const fetchMembers = useCallback(async () => {
         if (!activeGroupChat) return;
-        if (activeGroupChat.type !== 'class_set' && activeGroupChat.type !== 'glam_squad') return;
+        if (activeGroupChat.type !== 'class_set' && activeGroupChat.type !== 'glam_squad' && activeGroupChat.type !== 'org_group') return;
         setMembersLoading(true);
         try {
-            const routeName = activeGroupChat.type === 'glam_squad' ? 'glam-squad.members' : 'class-sets.members';
+            const routeName = activeGroupChat.type === 'glam_squad'
+                ? 'glam-squad.members'
+                : activeGroupChat.type === 'org_group'
+                ? 'org-groups.user.members'
+                : 'class-sets.members';
             const response = await axios.get(route(routeName, activeGroupChat.uuid));
             setMembersList(response.data.members || []);
         } catch {
@@ -807,7 +874,7 @@ export default function MessagesIndex({
     const handleSendGroupMessage = useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!newMessage.trim() || isSending || !activeGroupChat) return;
+        if ((!newMessage.trim() && !orgAttachment) || isSending || !activeGroupChat) return;
 
         setIsSending(true);
 
@@ -817,42 +884,62 @@ export default function MessagesIndex({
                 ? 'class-sets.send-message'
                 : activeGroupChat.type === 'glam_squad'
                 ? 'glam-squad.send-message'
+                : activeGroupChat.type === 'org_group'
+                ? 'org-groups.user.send-message'
                 : 'family-tree.chat.send';
-            const response = await axios.post(route(routeName, activeGroupChat.uuid), {
-                message: newMessage.trim(),
-                reply_to_id: replyingTo?.id || null,
-            });
 
+            let response;
+            if (activeGroupChat.type === 'org_group' && orgAttachment) {
+                const formData = new FormData();
+                if (newMessage.trim()) formData.append('message', newMessage.trim());
+                if (replyingTo) formData.append('reply_to_id', replyingTo.id.toString());
+                formData.append('attachment', orgAttachment);
+                response = await axios.post(route(routeName, activeGroupChat.uuid), formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                });
+            } else {
+                response = await axios.post(route(routeName, activeGroupChat.uuid), {
+                    message: newMessage.trim(),
+                    reply_to_id: replyingTo?.id || null,
+                });
+            }
+
+            const m = response.data.message;
             // Handle different response formats
-            const newMsg = (activeGroupChat.type === 'class_set' || activeGroupChat.type === 'glam_squad')
+            const newMsg = (activeGroupChat.type === 'class_set' || activeGroupChat.type === 'glam_squad' || activeGroupChat.type === 'org_group')
                 ? {
-                    id: response.data.message.id,
-                    user_id: response.data.message.sender?.id || response.data.message.sender_id,
-                    message: response.data.message.message,
-                    reply_to_id: response.data.message.reply_to_id || null,
-                    replied_message: response.data.message.replied_message || null,
-                    is_org_broadcast: response.data.message.is_org_broadcast || false,
-                    organization: response.data.message.organization || null,
-                    created_at: response.data.message.created_at,
-                    user: response.data.message.sender ? {
-                        id: response.data.message.sender.id,
-                        first_name: response.data.message.sender.first_name,
-                        last_name: response.data.message.sender.last_name,
-                        profile_image_url: response.data.message.sender.profile_image,
+                    id: m.id,
+                    user_id: (m.sender || m.user)?.id || m.sender_id || m.user_id,
+                    message: m.message,
+                    message_type: m.message_type || 'text',
+                    attachment_url: m.attachment_url || null,
+                    attachment_name: m.attachment_name || null,
+                    reply_to_id: m.reply_to_id || null,
+                    replied_message: m.replied_message || null,
+                    is_pinned: m.is_pinned || false,
+                    is_org_broadcast: m.is_org_broadcast || false,
+                    organization: m.organization || null,
+                    created_at: m.created_at,
+                    user: (m.sender || m.user) ? {
+                        id: (m.sender || m.user).id,
+                        first_name: (m.sender || m.user).first_name,
+                        last_name: (m.sender || m.user).last_name,
+                        profile_image_url: (m.sender || m.user).profile_image_url || (m.sender || m.user).profile_image,
                     } : null,
                 }
-                : response.data.message;
+                : m;
 
             setGroupMessages(prev => [...prev, newMsg]);
             setNewMessage('');
             setReplyingTo(null);
+            setOrgAttachment(null);
             setTimeout(scrollToBottom, 100);
         } catch (error) {
             console.error('Error sending group message:', error);
         } finally {
             setIsSending(false);
         }
-    }, [newMessage, isSending, activeGroupChat, scrollToBottom, replyingTo]);
+    }, [newMessage, isSending, activeGroupChat, scrollToBottom, replyingTo, orgAttachment]);
 
     // Send message
     const handleSendMessage = useCallback(async (e: React.FormEvent) => {
@@ -1018,6 +1105,7 @@ export default function MessagesIndex({
             const routeName = activeGroupChat
                 ? (activeGroupChat.type === 'class_set' ? 'class-sets.bulk-delete'
                     : activeGroupChat.type === 'glam_squad' ? 'glam-squad.bulk-delete'
+                    : activeGroupChat.type === 'org_group' ? 'org-groups.user.bulk-delete'
                     : 'family-tree.chat.bulk-delete')
                 : 'messages.bulk-delete';
             const response = await axios.post(route(routeName), {
@@ -1057,6 +1145,8 @@ export default function MessagesIndex({
                 ? 'class-sets.edit-message'
                 : activeGroupChat.type === 'glam_squad'
                 ? 'glam-squad.edit-message'
+                : activeGroupChat.type === 'org_group'
+                ? 'org-groups.user.edit-message'
                 : 'family-tree.chat.edit';
             const response = await axios.put(route(routeName, editingMessageId), {
                 message: editingText.trim(),
@@ -1088,6 +1178,8 @@ export default function MessagesIndex({
                 ? 'class-sets.delete-message'
                 : activeGroupChat.type === 'glam_squad'
                 ? 'glam-squad.delete-message'
+                : activeGroupChat.type === 'org_group'
+                ? 'org-groups.user.delete-message'
                 : 'family-tree.chat.delete';
             const response = await axios.delete(route(routeName, deletingMessageId));
 
@@ -1101,6 +1193,87 @@ export default function MessagesIndex({
             setIsDeleting(false);
         }
     }, [deletingMessageId, activeGroupChat]);
+
+    // Org group: toggle pin
+    const handleOrgTogglePin = useCallback(async (messageId: number) => {
+        if (!activeGroupChat || activeGroupChat.type !== 'org_group') return;
+        try {
+            const res = await axios.post(route('org-groups.user.toggle-pin', { groupUuid: activeGroupChat.uuid, messageId }));
+            const action = res.data.action;
+            setGroupMessages(prev => prev.map(m => m.id === messageId ? { ...m, is_pinned: action === 'pinned' } : m));
+            if (action === 'pinned') {
+                const msg = groupMessages.find(m => m.id === messageId);
+                if (msg) setOrgPinnedMessages(prev => [{ ...msg, is_pinned: true }, ...prev]);
+            } else {
+                setOrgPinnedMessages(prev => prev.filter(m => m.id !== messageId));
+            }
+        } catch {}
+    }, [activeGroupChat, groupMessages]);
+
+    // Org group: load pinned messages
+    const loadOrgPinnedMessages = useCallback(async () => {
+        if (!activeGroupChat || activeGroupChat.type !== 'org_group') return;
+        try {
+            const res = await axios.get(route('org-groups.user.pinned', activeGroupChat.uuid));
+            setOrgPinnedMessages(res.data.messages || []);
+        } catch {}
+    }, [activeGroupChat]);
+
+    // Org group: load polls
+    const loadOrgPolls = useCallback(async () => {
+        if (!activeGroupChat || activeGroupChat.type !== 'org_group') return;
+        setOrgPollsLoading(true);
+        try {
+            const res = await axios.get(route('org-groups.user.polls', activeGroupChat.uuid));
+            setOrgPolls(res.data || []);
+        } catch {} finally { setOrgPollsLoading(false); }
+    }, [activeGroupChat]);
+
+    // Org group: create poll
+    const handleCreateOrgPoll = useCallback(async () => {
+        if (!activeGroupChat || activeGroupChat.type !== 'org_group') return;
+        const validOpts = orgPollForm.options.filter(o => o.trim());
+        if (!orgPollForm.question.trim() || validOpts.length < 2) return;
+        setOrgPollSubmitting(true);
+        try {
+            const res = await axios.post(route('org-groups.user.polls.store', activeGroupChat.uuid), {
+                question: orgPollForm.question, description: orgPollForm.description || null,
+                poll_type: orgPollForm.poll_type, is_anonymous: orgPollForm.is_anonymous,
+                show_results_before_vote: orgPollForm.show_results_before_vote,
+                options: validOpts, expires_at: orgPollForm.expires_at || null,
+            });
+            setOrgPolls(prev => [res.data, ...prev]);
+            setShowCreateOrgPoll(false);
+            setOrgPollForm({ question: '', description: '', poll_type: 'single', is_anonymous: false, show_results_before_vote: true, expires_at: '', options: ['', ''] });
+        } catch {} finally { setOrgPollSubmitting(false); }
+    }, [activeGroupChat, orgPollForm]);
+
+    // Org group: vote on poll
+    const handleOrgPollVote = useCallback(async (pollId: number, optionIds: number[]) => {
+        if (!activeGroupChat || activeGroupChat.type !== 'org_group') return;
+        try {
+            const res = await axios.post(route('org-groups.user.polls.vote', { groupUuid: activeGroupChat.uuid, pollId }), { option_ids: optionIds });
+            setOrgPolls(prev => prev.map(p => p.id === pollId ? res.data : p));
+        } catch {}
+    }, [activeGroupChat]);
+
+    // Org group: close poll
+    const handleCloseOrgPoll = useCallback(async (pollId: number) => {
+        if (!activeGroupChat || activeGroupChat.type !== 'org_group') return;
+        try {
+            const res = await axios.post(route('org-groups.user.polls.close', { groupUuid: activeGroupChat.uuid, pollId }));
+            setOrgPolls(prev => prev.map(p => p.id === pollId ? res.data : p));
+        } catch {}
+    }, [activeGroupChat]);
+
+    // Org group: delete poll
+    const handleDeleteOrgPoll = useCallback(async (pollId: number) => {
+        if (!activeGroupChat || activeGroupChat.type !== 'org_group' || !confirm('Delete this poll?')) return;
+        try {
+            await axios.delete(route('org-groups.user.polls.destroy', { groupUuid: activeGroupChat.uuid, pollId }));
+            setOrgPolls(prev => prev.filter(p => p.id !== pollId));
+        } catch {}
+    }, [activeGroupChat]);
 
     // Format timestamp
     const formatTime = (timestamp: string) => {
@@ -1191,11 +1364,13 @@ export default function MessagesIndex({
                                             className={`messages-conversation-item group-chat ${activeGroupChat?.uuid === group.uuid ? 'active' : ''} ${group.unread_count > 0 ? 'unread' : ''}`}
                                         >
                                             <div className="conversation-avatar group-avatar">
-                                                <div className={`avatar-fallback group-fallback ${group.type === 'class_set' ? 'class-set-fallback' : group.type === 'glam_squad' ? 'glam-squad-fallback' : ''}`}>
+                                                <div className={`avatar-fallback group-fallback ${group.type === 'class_set' ? 'class-set-fallback' : group.type === 'glam_squad' ? 'glam-squad-fallback' : group.type === 'org_group' ? 'org-group-fallback' : ''}`}>
                                                     {group.type === 'class_set' ? (
                                                         <GraduationCap size={20} />
                                                     ) : group.type === 'glam_squad' ? (
                                                         <Sparkles size={20} />
+                                                    ) : group.type === 'org_group' ? (
+                                                        <Building2 size={20} />
                                                     ) : (
                                                         <Users size={20} />
                                                     )}
@@ -1434,6 +1609,63 @@ export default function MessagesIndex({
                                                 onMouseLeave={(e) => { e.currentTarget.style.background = showLeaguePanel ? 'rgba(236, 72, 153, 0.25)' : 'rgba(236, 72, 153, 0.08)'; }}
                                             >
                                                 <Trophy size={14} />
+                                            </button>
+                                        )}
+                                        {activeGroupChat.type === 'org_group' && (
+                                            <>
+                                                <button
+                                                    onClick={() => { setShowOrgPinPanel(!showOrgPinPanel); setShowOrgPollPanel(false); setShowMembersPanel(false); if (!showOrgPinPanel) loadOrgPinnedMessages(); }}
+                                                    title="Pinned messages"
+                                                    style={{
+                                                        width: '24px', height: '24px', minWidth: '24px', minHeight: '24px',
+                                                        maxWidth: '24px', maxHeight: '24px',
+                                                        borderRadius: '4px',
+                                                        background: showOrgPinPanel ? 'rgba(139, 92, 246, 0.25)' : 'rgba(139, 92, 246, 0.08)',
+                                                        border: `1px solid ${showOrgPinPanel ? 'rgba(139, 92, 246, 0.4)' : 'rgba(139, 92, 246, 0.15)'}`,
+                                                        color: '#8B5CF6',
+                                                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                        cursor: 'pointer', padding: 0, transition: 'all 0.2s ease',
+                                                        boxSizing: 'border-box', lineHeight: 1,
+                                                    }}
+                                                >
+                                                    <Pin size={14} />
+                                                </button>
+                                                <button
+                                                    onClick={() => { setShowOrgPollPanel(!showOrgPollPanel); setShowOrgPinPanel(false); setShowMembersPanel(false); if (!showOrgPollPanel) loadOrgPolls(); }}
+                                                    title="Polls"
+                                                    style={{
+                                                        width: '24px', height: '24px', minWidth: '24px', minHeight: '24px',
+                                                        maxWidth: '24px', maxHeight: '24px',
+                                                        borderRadius: '4px',
+                                                        background: showOrgPollPanel ? 'rgba(245, 158, 11, 0.25)' : 'rgba(245, 158, 11, 0.08)',
+                                                        border: `1px solid ${showOrgPollPanel ? 'rgba(245, 158, 11, 0.4)' : 'rgba(245, 158, 11, 0.15)'}`,
+                                                        color: '#F59E0B',
+                                                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                        cursor: 'pointer', padding: 0, transition: 'all 0.2s ease',
+                                                        boxSizing: 'border-box', lineHeight: 1,
+                                                    }}
+                                                >
+                                                    <BarChart3 size={14} />
+                                                </button>
+                                            </>
+                                        )}
+                                        {(activeGroupChat.type === 'class_set' || activeGroupChat.type === 'glam_squad' || activeGroupChat.type === 'org_group') && (
+                                            <button
+                                                onClick={toggleMembersPanel}
+                                                title="Members"
+                                                style={{
+                                                    width: '24px', height: '24px', minWidth: '24px', minHeight: '24px',
+                                                    maxWidth: '24px', maxHeight: '24px',
+                                                    borderRadius: '4px',
+                                                    background: showMembersPanel ? 'rgba(34, 197, 94, 0.25)' : 'rgba(34, 197, 94, 0.08)',
+                                                    border: `1px solid ${showMembersPanel ? 'rgba(34, 197, 94, 0.4)' : 'rgba(34, 197, 94, 0.15)'}`,
+                                                    color: '#22C55E',
+                                                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                    cursor: 'pointer', padding: 0, transition: 'all 0.2s ease',
+                                                    boxSizing: 'border-box', lineHeight: 1,
+                                                }}
+                                            >
+                                                <Users size={14} />
                                             </button>
                                         )}
                                         {(activeGroupChat.type === 'class_set' || activeGroupChat.type === 'glam_squad') && (
@@ -2300,7 +2532,35 @@ export default function MessagesIndex({
                                                                         </div>
                                                                     </>
                                                                 ) : (
-                                                                    <p className="message-text">{message.message}</p>
+                                                                    <>
+                                                                        {/* Attachment rendering for org_group */}
+                                                                        {message.message_type === 'image' && message.attachment_url && (
+                                                                            <a href={message.attachment_url} target="_blank" rel="noopener noreferrer" style={{ display: 'block', marginBottom: message.message ? '0.4rem' : 0 }}>
+                                                                                <img src={message.attachment_url} alt={message.attachment_name || 'Image'}
+                                                                                    style={{ maxWidth: '260px', maxHeight: '200px', borderRadius: '8px', objectFit: 'cover' }} />
+                                                                            </a>
+                                                                        )}
+                                                                        {message.message_type === 'file' && message.attachment_url && (
+                                                                            <a href={message.attachment_url} target="_blank" rel="noopener noreferrer" download
+                                                                                style={{
+                                                                                    display: 'flex', alignItems: 'center', gap: '0.5rem',
+                                                                                    padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.05)',
+                                                                                    borderRadius: '8px', marginBottom: message.message ? '0.4rem' : 0,
+                                                                                    textDecoration: 'none', color: '#aaa', fontSize: '0.78rem',
+                                                                                }}>
+                                                                                <File size={16} />
+                                                                                <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{message.attachment_name || 'Download'}</span>
+                                                                                <Download size={14} />
+                                                                            </a>
+                                                                        )}
+                                                                        {message.message && <p className="message-text">{message.message}</p>}
+                                                                        {/* Pin indicator */}
+                                                                        {message.is_pinned && (
+                                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px', fontSize: '0.65rem', color: '#8B5CF6' }}>
+                                                                                <Pin size={10} /> Pinned
+                                                                            </div>
+                                                                        )}
+                                                                    </>
                                                                 )}
 
                                                                 {/* Edit/Delete/Reply action icons */}
@@ -2313,6 +2573,16 @@ export default function MessagesIndex({
                                                                         >
                                                                             <Reply size={11} />
                                                                         </button>
+                                                                        {activeGroupChat?.type === 'org_group' && (
+                                                                            <button
+                                                                                className="message-action-btn"
+                                                                                onClick={() => handleOrgTogglePin(message.id)}
+                                                                                title={message.is_pinned ? 'Unpin' : 'Pin'}
+                                                                                style={{ color: message.is_pinned ? '#8B5CF6' : undefined }}
+                                                                            >
+                                                                                {message.is_pinned ? <PinOff size={11} /> : <Pin size={11} />}
+                                                                            </button>
+                                                                        )}
                                                                         {isOwnMessage && (
                                                                             <>
                                                                                 <button
@@ -2383,20 +2653,36 @@ export default function MessagesIndex({
                                                 </button>
                                             </div>
                                         )}
+                                        {/* Attachment preview for org_group */}
+                                        {activeGroupChat?.type === 'org_group' && orgAttachment && (
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 0.75rem', background: 'rgba(139,92,246,0.06)', borderRadius: '6px', marginBottom: '0.4rem', fontSize: '0.78rem', color: '#aaa' }}>
+                                                <Paperclip size={12} />
+                                                <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{orgAttachment.name}</span>
+                                                <button onClick={() => setOrgAttachment(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#888', padding: 0 }}><X size={14} /></button>
+                                            </div>
+                                        )}
                                         <form onSubmit={handleSendGroupMessage} className="messages-input-form">
+                                            {activeGroupChat?.type === 'org_group' && !activeGroupChat.is_suspended && (
+                                                <>
+                                                    <input type="file" ref={orgFileInputRef} style={{ display: 'none' }} onChange={(e) => { if (e.target.files?.[0]) setOrgAttachment(e.target.files[0]); }} />
+                                                    <button type="button" onClick={() => orgFileInputRef.current?.click()} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#888', padding: '0 0.25rem', display: 'flex', alignItems: 'center' }} title="Attach file">
+                                                        <Paperclip size={18} />
+                                                    </button>
+                                                </>
+                                            )}
                                             <input
                                                 type="text"
                                                 value={newMessage}
                                                 onChange={(e) => setNewMessage(e.target.value)}
-                                                placeholder="Type a message..."
+                                                placeholder={activeGroupChat?.type === 'org_group' && activeGroupChat.is_suspended ? 'Group is suspended...' : 'Type a message...'}
                                                 className="messages-input"
-                                                disabled={isSending}
+                                                disabled={isSending || (activeGroupChat?.type === 'org_group' && activeGroupChat.is_suspended)}
                                                 maxLength={5000}
                                             />
                                             <button
                                                 type="submit"
                                                 className="messages-send-btn"
-                                                disabled={!newMessage.trim() || isSending}
+                                                disabled={(!newMessage.trim() && !orgAttachment) || isSending || (activeGroupChat?.type === 'org_group' && activeGroupChat.is_suspended)}
                                             >
                                                 {isSending ? (
                                                     <div className="spinner-small"></div>
@@ -2747,7 +3033,7 @@ export default function MessagesIndex({
                     </div>
 
                     {/* Members Panel */}
-                    {showMembersPanel && (activeGroupChat?.type === 'class_set' || activeGroupChat?.type === 'glam_squad') && (
+                    {showMembersPanel && (activeGroupChat?.type === 'class_set' || activeGroupChat?.type === 'glam_squad' || activeGroupChat?.type === 'org_group') && (
                         <div style={{
                             width: '280px', minWidth: '280px',
                             background: 'rgba(15, 23, 42, 0.95)',
@@ -3254,6 +3540,365 @@ export default function MessagesIndex({
                                     <Trophy size={14} />
                                     View Full Leaderboard
                                 </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Org Group Pinned Messages Panel */}
+                    {showOrgPinPanel && activeGroupChat?.type === 'org_group' && (
+                        <div style={{
+                            width: '280px', background: '#1a1a2e',
+                            borderLeft: '1px solid rgba(255,255,255,0.06)',
+                            display: 'flex', flexDirection: 'column',
+                            flexShrink: 0, overflow: 'hidden',
+                        }}>
+                            <div style={{
+                                padding: '1rem', borderBottom: '1px solid rgba(255,255,255,0.06)',
+                                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                            }}>
+                                <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 600, color: '#e0e0e0' }}>
+                                    Pinned Messages
+                                </p>
+                                <button onClick={() => setShowOrgPinPanel(false)}
+                                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#666', padding: '2px', display: 'flex' }}>
+                                    <X size={16} />
+                                </button>
+                            </div>
+                            <div style={{ flex: 1, overflowY: 'auto', padding: '0.5rem' }}>
+                                {orgPinnedMessages.length > 0 ? orgPinnedMessages.map(msg => (
+                                    <div key={msg.id} style={{
+                                        padding: '0.6rem 0.75rem', marginBottom: '0.4rem',
+                                        background: 'rgba(255,255,255,0.02)', borderRadius: '8px',
+                                        border: '1px solid rgba(255,255,255,0.04)',
+                                    }}>
+                                        <p style={{ margin: 0, fontSize: '0.72rem', color: '#8B5CF6', fontWeight: 600 }}>
+                                            {msg.user?.first_name} {msg.user?.last_name}
+                                        </p>
+                                        <p style={{ margin: '3px 0 0', fontSize: '0.78rem', color: '#ccc', lineHeight: 1.4 }}>
+                                            {msg.message || '[Attachment]'}
+                                        </p>
+                                        <p style={{ margin: '3px 0 0', fontSize: '0.65rem', color: '#555' }}>
+                                            {formatTime(msg.created_at)}
+                                        </p>
+                                    </div>
+                                )) : (
+                                    <div style={{ textAlign: 'center', padding: '1.5rem' }}>
+                                        <Pin size={28} color="#333" style={{ marginBottom: '0.5rem' }} />
+                                        <p style={{ color: '#555', fontSize: '0.8rem', margin: 0 }}>No pinned messages</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Org Group Polls Panel */}
+                    {showOrgPollPanel && activeGroupChat?.type === 'org_group' && (
+                        <div style={{
+                            width: '360px', background: '#1a1a2e',
+                            borderLeft: '1px solid rgba(255,255,255,0.06)',
+                            display: 'flex', flexDirection: 'column',
+                            flexShrink: 0, overflow: 'hidden',
+                        }}>
+                            <div style={{
+                                padding: '1rem', borderBottom: '1px solid rgba(255,255,255,0.06)',
+                                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                            }}>
+                                <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 600, color: '#e0e0e0' }}>
+                                    Polls
+                                </p>
+                                <div style={{ display: 'flex', gap: '0.3rem', alignItems: 'center' }}>
+                                    <button onClick={() => setShowCreateOrgPoll(true)} style={{
+                                        background: 'rgba(139,92,246,0.15)', border: 'none', borderRadius: '6px',
+                                        padding: '4px 8px', cursor: 'pointer', color: '#8B5CF6',
+                                        fontSize: '0.7rem', fontWeight: 600, display: 'flex',
+                                        alignItems: 'center', gap: '3px',
+                                    }}>
+                                        <Plus size={12} /> New
+                                    </button>
+                                    <button onClick={() => setShowOrgPollPanel(false)}
+                                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#666', padding: '2px', display: 'flex' }}>
+                                        <X size={16} />
+                                    </button>
+                                </div>
+                            </div>
+                            <div style={{ flex: 1, overflowY: 'auto', padding: '0.5rem' }}>
+                                {/* Create Poll Form */}
+                                {showCreateOrgPoll && (
+                                    <div style={{
+                                        background: 'rgba(139,92,246,0.04)', border: '1px solid rgba(139,92,246,0.15)',
+                                        borderRadius: '10px', padding: '0.85rem', marginBottom: '0.75rem',
+                                    }}>
+                                        <input type="text" value={orgPollForm.question}
+                                            onChange={e => setOrgPollForm(f => ({ ...f, question: e.target.value }))}
+                                            placeholder="Ask a question..."
+                                            style={{
+                                                width: '100%', background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.08)',
+                                                borderRadius: '6px', padding: '0.4rem 0.6rem', color: '#fff',
+                                                fontSize: '0.78rem', fontWeight: 600, outline: 'none', marginBottom: '0.5rem',
+                                            }} />
+                                        <textarea value={orgPollForm.description}
+                                            onChange={e => setOrgPollForm(f => ({ ...f, description: e.target.value }))}
+                                            placeholder="Description (optional)" rows={2}
+                                            style={{
+                                                width: '100%', background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.08)',
+                                                borderRadius: '6px', padding: '0.4rem 0.6rem', color: '#fff',
+                                                fontSize: '0.78rem', outline: 'none', resize: 'none' as const, marginBottom: '0.5rem',
+                                            }} />
+
+                                        <p style={{ fontSize: '0.68rem', fontWeight: 600, color: '#888', margin: '0 0 0.3rem', textTransform: 'uppercase' }}>
+                                            Options
+                                        </p>
+                                        {orgPollForm.options.map((opt, i) => (
+                                            <div key={i} style={{ display: 'flex', gap: '0.3rem', marginBottom: '0.3rem' }}>
+                                                <input type="text" value={opt}
+                                                    onChange={e => {
+                                                        const next = [...orgPollForm.options];
+                                                        next[i] = e.target.value;
+                                                        setOrgPollForm(f => ({ ...f, options: next }));
+                                                    }}
+                                                    placeholder={`Option ${i + 1}`}
+                                                    style={{
+                                                        flex: 1, background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.08)',
+                                                        borderRadius: '6px', padding: '0.4rem 0.6rem', color: '#fff',
+                                                        fontSize: '0.78rem', outline: 'none',
+                                                    }} />
+                                                {orgPollForm.options.length > 2 && (
+                                                    <button onClick={() => setOrgPollForm(f => ({ ...f, options: f.options.filter((_, j) => j !== i) }))}
+                                                        style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', padding: '4px', display: 'flex' }}>
+                                                        <X size={14} />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        ))}
+                                        {orgPollForm.options.length < 10 && (
+                                            <button onClick={() => setOrgPollForm(f => ({ ...f, options: [...f.options, ''] }))}
+                                                style={{
+                                                    background: 'none', border: '1px dashed rgba(255,255,255,0.1)',
+                                                    borderRadius: '6px', padding: '0.3rem', width: '100%',
+                                                    color: '#666', fontSize: '0.72rem', cursor: 'pointer',
+                                                    marginBottom: '0.5rem',
+                                                }}>
+                                                + Add option
+                                            </button>
+                                        )}
+
+                                        {/* Settings */}
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', marginTop: '0.4rem' }}>
+                                            <div style={{ display: 'flex', gap: '0.3rem' }}>
+                                                {(['single', 'multiple'] as const).map(t => (
+                                                    <button key={t} onClick={() => setOrgPollForm(f => ({ ...f, poll_type: t }))} style={{
+                                                        flex: 1, padding: '0.35rem', borderRadius: '6px', fontSize: '0.7rem',
+                                                        fontWeight: 500, cursor: 'pointer', border: 'none',
+                                                        background: orgPollForm.poll_type === t ? 'rgba(139,92,246,0.18)' : 'rgba(255,255,255,0.03)',
+                                                        color: orgPollForm.poll_type === t ? '#8B5CF6' : '#666',
+                                                    }}>
+                                                        {t === 'single' ? 'Single choice' : 'Multiple choice'}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', fontSize: '0.72rem', color: '#888' }}>
+                                                <input type="checkbox" checked={orgPollForm.is_anonymous}
+                                                    onChange={e => setOrgPollForm(f => ({ ...f, is_anonymous: e.target.checked }))}
+                                                    style={{ accentColor: '#8B5CF6', width: '13px', height: '13px' }} />
+                                                Anonymous voting
+                                            </label>
+                                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', fontSize: '0.72rem', color: '#888' }}>
+                                                <input type="checkbox" checked={orgPollForm.show_results_before_vote}
+                                                    onChange={e => setOrgPollForm(f => ({ ...f, show_results_before_vote: e.target.checked }))}
+                                                    style={{ accentColor: '#8B5CF6', width: '13px', height: '13px' }} />
+                                                Show results before voting
+                                            </label>
+                                            <div>
+                                                <label style={{ fontSize: '0.68rem', color: '#666', fontWeight: 500 }}>Expires</label>
+                                                <input type="datetime-local" value={orgPollForm.expires_at}
+                                                    onChange={e => setOrgPollForm(f => ({ ...f, expires_at: e.target.value }))}
+                                                    style={{
+                                                        width: '100%', background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.08)',
+                                                        borderRadius: '6px', padding: '0.35rem 0.5rem', color: '#fff',
+                                                        fontSize: '0.72rem', outline: 'none',
+                                                    }} />
+                                            </div>
+                                        </div>
+
+                                        <div style={{ display: 'flex', gap: '0.3rem', justifyContent: 'flex-end', marginTop: '0.6rem' }}>
+                                            <button onClick={() => setShowCreateOrgPoll(false)} style={{
+                                                padding: '0.35rem 0.75rem', borderRadius: '6px',
+                                                background: 'rgba(255,255,255,0.05)', border: 'none',
+                                                color: '#888', fontSize: '0.72rem', cursor: 'pointer',
+                                            }}>Cancel</button>
+                                            <button onClick={handleCreateOrgPoll}
+                                                disabled={orgPollSubmitting || !orgPollForm.question.trim() || orgPollForm.options.filter(o => o.trim()).length < 2}
+                                                style={{
+                                                    padding: '0.35rem 0.75rem', borderRadius: '6px',
+                                                    background: 'linear-gradient(135deg, #8B5CF6, #6D28D9)',
+                                                    border: 'none', color: '#fff', fontSize: '0.72rem',
+                                                    fontWeight: 600, cursor: 'pointer',
+                                                    opacity: orgPollSubmitting || !orgPollForm.question.trim() || orgPollForm.options.filter(o => o.trim()).length < 2 ? 0.5 : 1,
+                                                }}>
+                                                {orgPollSubmitting ? 'Creating...' : 'Create Poll'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Polls list */}
+                                {orgPollsLoading ? (
+                                    <p style={{ color: '#666', textAlign: 'center', padding: '1.5rem', fontSize: '0.82rem' }}>Loading...</p>
+                                ) : orgPolls.length > 0 ? orgPolls.map(poll => {
+                                    const selectedOptions = poll.user_votes || [];
+                                    const canSeeResults = poll.has_voted || poll.show_results_before_vote || poll.is_closed;
+
+                                    return (
+                                        <div key={poll.id} style={{
+                                            background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)',
+                                            borderRadius: '10px', padding: '0.85rem', marginBottom: '0.5rem',
+                                        }}>
+                                            {/* Header */}
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.4rem' }}>
+                                                <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 600, color: '#e0e0e0', flex: 1 }}>
+                                                    {poll.question}
+                                                </p>
+                                                <div style={{ display: 'flex', gap: '2px', flexShrink: 0, marginLeft: '0.3rem' }}>
+                                                    {!poll.is_closed && (
+                                                        <button onClick={() => handleCloseOrgPoll(poll.id)} title="Close poll" style={{
+                                                            background: 'none', border: 'none', cursor: 'pointer',
+                                                            color: '#F59E0B', padding: '2px', display: 'flex',
+                                                        }}>
+                                                            <Lock size={12} />
+                                                        </button>
+                                                    )}
+                                                    <button onClick={() => handleDeleteOrgPoll(poll.id)} title="Delete poll" style={{
+                                                        background: 'none', border: 'none', cursor: 'pointer',
+                                                        color: '#EF4444', padding: '2px', display: 'flex',
+                                                    }}>
+                                                        <Trash2 size={12} />
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {poll.description && (
+                                                <p style={{ margin: '0 0 0.5rem', fontSize: '0.75rem', color: '#888', lineHeight: 1.4 }}>
+                                                    {poll.description}
+                                                </p>
+                                            )}
+
+                                            {/* Meta badges */}
+                                            <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
+                                                <span style={{
+                                                    fontSize: '0.6rem', fontWeight: 600, color: '#888',
+                                                    background: 'rgba(255,255,255,0.05)', padding: '1px 5px',
+                                                    borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '3px',
+                                                }}>
+                                                    {poll.poll_type === 'single' ? 'Single choice' : 'Multiple choice'}
+                                                </span>
+                                                {poll.is_anonymous && (
+                                                    <span style={{
+                                                        fontSize: '0.6rem', fontWeight: 600, color: '#888',
+                                                        background: 'rgba(255,255,255,0.05)', padding: '1px 5px',
+                                                        borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '3px',
+                                                    }}>
+                                                        <EyeOff size={9} /> Anonymous
+                                                    </span>
+                                                )}
+                                                {poll.is_closed && (
+                                                    <span style={{
+                                                        fontSize: '0.6rem', fontWeight: 600, color: '#EF4444',
+                                                        background: 'rgba(239,68,68,0.1)', padding: '1px 5px',
+                                                        borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '3px',
+                                                    }}>
+                                                        {poll.is_expired ? 'Expired' : 'Closed'}
+                                                    </span>
+                                                )}
+                                                {poll.expires_at && !poll.is_expired && (
+                                                    <span style={{
+                                                        fontSize: '0.6rem', fontWeight: 600, color: '#888',
+                                                        background: 'rgba(255,255,255,0.05)', padding: '1px 5px',
+                                                        borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '3px',
+                                                    }}>
+                                                        <Clock size={9} /> {formatTime(poll.expires_at)}
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            {/* Options */}
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                                {poll.options.map(opt => {
+                                                    const isSelected = selectedOptions.includes(opt.id);
+                                                    const showBar = canSeeResults;
+
+                                                    return (
+                                                        <button key={opt.id}
+                                                            onClick={() => {
+                                                                if (poll.is_closed) return;
+                                                                handleOrgPollVote(poll.id, [opt.id]);
+                                                            }}
+                                                            disabled={poll.is_closed}
+                                                            style={{
+                                                                position: 'relative', display: 'flex', alignItems: 'center',
+                                                                gap: '0.4rem', padding: '0.45rem 0.6rem', borderRadius: '8px',
+                                                                background: isSelected ? 'rgba(139,92,246,0.12)' : 'rgba(255,255,255,0.02)',
+                                                                border: `1px solid ${isSelected ? 'rgba(139,92,246,0.35)' : 'rgba(255,255,255,0.06)'}`,
+                                                                cursor: poll.is_closed ? 'default' : 'pointer',
+                                                                textAlign: 'left' as const, overflow: 'hidden',
+                                                                transition: 'all 0.15s',
+                                                            }}
+                                                        >
+                                                            {showBar && (
+                                                                <div style={{
+                                                                    position: 'absolute', left: 0, top: 0, bottom: 0,
+                                                                    width: `${opt.percentage}%`,
+                                                                    background: isSelected ? 'rgba(139,92,246,0.15)' : 'rgba(255,255,255,0.03)',
+                                                                    borderRadius: '8px', transition: 'width 0.3s ease',
+                                                                }} />
+                                                            )}
+                                                            <div style={{
+                                                                width: '14px', height: '14px',
+                                                                borderRadius: poll.poll_type === 'single' ? '50%' : '3px',
+                                                                border: `2px solid ${isSelected ? '#8B5CF6' : '#555'}`,
+                                                                background: isSelected ? '#8B5CF6' : 'transparent',
+                                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                                flexShrink: 0, position: 'relative', zIndex: 1,
+                                                            }}>
+                                                                {isSelected && <Check size={10} color="#fff" />}
+                                                            </div>
+                                                            <span style={{
+                                                                fontSize: '0.78rem', color: isSelected ? '#e0e0e0' : '#bbb',
+                                                                fontWeight: isSelected ? 600 : 400, flex: 1,
+                                                                position: 'relative', zIndex: 1,
+                                                            }}>
+                                                                {opt.label}
+                                                            </span>
+                                                            {showBar && (
+                                                                <span style={{
+                                                                    fontSize: '0.68rem', fontWeight: 600,
+                                                                    color: isSelected ? '#8B5CF6' : '#666',
+                                                                    position: 'relative', zIndex: 1,
+                                                                }}>
+                                                                    {opt.percentage}%
+                                                                </span>
+                                                            )}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+
+                                            {/* Footer */}
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' }}>
+                                                <span style={{ fontSize: '0.68rem', color: '#555' }}>
+                                                    {poll.total_voters} voter{poll.total_voters !== 1 ? 's' : ''} &middot; {poll.total_votes} vote{poll.total_votes !== 1 ? 's' : ''}
+                                                </span>
+                                                <span style={{ fontSize: '0.65rem', color: '#444' }}>
+                                                    {poll.creator?.first_name} {poll.creator?.last_name}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    );
+                                }) : !showCreateOrgPoll && (
+                                    <div style={{ textAlign: 'center', padding: '1.5rem' }}>
+                                        <BarChart3 size={28} color="#333" style={{ marginBottom: '0.5rem' }} />
+                                        <p style={{ color: '#555', fontSize: '0.8rem', margin: 0 }}>No polls yet</p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}

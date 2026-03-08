@@ -12,6 +12,8 @@ use App\Repositories\GuestRepositories\AuthAccessRepositories\ClassSetRepository
 use App\Repositories\GuestRepositories\AuthAccessRepositories\ClassSetMessageRepository;
 use App\Repositories\GuestRepositories\AuthAccessRepositories\GlamRepository;
 use App\Repositories\GuestRepositories\AuthAccessRepositories\GlamSquadMessageRepository;
+use App\Repositories\OrgRepositories\OrgGroupRepository;
+use App\Repositories\OrgRepositories\OrgGroupMessageRepository;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -25,7 +27,9 @@ class PrivateMessageController extends Controller
         private ClassSetRepository $classSetRepository,
         private ClassSetMessageRepository $classSetMessageRepository,
         private GlamRepository $glamRepository,
-        private GlamSquadMessageRepository $glamSquadMessageRepository
+        private GlamSquadMessageRepository $glamSquadMessageRepository,
+        private OrgGroupRepository $orgGroupRepository,
+        private OrgGroupMessageRepository $orgGroupMessageRepository,
     ) {}
 
     /**
@@ -494,6 +498,35 @@ class PrivateMessageController extends Controller
                     'created_at' => $latestMessage->created_at->toISOString(),
                 ] : null,
                 'last_message_at' => $latestMessage ? $latestMessage->created_at->toISOString() : $glamSquad->created_at->toISOString(),
+            ];
+        }
+
+        // Get org group chats
+        $orgGroups = $this->orgGroupRepository->getUserOrgGroups($userId);
+        foreach ($orgGroups as $orgGroup) {
+            $latestMessage = $this->orgGroupMessageRepository->getLatestMessage($orgGroup->id);
+            $memberCount = $orgGroup->activeMembers ? $orgGroup->activeMembers->count() : 0;
+
+            $orgName = $orgGroup->organization->short_name ?? $orgGroup->organization->name ?? '';
+
+            $groupChats[] = [
+                'id' => $orgGroup->id,
+                'uuid' => $orgGroup->uuid,
+                'type' => 'org_group',
+                'name' => $orgGroup->name,
+                'organization_name' => $orgName,
+                'member_count' => $memberCount,
+                'unread_count' => 0,
+                'is_suspended' => $orgGroup->is_suspended,
+                'lastMessage' => $latestMessage ? [
+                    'message' => $latestMessage->message,
+                    'sender_id' => $latestMessage->user_id,
+                    'sender_name' => $latestMessage->user
+                        ? trim($latestMessage->user->first_name . ' ' . $latestMessage->user->last_name)
+                        : 'Unknown',
+                    'created_at' => $latestMessage->created_at->toISOString(),
+                ] : null,
+                'last_message_at' => $latestMessage ? $latestMessage->created_at->toISOString() : $orgGroup->created_at->toISOString(),
             ];
         }
 

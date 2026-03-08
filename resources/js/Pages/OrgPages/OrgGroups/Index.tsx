@@ -6,7 +6,7 @@ import {
     ChevronDown, ChevronRight, Users, Shield, Clock, RotateCcw,
     Star, Award, Briefcase, Megaphone, Palette, User,
     History, AlertTriangle, Ban, ShieldOff, Zap, Inbox, Check,
-    XCircle, Play, Trash, Settings, MessageCircle, PauseCircle, PlayCircle,
+    XCircle, Play, Trash, Settings, PauseCircle, PlayCircle,
 } from 'lucide-react';
 
 // ─── Types ──────────────────────────────────────────────────────────
@@ -39,6 +39,7 @@ interface OrgGroup {
     active_members_count: number;
     pending_join_requests_count: number;
     members: GroupMember[];
+    parent_group_id: number | null;
     created_at: string;
 }
 
@@ -618,6 +619,16 @@ export default function OrgGroupsIndex({ groups, isLimitedAccess }: Props) {
                                                     Suspended
                                                 </span>
                                             )}
+                                            {group.parent_group_id && (
+                                                <span style={{
+                                                    fontSize: '0.6rem', fontWeight: 700, padding: '0.1rem 0.4rem',
+                                                    borderRadius: '4px', color: '#F59E0B',
+                                                    background: 'rgba(245,158,11,0.12)',
+                                                    textTransform: 'uppercase',
+                                                }}>
+                                                    Alumni
+                                                </span>
+                                            )}
                                         </div>
                                         {group.description && (
                                             <p style={{ margin: '0.2rem 0 0', fontSize: '0.8rem', color: '#666', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -631,20 +642,17 @@ export default function OrgGroupsIndex({ groups, isLimitedAccess }: Props) {
                                         </span>
                                         {/* Actions */}
                                         <div style={{ display: 'flex', gap: '0.3rem' }} onClick={e => e.stopPropagation()}>
-                                            <a href={route('org.org-groups.chat', { groupId: group.id })}
-                                                style={{ ...iconBtnStyle('#22C55E'), textDecoration: 'none' }} title="Open chat"
-                                            >
-                                                <MessageCircle size={14} />
-                                            </a>
-                                            <button onClick={() => {
-                                                setAddingMemberTo(group); setSelectedUser(null);
-                                                setSearchQuery(''); setSearchResults([]);
-                                                setMemberRole('member');
-                                            }}
-                                                style={iconBtnStyle('#3B82F6')} title="Add member"
-                                            >
-                                                <UserPlus size={14} />
-                                            </button>
+                                            {!group.parent_group_id && (
+                                                <button onClick={() => {
+                                                    setAddingMemberTo(group); setSelectedUser(null);
+                                                    setSearchQuery(''); setSearchResults([]);
+                                                    setMemberRole('member');
+                                                }}
+                                                    style={iconBtnStyle('#3B82F6')} title="Add member"
+                                                >
+                                                    <UserPlus size={14} />
+                                                </button>
+                                            )}
                                             {!isLimitedAccess && (
                                                 <>
                                                     <button onClick={() => openEdit(group)}
@@ -652,21 +660,25 @@ export default function OrgGroupsIndex({ groups, isLimitedAccess }: Props) {
                                                     >
                                                         <Edit2 size={14} />
                                                     </button>
-                                                    <button onClick={() => openTermHistory(group)}
-                                                        style={iconBtnStyle('#F59E0B')} title="Term history"
-                                                    >
-                                                        <History size={14} />
-                                                    </button>
-                                                    <button onClick={() => setHandoverGroup(group)}
-                                                        style={iconBtnStyle('#10B981')} title="Handover leadership"
-                                                    >
-                                                        <RotateCcw size={14} />
-                                                    </button>
-                                                    <button onClick={() => loadAutoRules(group)}
-                                                        style={iconBtnStyle('#06B6D4')} title="Auto-membership rules"
-                                                    >
-                                                        <Zap size={14} />
-                                                    </button>
+                                                    {!group.parent_group_id && (
+                                                        <>
+                                                            <button onClick={() => openTermHistory(group)}
+                                                                style={iconBtnStyle('#F59E0B')} title="Term history"
+                                                            >
+                                                                <History size={14} />
+                                                            </button>
+                                                            <button onClick={() => setHandoverGroup(group)}
+                                                                style={iconBtnStyle('#10B981')} title="Handover leadership"
+                                                            >
+                                                                <RotateCcw size={14} />
+                                                            </button>
+                                                            <button onClick={() => loadAutoRules(group)}
+                                                                style={iconBtnStyle('#06B6D4')} title="Auto-membership rules"
+                                                            >
+                                                                <Zap size={14} />
+                                                            </button>
+                                                        </>
+                                                    )}
                                                     <button onClick={() => loadBans(group)}
                                                         style={iconBtnStyle('#F97316')} title="View bans"
                                                     >

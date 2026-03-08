@@ -3,9 +3,13 @@
 namespace App\Actions\OrgServices;
 
 use App\Repositories\OrgRepositories\OrgGroupRepository;
+use App\Models\OrgModels\OrgGroup;
 use App\Models\OrgModels\OrgGroupMember;
+use App\Models\OrgModels\OrgGroupMessage;
+use App\Models\OrgModels\OrgGroupPoll;
 use App\Models\OrgModels\OrgGroupAutoRule;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 class OrgGroupService
 {
@@ -135,23 +139,78 @@ class OrgGroupService
 
     public function handoverLeadership(int $groupId, string $termName, ?string $notes = null): void
     {
-        $currentTerms = \App\Models\OrgModels\OrgGroupLeadershipTerm::where('org_group_id', $groupId)
-            ->where('is_current', true)
-            ->get();
+        DB::transaction(function () use ($groupId, $termName, $notes) {
+            $group = OrgGroup::findOrFail($groupId);
 
-        foreach ($currentTerms as $term) {
-            $term->update([
-                'is_current' => false,
-                'ended_at' => now(),
-                'handover_notes' => $notes,
-                'term_name' => $term->term_name ?: $termName,
-            ]);
-        }
+            // 1. End current leadership terms
+            $currentTerms = \App\Models\OrgModels\OrgGroupLeadershipTerm::where('org_group_id', $groupId)
+                ->where('is_current', true)
+                ->get();
 
-        OrgGroupMember::where('org_group_id', $groupId)
-            ->where('role', '!=', 'member')
-            ->where('is_active', true)
-            ->update(['role' => 'member']);
+            foreach ($currentTerms as $term) {
+                $term->update([
+                    'is_current' => false,
+                    'ended_at' => now(),
+                    'handover_notes' => $notes,
+                    'term_name' => $term->term_name ?: $termName,
+                ]);
+            }
+
+            // 2. Find or create the single alumni group for this main group
+            $alumniGroup = OrgGroup::where('parent_group_id', $group->id)->first();
+
+            if (!$alumniGroup) {
+                $alumniGroup = OrgGroup::create([
+                    'organization_id' => $group->organization_id,
+                    'parent_group_id' => $group->id,
+                    'name' => $group->name . ' Alumni',
+                    'slug' => Str::slug($group->name . ' Alumni') . '-' . Str::random(6),
+                    'description' => "Alumni group for past {$group->name} members.",
+                    'type' => $group->type,
+                    'is_active' => true,
+                    'allow_join_requests' => false,
+                    'created_by' => $group->created_by,
+                ]);
+            }
+
+            // 3. Add outgoing members to the alumni group (skip if already there)
+            $activeMembers = OrgGroupMember::where('org_group_id', $groupId)
+                ->where('is_active', true)
+                ->get();
+
+            $existingAlumniUserIds = OrgGroupMember::where('org_group_id', $alumniGroup->id)
+                ->where('is_active', true)
+                ->pluck('user_id')
+                ->toArray();
+
+            foreach ($activeMembers as $member) {
+                if (!in_array($member->user_id, $existingAlumniUserIds)) {
+                    OrgGroupMember::create([
+                        'org_group_id' => $alumniGroup->id,
+                        'user_id' => $member->user_id,
+                        'role' => 'member',
+                        'added_by_type' => 'org_staff',
+                        'is_active' => true,
+                    ]);
+                }
+            }
+
+            // 4. Deactivate all members from the main group
+            OrgGroupMember::where('org_group_id', $groupId)
+                ->where('is_active', true)
+                ->update(['is_active' => false]);
+
+            // 5. Hard delete all messages from the main group (fresh start)
+            OrgGroupMessage::where('org_group_id', $groupId)->forceDelete();
+
+            // 6. Hard delete all polls from the main group
+            $pollIds = OrgGroupPoll::where('org_group_id', $groupId)->pluck('id');
+            if ($pollIds->isNotEmpty()) {
+                \App\Models\OrgModels\OrgGroupPollVote::whereIn('org_group_poll_id', $pollIds)->delete();
+                \App\Models\OrgModels\OrgGroupPollOption::whereIn('org_group_poll_id', $pollIds)->delete();
+                OrgGroupPoll::where('org_group_id', $groupId)->delete();
+            }
+        });
     }
 
     public function getTermHistory(int $groupId)

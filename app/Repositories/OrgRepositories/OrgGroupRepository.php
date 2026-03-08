@@ -8,7 +8,7 @@ use App\Models\OrgModels\OrgGroupLeadershipTerm;
 use App\Models\OrgModels\OrgGroupJoinRequest;
 use App\Models\OrgModels\OrgGroupBan;
 use App\Models\OrgModels\OrgGroupAutoRule;
-use App\Models\User;
+use App\Models\GuestModels\User;
 use App\Models\OrgModels\OrganizationFollow;
 use App\Models\GuestModels\ClassSetMember;
 use App\Models\GuestModels\Organization;
@@ -361,5 +361,77 @@ class OrgGroupRepository
         return User::whereIn('id', $userIds->diff($excludeIds))
             ->select('id', 'uuid', 'first_name', 'last_name', 'username')
             ->get();
+    }
+
+    /**
+     * Get all active org groups that a user is a member of.
+     */
+    public function getUserOrgGroups(int $userId): Collection
+    {
+        $groupIds = OrgGroupMember::where('user_id', $userId)
+            ->where('is_active', true)
+            ->pluck('org_group_id');
+
+        return OrgGroup::whereIn('id', $groupIds)
+            ->where('is_active', true)
+            ->with('organization:id,name,short_name,logo')
+            ->get();
+    }
+
+    /**
+     * Get joinable org groups for an organization (active, not suspended, allow_join_requests).
+     */
+    public function getJoinableGroups(int $organizationId, int $userId): Collection
+    {
+        $groups = OrgGroup::where('organization_id', $organizationId)
+            ->where('is_active', true)
+            ->where('is_suspended', false)
+            ->where('allow_join_requests', true)
+            ->withCount('activeMembers')
+            ->get();
+
+        return $groups->map(function ($group) use ($userId) {
+            $isMember = OrgGroupMember::where('org_group_id', $group->id)
+                ->where('user_id', $userId)
+                ->where('is_active', true)
+                ->exists();
+
+            $pendingRequest = OrgGroupJoinRequest::where('org_group_id', $group->id)
+                ->where('user_id', $userId)
+                ->where('status', 'pending')
+                ->first();
+
+            $isBanned = OrgGroupBan::where('org_group_id', $group->id)
+                ->where('user_id', $userId)
+                ->where(function ($q) {
+                    $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
+                })
+                ->exists();
+
+            return [
+                'id' => $group->id,
+                'uuid' => $group->uuid,
+                'name' => $group->name,
+                'description' => $group->description,
+                'type' => $group->type,
+                'member_count' => $group->active_members_count,
+                'is_member' => $isMember,
+                'has_pending_request' => $pendingRequest !== null,
+                'pending_request_id' => $pendingRequest?->id,
+                'is_banned' => $isBanned,
+                'allow_join_requests' => $group->allow_join_requests,
+            ];
+        });
+    }
+
+    /**
+     * Cancel a pending join request.
+     */
+    public function cancelJoinRequest(int $requestId, int $userId): bool
+    {
+        return OrgGroupJoinRequest::where('id', $requestId)
+            ->where('user_id', $userId)
+            ->where('status', 'pending')
+            ->delete() > 0;
     }
 }

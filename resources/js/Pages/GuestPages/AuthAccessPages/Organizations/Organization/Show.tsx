@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
 import {
     ArrowLeft, MapPin, Globe, Mail, Phone, Calendar, Target, Eye,
-    Users, User, ChevronRight, Building2, Trophy, Award
+    Users, User, ChevronRight, Building2, Trophy, Award, MessageCircle,
+    Clock, CheckCircle, XCircle, Loader2
 } from 'lucide-react';
 import '../Organizations.css';
 import '../OrganizationProfile.css';
@@ -43,6 +45,20 @@ interface Gallery {
     caption: string | null;
 }
 
+interface OrgGroup {
+    id: number;
+    uuid: string;
+    name: string;
+    description: string | null;
+    type: string;
+    member_count: number;
+    allow_join_requests: boolean;
+    is_member: boolean;
+    has_pending_request: boolean;
+    pending_request_id: number | null;
+    is_banned: boolean;
+}
+
 interface BreadcrumbItem {
     label: string;
     url: string | null;
@@ -53,12 +69,18 @@ interface Props {
     facultiesCount: number;
     galleries: Gallery[];
     breadcrumb: BreadcrumbItem[];
+    orgGroups?: OrgGroup[];
 }
 
-export default function OrganizationShow({ organization, facultiesCount, galleries, breadcrumb }: Props) {
+export default function OrganizationShow({ organization, facultiesCount, galleries, breadcrumb, orgGroups = [] }: Props) {
     const isFootballClub = organization.category.slug === 'football-fans';
     const isReligiousOrg = organization.category.slug === 'religious-organizations';
     const usesChannels = isFootballClub || isReligiousOrg;
+
+    const [joiningGroupId, setJoiningGroupId] = useState<number | null>(null);
+    const [cancellingRequestId, setCancellingRequestId] = useState<number | null>(null);
+    const [joinMessage, setJoinMessage] = useState('');
+    const [showJoinModal, setShowJoinModal] = useState<number | null>(null);
 
     const handleFindGroup = () => {
         if (usesChannels) {
@@ -66,6 +88,26 @@ export default function OrganizationShow({ organization, facultiesCount, galleri
         } else {
             router.visit(`/organizations/${organization.slug}/faculties`);
         }
+    };
+
+    const handleJoinRequest = (groupId: number) => {
+        setJoiningGroupId(groupId);
+        router.post(`/organizations/groups/${groupId}/join-request`, { message: joinMessage }, {
+            preserveScroll: true,
+            onFinish: () => {
+                setJoiningGroupId(null);
+                setShowJoinModal(null);
+                setJoinMessage('');
+            },
+        });
+    };
+
+    const handleCancelRequest = (requestId: number) => {
+        setCancellingRequestId(requestId);
+        router.delete(`/organizations/groups/join-request/${requestId}`, {
+            preserveScroll: true,
+            onFinish: () => setCancellingRequestId(null),
+        });
     };
 
     // Parse honours from mission field for football clubs
@@ -332,6 +374,149 @@ export default function OrganizationShow({ organization, facultiesCount, galleri
                                 Enter Prediction League
                                 <ChevronRight size={20} />
                             </button>
+                        </div>
+                    )}
+
+                    {/* Org Groups - Join Section */}
+                    {orgGroups.length > 0 && (
+                        <div className="org-info-card" style={{ marginTop: '1.5rem' }}>
+                            <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <MessageCircle size={20} /> Community Groups
+                            </h2>
+                            <p style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '1rem' }}>
+                                Join groups to chat with other members of {organization.short_name || organization.name}.
+                            </p>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                {orgGroups.map(group => (
+                                    <div key={group.id} style={{
+                                        background: 'rgba(255,255,255,0.02)',
+                                        border: '1px solid rgba(255,255,255,0.06)',
+                                        borderRadius: '12px',
+                                        padding: '1rem 1.25rem',
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        gap: '1rem',
+                                    }}>
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                                                <span style={{ fontWeight: 600, color: '#e0e0e0', fontSize: '0.9rem' }}>
+                                                    {group.name}
+                                                </span>
+                                                {group.type && (
+                                                    <span style={{
+                                                        fontSize: '0.6rem', fontWeight: 600, color: '#8B5CF6',
+                                                        background: 'rgba(139,92,246,0.1)', padding: '1px 6px',
+                                                        borderRadius: '4px', textTransform: 'capitalize',
+                                                    }}>
+                                                        {group.type.replace(/_/g, ' ')}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            {group.description && (
+                                                <p style={{ margin: '0 0 0.3rem', fontSize: '0.78rem', color: '#888', lineHeight: 1.4 }}>
+                                                    {group.description}
+                                                </p>
+                                            )}
+                                            <span style={{ fontSize: '0.72rem', color: '#666' }}>
+                                                <Users size={12} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
+                                                {group.member_count} member{group.member_count !== 1 ? 's' : ''}
+                                            </span>
+                                        </div>
+
+                                        <div style={{ flexShrink: 0 }}>
+                                            {group.is_member ? (
+                                                <span style={{
+                                                    display: 'inline-flex', alignItems: 'center', gap: '4px',
+                                                    padding: '6px 14px', borderRadius: '8px',
+                                                    background: 'rgba(34,197,94,0.1)', color: '#22C55E',
+                                                    fontSize: '0.78rem', fontWeight: 600,
+                                                }}>
+                                                    <CheckCircle size={14} /> Joined
+                                                </span>
+                                            ) : group.is_banned ? (
+                                                <span style={{
+                                                    display: 'inline-flex', alignItems: 'center', gap: '4px',
+                                                    padding: '6px 14px', borderRadius: '8px',
+                                                    background: 'rgba(239,68,68,0.1)', color: '#EF4444',
+                                                    fontSize: '0.78rem', fontWeight: 600,
+                                                }}>
+                                                    <XCircle size={14} /> Banned
+                                                </span>
+                                            ) : group.has_pending_request ? (
+                                                <button
+                                                    onClick={() => handleCancelRequest(group.pending_request_id!)}
+                                                    disabled={cancellingRequestId === group.pending_request_id}
+                                                    style={{
+                                                        display: 'inline-flex', alignItems: 'center', gap: '4px',
+                                                        padding: '6px 14px', borderRadius: '8px',
+                                                        background: 'rgba(245,158,11,0.1)',
+                                                        border: '1px solid rgba(245,158,11,0.2)',
+                                                        color: '#F59E0B', fontSize: '0.78rem', fontWeight: 600,
+                                                        cursor: 'pointer', transition: 'all 0.2s',
+                                                    }}
+                                                >
+                                                    {cancellingRequestId === group.pending_request_id ? (
+                                                        <><Loader2 size={14} className="spin" /> Cancelling...</>
+                                                    ) : (
+                                                        <><Clock size={14} /> Pending &middot; Cancel</>
+                                                    )}
+                                                </button>
+                                            ) : showJoinModal === group.id ? (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', minWidth: '200px' }}>
+                                                    <textarea
+                                                        value={joinMessage}
+                                                        onChange={e => setJoinMessage(e.target.value)}
+                                                        placeholder="Why do you want to join? (optional)"
+                                                        rows={2}
+                                                        style={{
+                                                            background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.1)',
+                                                            borderRadius: '6px', padding: '0.4rem 0.6rem', color: '#fff',
+                                                            fontSize: '0.75rem', outline: 'none', resize: 'none' as const,
+                                                        }}
+                                                    />
+                                                    <div style={{ display: 'flex', gap: '0.3rem' }}>
+                                                        <button
+                                                            onClick={() => { setShowJoinModal(null); setJoinMessage(''); }}
+                                                            style={{
+                                                                flex: 1, padding: '5px 10px', borderRadius: '6px',
+                                                                background: 'rgba(255,255,255,0.05)', border: 'none',
+                                                                color: '#888', fontSize: '0.72rem', cursor: 'pointer',
+                                                            }}
+                                                        >Cancel</button>
+                                                        <button
+                                                            onClick={() => handleJoinRequest(group.id)}
+                                                            disabled={joiningGroupId === group.id}
+                                                            style={{
+                                                                flex: 1, padding: '5px 10px', borderRadius: '6px',
+                                                                background: 'linear-gradient(135deg, #8B5CF6, #6D28D9)',
+                                                                border: 'none', color: '#fff', fontSize: '0.72rem',
+                                                                fontWeight: 600, cursor: 'pointer',
+                                                                opacity: joiningGroupId === group.id ? 0.5 : 1,
+                                                            }}
+                                                        >
+                                                            {joiningGroupId === group.id ? 'Sending...' : 'Send Request'}
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <button
+                                                    onClick={() => setShowJoinModal(group.id)}
+                                                    style={{
+                                                        display: 'inline-flex', alignItems: 'center', gap: '4px',
+                                                        padding: '6px 14px', borderRadius: '8px',
+                                                        background: 'linear-gradient(135deg, #8B5CF6, #6D28D9)',
+                                                        border: 'none', color: '#fff', fontSize: '0.78rem',
+                                                        fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s',
+                                                    }}
+                                                >
+                                                    Request to Join
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     )}
 

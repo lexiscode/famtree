@@ -347,7 +347,7 @@ class OrgGroupController extends Controller
             'user_agent' => $request->userAgent(),
         ]);
 
-        return redirect()->back()->with('success', 'Leadership handover completed. All leaders have been demoted to members. You can now assign new leaders.');
+        return redirect()->back()->with('success', "Leadership handover completed. Outgoing members have been moved to the \"{$group->name} Alumni\" group. All chat history and polls have been cleared — the main group is ready for the new set.");
     }
 
     public function termHistory(int $groupId)

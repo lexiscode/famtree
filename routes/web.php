@@ -46,6 +46,7 @@ use App\Http\Controllers\GuestControllers\AuthAccessControllers\GroupRemovalCont
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\PredictionController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\GlamController as GuestGlamController;
 use App\Http\Controllers\GuestControllers\AuthAccessControllers\GlamSquadChatController;
+use App\Http\Controllers\GuestControllers\AuthAccessControllers\UserOrgGroupChatController;
 use Inertia\Inertia;
 
 
@@ -415,10 +416,34 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::get('/faculty/{facultySlug}/departments', [OrganizationController::class, 'departments'])->name('organizations.departments');
         Route::get('/department/{departmentSlug}/class-sets', [OrganizationController::class, 'classSets'])->name('organizations.class-sets');
 
+        // Org Group join requests
+        Route::post('/groups/{groupId}/join-request', [OrganizationController::class, 'requestJoinGroup'])->name('organizations.groups.join-request');
+        Route::delete('/groups/join-request/{requestId}', [OrganizationController::class, 'cancelJoinRequest'])->name('organizations.groups.cancel-request');
+
         // Prediction League routes
         Route::get('/{slug}/predictions', [PredictionController::class, 'index'])->name('organizations.predictions');
         Route::post('/{slug}/predictions/predict', [PredictionController::class, 'predict'])->name('organizations.predictions.predict');
         Route::get('/{slug}/predictions/history', [PredictionController::class, 'history'])->name('organizations.predictions.history');
+    });
+
+    // Org Group Chat routes (user-facing)
+    Route::prefix('org-groups')->group(function () {
+        Route::get('/{groupUuid}/messages', [UserOrgGroupChatController::class, 'getMessages'])->name('org-groups.user.messages');
+        Route::post('/{groupUuid}/messages', [UserOrgGroupChatController::class, 'sendMessage'])->name('org-groups.user.send-message');
+        Route::put('/message/{messageId}', [UserOrgGroupChatController::class, 'editMessage'])->name('org-groups.user.edit-message');
+        Route::delete('/message/{messageId}', [UserOrgGroupChatController::class, 'deleteMessage'])->name('org-groups.user.delete-message');
+        Route::post('/bulk-delete', [UserOrgGroupChatController::class, 'bulkDeleteMessages'])->name('org-groups.user.bulk-delete');
+        Route::post('/{groupUuid}/messages/{messageId}/pin', [UserOrgGroupChatController::class, 'togglePin'])->name('org-groups.user.toggle-pin');
+        Route::get('/{groupUuid}/members', [UserOrgGroupChatController::class, 'getMembers'])->name('org-groups.user.members');
+        Route::get('/{groupUuid}/pinned', [UserOrgGroupChatController::class, 'getPinnedMessages'])->name('org-groups.user.pinned');
+
+        // Polls
+        Route::get('/{groupUuid}/polls', [UserOrgGroupChatController::class, 'getPolls'])->name('org-groups.user.polls');
+        Route::post('/{groupUuid}/polls', [UserOrgGroupChatController::class, 'createPoll'])->name('org-groups.user.polls.store');
+        Route::post('/{groupUuid}/polls/{pollId}/vote', [UserOrgGroupChatController::class, 'votePoll'])->name('org-groups.user.polls.vote');
+        Route::post('/{groupUuid}/polls/{pollId}/close', [UserOrgGroupChatController::class, 'closePoll'])->name('org-groups.user.polls.close');
+        Route::delete('/{groupUuid}/polls/{pollId}', [UserOrgGroupChatController::class, 'destroyPoll'])->name('org-groups.user.polls.destroy');
+        Route::get('/{groupUuid}/polls/{pollId}/voters', [UserOrgGroupChatController::class, 'pollVoters'])->name('org-groups.user.polls.voters');
     });
 
     // Class Set Actions routes

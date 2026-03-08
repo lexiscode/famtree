@@ -13,6 +13,7 @@ class OrgGroup extends Model
     protected $fillable = [
         'uuid',
         'organization_id',
+        'parent_group_id',
         'name',
         'slug',
         'description',
@@ -52,6 +53,16 @@ class OrgGroup extends Model
     public function organization()
     {
         return $this->belongsTo(Organization::class);
+    }
+
+    public function parentGroup()
+    {
+        return $this->belongsTo(self::class, 'parent_group_id');
+    }
+
+    public function alumniGroups()
+    {
+        return $this->hasMany(self::class, 'parent_group_id');
     }
 
     public function members()

@@ -2,7 +2,7 @@
 
 namespace App\Models\OrgModels;
 
-use App\Models\User;
+use App\Models\GuestModels\User;
 use Illuminate\Database\Eloquent\Model;
 
 class OrgGroupJoinRequest extends Model
