@@ -444,6 +444,16 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::post('/{groupUuid}/polls/{pollId}/close', [UserOrgGroupChatController::class, 'closePoll'])->name('org-groups.user.polls.close');
         Route::delete('/{groupUuid}/polls/{pollId}', [UserOrgGroupChatController::class, 'destroyPoll'])->name('org-groups.user.polls.destroy');
         Route::get('/{groupUuid}/polls/{pollId}/voters', [UserOrgGroupChatController::class, 'pollVoters'])->name('org-groups.user.polls.voters');
+
+        // Leader management (president & vice_president only)
+        Route::get('/{groupUuid}/settings', [UserOrgGroupChatController::class, 'getGroupSettings'])->name('org-groups.user.settings');
+        Route::get('/{groupUuid}/search-users', [UserOrgGroupChatController::class, 'searchUsersToAdd'])->name('org-groups.user.search-users');
+        Route::post('/{groupUuid}/add-member', [UserOrgGroupChatController::class, 'addMember'])->name('org-groups.user.add-member');
+        Route::delete('/{groupUuid}/members/{userId}', [UserOrgGroupChatController::class, 'removeMemberByLeader'])->name('org-groups.user.remove-member');
+        Route::put('/{groupUuid}/members/{userId}/role', [UserOrgGroupChatController::class, 'updateMemberRole'])->name('org-groups.user.update-role');
+        Route::get('/{groupUuid}/join-requests', [UserOrgGroupChatController::class, 'getJoinRequests'])->name('org-groups.user.join-requests');
+        Route::post('/{groupUuid}/join-requests/{requestId}/approve', [UserOrgGroupChatController::class, 'approveJoinRequest'])->name('org-groups.user.approve-join');
+        Route::post('/{groupUuid}/join-requests/{requestId}/reject', [UserOrgGroupChatController::class, 'rejectJoinRequest'])->name('org-groups.user.reject-join');
     });
 
     // Class Set Actions routes

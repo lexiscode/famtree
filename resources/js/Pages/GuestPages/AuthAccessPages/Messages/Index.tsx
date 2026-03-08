@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { router } from '@inertiajs/react';
 import AuthAccessLayout from '@/Layouts/AuthAccessLayout';
-import { MessageCircle, Search, ArrowLeft, Users, GraduationCap, Pencil, Trash2, X, Check, CheckSquare, Square, Shield, Vote, UserMinus, Clock, AlertTriangle, ChevronDown, LogOut, Trophy, Sparkles, Reply, Building2, Pin, PinOff, Paperclip, BarChart3, Plus, Lock, Eye, EyeOff, Download, Image as ImageIcon, File } from 'lucide-react';
+import { MessageCircle, Search, ArrowLeft, Users, GraduationCap, Pencil, Trash2, X, Check, CheckSquare, Square, Shield, Vote, UserMinus, Clock, AlertTriangle, ChevronDown, LogOut, Trophy, Sparkles, Reply, Building2, Pin, PinOff, Paperclip, BarChart3, Plus, Lock, Eye, EyeOff, Download, Image as ImageIcon, File, Settings, UserPlus, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import '../../../../../css/predictions.css';
 
 // Custom Leaf Indicator Components for message status
@@ -349,11 +349,29 @@ export default function MessagesIndex({
     const [orgAttachment, setOrgAttachment] = useState<File | null>(null);
     const orgFileInputRef = useRef<HTMLInputElement>(null);
 
+    // Org group leader management state
+    const [isOrgLeader, setIsOrgLeader] = useState(false);
+    const [showOrgManagePanel, setShowOrgManagePanel] = useState(false);
+    const [orgManageTab, setOrgManageTab] = useState<'add' | 'requests'>('add');
+    const [orgSearchQuery, setOrgSearchQuery] = useState('');
+    const [orgSearchResults, setOrgSearchResults] = useState<Array<{ id: number; uuid: string; first_name: string; last_name: string; username: string; profile_image: string | null }>>([]);
+    const [orgSearching, setOrgSearching] = useState(false);
+    const [orgAddingUserId, setOrgAddingUserId] = useState<number | null>(null);
+    const [orgSelectedUser, setOrgSelectedUser] = useState<{ id: number; uuid: string; first_name: string; last_name: string; username: string; profile_image: string | null } | null>(null);
+    const [orgMemberRole, setOrgMemberRole] = useState('member');
+    const [orgJoinRequests, setOrgJoinRequests] = useState<Array<{ id: number; user: { id: number; uuid: string; first_name: string; last_name: string; username: string; profile_image: string | null }; message: string | null; created_at: string }>>([]);
+    const [orgJoinRequestsLoading, setOrgJoinRequestsLoading] = useState(false);
+    const [orgRemovingUserId, setOrgRemovingUserId] = useState<number | null>(null);
+    const [orgConfirmRemoveUser, setOrgConfirmRemoveUser] = useState<{ id: number; name: string } | null>(null);
+    const [orgEditingRoleUserId, setOrgEditingRoleUserId] = useState<number | null>(null);
+    const [orgProcessingRequestId, setOrgProcessingRequestId] = useState<number | null>(null);
+    const orgSearchTimeout = useRef<NodeJS.Timeout | null>(null);
+
     // Members panel state
     const [showMembersPanel, setShowMembersPanel] = useState(false);
     const [membersList, setMembersList] = useState<Array<{
         id: number; uuid: string; first_name: string; last_name: string;
-        username: string; profile_image: string | null; is_admin: boolean; joined_at: string;
+        username: string; profile_image: string | null; is_admin: boolean; role: string; joined_at: string;
     }>>([]);
     const [membersLoading, setMembersLoading] = useState(false);
     const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
@@ -385,6 +403,18 @@ export default function MessagesIndex({
     const isTypingRef = useRef(false);
     const channelRef = useRef<any>(null);
     const groupChannelRef = useRef<any>(null);
+
+    // Role label/color helpers
+    const ORG_ROLES: Record<string, { label: string; color: string }> = {
+        president: { label: 'President', color: '#F59E0B' },
+        vice_president: { label: 'Vice President', color: '#8B5CF6' },
+        secretary: { label: 'Secretary', color: '#3B82F6' },
+        treasurer: { label: 'Treasurer', color: '#10B981' },
+        pro: { label: 'PRO', color: '#EC4899' },
+        social_director: { label: 'Social Director', color: '#F97316' },
+        member: { label: 'Member', color: '#6B7280' },
+    };
+    const getOrgRoleInfo = (role: string) => ORG_ROLES[role] || ORG_ROLES.member;
 
     // Scroll to bottom of messages
     const scrollToBottom = useCallback(() => {
@@ -597,9 +627,17 @@ export default function MessagesIndex({
         setGroupMessages([]);
         setShowOrgPollPanel(false);
         setShowOrgPinPanel(false);
+        setShowOrgManagePanel(false);
         setOrgPolls([]);
         setOrgPinnedMessages([]);
         setOrgAttachment(null);
+        setIsOrgLeader(false);
+        setOrgJoinRequests([]);
+        setOrgSearchQuery('');
+        setOrgSearchResults([]);
+        setOrgSelectedUser(null);
+        setOrgMemberRole('member');
+        setOrgConfirmRemoveUser(null);
 
         try {
             // Use different route based on group type
@@ -708,6 +746,9 @@ export default function MessagesIndex({
                 : 'class-sets.members';
             const response = await axios.get(route(routeName, activeGroupChat.uuid));
             setMembersList(response.data.members || []);
+            if (activeGroupChat.type === 'org_group') {
+                setIsOrgLeader(response.data.is_leader || false);
+            }
         } catch {
             setMembersList([]);
         } finally {
@@ -1275,6 +1316,93 @@ export default function MessagesIndex({
         } catch {}
     }, [activeGroupChat]);
 
+    // Org group leader: search users to add
+    const handleOrgSearchUsers = useCallback(async (query: string) => {
+        setOrgSearchQuery(query);
+        if (orgSearchTimeout.current) clearTimeout(orgSearchTimeout.current);
+        if (!activeGroupChat || activeGroupChat.type !== 'org_group' || query.length < 2) {
+            setOrgSearchResults([]);
+            return;
+        }
+        orgSearchTimeout.current = setTimeout(async () => {
+            setOrgSearching(true);
+            try {
+                const res = await axios.get(route('org-groups.user.search-users', activeGroupChat.uuid), { params: { q: query } });
+                setOrgSearchResults(res.data || []);
+            } catch { setOrgSearchResults([]); }
+            finally { setOrgSearching(false); }
+        }, 300);
+    }, [activeGroupChat]);
+
+    // Org group leader: add member
+    const handleOrgAddMember = useCallback(async () => {
+        if (!activeGroupChat || activeGroupChat.type !== 'org_group' || !orgSelectedUser) return;
+        setOrgAddingUserId(orgSelectedUser.id);
+        try {
+            await axios.post(route('org-groups.user.add-member', activeGroupChat.uuid), { user_id: orgSelectedUser.id, role: orgMemberRole });
+            setOrgSelectedUser(null);
+            setOrgMemberRole('member');
+            setOrgSearchQuery('');
+            setOrgSearchResults([]);
+            fetchMembers();
+        } catch {}
+        finally { setOrgAddingUserId(null); }
+    }, [activeGroupChat, fetchMembers, orgSelectedUser, orgMemberRole]);
+
+    // Org group leader: change member role
+    const handleOrgChangeRole = useCallback(async (userId: number, newRole: string) => {
+        if (!activeGroupChat || activeGroupChat.type !== 'org_group') return;
+        try {
+            await axios.put(route('org-groups.user.update-role', { groupUuid: activeGroupChat.uuid, userId }), { role: newRole });
+            setMembersList(prev => prev.map(m => m.id === userId ? { ...m, role: newRole, is_admin: newRole !== 'member' } : m));
+        } catch {}
+    }, [activeGroupChat]);
+
+    // Org group leader: remove member (with confirmation)
+    const handleOrgRemoveMember = useCallback(async (userId: number) => {
+        if (!activeGroupChat || activeGroupChat.type !== 'org_group') return;
+        setOrgRemovingUserId(userId);
+        try {
+            await axios.delete(route('org-groups.user.remove-member', { groupUuid: activeGroupChat.uuid, userId }));
+            setMembersList(prev => prev.filter(m => m.id !== userId));
+        } catch {}
+        finally { setOrgRemovingUserId(null); setOrgConfirmRemoveUser(null); }
+    }, [activeGroupChat]);
+
+    // Org group leader: load join requests
+    const loadOrgJoinRequests = useCallback(async () => {
+        if (!activeGroupChat || activeGroupChat.type !== 'org_group') return;
+        setOrgJoinRequestsLoading(true);
+        try {
+            const res = await axios.get(route('org-groups.user.join-requests', activeGroupChat.uuid));
+            setOrgJoinRequests(res.data || []);
+        } catch {}
+        finally { setOrgJoinRequestsLoading(false); }
+    }, [activeGroupChat]);
+
+    // Org group leader: approve join request
+    const handleOrgApproveRequest = useCallback(async (requestId: number) => {
+        if (!activeGroupChat || activeGroupChat.type !== 'org_group') return;
+        setOrgProcessingRequestId(requestId);
+        try {
+            await axios.post(route('org-groups.user.approve-join', { groupUuid: activeGroupChat.uuid, requestId }));
+            setOrgJoinRequests(prev => prev.filter(r => r.id !== requestId));
+            fetchMembers();
+        } catch {}
+        finally { setOrgProcessingRequestId(null); }
+    }, [activeGroupChat, fetchMembers]);
+
+    // Org group leader: reject join request
+    const handleOrgRejectRequest = useCallback(async (requestId: number) => {
+        if (!activeGroupChat || activeGroupChat.type !== 'org_group') return;
+        setOrgProcessingRequestId(requestId);
+        try {
+            await axios.post(route('org-groups.user.reject-join', { groupUuid: activeGroupChat.uuid, requestId }));
+            setOrgJoinRequests(prev => prev.filter(r => r.id !== requestId));
+        } catch {}
+        finally { setOrgProcessingRequestId(null); }
+    }, [activeGroupChat]);
+
     // Format timestamp
     const formatTime = (timestamp: string) => {
         const date = new Date(timestamp);
@@ -1647,6 +1775,29 @@ export default function MessagesIndex({
                                                 >
                                                     <BarChart3 size={14} />
                                                 </button>
+                                                {isOrgLeader && (
+                                                    <button
+                                                        onClick={() => {
+                                                            setShowOrgManagePanel(!showOrgManagePanel);
+                                                            setShowOrgPinPanel(false); setShowOrgPollPanel(false); setShowMembersPanel(false);
+                                                            if (!showOrgManagePanel) { setOrgManageTab('requests'); loadOrgJoinRequests(); }
+                                                        }}
+                                                        title="Group settings"
+                                                        style={{
+                                                            width: '24px', height: '24px', minWidth: '24px', minHeight: '24px',
+                                                            maxWidth: '24px', maxHeight: '24px',
+                                                            borderRadius: '4px',
+                                                            background: showOrgManagePanel ? 'rgba(59, 130, 246, 0.25)' : 'rgba(59, 130, 246, 0.08)',
+                                                            border: `1px solid ${showOrgManagePanel ? 'rgba(59, 130, 246, 0.4)' : 'rgba(59, 130, 246, 0.15)'}`,
+                                                            color: '#3B82F6',
+                                                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                            cursor: 'pointer', padding: 0, transition: 'all 0.2s ease',
+                                                            boxSizing: 'border-box', lineHeight: 1,
+                                                        }}
+                                                    >
+                                                        <Settings size={14} />
+                                                    </button>
+                                                )}
                                             </>
                                         )}
                                         {(activeGroupChat.type === 'class_set' || activeGroupChat.type === 'glam_squad' || activeGroupChat.type === 'org_group') && (
@@ -3084,17 +3235,19 @@ export default function MessagesIndex({
                                     </div>
                                 ) : membersList.length > 0 ? (
                                     <>
-                                        {/* Admins first */}
+                                        {/* Admins/Leaders first */}
                                         {membersList.filter(m => m.is_admin).length > 0 && (
                                             <div style={{
                                                 padding: '0.5rem 0.75rem 0.35rem',
                                                 fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase',
                                                 letterSpacing: '0.05em', color: '#F59E0B',
                                             }}>
-                                                Admins
+                                                {activeGroupChat?.type === 'org_group' ? 'Leaders' : 'Admins'}
                                             </div>
                                         )}
-                                        {membersList.filter(m => m.is_admin).map(member => (
+                                        {membersList.filter(m => m.is_admin).map(member => {
+                                            const roleInfo = activeGroupChat?.type === 'org_group' && member.role ? getOrgRoleInfo(member.role) : null;
+                                            return (
                                             <div key={member.id} style={{
                                                 display: 'flex', alignItems: 'center', gap: '8px',
                                                 padding: '6px 10px', borderRadius: '8px',
@@ -3126,14 +3279,16 @@ export default function MessagesIndex({
                                                     </div>
                                                 </div>
                                                 <span style={{
-                                                    fontSize: '0.6rem', fontWeight: 700, color: '#F59E0B',
-                                                    background: 'rgba(245, 158, 11, 0.12)',
+                                                    fontSize: '0.6rem', fontWeight: 700,
+                                                    color: roleInfo ? roleInfo.color : '#F59E0B',
+                                                    background: roleInfo ? `${roleInfo.color}18` : 'rgba(245, 158, 11, 0.12)',
                                                     padding: '2px 6px', borderRadius: '4px', flexShrink: 0,
                                                 }}>
-                                                    ADMIN
+                                                    {roleInfo ? roleInfo.label : 'ADMIN'}
                                                 </span>
                                             </div>
-                                        ))}
+                                            );
+                                        })}
 
                                         {/* Regular members */}
                                         {membersList.filter(m => !m.is_admin).length > 0 && (
@@ -3898,6 +4053,442 @@ export default function MessagesIndex({
                                         <BarChart3 size={28} color="#333" style={{ marginBottom: '0.5rem' }} />
                                         <p style={{ color: '#555', fontSize: '0.8rem', margin: 0 }}>No polls yet</p>
                                     </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Org Group Leader Management Panel */}
+                    {showOrgManagePanel && activeGroupChat?.type === 'org_group' && isOrgLeader && (
+                        <div style={{
+                            width: '320px', background: '#1a1a2e',
+                            borderLeft: '1px solid rgba(255,255,255,0.06)',
+                            display: 'flex', flexDirection: 'column',
+                            flexShrink: 0, overflow: 'hidden',
+                            position: 'relative',
+                        }}>
+                            <div style={{
+                                padding: '1rem', borderBottom: '1px solid rgba(255,255,255,0.06)',
+                                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                            }}>
+                                <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 600, color: '#e0e0e0' }}>
+                                    Group Management
+                                </p>
+                                <button onClick={() => setShowOrgManagePanel(false)}
+                                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#666', padding: '2px', display: 'flex' }}>
+                                    <X size={16} />
+                                </button>
+                            </div>
+
+                            {/* Tabs */}
+                            <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                                {([
+                                    { key: 'add' as const, label: 'Add Member', icon: <UserPlus size={12} /> },
+                                    { key: 'requests' as const, label: 'Requests', icon: <Clock size={12} /> },
+                                ]).map(tab => (
+                                    <button key={tab.key}
+                                        onClick={() => { setOrgManageTab(tab.key); if (tab.key === 'requests') loadOrgJoinRequests(); }}
+                                        style={{
+                                            flex: 1, padding: '0.6rem', border: 'none', cursor: 'pointer',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px',
+                                            fontSize: '0.72rem', fontWeight: 600,
+                                            background: orgManageTab === tab.key ? 'rgba(59,130,246,0.1)' : 'transparent',
+                                            color: orgManageTab === tab.key ? '#3B82F6' : '#666',
+                                            borderBottom: orgManageTab === tab.key ? '2px solid #3B82F6' : '2px solid transparent',
+                                        }}
+                                    >
+                                        {tab.icon} {tab.label}
+                                        {tab.key === 'requests' && orgJoinRequests.length > 0 && (
+                                            <span style={{
+                                                background: '#EF4444', color: '#fff', fontSize: '0.6rem',
+                                                padding: '0 4px', borderRadius: '8px', fontWeight: 700, minWidth: '14px', textAlign: 'center',
+                                            }}>{orgJoinRequests.length}</span>
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
+
+                            <div style={{ flex: 1, overflowY: 'auto', padding: '0.75rem' }}>
+                                {/* Add Member Tab */}
+                                {orgManageTab === 'add' && (
+                                    <>
+                                        {/* Search / Selected User */}
+                                        {!orgSelectedUser ? (
+                                            <>
+                                                <div style={{ position: 'relative', marginBottom: '0.75rem' }}>
+                                                    <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#555' }} />
+                                                    <input
+                                                        type="text"
+                                                        value={orgSearchQuery}
+                                                        onChange={e => handleOrgSearchUsers(e.target.value)}
+                                                        placeholder="Search users to add..."
+                                                        style={{
+                                                            width: '100%', background: '#0f0f23', border: '1px solid rgba(255,255,255,0.08)',
+                                                            borderRadius: '8px', padding: '0.5rem 0.5rem 0.5rem 2rem', color: '#fff',
+                                                            fontSize: '0.78rem', outline: 'none',
+                                                        }}
+                                                    />
+                                                </div>
+                                                {orgSearching && (
+                                                    <p style={{ color: '#666', fontSize: '0.78rem', textAlign: 'center', padding: '0.5rem' }}>Searching...</p>
+                                                )}
+                                                {orgSearchResults.map(user => (
+                                                    <div key={user.id}
+                                                        onClick={() => { setOrgSelectedUser(user); setOrgMemberRole('member'); }}
+                                                        style={{
+                                                            display: 'flex', alignItems: 'center', gap: '8px',
+                                                            padding: '6px 8px', borderRadius: '8px', marginBottom: '4px',
+                                                            background: 'rgba(255,255,255,0.02)', cursor: 'pointer',
+                                                            transition: 'background 0.15s',
+                                                        }}
+                                                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
+                                                        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; }}
+                                                    >
+                                                        <div style={{
+                                                            width: '30px', height: '30px', borderRadius: '50%',
+                                                            background: 'rgba(59,130,246,0.2)', display: 'flex',
+                                                            alignItems: 'center', justifyContent: 'center',
+                                                            fontSize: '0.7rem', fontWeight: 600, color: '#3B82F6',
+                                                            overflow: 'hidden', flexShrink: 0,
+                                                        }}>
+                                                            {user.profile_image
+                                                                ? <img src={user.profile_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                                : user.first_name.charAt(0)}
+                                                        </div>
+                                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                                            <div style={{ fontSize: '0.78rem', color: '#e0e0e0', fontWeight: 500 }}>
+                                                                {user.first_name} {user.last_name}
+                                                            </div>
+                                                            <div style={{ fontSize: '0.68rem', color: '#666' }}>@{user.username}</div>
+                                                        </div>
+                                                        <ChevronDown size={14} color="#555" style={{ transform: 'rotate(-90deg)' }} />
+                                                    </div>
+                                                ))}
+                                                {orgSearchQuery.length >= 2 && !orgSearching && orgSearchResults.length === 0 && (
+                                                    <p style={{ color: '#555', fontSize: '0.78rem', textAlign: 'center', padding: '1rem' }}>No users found</p>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <>
+                                                {/* Selected user card */}
+                                                <div style={{
+                                                    display: 'flex', alignItems: 'center', gap: '8px',
+                                                    padding: '8px 10px', borderRadius: '10px', marginBottom: '0.75rem',
+                                                    background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.15)',
+                                                }}>
+                                                    <div style={{
+                                                        width: '34px', height: '34px', borderRadius: '50%',
+                                                        background: 'rgba(59,130,246,0.2)', display: 'flex',
+                                                        alignItems: 'center', justifyContent: 'center',
+                                                        fontSize: '0.75rem', fontWeight: 600, color: '#3B82F6',
+                                                        overflow: 'hidden', flexShrink: 0,
+                                                    }}>
+                                                        {orgSelectedUser.profile_image
+                                                            ? <img src={orgSelectedUser.profile_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                            : orgSelectedUser.first_name.charAt(0)}
+                                                    </div>
+                                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                                        <div style={{ fontSize: '0.82rem', color: '#e0e0e0', fontWeight: 600 }}>
+                                                            {orgSelectedUser.first_name} {orgSelectedUser.last_name}
+                                                        </div>
+                                                        <div style={{ fontSize: '0.68rem', color: '#3B82F6' }}>@{orgSelectedUser.username}</div>
+                                                    </div>
+                                                    <button onClick={() => { setOrgSelectedUser(null); setOrgMemberRole('member'); }}
+                                                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#888', padding: '2px', display: 'flex' }}>
+                                                        <X size={15} />
+                                                    </button>
+                                                </div>
+
+                                                {/* Role selection */}
+                                                <p style={{ fontSize: '0.68rem', fontWeight: 600, color: '#888', textTransform: 'uppercase', margin: '0 0 0.4rem', letterSpacing: '0.04em' }}>
+                                                    Assign Role
+                                                </p>
+                                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.35rem', marginBottom: '0.75rem' }}>
+                                                    {([
+                                                        { value: 'president', label: 'President', color: '#F59E0B' },
+                                                        { value: 'vice_president', label: 'Vice President', color: '#8B5CF6' },
+                                                        { value: 'secretary', label: 'Secretary', color: '#3B82F6' },
+                                                        { value: 'treasurer', label: 'Treasurer', color: '#10B981' },
+                                                        { value: 'pro', label: 'PRO', color: '#EC4899' },
+                                                        { value: 'social_director', label: 'Social Director', color: '#F97316' },
+                                                        { value: 'member', label: 'Member', color: '#6B7280' },
+                                                    ] as const).map(r => {
+                                                        const isSelected = orgMemberRole === r.value;
+                                                        return (
+                                                            <button key={r.value} onClick={() => setOrgMemberRole(r.value)} style={{
+                                                                padding: '0.4rem 0.6rem', borderRadius: '7px',
+                                                                background: isSelected ? `${r.color}18` : 'rgba(255,255,255,0.03)',
+                                                                border: `1px solid ${isSelected ? `${r.color}40` : 'rgba(255,255,255,0.06)'}`,
+                                                                color: isSelected ? r.color : '#888',
+                                                                fontSize: '0.72rem', fontWeight: isSelected ? 600 : 500,
+                                                                cursor: 'pointer', transition: 'all 0.15s',
+                                                                textAlign: 'left' as const,
+                                                            }}>
+                                                                {r.label}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+
+                                                {/* Add button */}
+                                                <button
+                                                    onClick={handleOrgAddMember}
+                                                    disabled={orgAddingUserId !== null}
+                                                    style={{
+                                                        width: '100%', padding: '0.55rem', borderRadius: '8px',
+                                                        background: 'linear-gradient(135deg, #8B5CF6, #6D28D9)',
+                                                        border: 'none', color: '#fff', fontSize: '0.78rem',
+                                                        fontWeight: 600, cursor: 'pointer', display: 'flex',
+                                                        alignItems: 'center', justifyContent: 'center', gap: '6px',
+                                                        opacity: orgAddingUserId !== null ? 0.5 : 1,
+                                                    }}
+                                                >
+                                                    {orgAddingUserId !== null ? <Loader2 size={14} /> : <UserPlus size={14} />}
+                                                    Add as {([
+                                                        { value: 'president', label: 'President' },
+                                                        { value: 'vice_president', label: 'Vice President' },
+                                                        { value: 'secretary', label: 'Secretary' },
+                                                        { value: 'treasurer', label: 'Treasurer' },
+                                                        { value: 'pro', label: 'PRO' },
+                                                        { value: 'social_director', label: 'Social Director' },
+                                                        { value: 'member', label: 'Member' },
+                                                    ]).find(r => r.value === orgMemberRole)?.label || 'Member'}
+                                                </button>
+                                            </>
+                                        )}
+
+                                        {/* Current members with role labels & management */}
+                                        <div style={{ marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                                            <p style={{ fontSize: '0.68rem', fontWeight: 600, color: '#888', textTransform: 'uppercase', margin: '0 0 0.5rem', letterSpacing: '0.05em' }}>
+                                                Members ({membersList.length})
+                                            </p>
+                                            {membersList.map(member => {
+                                                const roleInfo = getOrgRoleInfo(member.role);
+                                                const isEditingRole = orgEditingRoleUserId === member.id;
+                                                const canManage = member.id !== currentUserId && !(member.role === 'president' || member.role === 'vice_president');
+
+                                                return (
+                                                    <div key={member.id} style={{ marginBottom: '2px' }}>
+                                                        <div style={{
+                                                            display: 'flex', alignItems: 'center', gap: '8px',
+                                                            padding: '5px 8px', borderRadius: '8px',
+                                                        }}>
+                                                            <div style={{
+                                                                width: '28px', height: '28px', borderRadius: '50%',
+                                                                background: `${roleInfo.color}20`, display: 'flex',
+                                                                alignItems: 'center', justifyContent: 'center',
+                                                                fontSize: '0.68rem', fontWeight: 600, color: roleInfo.color,
+                                                                overflow: 'hidden', flexShrink: 0,
+                                                            }}>
+                                                                {member.profile_image
+                                                                    ? <img src={member.profile_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                                    : member.first_name.charAt(0)}
+                                                            </div>
+                                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                                <div style={{ fontSize: '0.75rem', color: '#e0e0e0', fontWeight: 500 }}>
+                                                                    {member.first_name} {member.last_name}
+                                                                    {member.id === currentUserId && <span style={{ fontSize: '0.65rem', color: '#888', marginLeft: '3px' }}>(You)</span>}
+                                                                </div>
+                                                            </div>
+                                                            <span
+                                                                onClick={() => canManage ? setOrgEditingRoleUserId(isEditingRole ? null : member.id) : undefined}
+                                                                style={{
+                                                                    fontSize: '0.55rem', fontWeight: 700, color: roleInfo.color,
+                                                                    background: `${roleInfo.color}15`, padding: '1px 5px',
+                                                                    borderRadius: '3px', cursor: canManage ? 'pointer' : 'default',
+                                                                    border: isEditingRole ? `1px solid ${roleInfo.color}40` : '1px solid transparent',
+                                                                    transition: 'all 0.15s',
+                                                                }}
+                                                                title={canManage ? 'Click to change role' : ''}
+                                                            >
+                                                                {roleInfo.label.toUpperCase()}
+                                                            </span>
+                                                            {canManage && (
+                                                                <button
+                                                                    onClick={() => setOrgConfirmRemoveUser({ id: member.id, name: `${member.first_name} ${member.last_name}` })}
+                                                                    disabled={orgRemovingUserId === member.id}
+                                                                    title="Remove member"
+                                                                    style={{
+                                                                        background: 'none', border: 'none', cursor: 'pointer',
+                                                                        color: '#EF4444', padding: '2px', display: 'flex',
+                                                                        opacity: orgRemovingUserId === member.id ? 0.5 : 1,
+                                                                    }}
+                                                                >
+                                                                    {orgRemovingUserId === member.id ? <Loader2 size={13} /> : <UserMinus size={13} />}
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                        {/* Role change dropdown */}
+                                                        {isEditingRole && (
+                                                            <div style={{
+                                                                display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '3px',
+                                                                padding: '6px 8px 8px 44px',
+                                                            }}>
+                                                                {Object.entries(ORG_ROLES).map(([value, info]) => (
+                                                                    <button key={value}
+                                                                        onClick={() => { handleOrgChangeRole(member.id, value); setOrgEditingRoleUserId(null); }}
+                                                                        style={{
+                                                                            padding: '3px 6px', borderRadius: '5px',
+                                                                            background: member.role === value ? `${info.color}18` : 'rgba(255,255,255,0.02)',
+                                                                            border: `1px solid ${member.role === value ? `${info.color}35` : 'rgba(255,255,255,0.05)'}`,
+                                                                            color: member.role === value ? info.color : '#777',
+                                                                            fontSize: '0.65rem', fontWeight: member.role === value ? 600 : 400,
+                                                                            cursor: 'pointer', transition: 'all 0.12s',
+                                                                            textAlign: 'left' as const,
+                                                                        }}
+                                                                    >
+                                                                        {info.label}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </>
+                                )}
+
+                                {/* Remove Member Confirmation Dialog */}
+                                {orgConfirmRemoveUser && (
+                                    <div style={{
+                                        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                                        background: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(4px)',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        zIndex: 20, padding: '1rem',
+                                    }}>
+                                        <div style={{
+                                            background: 'rgba(20, 27, 45, 0.98)', border: '1px solid rgba(239, 68, 68, 0.25)',
+                                            borderRadius: '12px', padding: '1.25rem', width: '100%', maxWidth: '240px',
+                                            textAlign: 'center',
+                                        }}>
+                                            <div style={{
+                                                width: '36px', height: '36px', borderRadius: '50%',
+                                                background: 'rgba(239, 68, 68, 0.12)', display: 'flex',
+                                                alignItems: 'center', justifyContent: 'center', margin: '0 auto 0.75rem',
+                                            }}>
+                                                <UserMinus size={18} color="#EF4444" />
+                                            </div>
+                                            <p style={{ color: '#e0e0e0', fontSize: '0.8rem', margin: '0 0 0.25rem', fontWeight: 600 }}>
+                                                Remove Member?
+                                            </p>
+                                            <p style={{ color: '#888', fontSize: '0.72rem', margin: '0 0 1rem', lineHeight: 1.4 }}>
+                                                Are you sure you want to remove <span style={{ color: '#ccc', fontWeight: 500 }}>{orgConfirmRemoveUser.name}</span> from this group?
+                                            </p>
+                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                                <button
+                                                    onClick={() => setOrgConfirmRemoveUser(null)}
+                                                    style={{
+                                                        flex: 1, padding: '7px 0', borderRadius: '8px',
+                                                        background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+                                                        color: '#ccc', fontSize: '0.75rem', fontWeight: 500, cursor: 'pointer',
+                                                        transition: 'all 0.15s',
+                                                    }}
+                                                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
+                                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
+                                                >
+                                                    Cancel
+                                                </button>
+                                                <button
+                                                    onClick={() => handleOrgRemoveMember(orgConfirmRemoveUser.id)}
+                                                    disabled={orgRemovingUserId === orgConfirmRemoveUser.id}
+                                                    style={{
+                                                        flex: 1, padding: '7px 0', borderRadius: '8px',
+                                                        background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)',
+                                                        color: '#EF4444', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer',
+                                                        transition: 'all 0.15s',
+                                                        opacity: orgRemovingUserId === orgConfirmRemoveUser.id ? 0.6 : 1,
+                                                    }}
+                                                    onMouseEnter={(e) => { if (orgRemovingUserId !== orgConfirmRemoveUser?.id) e.currentTarget.style.background = 'rgba(239, 68, 68, 0.25)'; }}
+                                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)'; }}
+                                                >
+                                                    {orgRemovingUserId === orgConfirmRemoveUser.id ? 'Removing...' : 'Remove'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Join Requests Tab */}
+                                {orgManageTab === 'requests' && (
+                                    <>
+                                        {orgJoinRequestsLoading ? (
+                                            <p style={{ color: '#666', fontSize: '0.78rem', textAlign: 'center', padding: '1.5rem' }}>Loading...</p>
+                                        ) : orgJoinRequests.length > 0 ? orgJoinRequests.map(req => (
+                                            <div key={req.id} style={{
+                                                background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)',
+                                                borderRadius: '10px', padding: '0.75rem', marginBottom: '0.5rem',
+                                            }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.4rem' }}>
+                                                    <div style={{
+                                                        width: '32px', height: '32px', borderRadius: '50%',
+                                                        background: 'rgba(59,130,246,0.2)', display: 'flex',
+                                                        alignItems: 'center', justifyContent: 'center',
+                                                        fontSize: '0.72rem', fontWeight: 600, color: '#3B82F6',
+                                                        overflow: 'hidden', flexShrink: 0,
+                                                    }}>
+                                                        {req.user.profile_image
+                                                            ? <img src={req.user.profile_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                            : req.user.first_name.charAt(0)}
+                                                    </div>
+                                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                                        <div style={{ fontSize: '0.82rem', color: '#e0e0e0', fontWeight: 500 }}>
+                                                            {req.user.first_name} {req.user.last_name}
+                                                        </div>
+                                                        <div style={{ fontSize: '0.68rem', color: '#666' }}>@{req.user.username}</div>
+                                                    </div>
+                                                </div>
+                                                {req.message && (
+                                                    <p style={{
+                                                        margin: '0 0 0.5rem', fontSize: '0.75rem', color: '#888',
+                                                        lineHeight: 1.4, fontStyle: 'italic',
+                                                        background: 'rgba(255,255,255,0.02)', padding: '0.4rem 0.6rem',
+                                                        borderRadius: '6px', borderLeft: '2px solid rgba(59,130,246,0.3)',
+                                                    }}>
+                                                        "{req.message}"
+                                                    </p>
+                                                )}
+                                                <div style={{ display: 'flex', gap: '0.4rem' }}>
+                                                    <button
+                                                        onClick={() => handleOrgApproveRequest(req.id)}
+                                                        disabled={orgProcessingRequestId === req.id}
+                                                        style={{
+                                                            flex: 1, padding: '5px 10px', borderRadius: '6px',
+                                                            background: 'rgba(34,197,94,0.15)', border: 'none',
+                                                            color: '#22C55E', fontSize: '0.72rem', fontWeight: 600,
+                                                            cursor: 'pointer', display: 'flex', alignItems: 'center',
+                                                            justifyContent: 'center', gap: '4px',
+                                                            opacity: orgProcessingRequestId === req.id ? 0.5 : 1,
+                                                        }}
+                                                    >
+                                                        <CheckCircle size={13} /> Approve
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleOrgRejectRequest(req.id)}
+                                                        disabled={orgProcessingRequestId === req.id}
+                                                        style={{
+                                                            flex: 1, padding: '5px 10px', borderRadius: '6px',
+                                                            background: 'rgba(239,68,68,0.1)', border: 'none',
+                                                            color: '#EF4444', fontSize: '0.72rem', fontWeight: 600,
+                                                            cursor: 'pointer', display: 'flex', alignItems: 'center',
+                                                            justifyContent: 'center', gap: '4px',
+                                                            opacity: orgProcessingRequestId === req.id ? 0.5 : 1,
+                                                        }}
+                                                    >
+                                                        <XCircle size={13} /> Reject
+                                                    </button>
+                                                </div>
+                                                <p style={{ margin: '0.3rem 0 0', fontSize: '0.65rem', color: '#555' }}>
+                                                    {formatTime(req.created_at)}
+                                                </p>
+                                            </div>
+                                        )) : (
+                                            <div style={{ textAlign: 'center', padding: '1.5rem' }}>
+                                                <Clock size={28} color="#333" style={{ marginBottom: '0.5rem' }} />
+                                                <p style={{ color: '#555', fontSize: '0.8rem', margin: 0 }}>No pending requests</p>
+                                            </div>
+                                        )}
+                                    </>
                                 )}
                             </div>
                         </div>

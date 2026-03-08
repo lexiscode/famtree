@@ -5,9 +5,11 @@ namespace App\Http\Controllers\GuestControllers\AuthAccessControllers;
 use App\Http\Controllers\Controller;
 use App\Actions\OrgServices\OrgGroupMessageService;
 use App\Actions\OrgServices\OrgGroupPollService;
+use App\Actions\OrgServices\OrgGroupService;
 use App\Repositories\OrgRepositories\OrgGroupRepository;
 use App\Repositories\OrgRepositories\OrgGroupMessageRepository;
 use App\Models\OrgModels\OrgGroup;
+use App\Models\OrgModels\OrgGroupMember;
 use App\Models\OrgModels\OrgGroupMessage;
 use Illuminate\Http\Request;
 
@@ -16,6 +18,7 @@ class UserOrgGroupChatController extends Controller
     public function __construct(
         private OrgGroupMessageService $messageService,
         private OrgGroupPollService $pollService,
+        private OrgGroupService $groupService,
         private OrgGroupRepository $groupRepo,
         private OrgGroupMessageRepository $messageRepo,
     ) {}
@@ -215,6 +218,8 @@ class UserOrgGroupChatController extends Controller
 
         $group = $this->groupRepo->findById($group->id);
 
+        $myMember = $group->activeMembers->first(fn($m) => $m->user_id === $user->id);
+
         return response()->json([
             'members' => $group->activeMembers->map(fn($m) => [
                 'id' => $m->user_id,
@@ -227,6 +232,8 @@ class UserOrgGroupChatController extends Controller
                 'role' => $m->role,
                 'joined_at' => $m->created_at->toISOString(),
             ]),
+            'my_role' => $myMember?->role,
+            'is_leader' => $myMember && in_array($myMember->role, ['president', 'vice_president']),
         ]);
     }
 
@@ -367,6 +374,297 @@ class UserOrgGroupChatController extends Controller
             'profile_image' => $v->user->profile_image,
             'option_id' => $v->org_group_poll_option_id,
         ]));
+    }
+
+    // ─── Leader Management (president & vice_president only) ───
+
+    private function verifyLeader(int $groupId, int $userId): ?OrgGroupMember
+    {
+        $member = $this->groupRepo->getMember($groupId, $userId);
+        if (!$member || !in_array($member->role, ['president', 'vice_president'])) {
+            return null;
+        }
+        return $member;
+    }
+
+    /**
+     * Get group settings/info for the leader management panel.
+     */
+    public function getGroupSettings(string $groupUuid)
+    {
+        $user = auth()->user();
+        $group = $this->getGroupByUuid($groupUuid);
+        if (!$group) return response()->json(['error' => 'Group not found.'], 404);
+
+        $member = $this->groupRepo->getMember($group->id, $user->id);
+        $isLeader = $member && in_array($member->role, ['president', 'vice_president']);
+
+        return response()->json([
+            'group' => [
+                'id' => $group->id,
+                'uuid' => $group->uuid,
+                'name' => $group->name,
+                'description' => $group->description,
+                'type' => $group->type,
+                'member_count' => $group->activeMembers()->count(),
+                'allow_join_requests' => $group->allow_join_requests,
+                'max_members' => $group->max_members,
+                'is_alumni' => $group->parent_group_id !== null,
+            ],
+            'is_leader' => $isLeader,
+            'my_role' => $member?->role,
+        ]);
+    }
+
+    /**
+     * Search users to add as members (leader only).
+     */
+    public function searchUsersToAdd(Request $request, string $groupUuid)
+    {
+        $user = auth()->user();
+        $group = $this->getGroupByUuid($groupUuid);
+        if (!$group) return response()->json(['error' => 'Group not found.'], 404);
+        if (!$this->verifyLeader($group->id, $user->id)) {
+            return response()->json(['error' => 'Only president or vice president can manage members.'], 403);
+        }
+
+        $query = $request->query('q', '');
+        if (strlen($query) < 2) return response()->json([]);
+
+        $results = $this->groupRepo->searchEligibleUsers($group->organization_id, $query, $group->id);
+
+        return response()->json($results->map(fn($u) => [
+            'id' => $u->id,
+            'uuid' => $u->uuid,
+            'first_name' => $u->first_name,
+            'last_name' => $u->last_name,
+            'username' => $u->username,
+            'profile_image' => $u->profile_image_url,
+        ]));
+    }
+
+    /**
+     * Add a member to the group (leader only, as regular member).
+     */
+    public function addMember(Request $request, string $groupUuid)
+    {
+        $user = auth()->user();
+        $group = $this->getGroupByUuid($groupUuid);
+        if (!$group) return response()->json(['error' => 'Group not found.'], 404);
+        if (!$this->verifyLeader($group->id, $user->id)) {
+            return response()->json(['error' => 'Only president or vice president can manage members.'], 403);
+        }
+        if ($group->parent_group_id) {
+            return response()->json(['error' => 'Cannot add members to alumni groups.'], 403);
+        }
+
+        $request->validate([
+            'user_id' => 'required|integer',
+            'role' => 'nullable|string|in:president,vice_president,secretary,treasurer,pro,social_director,member',
+        ]);
+        $targetUserId = $request->input('user_id');
+        $role = $request->input('role', 'member');
+
+        // Check if already a member
+        $existing = $this->groupRepo->getMember($group->id, $targetUserId);
+        if ($existing && $existing->is_active) {
+            return response()->json(['error' => 'User is already a member.'], 422);
+        }
+
+        // Check max members
+        if ($group->max_members) {
+            $count = $this->groupRepo->getMemberCount($group->id);
+            if ($count >= $group->max_members) {
+                return response()->json(['error' => 'Group is full.'], 422);
+            }
+        }
+
+        // Check if banned
+        if ($this->groupRepo->isBanned($group->id, $targetUserId)) {
+            return response()->json(['error' => 'User is banned from this group.'], 422);
+        }
+
+        $result = $this->groupService->addMember($group->id, $targetUserId, $role, 'leader', $user->id);
+
+        if ($result === 'role_taken') {
+            return response()->json(['error' => 'That role is already assigned to another member.'], 422);
+        }
+
+        return response()->json(['success' => true, 'message' => 'Member added.']);
+    }
+
+    /**
+     * Remove a member from the group (leader only).
+     */
+    public function removeMemberByLeader(string $groupUuid, int $userId)
+    {
+        $user = auth()->user();
+        $group = $this->getGroupByUuid($groupUuid);
+        if (!$group) return response()->json(['error' => 'Group not found.'], 404);
+        if (!$this->verifyLeader($group->id, $user->id)) {
+            return response()->json(['error' => 'Only president or vice president can manage members.'], 403);
+        }
+
+        if ($userId === $user->id) {
+            return response()->json(['error' => 'You cannot remove yourself.'], 422);
+        }
+
+        // Cannot remove another president/vice_president
+        $targetMember = $this->groupRepo->getMember($group->id, $userId);
+        if ($targetMember && in_array($targetMember->role, ['president', 'vice_president'])) {
+            return response()->json(['error' => 'Cannot remove another leader.'], 403);
+        }
+
+        $this->groupService->removeMember($group->id, $userId);
+
+        return response()->json(['success' => true, 'message' => 'Member removed.']);
+    }
+
+    /**
+     * Get join requests (leader only).
+     */
+    public function getJoinRequests(string $groupUuid)
+    {
+        $user = auth()->user();
+        $group = $this->getGroupByUuid($groupUuid);
+        if (!$group) return response()->json(['error' => 'Group not found.'], 404);
+        if (!$this->verifyLeader($group->id, $user->id)) {
+            return response()->json(['error' => 'Only president or vice president can manage members.'], 403);
+        }
+
+        $requests = $this->groupRepo->getJoinRequests($group->id, 'pending');
+
+        return response()->json($requests->map(fn($r) => [
+            'id' => $r->id,
+            'user' => [
+                'id' => $r->user->id,
+                'uuid' => $r->user->uuid,
+                'first_name' => $r->user->first_name,
+                'last_name' => $r->user->last_name,
+                'username' => $r->user->username,
+                'profile_image' => $r->user->profile_image_url,
+            ],
+            'message' => $r->message,
+            'created_at' => $r->created_at->toISOString(),
+        ]));
+    }
+
+    /**
+     * Approve a join request (leader only).
+     */
+    public function approveJoinRequest(string $groupUuid, int $requestId)
+    {
+        $user = auth()->user();
+        $group = $this->getGroupByUuid($groupUuid);
+        if (!$group) return response()->json(['error' => 'Group not found.'], 404);
+        if (!$this->verifyLeader($group->id, $user->id)) {
+            return response()->json(['error' => 'Only president or vice president can manage members.'], 403);
+        }
+
+        $joinRequest = $this->groupRepo->findJoinRequest($requestId);
+        if (!$joinRequest || $joinRequest->org_group_id !== $group->id) {
+            return response()->json(['error' => 'Request not found.'], 404);
+        }
+
+        // Use updateJoinRequest + addMember directly (reviewed_by is org_accounts FK, so null for user-approved)
+        if ($joinRequest->status !== 'pending') {
+            return response()->json(['error' => 'Request already processed.'], 422);
+        }
+
+        if ($this->groupRepo->isBanned($group->id, $joinRequest->user_id)) {
+            $this->groupRepo->updateJoinRequest($requestId, [
+                'status' => 'rejected',
+                'reviewed_at' => now(),
+                'review_note' => "Rejected (user is banned). Reviewed by {$user->first_name} {$user->last_name}.",
+            ]);
+            return response()->json(['error' => 'User is banned from this group.'], 422);
+        }
+
+        if ($group->max_members) {
+            $count = $this->groupRepo->getMemberCount($group->id);
+            if ($count >= $group->max_members) {
+                return response()->json(['error' => 'Group is full.'], 422);
+            }
+        }
+
+        $this->groupRepo->addMember($group->id, $joinRequest->user_id, 'member', 'leader', $user->id);
+        $this->groupRepo->updateJoinRequest($requestId, [
+            'status' => 'approved',
+            'reviewed_at' => now(),
+            'review_note' => "Approved by {$user->first_name} {$user->last_name} (group leader).",
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Request approved.']);
+    }
+
+    /**
+     * Reject a join request (leader only).
+     */
+    public function rejectJoinRequest(string $groupUuid, int $requestId)
+    {
+        $user = auth()->user();
+        $group = $this->getGroupByUuid($groupUuid);
+        if (!$group) return response()->json(['error' => 'Group not found.'], 404);
+        if (!$this->verifyLeader($group->id, $user->id)) {
+            return response()->json(['error' => 'Only president or vice president can manage members.'], 403);
+        }
+
+        $joinRequest = $this->groupRepo->findJoinRequest($requestId);
+        if (!$joinRequest || $joinRequest->org_group_id !== $group->id || $joinRequest->status !== 'pending') {
+            return response()->json(['error' => 'Request not found.'], 404);
+        }
+
+        $this->groupRepo->updateJoinRequest($requestId, [
+            'status' => 'rejected',
+            'reviewed_at' => now(),
+            'review_note' => "Rejected by {$user->first_name} {$user->last_name} (group leader).",
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Request rejected.']);
+    }
+
+    /**
+     * Change a member's role (leader only).
+     */
+    public function updateMemberRole(Request $request, string $groupUuid, int $userId)
+    {
+        $user = auth()->user();
+        $group = $this->getGroupByUuid($groupUuid);
+        if (!$group) return response()->json(['error' => 'Group not found.'], 404);
+        if (!$this->verifyLeader($group->id, $user->id)) {
+            return response()->json(['error' => 'Only president or vice president can change roles.'], 403);
+        }
+
+        $request->validate([
+            'role' => 'required|string|in:president,vice_president,secretary,treasurer,pro,social_director,member',
+        ]);
+
+        if ($userId === $user->id) {
+            return response()->json(['error' => 'You cannot change your own role.'], 422);
+        }
+
+        $targetMember = $this->groupRepo->getMember($group->id, $userId);
+        if (!$targetMember || !$targetMember->is_active) {
+            return response()->json(['error' => 'Member not found.'], 404);
+        }
+
+        // Cannot change another president/vice_president's role (unless you're the president)
+        $myMember = $this->groupRepo->getMember($group->id, $user->id);
+        if (in_array($targetMember->role, ['president', 'vice_president']) && $myMember->role !== 'president') {
+            return response()->json(['error' => 'Only the president can change another leader\'s role.'], 403);
+        }
+
+        $result = $this->groupService->updateMemberRole($group->id, $userId, $request->input('role'));
+
+        if ($result === 'role_taken') {
+            return response()->json(['error' => 'That role is already assigned to another member.'], 422);
+        }
+
+        if ($result === false) {
+            return response()->json(['error' => 'Failed to update role.'], 422);
+        }
+
+        return response()->json(['success' => true, 'message' => 'Role updated.']);
     }
 
     // ─── Helpers ────────────────────────────────────────────────
