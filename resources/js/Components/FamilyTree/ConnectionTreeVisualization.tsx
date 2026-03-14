@@ -149,14 +149,6 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick,
     const [hoveredNode, setHoveredNode] = useState<number | null>(null);
     const [hoveredEdge, setHoveredEdge] = useState<string | null>(null);
 
-    // Reset zoom, pan, and hover states when tree data changes (but preserve fullscreen)
-    useEffect(() => {
-        setZoom(1);
-        setPan({ x: 0, y: 0 });
-        setHoveredNode(null);
-        setHoveredEdge(null);
-    }, [treeData.rootUserId]);
-
     // Calculate node positions using a hierarchical tree layout
     const { nodePositions, svgDimensions } = useMemo(() => {
         if (!treeData || treeData.nodes.length === 0) {
@@ -588,76 +580,92 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick,
         }
 
         // Phase 2b: Position childSpouseGroup nodes (in-law spouses + grouped grandchildren)
+        // For deep trees, CSGs form a chain: shallower CSGs position grandchildren that become
+        // the childId for deeper CSGs. Process iteratively so each depth resolves before the next.
         if (treeData.childSpouseGroups && treeData.childSpouseGroups.length > 0) {
             const childSpacing = 160;
             const groupGap = 180;
 
-            const csgBounds: { childId: number; spouseId: number; grandchildIds: number[]; minX: number; maxX: number; centerX: number }[] = [];
-
-            // Track how many spouses placed on each side per child to avoid overlap
             const childRightCount: Record<number, number> = {};
             const childLeftCount: Record<number, number> = {};
 
-            treeData.childSpouseGroups.forEach(group => {
-                const childPos = positions[group.childId];
-                if (!childPos) return;
+            let remaining = [...treeData.childSpouseGroups];
+            const maxPasses = 10; // safety limit
 
-                // Place in-law spouse diagonally below and to the side of child
-                const spouseYOffset = 180; // push down to create clear row separation from children
-                let spouseX: number;
-                if (group.isDivorced) {
-                    const leftIdx = childLeftCount[group.childId] || 0;
-                    spouseX = childPos.x - (nodeWidth * 0.8) - (leftIdx * nodeWidth);
-                    childLeftCount[group.childId] = leftIdx + 1;
-                } else {
-                    const rightIdx = childRightCount[group.childId] || 0;
-                    spouseX = childPos.x + (nodeWidth * 0.8) + (rightIdx * nodeWidth);
-                    childRightCount[group.childId] = rightIdx + 1;
+            for (let pass = 0; pass < maxPasses && remaining.length > 0; pass++) {
+                // Pick CSGs whose childId is already positioned
+                const ready: typeof remaining = [];
+                const notReady: typeof remaining = [];
+                remaining.forEach(group => {
+                    if (positions[group.childId]) {
+                        ready.push(group);
+                    } else {
+                        notReady.push(group);
+                    }
+                });
+
+                if (ready.length === 0) break; // no progress possible
+
+                const csgBounds: { childId: number; spouseId: number; grandchildIds: number[]; minX: number; maxX: number; centerX: number }[] = [];
+
+                ready.forEach(group => {
+                    const childPos = positions[group.childId];
+                    if (!childPos) return;
+
+                    const spouseYOffset = 180;
+                    let spouseX: number;
+                    if (group.isDivorced) {
+                        const leftIdx = childLeftCount[group.childId] || 0;
+                        spouseX = childPos.x - (nodeWidth * 0.8) - (leftIdx * nodeWidth);
+                        childLeftCount[group.childId] = leftIdx + 1;
+                    } else {
+                        const rightIdx = childRightCount[group.childId] || 0;
+                        spouseX = childPos.x + (nodeWidth * 0.8) + (rightIdx * nodeWidth);
+                        childRightCount[group.childId] = rightIdx + 1;
+                    }
+                    positions[group.spouseId] = { x: spouseX, y: childPos.y + spouseYOffset, level: childPos.level + 1 };
+
+                    if (group.grandchildIds.length > 0) {
+                        const gcY = childPos.y + spouseYOffset + levelHeight;
+                        const midX = spouseX;
+                        const groupWidth = (group.grandchildIds.length - 1) * childSpacing;
+
+                        group.grandchildIds.forEach((gcId, index) => {
+                            const x = midX + (index * childSpacing) - (groupWidth / 2);
+                            positions[gcId] = { x, y: gcY, level: childPos.level + 2 };
+                        });
+
+                        const xs = [...group.grandchildIds.map(id => positions[id].x), spouseX, childPos.x];
+                        csgBounds.push({
+                            childId: group.childId,
+                            spouseId: group.spouseId,
+                            grandchildIds: group.grandchildIds,
+                            minX: Math.min(...xs),
+                            maxX: Math.max(...xs),
+                            centerX: midX,
+                        });
+                    }
+                });
+
+                // Resolve overlaps only among CSGs processed in this pass (same depth level)
+                csgBounds.sort((a, b) => a.centerX - b.centerX);
+                for (let i = 1; i < csgBounds.length; i++) {
+                    const prev = csgBounds[i - 1];
+                    const curr = csgBounds[i];
+                    const overlap = (prev.maxX + groupGap) - curr.minX;
+
+                    if (overlap > 0) {
+                        if (positions[curr.spouseId]) positions[curr.spouseId].x += overlap;
+                        curr.grandchildIds.forEach(gcId => {
+                            if (positions[gcId]) positions[gcId].x += overlap;
+                        });
+                        curr.minX += overlap;
+                        curr.maxX += overlap;
+                        curr.centerX += overlap;
+                    }
                 }
-                positions[group.spouseId] = { x: spouseX, y: childPos.y + spouseYOffset, level: 1 };
 
-                // Position grandchildren under midpoint of child + in-law
-                if (group.grandchildIds.length > 0) {
-                    const spouseY = childPos.y + spouseYOffset;
-                    const gcY = spouseY + levelHeight;
-                    const midX = spouseX;
-                    const groupWidth = (group.grandchildIds.length - 1) * childSpacing;
-
-                    group.grandchildIds.forEach((gcId, index) => {
-                        const x = midX + (index * childSpacing) - (groupWidth / 2);
-                        positions[gcId] = { x, y: gcY, level: 2 };
-                    });
-
-                    const xs = [...group.grandchildIds.map(id => positions[id].x), spouseX, childPos.x];
-                    csgBounds.push({
-                        childId: group.childId,
-                        spouseId: group.spouseId,
-                        grandchildIds: group.grandchildIds,
-                        minX: Math.min(...xs),
-                        maxX: Math.max(...xs),
-                        centerX: midX,
-                    });
-                }
-            });
-
-            // Resolve overlaps between grandchild groups by shifting right
-            csgBounds.sort((a, b) => a.centerX - b.centerX);
-            for (let i = 1; i < csgBounds.length; i++) {
-                const prev = csgBounds[i - 1];
-                const curr = csgBounds[i];
-                const overlap = (prev.maxX + groupGap) - curr.minX;
-
-                if (overlap > 0) {
-                    // Shift entire unit: child + in-law spouse + grandchildren
-                    if (positions[curr.childId]) positions[curr.childId].x += overlap;
-                    if (positions[curr.spouseId]) positions[curr.spouseId].x += overlap;
-                    curr.grandchildIds.forEach(gcId => {
-                        if (positions[gcId]) positions[gcId].x += overlap;
-                    });
-                    curr.minX += overlap;
-                    curr.maxX += overlap;
-                    curr.centerX += overlap;
-                }
+                remaining = notReady;
             }
         }
 
@@ -938,6 +946,14 @@ const ConnectionTreeVisualization: React.FC<Props> = ({ treeData, onAvatarClick,
             svgDimensions: { width, height, minX, maxX, minY, maxY, padding }
         };
     }, [treeData]);
+
+    // Reset zoom, pan, and hover states when tree data changes (but preserve fullscreen)
+    useEffect(() => {
+        setZoom(1);
+        setPan({ x: 0, y: 0 });
+        setHoveredNode(null);
+        setHoveredEdge(null);
+    }, [treeData.rootUserId]);
 
     const handleMouseDown = useCallback((e: React.MouseEvent) => {
         if (e.button === 0) {
